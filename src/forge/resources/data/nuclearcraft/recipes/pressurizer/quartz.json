@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:dusts/quartz"
+                },
+                {
+                    "tag": "forge:dusts/nether_quartz"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:quartz",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40
+}

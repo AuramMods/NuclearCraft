@@ -3,6 +3,7 @@ package nc.init;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -37,6 +38,10 @@ final class NCMaterials {
         }
         block("soulless_sand", BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F));
         block("soulless_sandstone", BlockBehaviour.Properties.copy(Blocks.SANDSTONE).strength(0.8F));
+        block("molybdenum_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
+        block("copper_oxide_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
+        item("flour");
+        item("graham_cracker", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);
         }
@@ -85,7 +90,11 @@ final class NCMaterials {
     }
 
     private static RegistryObject<Item> item(String id) {
-        var item = NCRegistries.ITEMS.register(id, () -> new Item(new Item.Properties()));
+        return item(id, new Item.Properties());
+    }
+
+    private static RegistryObject<Item> item(String id, Item.Properties properties) {
+        var item = NCRegistries.ITEMS.register(id, () -> new Item(properties));
         MATERIALS.add(item);
         return item;
     }

@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/molybdenum"
+            },
+            "count": 9
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:molybdenum_block",
+        "count": 1
+    },
+    "ticks": 5400,
+    "energy_per_tick": 40,
+    "conditions": [
+        {
+            "type": "forge:tag_empty",
+            "tag": "forge:ingots/molybdenum"
+        }
+    ]
+}

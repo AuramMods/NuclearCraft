@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:dusts/wheat"
+                },
+                {
+                    "tag": "forge:flour"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:graham_cracker",
+        "count": 1
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

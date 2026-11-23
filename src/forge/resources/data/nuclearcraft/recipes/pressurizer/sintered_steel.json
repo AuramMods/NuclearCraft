@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/steel"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:sintered_steel",
+        "count": 1
+    },
+    "ticks": 1200,
+    "energy_per_tick": 80,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/steel"
+            }
+        }
+    ]
+}

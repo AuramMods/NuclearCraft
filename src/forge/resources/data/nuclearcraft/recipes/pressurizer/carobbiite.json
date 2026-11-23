@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/carobbiite"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:carobbiite",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40
+}

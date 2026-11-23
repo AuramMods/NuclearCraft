@@ -48,7 +48,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         this.access = access;
         this.processor = processor;
         for (int index = 0; index < machine.inputs(); index++) {
-            addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), machine.inputY()));
+            addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), machine.inputY(index)));
         }
         for (int index = 0; index < machine.outputs(); index++) {
             addSlot(new SlotItemHandler(inventory, machine.inputs() + index, machine.outputX(index), machine.outputY(index)) {

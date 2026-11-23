@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/ender_pearl"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:ender_pearl",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/ender_pearl"
+            }
+        }
+    ]
+}

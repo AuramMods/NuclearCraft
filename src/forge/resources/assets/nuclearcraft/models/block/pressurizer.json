@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "particle": "nuclearcraft:block/processor_side",
+        "up": "nuclearcraft:block/processor_top",
+        "down": "nuclearcraft:block/processor_bottom",
+        "north": "nuclearcraft:block/pressurizer_front_off",
+        "south": "nuclearcraft:block/processor_back",
+        "east": "nuclearcraft:block/processor_side",
+        "west": "nuclearcraft:block/processor_side"
+    }
+}

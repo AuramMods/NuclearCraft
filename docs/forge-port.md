@@ -41,7 +41,9 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - The Fuel Reprocessor has the original crafting pattern, eight ordered outputs, and 108 recipes covering all 27 NuclearCraft fuels in TRISO, oxide, nitride, and zirconium-alloy forms. Each batch uses nine depleted fuel items, 400 ticks, and 8,000 FE. Chance byproducts roll independently for each possible item. TRISO also returns graphite and cladding, and zirconium-alloy recipes return surplus zirconium in their original slot.
 - Headless tests checked the catalog, recipe values, sided automation, and a saved batch. A full active output held the input and energy, while leftovers in the inactive output slots remained where they were. The recovered oxides matched the crafting ingredients for fresh LEP-239 fuel.
 - A silent, hidden client opened the Fuel Reprocessor against a packaged dedicated server. It displayed all eight output slots, the stored energy, and 108 JEI recipes. The native observer recorded zero visible windows and focus changes.
-- Remaining work includes the full TRISO production chain and its pebble-bed reactor, other reactor variants, neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
+- The Pressurizer makes pyrolytic carbon from graphite and includes the legacy gem, obsidian, sintered-material, flour, and compression recipes that have native or Forge-tagged ingredients. The Assembler coats all 27 NuclearCraft carbide fuels. Its four item inputs are shapeless and cannot reuse one input slot for two ingredients.
+- Headless tests pressed graphite and coated nine LEU-235 fuel items. The Pressurizer used 24,000 FE and the Assembler used 6,000 FE. A separate test checked that overlapping ingredients still match each required slot. A silent, hidden client opened the Assembler with its four input slots and found all 27 recipes plus the Pressurizer’s pyrolytic carbon entry in JEI.
+- Remaining work includes the pebble-bed and molten-salt reactors, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -100,7 +102,13 @@ On a headless server with Auram’s Immersive Engineering JAR, a Compact Water S
 
 Two Decay Generators sent power through an Ender IO Energy Conduit and a Mekanism Basic Universal Cable. Each was surrounded by five uranium blocks. Both Manufactory machines started with an empty energy buffer, consumed one coal, and produced one coal dust.
 
+Two Pressurizer-to-Assembler chains moved their supplies and pressed carbon through the exact Ender IO Item Conduits and Mekanism Basic Logistical Transporters in Auram. Each extracted exactly nine coated LEU-235 items. Both input barrels and machine inventories emptied in each chain, and both machines used their full preloaded charge.
+
+A headless Forge run used Auram’s installed Create, Applied Energistics 2, and Mekanism. Their tagged wheat flour, ender dust, and steel dust each completed a Pressurizer recipe, yielding one graham cracker, one ender pearl, and one sintered steel respectively. Each machine spent its full preloaded charge.
+
 The isolated Auram client loaded all 539 installed mod JARs and the pack’s configuration and scripts alongside the packaged NuclearCraft JAR. It entered a disposable singleplayer world on Forge 47.4.10 and Java 17, finished loading JEI, and saved and exited normally. In that world a KubeJS test loaded a native Manufactory with one coal and 5,000 FE. The saved inventory held one `mekanism:dust_coal` after Almost Unified applied Auram’s coal dust preference, and the machine had 1,000 FE left. The native observer recorded zero onscreen windows and focus changes. Master volume was zero, and the client used the OpenAL No Output device. No installed mod JAR declared the `nuclearcraft` mod ID.
+
+A second isolated run with all 539 mods loaded the Fuel Reprocessor build and completed a batch in the disposable world. A KubeJS check and the saved block data agreed on all four guaranteed outputs, the consumed fuel, and the 8,000 FE spent. The client used master volume zero and the OpenAL No Output device, with zero observed windows or focus changes. Forge logged a config-unload `ClassCastException` after the world save. The client exited with code zero and the resulting block inventory was readable from disk.
 
 ## Registry migration references
 
@@ -126,6 +134,8 @@ The isolated Auram client loaded all 539 installed mod JARs and the pack’s con
 | `nuclearcraft:turbine_dynamo_coil`, 3 | `nuclearcraft:turbine_dynamo_coil_gold` |
 | `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
+
+Legacy `nuclearcraft:material_block` metadata 0 and 1 maps to `nuclearcraft:molybdenum_block` and `nuclearcraft:copper_oxide_block`. Pressurizer and Assembler recipes use `nuclearcraft:pressurizer` and `nuclearcraft:assembler` with a single `result`. The Assembler takes four counted ingredients and matches them in any order.
 
 Legacy `fertile_isotope` variants 0 through 6 map in order to `uranium_238_block`, `neptunium_237_block`, `plutonium_242_block`, `americium_243_block`, `curium_246_block`, `berkelium_247_block`, and `californium_252_block` in the `nuclearcraft` namespace.
 

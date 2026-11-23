@@ -1,0 +1,35 @@
+{
+    "type": "nuclearcraft:assembler",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/leb_248_carbide"
+            },
+            "count": 9
+        },
+        {
+            "ingredient": {
+                "tag": "forge:dusts/graphite"
+            },
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "tag": "forge:ingots/pyrolytic_carbon"
+            },
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "tag": "forge:ingots/silicon_carbide"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:leb_248_triso",
+        "count": 9
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

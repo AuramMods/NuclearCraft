@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/obsidian"
+            },
+            "count": 4
+        }
+    ],
+    "result": {
+        "item": "minecraft:obsidian",
+        "count": 1
+    },
+    "ticks": 900,
+    "energy_per_tick": 60
+}

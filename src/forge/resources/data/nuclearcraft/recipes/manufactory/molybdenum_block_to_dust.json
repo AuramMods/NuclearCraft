@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:storage_blocks/molybdenum"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:molybdenum_dust",
+        "count": 9
+    },
+    "ticks": 3600,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:tag_empty",
+            "tag": "forge:ingots/molybdenum"
+        }
+    ]
+}

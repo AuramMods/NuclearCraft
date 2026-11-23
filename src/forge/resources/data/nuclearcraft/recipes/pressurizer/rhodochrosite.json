@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/rhodochrosite"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:rhodochrosite",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40
+}

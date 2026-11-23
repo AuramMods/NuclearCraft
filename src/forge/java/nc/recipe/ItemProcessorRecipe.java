@@ -37,45 +37,41 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         alternateResults = List.copyOf(alternateResults);
     }
 
-    /** Counts are indexed by inventory slot, so the furnace can consume either ingredient order. */
+    /** Counts are indexed by inventory slot after assigning each ingredient to a distinct slot. */
     public int[] match(Container container) {
-        int[] amounts = match(container, false);
-        return amounts == null && inputs.size() == 2 ? match(container, true) : amounts;
-    }
-
-    private int[] match(Container container, boolean reversed) {
         if (container.getContainerSize() < inputs.size()) {
             return null;
         }
         int[] amounts = new int[inputs.size()];
-        for (int slot = 0; slot < inputs.size(); slot++) {
-            Input input = inputAt(slot, reversed);
-            ItemStack stack = container.getItem(slot);
-            if (stack.getCount() < input.count() || !input.accepts(stack)) {
-                return null;
-            }
-            amounts[slot] = input.count();
-        }
-        return amounts;
+        return matchInputs(container, 0, 0, amounts, -1, ItemStack.EMPTY) ? amounts : null;
     }
 
     public boolean canInsert(Container container, int slot, ItemStack stack) {
-        return canInsert(container, slot, stack, false)
-                || (inputs.size() == 2 && canInsert(container, slot, stack, true));
+        return container.getContainerSize() >= inputs.size() && slot >= 0 && slot < inputs.size()
+                && matchInputs(container, 0, 0, null, slot, stack);
     }
 
-    private boolean canInsert(Container container, int slot, ItemStack stack, boolean reversed) {
+    private boolean matchInputs(Container container, int slot, int used, @Nullable int[] amounts,
+                                int insertSlot, ItemStack inserted) {
+        if (slot == inputs.size()) {
+            return true;
+        }
+        ItemStack stack = slot == insertSlot ? inserted : container.getItem(slot);
+        if (amounts == null && stack.isEmpty()) {
+            return matchInputs(container, slot + 1, used, null, insertSlot, inserted);
+        }
         for (int index = 0; index < inputs.size(); index++) {
-            ItemStack current = index == slot ? stack : container.getItem(index);
-            if (!current.isEmpty() && !inputAt(index, reversed).accepts(current)) {
-                return false;
+            Input input = inputs.get(index);
+            int bit = 1 << index;
+            if ((used & bit) == 0 && (amounts == null || stack.getCount() >= input.count()) && input.accepts(stack)
+                    && matchInputs(container, slot + 1, used | bit, amounts, insertSlot, inserted)) {
+                if (amounts != null) {
+                    amounts[slot] = input.count();
+                }
+                return true;
             }
         }
-        return true;
-    }
-
-    private Input inputAt(int slot, boolean reversed) {
-        return inputs.get(reversed ? 1 - slot : slot);
+        return false;
     }
 
     @Override

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/graphite"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:coal",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40
+}

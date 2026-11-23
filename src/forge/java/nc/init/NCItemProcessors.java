@@ -60,13 +60,16 @@ public final class NCItemProcessors {
         ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 0, 84, 35, 16),
         INFUSER("infuser", 1, 1, true, 46, 66, 126, 0, 84, 35, 16),
         ROCK_CRUSHER("rock_crusher", 1, 3, false, 38, -1, 94, 20, 56, 35, 16),
-        FUEL_REPROCESSOR("fuel_reprocessor", 1, 8, false, 30, -1, 86, 20, 48, 30, 38, 4, 12);
+        FUEL_REPROCESSOR("fuel_reprocessor", 1, 8, false, 30, -1, 86, 20, 48, 30, 38, 1, 4, 12),
+        PRESSURIZER("pressurizer", 1, 1, true, 56, -1, 116, 0, 74, 35, 16),
+        ASSEMBLER("assembler", 4, 1, false, 46, -1, 126, 0, 84, 31, 36, 2, 1, 12);
 
         private final String id;
         private final int inputs;
         private final int outputs;
         private final boolean losesProgress;
         private final int inputX;
+        private final int inputColumns;
         private final int fluidInputX;
         private final int outputX;
         private final int outputSpacing;
@@ -85,16 +88,18 @@ public final class NCItemProcessors {
         Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
                 int outputSpacing, int progressX, int progressY, int progressHeight) {
             this(id, inputs, outputs, losesProgress, inputX, fluidInputX, outputX, outputSpacing, progressX, progressY,
-                    progressHeight, outputs, 0);
+                    progressHeight, inputs, outputs, 0);
         }
 
         Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
-                int outputSpacing, int progressX, int progressY, int progressHeight, int outputColumns, int menuExtension) {
+                int outputSpacing, int progressX, int progressY, int progressHeight, int inputColumns,
+                int outputColumns, int menuExtension) {
             this.id = id;
             this.inputs = inputs;
             this.outputs = outputs;
             this.losesProgress = losesProgress;
             this.inputX = inputX;
+            this.inputColumns = inputColumns;
             this.fluidInputX = fluidInputX;
             this.outputX = outputX;
             this.outputSpacing = outputSpacing;
@@ -134,11 +139,11 @@ public final class NCItemProcessors {
         }
 
         public int inputX(int slot) {
-            return inputX + slot * 20;
+            return inputX + (slot % inputColumns) * 20;
         }
 
-        public int inputY() {
-            return 35 + menuExtension / 2;
+        public int inputY(int slot) {
+            return slotY(slot, inputColumns, inputs);
         }
 
         public boolean hasFluidInput() {
@@ -154,7 +159,11 @@ public final class NCItemProcessors {
         }
 
         public int outputY(int slot) {
-            return inputY() + 20 * (slot / outputColumns) - 10 * ((outputs - 1) / outputColumns);
+            return slotY(slot, outputColumns, outputs);
+        }
+
+        private int slotY(int slot, int columns, int count) {
+            return 35 + menuExtension / 2 + 20 * (slot / columns) - 10 * ((count - 1) / columns);
         }
 
         public int menuExtension() {

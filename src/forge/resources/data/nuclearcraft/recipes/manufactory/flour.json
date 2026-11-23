@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:crops/wheat"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:flour",
+        "count": 1
+    },
+    "ticks": 100,
+    "energy_per_tick": 10
+}
