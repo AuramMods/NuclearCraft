@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:enricher",
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/dimensional"
+        },
+        "count": 1
+    },
+    "fluid_input": {
+        "fluid": "nuclearcraft:soul",
+        "amount": 100
+    },
+    "result": {
+        "fluid": "nuclearcraft:mysterious_soul",
+        "amount": 100
+    },
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

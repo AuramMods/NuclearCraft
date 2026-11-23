@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:enricher",
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/irradiated_borax"
+        },
+        "count": 1
+    },
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 1000
+    },
+    "result": {
+        "fluid": "nuclearcraft:irradiated_borax_solution",
+        "amount": 666
+    },
+    "ticks": 300,
+    "energy_per_tick": 5
+}

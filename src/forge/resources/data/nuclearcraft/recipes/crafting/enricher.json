@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PHP",
+        "LCL",
+        "PMP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        },
+        "L": {
+            "tag": "forge:gems/lapis"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:enricher",
+        "count": 1
+    }
+}

@@ -1,5 +1,7 @@
 package nc.init;
 
+import net.minecraft.sounds.SoundEvents;
+
 final class NCChemicalFluids {
     private NCChemicalFluids() {}
 
@@ -9,6 +11,7 @@ final class NCChemicalFluids {
         NCFluids.liquid("ammonium_sulfate_solution", "salt_solution", 1000, 0x4D73B5, 300, 1000);
         NCFluids.molten("baalo", 0x857958);
         NCFluids.molten("bacro", 0x5E615E);
+        NCFluids.molten("bacro_nio", 0x414641);
         NCFluids.molten("barium", 0x4B4B4B);
         NCFluids.molten("barium_oxide", 0xC7D4D6);
         NCFluids.molten("barium_sulfide", 0xBDA776);
@@ -31,8 +34,10 @@ final class NCChemicalFluids {
         NCFluids.liquid("hydrogen_peroxide", "hydrogen_peroxide", 1000, 0xFFFFFF, 300, 1000);
         NCFluids.gas("hydrogen_sulfide", 0xFF785830, 300);
         NCFluids.liquid("hydroquinone_solution", "salt_solution", 1000, 0x737DD5, 300, 1000);
+        NCFluids.liquid("irradiated_borax_solution", "salt_solution", 1000, 0x9789CB, 300, 1000);
         NCFluids.molten("manganese_dioxide", 0x28211E);
         NCFluids.liquid("methanol", "liquid", 800, 0x71524C, 300, 800);
+        NCFluids.soul("mysterious_soul", 0xFF985CA4, SoundEvents.GHAST_AMBIENT, SoundEvents.GHAST_WARN);
         NCFluids.molten("nickel_oxide", 0x435E49);
         NCFluids.molten("nickel_sulfide", 0xCBD3AD);
         NCFluids.liquid("orthosilicic_acid", "liquid", 1000, 0xB8B8B8, 300, 1000);
@@ -51,6 +56,7 @@ final class NCChemicalFluids {
         NCFluids.liquid("sodium_hydroquinone_solution", "salt_solution", 1000, 0x7C7ED7, 300, 1000);
         NCFluids.liquid("sodium_hydroxide_solution", "salt_solution", 1000, 0x787DD7, 300, 1000);
         NCFluids.molten("sodium_sulfide", 0x9A8B0B);
+        NCFluids.soul("soul", 0xFF7B6F68, SoundEvents.GHAST_HURT, SoundEvents.GHAST_SCREAM);
         NCFluids.liquid("sulfuric_acid", "liquid", 1000, 0x454500, 300, 1000);
     }
 }

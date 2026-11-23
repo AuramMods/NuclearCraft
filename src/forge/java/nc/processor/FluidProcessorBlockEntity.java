@@ -18,6 +18,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -30,6 +31,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +42,8 @@ import java.util.Objects;
 public final class FluidProcessorBlockEntity extends BlockEntity implements MenuProvider {
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ? extends FluidProcessorRecipe> recipes;
-    private final ProcessorInputs input = new ProcessorInputs(0);
+    private final ProcessorInputs input;
+    private final @Nullable FluidProcessorItemInput itemInput;
     private final ProcessorFluidTanks fluids;
     private final ProcessorEnergy power = new ProcessorEnergy(this, 256_000);
     private final OutputMode[] outputModes;
@@ -54,6 +57,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         super(machine.entity(), pos, state);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
+        input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
+        itemInput = machine.hasItemInput ? new FluidProcessorItemInput(this, this::acceptsItem) : null;
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, machine.inputs, machine.outputs);
         outputModes = new OutputMode[machine.outputs];
         Arrays.fill(outputModes, OutputMode.HOLD);
@@ -70,7 +75,19 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 .anyMatch(recipe -> recipe.inputs().stream().anyMatch(ingredient -> ingredient.accepts(stack)));
     }
 
+    private boolean acceptsItem(ItemStack stack) {
+        return level == null || level.isClientSide || level.getRecipeManager().getAllRecipesFor(machine.recipes())
+                .stream().anyMatch(recipe -> recipe.acceptsItem(stack));
+    }
+
+    public ItemStackHandler inventory() {
+        return Objects.requireNonNull(itemInput);
+    }
+
     private boolean process(Level level, boolean halted) {
+        if (itemInput != null) {
+            input.setItem(0, itemInput.getStackInSlot(0));
+        }
         input.setFluid(fluids.stored(0));
         if (machine.inputs == 2) {
             input.setSecondFluid(fluids.stored(1));
@@ -96,6 +113,10 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         }
         progressHalfTicks += 2;
         if (progressHalfTicks >= 2L * recipe.ticks()) {
+            var item = recipe.itemInput();
+            if (item != null && itemInput != null) {
+                itemInput.extractItem(0, item.count(), false);
+            }
             List<FluidIngredient> ingredients = recipe.inputs();
             boolean inOrder = recipe.inOrder(input);
             for (int index = 0; index < machine.inputs; index++) {
@@ -136,6 +157,16 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         }
     }
 
+    void toggleItemSide(Direction side) {
+        if (itemInput != null) {
+            itemInput.toggle(side);
+            setChanged();
+            if (level != null) {
+                level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+            }
+        }
+    }
+
     void cycleOutputMode(int tank) {
         OutputMode next = outputModes[tank - machine.inputs].next();
         outputModes[tank - machine.inputs] = next;
@@ -151,6 +182,9 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return fluids.capability(side).cast();
             }
+            if (capability == ForgeCapabilities.ITEM_HANDLER && itemInput != null) {
+                return itemInput.capability(side).cast();
+            }
             if (capability == ForgeCapabilities.ENERGY) {
                 return energy.cast();
             }
@@ -162,6 +196,9 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     public void invalidateCaps() {
         super.invalidateCaps();
         fluids.invalidate();
+        if (itemInput != null) {
+            itemInput.invalidate();
+        }
         energy.invalidate();
     }
 
@@ -169,12 +206,18 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     public void reviveCaps() {
         super.reviveCaps();
         fluids.revive();
+        if (itemInput != null) {
+            itemInput.revive();
+        }
         energy = LazyOptional.of(() -> power);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        if (itemInput != null) {
+            itemInput.save(tag);
+        }
         tag.putInt("energy", power.getEnergyStored());
         tag.putLong("progress_half_ticks", progressHalfTicks);
         if (activeRecipe != null) {
@@ -191,6 +234,9 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (itemInput != null) {
+            itemInput.load(tag);
+        }
         power.load(tag.getInt("energy"));
         progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
@@ -219,6 +265,9 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
                 }
+                if (itemInput != null && index == FluidProcessorMenu.itemSidesIndex(machine)) {
+                    return itemInput.disabledSides();
+                }
                 int tank = (index - FluidProcessorMenu.FIRST_TANK) / FluidProcessorMenu.TANK_DATA_SIZE;
                 return switch ((index - FluidProcessorMenu.FIRST_TANK) % FluidProcessorMenu.TANK_DATA_SIZE) {
                     case FluidProcessorMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(fluids.stored(tank).getFluid());
@@ -242,14 +291,25 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     public enum Machine {
         ELECTROLYZER(1, ElectrolyzerRecipe.OUTPUTS),
         SALT_MIXER(2, 1),
-        CHEMICAL_REACTOR(2, ChemicalReactorRecipe.OUTPUTS);
+        CHEMICAL_REACTOR(2, ChemicalReactorRecipe.OUTPUTS),
+        ENRICHER(1, 1, true);
 
         private final int inputs;
         private final int outputs;
+        private final boolean hasItemInput;
 
         Machine(int inputs, int outputs) {
+            this(inputs, outputs, false);
+        }
+
+        Machine(int inputs, int outputs, boolean hasItemInput) {
             this.inputs = inputs;
             this.outputs = outputs;
+            this.hasItemInput = hasItemInput;
+        }
+
+        public boolean hasItemInput() {
+            return hasItemInput;
         }
 
         public int inputs() {
@@ -265,6 +325,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case ELECTROLYZER -> NCRegistries.ELECTROLYZER.get();
                 case SALT_MIXER -> NCRegistries.SALT_MIXER.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR.get();
+                case ENRICHER -> NCRegistries.ENRICHER.get();
             };
         }
 
@@ -273,6 +334,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case ELECTROLYZER -> NCRegistries.ELECTROLYZER_ENTITY.get();
                 case SALT_MIXER -> NCRegistries.SALT_MIXER_ENTITY.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get();
+                case ENRICHER -> NCRegistries.ENRICHER_ENTITY.get();
             };
         }
 
@@ -281,6 +343,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case ELECTROLYZER -> NCRegistries.ELECTROLYZER_MENU.get();
                 case SALT_MIXER -> NCRegistries.SALT_MIXER_MENU.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_MENU.get();
+                case ENRICHER -> NCRegistries.ENRICHER_MENU.get();
             };
         }
 
@@ -289,6 +352,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case ELECTROLYZER -> NCRegistries.ELECTROLYSIS.get();
                 case SALT_MIXER -> NCRegistries.MIXING.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTIONS.get();
+                case ENRICHER -> NCRegistries.ENRICHING.get();
             };
         }
     }

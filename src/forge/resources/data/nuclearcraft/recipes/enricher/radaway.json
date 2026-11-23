@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:enricher",
+    "item_input": {
+        "ingredient": {
+            "item": "nuclearcraft:glowing_mushroom"
+        },
+        "count": 3
+    },
+    "fluid_input": {
+        "tag": "forge:ethanol",
+        "amount": 250
+    },
+    "result": {
+        "fluid": "nuclearcraft:radaway",
+        "amount": 250
+    },
+    "ticks": 600,
+    "energy_per_tick": 5
+}

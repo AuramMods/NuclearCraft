@@ -10,6 +10,7 @@ import nc.processor.MelterMenu;
 import nc.processor.ProcessorBlock;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
+import nc.recipe.EnricherRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
 import net.minecraft.core.registries.Registries;
@@ -109,6 +110,23 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<ChemicalReactorRecipe>> CHEMICAL_REACTOR_SERIALIZER =
             RECIPE_SERIALIZERS.register("chemical_reactor", ChemicalReactorRecipe.Serializer::new);
 
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> ENRICHER =
+            BLOCKS.register("enricher", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.ENRICHER_ENTITY.get(), FluidProcessorBlockEntity::tick, FluidProcessorBlockEntity::inventory));
+    public static final RegistryObject<Item> ENRICHER_ITEM =
+            ITEMS.register("enricher", () -> new BlockItem(ENRICHER.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> ENRICHER_ENTITY =
+            BLOCK_ENTITIES.register("enricher", () ->
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.ENRICHER, pos, state),
+                            ENRICHER.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> ENRICHER_MENU =
+            MENUS.register("enricher", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.ENRICHER), FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<EnricherRecipe>> ENRICHING =
+            RECIPE_TYPES.register("enricher", () -> RecipeType.simple(NuclearCraft.id("enricher")));
+    public static final RegistryObject<RecipeSerializer<EnricherRecipe>> ENRICHER_SERIALIZER =
+            RECIPE_SERIALIZERS.register("enricher", EnricherRecipe.Serializer::new);
+
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
@@ -118,6 +136,7 @@ public final class NCRegistries {
                         output.accept(ELECTROLYZER_ITEM.get());
                         output.accept(SALT_MIXER_ITEM.get());
                         output.accept(CHEMICAL_REACTOR_ITEM.get());
+                        output.accept(ENRICHER_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);

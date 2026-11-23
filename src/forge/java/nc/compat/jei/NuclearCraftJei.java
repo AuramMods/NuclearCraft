@@ -34,6 +34,7 @@ import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
+import nc.recipe.EnricherRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
@@ -68,6 +69,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
     private static final RecipeType<ChemicalReactorRecipe> CHEMICAL_REACTOR =
             RecipeType.create(NuclearCraft.MOD_ID, "chemical_reactor", ChemicalReactorRecipe.class);
+    private static final RecipeType<EnricherRecipe> ENRICHER =
+            RecipeType.create(NuclearCraft.MOD_ID, "enricher", EnricherRecipe.class);
     private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
             RecipeType.create(NuclearCraft.MOD_ID, "salt_mixer", SaltMixerRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
@@ -126,6 +129,13 @@ public final class NuclearCraftJei implements IModPlugin {
                         fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(results.get(index)));
                     }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(ENRICHER, NCRegistries.ENRICHER.get(), gui, (layout, recipe) -> {
+                    ItemProcessorRecipe.Input item = recipe.itemInput();
+                    layout.addSlot(INPUT, 18, 12).setStandardSlotBackground().addItemStacks(
+                            Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+                    fluidSlot(layout, INPUT, 40, recipe.fluidInput().alternatives());
+                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
+                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(SALT_MIXER, NCRegistries.SALT_MIXER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
                     fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
@@ -171,6 +181,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
+        registration.addRecipes(ENRICHER, recipes.getAllRecipesFor(NCRegistries.ENRICHING.get()));
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
@@ -193,6 +204,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
         registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
+        registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         for (NCGasCoolants gas : NCGasCoolants.values()) {
@@ -220,6 +232,7 @@ public final class NuclearCraftJei implements IModPlugin {
                     case ELECTROLYZER -> List.of(IGuiClickableArea.createBasic(68, 30, 37, 38, ELECTROLYZER));
                     case SALT_MIXER -> List.of(IGuiClickableArea.createBasic(84, 34, 37, 18, SALT_MIXER));
                     case CHEMICAL_REACTOR -> List.of(IGuiClickableArea.createBasic(70, 34, 37, 18, CHEMICAL_REACTOR));
+                    case ENRICHER -> List.of(IGuiClickableArea.createBasic(84, 35, 37, 16, ENRICHER));
                 };
             }
         });

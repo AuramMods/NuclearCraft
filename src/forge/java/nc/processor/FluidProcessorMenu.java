@@ -12,6 +12,8 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class FluidProcessorMenu extends AbstractContainerMenu {
@@ -42,6 +44,10 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
         this.data = data;
         this.access = access;
         this.machine = machine;
+        if (type.hasItemInput()) {
+            ItemStackHandler input = machine == null ? new ItemStackHandler(1) : machine.inventory();
+            addSlot(new SlotItemHandler(input, 0, 46, 35));
+        }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 96 + row * 18));
@@ -54,7 +60,19 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataCount(Machine type) {
+        return itemSidesIndex(type) + (type.hasItemInput() ? 1 : 0);
+    }
+
+    static int itemSidesIndex(Machine type) {
         return FIRST_TANK + type.tanks() * TANK_DATA_SIZE;
+    }
+
+    public boolean itemSideEnabled(Direction side) {
+        return type.hasItemInput() && (data.get(itemSidesIndex(type)) & FluidProcessorItemInput.sideBit(side)) == 0;
+    }
+
+    public int itemSideButton(Direction side) {
+        return outputModeButton(type.tanks()) + side.ordinal();
     }
 
     public Machine type() {
@@ -99,6 +117,11 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             machine.cycleSide(button / SIDES.length, SIDES[button % SIDES.length]);
             return true;
         }
+        int itemSide = button - outputModeButton(type.tanks());
+        if (type.hasItemInput() && itemSide >= 0 && itemSide < SIDES.length) {
+            machine.toggleItemSide(SIDES[itemSide]);
+            return true;
+        }
         int tank = button - outputModeButton(0);
         if (tank >= type.inputs() && tank < type.tanks()) {
             machine.cycleOutputMode(tank);
@@ -114,6 +137,29 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        if (!type.hasItemInput()) {
+            return ItemStack.EMPTY;
+        }
+        Slot slot = slots.get(index);
+        if (!slot.hasItem()) {
+            return ItemStack.EMPTY;
+        }
+        ItemStack stack = slot.getItem();
+        ItemStack original = stack.copy();
+        boolean moved = index == 0 ? moveItemStackTo(stack, 1, slots.size(), true)
+                : moveItemStackTo(stack, 0, 1, false);
+        if (!moved) {
+            return ItemStack.EMPTY;
+        }
+        if (stack.isEmpty()) {
+            slot.setByPlayer(ItemStack.EMPTY);
+        } else {
+            slot.setChanged();
+        }
+        slot.onTake(player, stack);
+        if (machine != null) {
+            machine.setChanged();
+        }
+        return original;
     }
 }

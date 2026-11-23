@@ -2,6 +2,7 @@ package nc.init;
 
 import nc.NuclearCraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
@@ -33,6 +34,7 @@ public final class NCFluids {
 
     private static final ResourceLocation STEAM = NuclearCraft.id("block/fluids/steam");
     private static final ResourceLocation GAS = NuclearCraft.id("block/fluids/gas");
+    private static final ResourceLocation SOUL = NuclearCraft.id("block/fluids/soul");
 
     public static final RegisteredFluid SULFUR = molten("sulfur", 0xDEDE7A);
     public static final RegisteredFluid CORIUM = new RegisteredFluid("corium", 10,
@@ -127,6 +129,13 @@ public final class NCFluids {
                 FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature).canDrown(false).canSwim(false)
                         .canPushEntity(false).sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), GAS, GAS, tint));
+    }
+
+    static RegisteredFluid soul(String name, int tint, SoundEvent emptySound, SoundEvent fillSound) {
+        return new RegisteredFluid(name, () -> tintedFluid(
+                FluidType.Properties.create().density(-10).viscosity(40).canDrown(false).canSwim(false)
+                        .canPushEntity(false).sound(SoundActions.BUCKET_FILL, fillSound)
+                        .sound(SoundActions.BUCKET_EMPTY, emptySound), SOUL, SOUL, tint));
     }
 
     private NCFluids() {}

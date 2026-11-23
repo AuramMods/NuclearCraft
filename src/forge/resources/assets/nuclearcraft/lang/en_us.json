@@ -2255,5 +2255,21 @@
     "item.nuclearcraft.sodium_sulfide_bucket": "Molten Sodium Sulfide Bucket",
     "fluid_type.nuclearcraft.sulfuric_acid": "Sulfuric Acid",
     "block.nuclearcraft.sulfuric_acid": "Sulfuric Acid",
-    "item.nuclearcraft.sulfuric_acid_bucket": "Sulfuric Acid Bucket"
+    "item.nuclearcraft.sulfuric_acid_bucket": "Sulfuric Acid Bucket",
+    "fluid_type.nuclearcraft.irradiated_borax_solution": "Irradiated Borax Solution",
+    "block.nuclearcraft.irradiated_borax_solution": "Irradiated Borax Solution",
+    "item.nuclearcraft.irradiated_borax_solution_bucket": "Irradiated Borax Solution Bucket",
+    "fluid_type.nuclearcraft.bacro_nio": "Molten Barium Nichromate Mixture",
+    "block.nuclearcraft.bacro_nio": "Molten Barium Nichromate Mixture",
+    "item.nuclearcraft.bacro_nio_bucket": "Molten Barium Nichromate Mixture Bucket",
+    "fluid_type.nuclearcraft.soul": "Concentrated Souls",
+    "block.nuclearcraft.soul": "Concentrated Souls",
+    "item.nuclearcraft.soul_bucket": "Concentrated Souls Bucket",
+    "fluid_type.nuclearcraft.mysterious_soul": "Mysterious Souls",
+    "block.nuclearcraft.mysterious_soul": "Mysterious Souls",
+    "item.nuclearcraft.mysterious_soul_bucket": "Mysterious Souls Bucket",
+    "block.nuclearcraft.enricher": "Enricher",
+    "block.nuclearcraft.glowing_mushroom": "Glowing Mushroom",
+    "gui.nuclearcraft.fluid_processor.item_input": "Item",
+    "gui.nuclearcraft.fluid_processor.item_sides": "Configure item input sides"
 }

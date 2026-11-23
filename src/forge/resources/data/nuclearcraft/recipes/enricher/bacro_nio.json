@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:enricher",
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/nichromite"
+        },
+        "count": 1
+    },
+    "fluid_input": {
+        "fluid": "nuclearcraft:barium_oxide",
+        "amount": 144
+    },
+    "result": {
+        "fluid": "nuclearcraft:bacro_nio",
+        "amount": 144
+    },
+    "ticks": 1200,
+    "energy_per_tick": 20
+}

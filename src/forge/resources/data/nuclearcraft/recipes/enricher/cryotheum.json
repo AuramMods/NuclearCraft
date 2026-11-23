@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:enricher",
+    "item_input": {
+        "ingredient": {
+            "item": "minecraft:snowball"
+        },
+        "count": 4
+    },
+    "fluid_input": {
+        "fluid": "nuclearcraft:liquid_helium",
+        "amount": 25
+    },
+    "result": {
+        "fluid": "nuclearcraft:cryotheum",
+        "amount": 25
+    },
+    "ticks": 300,
+    "energy_per_tick": 10
+}
