@@ -2,6 +2,7 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.init.NCRegistries;
+import nc.init.NCFission;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -14,6 +15,9 @@ public final class NCClient {
 
     @SubscribeEvent
     public static void setup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new));
+        event.enqueueWork(() -> {
+            MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new);
+            MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
+        });
     }
 }

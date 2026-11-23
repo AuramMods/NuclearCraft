@@ -26,15 +26,15 @@ import net.minecraftforge.registries.RegistryObject;
 public final class NCRegistries {
     static final DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, NuclearCraft.MOD_ID);
     static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, NuclearCraft.MOD_ID);
-    private static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+    static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, NuclearCraft.MOD_ID);
-    private static final DeferredRegister<MenuType<?>> MENUS =
+    static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, NuclearCraft.MOD_ID);
-    private static final DeferredRegister<CreativeModeTab> TABS =
+    static final DeferredRegister<CreativeModeTab> TABS =
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, NuclearCraft.MOD_ID);
-    private static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
+    static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
             DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, NuclearCraft.MOD_ID);
-    private static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
+    static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
             DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, NuclearCraft.MOD_ID);
 
     public static final RegistryObject<MelterBlock> MELTER = BLOCKS.register("melter", () -> new MelterBlock(
@@ -66,6 +66,7 @@ public final class NCRegistries {
     private NCRegistries() {}
 
     public static void register(IEventBus bus) {
+        NCFission.register();
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);

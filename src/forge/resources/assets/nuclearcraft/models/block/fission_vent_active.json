@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/fission/vent_side",
+        "down": "nuclearcraft:block/fission/vent_side",
+        "north": "nuclearcraft:block/fission/vent_out_output",
+        "south": "nuclearcraft:block/fission/vent_in",
+        "east": "nuclearcraft:block/fission/vent_side",
+        "west": "nuclearcraft:block/fission/vent_side",
+        "particle": "nuclearcraft:block/fission/vent_out_output"
+    }
+}

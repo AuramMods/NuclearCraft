@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/fission/solid/controller_top",
+        "down": "nuclearcraft:block/fission/solid/controller_bottom",
+        "north": "nuclearcraft:block/fission/solid/controller_front_off",
+        "south": "nuclearcraft:block/fission/solid/controller_back",
+        "east": "nuclearcraft:block/fission/solid/controller_side",
+        "west": "nuclearcraft:block/fission/solid/controller_side",
+        "particle": "nuclearcraft:block/fission/solid/controller_front_off"
+    }
+}

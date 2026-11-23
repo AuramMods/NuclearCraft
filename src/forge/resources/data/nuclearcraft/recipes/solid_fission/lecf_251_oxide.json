@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "item": "nuclearcraft:lecf_251_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lecf_251_oxide"
+    },
+    "ticks": 2000,
+    "heat": 288,
+    "efficiency": 1.8,
+    "criticality": 71,
+    "self_priming": true
+}

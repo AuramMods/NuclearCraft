@@ -1,6 +1,14 @@
 {
     "replace": false,
     "values": [
-        "nuclearcraft:melter"
+        "nuclearcraft:melter",
+        "nuclearcraft:fission_casing",
+        "nuclearcraft:solid_fission_cell",
+        "nuclearcraft:water_heat_sink",
+        "nuclearcraft:heavy_water_moderator",
+        "nuclearcraft:beryllium_carbon_reflector",
+        "nuclearcraft:solid_fission_controller",
+        "nuclearcraft:fission_vent",
+        "nuclearcraft:fission_cell_port"
     ]
 }

@@ -21,6 +21,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 public final class NCFluids {
     private static final DeferredRegister<FluidType> TYPES =
@@ -30,7 +31,19 @@ public final class NCFluids {
     private static final ResourceLocation MOLTEN_STILL = NuclearCraft.id("block/fluids/molten_still");
     private static final ResourceLocation MOLTEN_FLOW = NuclearCraft.id("block/fluids/molten_flow");
 
-    public static final RegisteredFluid SULFUR = new RegisteredFluid("sulfur", 0xFFDEDE7A);
+    private static final ResourceLocation STEAM = NuclearCraft.id("block/fluids/steam");
+
+    public static final RegisteredFluid SULFUR = new RegisteredFluid("sulfur",
+            () -> tintedFluid(FluidType.Properties.create().density(5000).viscosity(8000).temperature(1200).lightLevel(10)
+                    .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
+                    .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA), MOLTEN_STILL, MOLTEN_FLOW, 0xFFDEDE7A));
+    public static final RegisteredFluid CORIUM = new RegisteredFluid("corium",
+            () -> tintedFluid(FluidType.Properties.create().density(6000).viscosity(10000).temperature(2400).lightLevel(10),
+                    MOLTEN_STILL, MOLTEN_FLOW, 0xFF7C7C6F));
+    public static final RegisteredFluid HIGH_PRESSURE_STEAM = new RegisteredFluid("high_pressure_steam",
+            () -> tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(600)
+                    .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
+                    .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), STEAM, STEAM, 0xFFBDBDBD));
 
     private NCFluids() {}
 
@@ -39,22 +52,20 @@ public final class NCFluids {
         FLUIDS.register(bus);
     }
 
-    private static FluidType moltenType(int tint) {
-        return new FluidType(
-                FluidType.Properties.create().density(5000).viscosity(8000).temperature(1200).lightLevel(10)
-                        .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
-                        .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA)) {
+    private static FluidType tintedFluid(FluidType.Properties properties, ResourceLocation still,
+                                         ResourceLocation flowing, int tint) {
+        return new FluidType(properties) {
             @Override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
                     @Override
                     public ResourceLocation getStillTexture() {
-                        return MOLTEN_STILL;
+                        return still;
                     }
 
                     @Override
                     public ResourceLocation getFlowingTexture() {
-                        return MOLTEN_FLOW;
+                        return flowing;
                     }
 
                     @Override
@@ -73,8 +84,8 @@ public final class NCFluids {
         private final RegistryObject<LiquidBlock> block;
         private final RegistryObject<Item> bucket;
 
-        private RegisteredFluid(String name, int tint) {
-            type = TYPES.register(name, () -> moltenType(tint));
+        private RegisteredFluid(String name, Supplier<FluidType> fluidType) {
+            type = TYPES.register(name, fluidType);
             source = FLUIDS.register(name, () -> new ForgeFlowingFluid.Source(properties()));
             flowing = FLUIDS.register("flowing_" + name, () -> new ForgeFlowingFluid.Flowing(properties()));
             block = NCRegistries.BLOCKS.register(name,
@@ -90,6 +101,10 @@ public final class NCFluids {
 
         public RegistryObject<FlowingFluid> source() {
             return source;
+        }
+
+        public RegistryObject<LiquidBlock> block() {
+            return block;
         }
 
         public RegistryObject<Item> bucket() {
