@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:copper_ingot",
+        "minecraft:copper_ingot"
+    ]
+}

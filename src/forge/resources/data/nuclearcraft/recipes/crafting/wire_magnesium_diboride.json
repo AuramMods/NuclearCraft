@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MM",
+        "TT",
+        "MM"
+    ],
+    "key": {
+        "M": {
+            "tag": "forge:ingots/magnesium_diboride"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:wire_magnesium_diboride",
+        "count": 2
+    }
+}

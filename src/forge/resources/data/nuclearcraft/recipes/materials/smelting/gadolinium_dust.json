@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:gadolinium_dust"
+    },
+    "result": "nuclearcraft:gadolinium_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

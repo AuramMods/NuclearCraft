@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "CCC",
+        "HTH",
+        "CCC"
+    ],
+    "key": {
+        "C": {
+            "tag": "forge:ingots/copper"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_dynamo_coil_copper",
+        "count": 2
+    }
+}

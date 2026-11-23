@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "HHH",
+        "HTH",
+        "HHH"
+    ],
+    "key": {
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_coil_connector",
+        "count": 4
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:nickel_oxide_dust"
+    },
+    "result": "nuclearcraft:nickel_oxide_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

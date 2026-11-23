@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SRS",
+        "TFT",
+        "SRS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "T": {
+            "item": "minecraft:redstone_torch"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_redstone_port",
+        "count": 1
+    }
+}

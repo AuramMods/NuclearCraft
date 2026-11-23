@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PCP",
+        "TFT",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "C": {
+            "item": "nuclearcraft:pyrolytic_carbon"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:empty_cooler",
+        "count": 8
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "III",
+        "III"
+    ],
+    "key": {
+        "I": {
+            "item": "nuclearcraft:iridium_oxide_ingot"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:iridium_oxide_block",
+        "count": 1
+    }
+}

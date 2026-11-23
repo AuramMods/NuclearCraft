@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:gadolinium_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:gadolinium_ingot",
+        "count": 9
+    }
+}

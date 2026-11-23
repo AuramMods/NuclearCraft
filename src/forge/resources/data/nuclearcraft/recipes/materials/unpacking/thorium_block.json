@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:thorium_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:thorium_ingot",
+        "count": 9
+    }
+}

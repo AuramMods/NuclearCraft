@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:lead_ore"
+    },
+    "result": "nuclearcraft:lead_ingot",
+    "experience": 0.5,
+    "cookingtime": 200
+}

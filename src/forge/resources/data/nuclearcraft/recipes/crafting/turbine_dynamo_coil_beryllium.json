@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "HTH",
+        "BBB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/beryllium"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_dynamo_coil_beryllium",
+        "count": 2
+    }
+}

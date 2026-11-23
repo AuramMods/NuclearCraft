@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PSP",
+        "T T",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:empty_sink",
+        "count": 8
+    }
+}

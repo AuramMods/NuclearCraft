@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SSS",
+        "HTH",
+        "SSS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/silver"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_dynamo_coil_silver",
+        "count": 2
+    }
+}

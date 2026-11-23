@@ -11,7 +11,9 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - The headless reactor tests assembled a five-block-wide shell, inserted one fuel and 1,000 mB of water through the ports, and verified one depleted fuel item and 4,000 mB of high-pressure steam. A separate test broke and repaired the shell, checked invalidation of previously acquired handlers, and loaded the saved coolant into a replacement controller.
 - The steam turbine validates opposed inlets and outlets, centered bearings, a full shaft, matching blades per stage, and dynamo coil placement. It has a controller menu, redstone activation, three blade tiers, a stator, six coil tiers, and coil connectors. It accepts steam through an outward-facing Forge fluid handler and exposes exhaust and energy on the corresponding outward faces. It can also push into neighboring tanks and energy storage.
 - Four headless turbine tests cover sided access, simulated transfers, full exhaust backpressure, save and reassembly, reversed flow through a two-wide shaft, rejection of mixed blade tiers, and a complete reactor-to-turbine-to-Melter chain.
-- Remaining work includes survival crafting, the rest of the Melter and reactor catalogs, upgrades and side configuration, legacy port filters, turbine hot gas recipes and animated rendering, radiation, world generation, and the other Overhauled systems. Client menus and chunk unload and reload still need runtime verification.
+- The legacy ore, ingot, dust, storage block, alloy, gem, compound, and part families have individual registry IDs. The port includes the original crafting patterns for the Melter and available solid-fission and turbine parts, plus vanilla smelting and blasting for ores and metal dusts. A headless GameTest crafted copper wire with mixed vanilla and NuclearCraft ingots and verified that crafting a water heat sink returns the bucket.
+- A new world on a clean Forge dedicated server generated all eight legacy NuclearCraft ores using the packaged JAR. The ore recipes and drops preserve the default legacy ore-to-ingot progression.
+- Remaining work includes the survival processing chains for intermediate materials and fuel, the rest of the Melter and reactor catalogs, upgrades and side configuration, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems. Client menus and chunk unload and reload still need runtime verification.
 
 ## Auram targets
 
@@ -27,6 +29,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 | Industrial Foregoing | 3.5.21 | Automation through standard capabilities |
 | PneumaticCraft | 6.0.22 | Fluid and item automation and shared tags |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
+| Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
 ## Verified with Auram mod JARs
 
@@ -42,6 +45,8 @@ Two packaged reactor-to-turbine chains used Ender IO conduits or Mekanism transm
 With the turbines enabled after each inlet accumulated exactly 4,000 mB of high-pressure steam, both networks delivered 5,051 FE to their paused Melters. After the Melters were enabled, each produced 1,000 mB of water from its ice.
 
 In a separate headless test with Auram's installed KubeJS JAR, a server script removed the default Melter ice recipe and added a custom recipe with `event.custom`. The Melter produced the scripted 750 mB of water in-world.
+
+With Auram's Almost Unified JAR and config alongside Mekanism, a furnace smelted one NuclearCraft copper dust into one vanilla copper ingot, matching the pack's priority for copper.
 
 Full Auram instance testing is pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
 
@@ -61,3 +66,7 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
 
 The datapack recipe types are `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
+
+Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
+
+Ore generation uses Forge biome modifiers and configured and placed features. The default modifiers target the Overworld biome tag with the legacy height bands and attempts per chunk. A pack can override `data/nuclearcraft/forge/biome_modifier/ore_<material>.json` with `{"type":"forge:none"}` to disable an ore, or replace the configured and placed features to control its shape, height, and frequency.

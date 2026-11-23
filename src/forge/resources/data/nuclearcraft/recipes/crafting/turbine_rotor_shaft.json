@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SSS",
+        "TTT",
+        "SSS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_rotor_shaft",
+        "count": 4
+    }
+}

@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SSS",
+        "VFV",
+        "SSS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "V": {
+            "item": "nuclearcraft:servo"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_outlet",
+        "count": 4
+    }
+}

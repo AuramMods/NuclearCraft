@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PSP",
+        "CFC",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        },
+        "C": {
+            "item": "nuclearcraft:pyrolytic_carbon"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:empty_cooler_port",
+        "count": 4
+    }
+}

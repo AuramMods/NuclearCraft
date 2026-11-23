@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:dysprosium_dust"
+    },
+    "result": "nuclearcraft:dysprosium_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

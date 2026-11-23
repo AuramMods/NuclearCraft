@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "EHE",
+        "EHE",
+        "EHE"
+    ],
+    "key": {
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_rotor_blade_extreme",
+        "count": 4
+    }
+}

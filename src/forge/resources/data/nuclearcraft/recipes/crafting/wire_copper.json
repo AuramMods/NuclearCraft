@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "CC",
+        "II",
+        "CC"
+    ],
+    "key": {
+        "C": {
+            "tag": "forge:ingots/copper"
+        },
+        "I": {
+            "tag": "forge:ingots/iron"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:wire_copper",
+        "count": 2
+    }
+}

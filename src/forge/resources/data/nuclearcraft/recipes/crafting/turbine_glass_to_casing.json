@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:turbine_glass"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:turbine_casing",
+        "count": 1
+    }
+}

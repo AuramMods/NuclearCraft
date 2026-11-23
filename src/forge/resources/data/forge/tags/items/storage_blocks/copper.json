@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:copper_block",
+        "minecraft:copper_block"
+    ]
+}

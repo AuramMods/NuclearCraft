@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "STS",
+        "VFV",
+        "STS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "V": {
+            "item": "nuclearcraft:servo"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_inlet",
+        "count": 4
+    }
+}

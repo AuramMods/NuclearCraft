@@ -1,0 +1,8 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:copper_ore",
+        "nuclearcraft:tin_ore",
+        "nuclearcraft:lead_ore"
+    ]
+}

@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "III",
+        "III"
+    ],
+    "key": {
+        "I": {
+            "item": "nuclearcraft:dysprosium_ingot"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:dysprosium_block",
+        "count": 1
+    }
+}

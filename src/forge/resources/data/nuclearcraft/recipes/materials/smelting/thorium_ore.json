@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:thorium_ore"
+    },
+    "result": "nuclearcraft:thorium_ingot",
+    "experience": 0.5,
+    "cookingtime": 200
+}

@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PTP",
+        "HFH",
+        "PTP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hard_carbon"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:solid_fission_controller",
+        "count": 1
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SSG",
+        "CCI",
+        "SSG"
+    ],
+    "key": {
+        "G": {
+            "item": "minecraft:gold_nugget"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "I": {
+            "tag": "forge:ingots/iron"
+        },
+        "C": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:motor",
+        "count": 1
+    }
+}

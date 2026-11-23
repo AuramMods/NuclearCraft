@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SHS",
+        "SHS",
+        "SHS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_rotor_blade_steel",
+        "count": 4
+    }
+}

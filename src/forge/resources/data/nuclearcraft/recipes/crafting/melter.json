@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PNP",
+        "NCN",
+        "PSP"
+    ],
+    "key": {
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "N": {
+            "item": "minecraft:nether_brick"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:melter",
+        "count": 1
+    }
+}

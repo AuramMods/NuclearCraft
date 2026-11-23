@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MMM",
+        "HTH",
+        "MMM"
+    ],
+    "key": {
+        "M": {
+            "tag": "forge:ingots/magnesium"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_dynamo_coil_magnesium",
+        "count": 2
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " S ",
+        "SFS",
+        " S "
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_casing",
+        "count": 8
+    }
+}

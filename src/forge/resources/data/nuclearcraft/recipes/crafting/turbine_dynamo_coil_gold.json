@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "GGG",
+        "HTH",
+        "GGG"
+    ],
+    "key": {
+        "G": {
+            "tag": "forge:ingots/gold"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_dynamo_coil_gold",
+        "count": 2
+    }
+}

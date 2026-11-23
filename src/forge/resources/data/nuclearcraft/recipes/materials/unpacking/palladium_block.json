@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:palladium_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:palladium_ingot",
+        "count": 9
+    }
+}

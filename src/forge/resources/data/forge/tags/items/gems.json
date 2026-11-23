@@ -1,0 +1,12 @@
+{
+    "replace": false,
+    "values": [
+        "#forge:gems/rhodochrosite",
+        "#forge:gems/boron_nitride",
+        "#forge:gems/fluorite",
+        "#forge:gems/villiaumite",
+        "#forge:gems/carobbiite",
+        "#forge:gems/boron_arsenide",
+        "#forge:gems/silicon"
+    ]
+}

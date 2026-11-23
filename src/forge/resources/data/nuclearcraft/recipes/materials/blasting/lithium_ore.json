@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:blasting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:lithium_ore"
+    },
+    "result": "nuclearcraft:lithium_ingot",
+    "experience": 0.5,
+    "cookingtime": 100
+}

@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:boron_ore"
+    },
+    "result": "nuclearcraft:boron_ingot",
+    "experience": 0.5,
+    "cookingtime": 200
+}

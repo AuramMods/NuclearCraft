@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "III",
+        "III"
+    ],
+    "key": {
+        "I": {
+            "item": "nuclearcraft:manganese_dioxide_ingot"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:manganese_dioxide_block",
+        "count": 1
+    }
+}

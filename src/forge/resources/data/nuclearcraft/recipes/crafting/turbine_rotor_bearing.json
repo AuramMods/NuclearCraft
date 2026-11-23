@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SGS",
+        "GFG",
+        "SGS"
+    ],
+    "key": {
+        "G": {
+            "item": "minecraft:gold_nugget"
+        },
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_rotor_bearing",
+        "count": 4
+    }
+}

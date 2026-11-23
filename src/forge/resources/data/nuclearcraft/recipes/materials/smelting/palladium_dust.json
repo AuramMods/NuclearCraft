@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:palladium_dust"
+    },
+    "result": "nuclearcraft:palladium_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

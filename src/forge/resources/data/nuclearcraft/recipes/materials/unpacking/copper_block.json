@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:copper_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:copper_ingot",
+        "count": 9
+    }
+}

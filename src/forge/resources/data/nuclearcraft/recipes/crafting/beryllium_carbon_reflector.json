@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BGB",
+        "GFG",
+        "BGB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/beryllium"
+        },
+        "G": {
+            "tag": "forge:ingots/graphite"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:beryllium_carbon_reflector",
+        "count": 2
+    }
+}

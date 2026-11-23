@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SS",
+        "SS",
+        "SS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_rotor_stator",
+        "count": 4
+    }
+}

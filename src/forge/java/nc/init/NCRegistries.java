@@ -42,7 +42,6 @@ public final class NCRegistries {
                     .lightLevel(state -> state.getValue(MelterBlock.LIT) ? 7 : 0)));
     public static final RegistryObject<Item> MELTER_ITEM =
             ITEMS.register("melter", () -> new BlockItem(MELTER.get(), new Item.Properties()));
-    public static final RegistryObject<Item> SULFUR_DUST = ITEMS.register("sulfur_dust", () -> new Item(new Item.Properties()));
     public static final RegistryObject<BlockEntityType<MelterBlockEntity>> MELTER_ENTITY =
             BLOCK_ENTITIES.register("melter", () -> BlockEntityType.Builder.of(MelterBlockEntity::new, MELTER.get()).build(null));
     public static final RegistryObject<MenuType<MelterMenu>> MELTER_MENU =
@@ -59,7 +58,6 @@ public final class NCRegistries {
                     .displayItems((parameters, output) -> {
                         output.accept(MELTER_ITEM.get());
                         output.accept(NCFluids.SULFUR.bucket().get());
-                        output.accept(SULFUR_DUST.get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
                         output.accept(NCFluids.LOW_PRESSURE_STEAM.bucket().get());
@@ -70,6 +68,7 @@ public final class NCRegistries {
     private NCRegistries() {}
 
     public static void register(IEventBus bus) {
+        NCMaterials.register();
         NCFission.register();
         NCTurbine.register();
         BLOCKS.register(bus);

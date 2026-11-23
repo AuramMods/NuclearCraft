@@ -1,0 +1,18 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "III",
+        "III"
+    ],
+    "key": {
+        "I": {
+            "item": "nuclearcraft:silver_ingot"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:silver_block",
+        "count": 1
+    }
+}
