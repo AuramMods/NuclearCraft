@@ -4,11 +4,14 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /** Geometry shared by rectangular multiblocks. Discovery only examines loaded chunks. */
@@ -44,6 +47,26 @@ public record Cuboid(BlockPos min, BlockPos max) {
         }
 
         return new Cuboid(min, max);
+    }
+
+    public static <T extends BlockEntity> void visitNearby(ServerLevel level, ChunkPos center, int maxDistance,
+                                                           Class<T> type, Consumer<T> visit) {
+        var entities = new ArrayList<T>();
+        int radius = (maxDistance + 15) / 16;
+        for (int x = center.x - radius; x <= center.x + radius; x++) {
+            for (int z = center.z - radius; z <= center.z + radius; z++) {
+                var chunk = level.getChunkSource().getChunkNow(x, z);
+                if (chunk == null) {
+                    continue;
+                }
+                for (BlockEntity entity : chunk.getBlockEntities().values()) {
+                    if (type.isInstance(entity)) {
+                        entities.add(type.cast(entity));
+                    }
+                }
+            }
+        }
+        entities.forEach(visit);
     }
 
     public boolean contains(BlockPos pos) {

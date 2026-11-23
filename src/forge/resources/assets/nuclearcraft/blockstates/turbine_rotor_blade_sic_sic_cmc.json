@@ -1,0 +1,16 @@
+{
+    "variants": {
+        "axis=x": {
+            "model": "nuclearcraft:block/turbine_rotor_blade_sic_sic_cmc",
+            "x": 90,
+            "y": 90
+        },
+        "axis=y": {
+            "model": "nuclearcraft:block/turbine_rotor_blade_sic_sic_cmc"
+        },
+        "axis=z": {
+            "model": "nuclearcraft:block/turbine_rotor_blade_sic_sic_cmc",
+            "x": 90
+        }
+    }
+}

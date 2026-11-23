@@ -110,7 +110,7 @@ public final class SolidFissionGameTests {
                 .thenSucceed();
     }
 
-    private static void buildReactor(GameTestHelper helper) {
+    static void buildReactor(GameTestHelper helper) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 5, 5))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 5
                     || pos.getZ() == 1 || pos.getZ() == 5) {

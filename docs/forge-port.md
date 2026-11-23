@@ -9,7 +9,9 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - The reobfuscated development JAR booted in a clean Forge 47.4.10 dedicated server and produced 1,000 mB of water from ice in-world. The server stopped cleanly.
 - The first solid-fuel reactor uses the original cuboidal frame and wall rules, with outward-only Forge item and fluid ports. It has a controller menu and can run on a redstone signal. The first supported combination is LECf-251 oxide fuel, a heavy water moderator, a beryllium-carbon reflector, and water heat sinks.
 - The headless reactor tests assembled a five-block-wide shell, inserted one fuel and 1,000 mB of water through the ports, and verified one depleted fuel item and 4,000 mB of high-pressure steam. A separate test broke and repaired the shell, checked invalidation of previously acquired handlers, and loaded the saved coolant into a replacement controller.
-- Remaining work includes the rest of the Melter and reactor catalogs, survival crafting, upgrades and side configuration, the legacy fuel port filters, radiation, world generation, and the rest of Overhauled. Reactor menu rendering, chunk unload and reload, and the downstream turbine chain still need runtime verification.
+- The steam turbine validates opposed inlets and outlets, centered bearings, a full shaft, matching blades per stage, and dynamo coil placement. It has a controller menu, redstone activation, three blade tiers, a stator, six coil tiers, and coil connectors. It accepts steam through an outward-facing Forge fluid handler and exposes exhaust and energy on the corresponding outward faces. It can also push into neighboring tanks and energy storage.
+- Four headless turbine tests cover sided access, simulated transfers, full exhaust backpressure, save and reassembly, reversed flow through a two-wide shaft, rejection of mixed blade tiers, and a complete reactor-to-turbine-to-Melter chain.
+- Remaining work includes survival crafting, the rest of the Melter and reactor catalogs, upgrades and side configuration, legacy port filters, turbine hot gas recipes and animated rendering, radiation, world generation, and the other Overhauled systems. Client menus and chunk unload and reload still need runtime verification.
 
 ## Auram targets
 
@@ -35,8 +37,13 @@ A disposable headless Forge 47.4.10 server ran the reobfuscated NuclearCraft JAR
 
 The same packaged reactor ran with each mod's pipes at both vents. Each setup emptied a 1,000 mB source tank, delivered 4,000 mB of high-pressure steam to its destination, and produced one depleted fuel item. The two devices were Ender IO Fluid Conduits and Mekanism Basic Mechanical Pipes, using the versions listed above. A full restart of the same test world preserved the steam volumes and depleted fuel in both setups.
 
-These tests cover processor fluid output and reactor coolant intake and steam output. Item and energy automation with the installed devices and testing the full Auram instance are pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
+Two packaged reactor-to-turbine chains used Ender IO conduits or Mekanism transmitters for each transfer. Each delivered one fuel item from a barrel, drew 1,000 mB of water from an Ender IO tank, collected 16,000 mB of turbine exhaust in another tank, and returned one depleted fuel item to an output barrel. The Mekanism Basic Universal Cable powered a Melter that produced 1,000 mB of water from ice. With both turbines starting as soon as steam arrived and both Melters paused, the Ender IO Energy Conduit delivered 2,441 FE and the Mekanism cable delivered 18,891 FE. The ice recipe requires 4,000 FE.
 
+With the turbines enabled after each inlet accumulated exactly 4,000 mB of high-pressure steam, both networks delivered 5,051 FE to their paused Melters. After the Melters were enabled, each produced 1,000 mB of water from its ice.
+
+In a separate headless test with Auram's installed KubeJS JAR, a server script removed the default Melter ice recipe and added a custom recipe with `event.custom`. The Melter produced the scripted 750 mB of water in-world.
+
+Full Auram instance testing is pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
 
 ## Registry migration references
 
@@ -46,5 +53,11 @@ These tests cover processor fluid output and reactor coolant intake and steam ou
 | `nuclearcraft:fission_reflector`, 0 | `nuclearcraft:beryllium_carbon_reflector` |
 | `nuclearcraft:fuel_californium`, 9 | `nuclearcraft:lecf_251_oxide` |
 | `nuclearcraft:depleted_fuel_californium`, 9 | `nuclearcraft:depleted_lecf_251_oxide` |
+| `nuclearcraft:turbine_dynamo_coil`, 0 | `nuclearcraft:turbine_dynamo_coil_magnesium` |
+| `nuclearcraft:turbine_dynamo_coil`, 1 | `nuclearcraft:turbine_dynamo_coil_beryllium` |
+| `nuclearcraft:turbine_dynamo_coil`, 2 | `nuclearcraft:turbine_dynamo_coil_aluminum` |
+| `nuclearcraft:turbine_dynamo_coil`, 3 | `nuclearcraft:turbine_dynamo_coil_gold` |
+| `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
+| `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
 
-Melter and solid-fission recipes use the `nuclearcraft:melter` and `nuclearcraft:solid_fission` datapack recipe types. These IDs and evidence cover the ported subset. Legacy world data still requires an explicit conversion.
+The datapack recipe types are `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.

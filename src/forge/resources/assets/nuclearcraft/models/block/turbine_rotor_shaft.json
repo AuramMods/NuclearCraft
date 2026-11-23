@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_column",
+    "textures": {
+        "end": "nuclearcraft:block/turbine/rotor_shaft_end",
+        "side": "nuclearcraft:block/turbine/rotor_shaft_side"
+    }
+}

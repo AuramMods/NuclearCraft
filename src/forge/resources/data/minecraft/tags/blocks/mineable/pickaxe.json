@@ -9,6 +9,25 @@
         "nuclearcraft:beryllium_carbon_reflector",
         "nuclearcraft:solid_fission_controller",
         "nuclearcraft:fission_vent",
-        "nuclearcraft:fission_cell_port"
+        "nuclearcraft:fission_cell_port",
+        "nuclearcraft:turbine_casing",
+        "nuclearcraft:turbine_glass",
+        "nuclearcraft:turbine_rotor_bearing",
+        "nuclearcraft:turbine_rotor_shaft",
+        "nuclearcraft:turbine_rotor_blade_steel",
+        "nuclearcraft:turbine_rotor_blade_extreme",
+        "nuclearcraft:turbine_rotor_blade_sic_sic_cmc",
+        "nuclearcraft:turbine_rotor_stator",
+        "nuclearcraft:turbine_controller",
+        "nuclearcraft:turbine_inlet",
+        "nuclearcraft:turbine_outlet",
+        "nuclearcraft:turbine_redstone_port",
+        "nuclearcraft:turbine_coil_connector",
+        "nuclearcraft:turbine_dynamo_coil_magnesium",
+        "nuclearcraft:turbine_dynamo_coil_beryllium",
+        "nuclearcraft:turbine_dynamo_coil_aluminum",
+        "nuclearcraft:turbine_dynamo_coil_gold",
+        "nuclearcraft:turbine_dynamo_coil_copper",
+        "nuclearcraft:turbine_dynamo_coil_silver"
     ]
 }

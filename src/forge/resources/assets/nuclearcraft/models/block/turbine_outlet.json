@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/turbine/outlet_top",
+        "down": "nuclearcraft:block/turbine/outlet_top",
+        "north": "nuclearcraft:block/turbine/outlet_out",
+        "south": "nuclearcraft:block/turbine/outlet_in",
+        "east": "nuclearcraft:block/turbine/outlet_side",
+        "west": "nuclearcraft:block/turbine/outlet_side",
+        "particle": "nuclearcraft:block/turbine/outlet_out"
+    }
+}

@@ -40,10 +40,18 @@ public final class NCFluids {
     public static final RegisteredFluid CORIUM = new RegisteredFluid("corium",
             () -> tintedFluid(FluidType.Properties.create().density(6000).viscosity(10000).temperature(2400).lightLevel(10),
                     MOLTEN_STILL, MOLTEN_FLOW, 0xFF7C7C6F));
-    public static final RegisteredFluid HIGH_PRESSURE_STEAM = new RegisteredFluid("high_pressure_steam",
-            () -> tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(600)
-                    .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
-                    .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), STEAM, STEAM, 0xFFBDBDBD));
+    public static final RegisteredFluid HIGH_PRESSURE_STEAM = steam("high_pressure_steam", 600, 0xFFBDBDBD);
+    public static final RegisteredFluid EXHAUST_STEAM = steam("exhaust_steam", 400, 0xFF7E7E7E);
+    public static final RegisteredFluid LOW_PRESSURE_STEAM = steam("low_pressure_steam", 550, 0xFFA8A8A8);
+    public static final RegisteredFluid LOW_QUALITY_STEAM = steam("low_quality_steam", 350, 0xFF828282);
+    public static final RegisteredFluid STANDARD_STEAM = steam("steam", 550, 0xFF929292);
+
+    private static RegisteredFluid steam(String name, int temperature, int tint) {
+        return new RegisteredFluid(name, () ->
+                tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature)
+                        .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
+                        .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), STEAM, STEAM, tint));
+    }
 
     private NCFluids() {}
 

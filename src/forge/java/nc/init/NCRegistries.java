@@ -60,6 +60,10 @@ public final class NCRegistries {
                         output.accept(MELTER_ITEM.get());
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(SULFUR_DUST.get());
+                        output.accept(NCFluids.STANDARD_STEAM.bucket().get());
+                        output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
+                        output.accept(NCFluids.LOW_PRESSURE_STEAM.bucket().get());
+                        output.accept(NCFluids.LOW_QUALITY_STEAM.bucket().get());
                     })
                     .build());
 
@@ -67,6 +71,7 @@ public final class NCRegistries {
 
     public static void register(IEventBus bus) {
         NCFission.register();
+        NCTurbine.register();
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);

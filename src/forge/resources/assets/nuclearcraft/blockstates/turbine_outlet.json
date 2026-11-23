@@ -1,0 +1,50 @@
+{
+    "variants": {
+        "active=false,facing=down": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "x": 90
+        },
+        "active=false,facing=up": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "x": 270
+        },
+        "active=false,facing=north": {
+            "model": "nuclearcraft:block/turbine_outlet"
+        },
+        "active=false,facing=east": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 90
+        },
+        "active=false,facing=south": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 180
+        },
+        "active=false,facing=west": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 270
+        },
+        "active=true,facing=down": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "x": 90
+        },
+        "active=true,facing=up": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "x": 270
+        },
+        "active=true,facing=north": {
+            "model": "nuclearcraft:block/turbine_outlet"
+        },
+        "active=true,facing=east": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 90
+        },
+        "active=true,facing=south": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 180
+        },
+        "active=true,facing=west": {
+            "model": "nuclearcraft:block/turbine_outlet",
+            "y": 270
+        }
+    }
+}

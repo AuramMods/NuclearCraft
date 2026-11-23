@@ -1,0 +1,94 @@
+package nc.multiblock.turbine;
+
+import nc.NuclearCraft;
+import nc.multiblock.Cuboid;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
+public class TurbinePartBlock extends Block {
+    static final int MAX_INTERIOR_LENGTH = 24;
+
+    public enum Part {
+        CASING, GLASS, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
+        STEEL(1.0, 1.4), EXTREME(1.1, 1.6), SIC_SIC_CMC(1.2, 1.8), STATOR(-1, 0.75),
+        MAGNESIUM(0.88), BERYLLIUM(0.90), ALUMINUM(1.00), GOLD(1.04), COPPER(1.06), SILVER(1.12),
+        CONNECTOR, REDSTONE;
+
+        final double conductivity;
+        final double efficiency;
+        final double expansion;
+
+        Part() {
+            this(0, 0, 0);
+        }
+
+        Part(double conductivity) {
+            this(conductivity, 0, 0);
+        }
+
+        Part(double efficiency, double expansion) {
+            this(0, efficiency, expansion);
+        }
+
+        Part(double conductivity, double efficiency, double expansion) {
+            this.conductivity = conductivity;
+            this.efficiency = efficiency;
+            this.expansion = expansion;
+        }
+
+        boolean dynamo() {
+            return conductivity > 0 || this == CONNECTOR;
+        }
+
+        boolean rotor() {
+            return expansion > 0 || this == SHAFT;
+        }
+    }
+
+    private final Part part;
+
+    public TurbinePartBlock(Properties properties, Part part) {
+        super(properties);
+        this.part = part;
+    }
+
+    static Part part(BlockState state) {
+        return state.getBlock() instanceof TurbinePartBlock block ? block.part : null;
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moved) {
+        super.onPlace(state, level, pos, previous, moved);
+        if (level instanceof ServerLevel server && !state.is(previous.getBlock())) {
+            Cuboid.visitNearby(server, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+                    controller -> controller.partChanged(pos));
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
+        if (level instanceof ServerLevel server && !state.is(replacement.getBlock())) {
+            Cuboid.visitNearby(server, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+                    controller -> controller.partChanged(pos));
+        }
+        super.onRemove(state, level, pos, replacement, moved);
+    }
+
+    @SubscribeEvent
+    public static void onChunkUnload(ChunkEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel level) {
+            ChunkPos pos = event.getChunk().getPos();
+            Cuboid.visitNearby(level, pos, MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+                    controller -> controller.chunkUnloaded(pos));
+        }
+    }
+}

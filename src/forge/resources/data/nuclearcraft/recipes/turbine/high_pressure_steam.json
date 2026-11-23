@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "tag": "forge:high_pressure_steam",
+        "amount": 1
+    },
+    "output": {
+        "fluid": "nuclearcraft:exhaust_steam",
+        "amount": 4
+    },
+    "power_per_mb": 16,
+    "expansion": 4,
+    "spin_up": 1
+}

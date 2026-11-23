@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/turbine/controller_top",
+        "down": "nuclearcraft:block/turbine/controller_bottom",
+        "north": "nuclearcraft:block/turbine/controller_front_on",
+        "south": "nuclearcraft:block/turbine/controller_back",
+        "east": "nuclearcraft:block/turbine/controller_side",
+        "west": "nuclearcraft:block/turbine/controller_side",
+        "particle": "nuclearcraft:block/turbine/controller_front_on"
+    }
+}
