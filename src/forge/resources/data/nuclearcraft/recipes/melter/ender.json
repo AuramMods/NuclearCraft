@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:ender_pearl"
+        },
+        {
+            "tag": "forge:dusts/ender"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:ender",
+        "amount": 250
+    },
+    "ticks": 400,
+    "energy_per_tick": 60
+}

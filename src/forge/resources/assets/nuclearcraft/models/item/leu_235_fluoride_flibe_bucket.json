@@ -1,0 +1,5 @@
+{
+    "parent": "forge:item/bucket",
+    "loader": "forge:fluid_container",
+    "fluid": "nuclearcraft:leu_235_fluoride_flibe"
+}

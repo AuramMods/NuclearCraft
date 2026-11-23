@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:glowstone_dust"
+    },
+    "result": {
+        "fluid": "nuclearcraft:glowstone",
+        "amount": 250
+    },
+    "ticks": 200,
+    "energy_per_tick": 40
+}

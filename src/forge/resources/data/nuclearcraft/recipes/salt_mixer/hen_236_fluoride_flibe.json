@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:hen_236_fluoride",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:flibe",
+            "amount": 72
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hen_236_fluoride_flibe",
+        "amount": 72
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

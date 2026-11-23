@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:end_stone"
+        },
+        {
+            "item": "minecraft:end_stone_bricks"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:end_stone",
+        "amount": 288
+    },
+    "ticks": 1600,
+    "energy_per_tick": 80
+}

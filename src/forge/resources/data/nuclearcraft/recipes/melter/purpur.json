@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:purpur_block"
+    },
+    "result": {
+        "fluid": "nuclearcraft:purpur",
+        "amount": 288
+    },
+    "ticks": 1600,
+    "energy_per_tick": 60
+}

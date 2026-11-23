@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/californium_249"
+    },
+    "result": {
+        "fluid": "nuclearcraft:californium_249",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

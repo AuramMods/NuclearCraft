@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "tag": "forge:molten_steel",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:boron",
+            "amount": 72
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:ferroboron",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:quartz"
+    },
+    "result": {
+        "fluid": "nuclearcraft:quartz",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

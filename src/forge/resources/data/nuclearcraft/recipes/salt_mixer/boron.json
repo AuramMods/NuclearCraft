@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:boron_11",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:boron_10",
+            "amount": 48
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:boron",
+        "amount": 192
+    },
+    "ticks": 800,
+    "energy_per_tick": 20
+}

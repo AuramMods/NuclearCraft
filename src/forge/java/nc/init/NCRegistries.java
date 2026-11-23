@@ -1,14 +1,16 @@
 package nc.init;
 
 import nc.NuclearCraft;
-import nc.processor.ElectrolyzerBlockEntity;
-import nc.processor.ElectrolyzerMenu;
+import nc.processor.FluidProcessorBlockEntity;
+import nc.processor.FluidProcessorBlockEntity.Machine;
+import nc.processor.FluidProcessorMenu;
 import nc.processor.MelterBlock;
 import nc.processor.MelterBlockEntity;
 import nc.processor.MelterMenu;
 import nc.processor.ProcessorBlock;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.MelterRecipe;
+import nc.recipe.SaltMixerRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.flag.FeatureFlags;
@@ -55,20 +57,39 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<MelterRecipe>> MELTER_SERIALIZER =
             RECIPE_SERIALIZERS.register("melter", MelterRecipe.Serializer::new);
 
-    public static final RegistryObject<ProcessorBlock<ElectrolyzerBlockEntity>> ELECTROLYZER =
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> ELECTROLYZER =
             BLOCKS.register("electrolyzer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.ELECTROLYZER_ENTITY.get(), ElectrolyzerBlockEntity::tick, null));
+                    () -> NCRegistries.ELECTROLYZER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
     public static final RegistryObject<Item> ELECTROLYZER_ITEM =
             ITEMS.register("electrolyzer", () -> new BlockItem(ELECTROLYZER.get(), new Item.Properties()));
-    public static final RegistryObject<BlockEntityType<ElectrolyzerBlockEntity>> ELECTROLYZER_ENTITY =
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> ELECTROLYZER_ENTITY =
             BLOCK_ENTITIES.register("electrolyzer", () ->
-                    BlockEntityType.Builder.of(ElectrolyzerBlockEntity::new, ELECTROLYZER.get()).build(null));
-    public static final RegistryObject<MenuType<ElectrolyzerMenu>> ELECTROLYZER_MENU =
-            MENUS.register("electrolyzer", () -> new MenuType<>(ElectrolyzerMenu::new, FeatureFlags.DEFAULT_FLAGS));
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.ELECTROLYZER, pos, state),
+                            ELECTROLYZER.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> ELECTROLYZER_MENU =
+            MENUS.register("electrolyzer", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.ELECTROLYZER), FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<ElectrolyzerRecipe>> ELECTROLYSIS =
             RECIPE_TYPES.register("electrolyzer", () -> RecipeType.simple(NuclearCraft.id("electrolyzer")));
     public static final RegistryObject<RecipeSerializer<ElectrolyzerRecipe>> ELECTROLYZER_SERIALIZER =
             RECIPE_SERIALIZERS.register("electrolyzer", ElectrolyzerRecipe.Serializer::new);
+
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> SALT_MIXER =
+            BLOCKS.register("salt_mixer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.SALT_MIXER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+    public static final RegistryObject<Item> SALT_MIXER_ITEM =
+            ITEMS.register("salt_mixer", () -> new BlockItem(SALT_MIXER.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> SALT_MIXER_ENTITY =
+            BLOCK_ENTITIES.register("salt_mixer", () ->
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.SALT_MIXER, pos, state),
+                            SALT_MIXER.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> SALT_MIXER_MENU =
+            MENUS.register("salt_mixer", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.SALT_MIXER), FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<SaltMixerRecipe>> MIXING =
+            RECIPE_TYPES.register("salt_mixer", () -> RecipeType.simple(NuclearCraft.id("salt_mixer")));
+    public static final RegistryObject<RecipeSerializer<SaltMixerRecipe>> SALT_MIXER_SERIALIZER =
+            RECIPE_SERIALIZERS.register("salt_mixer", SaltMixerRecipe.Serializer::new);
 
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
@@ -77,6 +98,7 @@ public final class NCRegistries {
                     .displayItems((parameters, output) -> {
                         output.accept(MELTER_ITEM.get());
                         output.accept(ELECTROLYZER_ITEM.get());
+                        output.accept(SALT_MIXER_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);

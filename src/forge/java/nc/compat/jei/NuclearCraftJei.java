@@ -18,7 +18,7 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import nc.NuclearCraft;
-import nc.client.ElectrolyzerScreen;
+import nc.client.FluidProcessorScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
@@ -36,6 +36,7 @@ import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
+import nc.recipe.SaltMixerRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -64,6 +65,8 @@ public final class NuclearCraftJei implements IModPlugin {
     private static final RecipeType<MelterRecipe> MELTER = RecipeType.create("nuclearcraft", "melter", MelterRecipe.class);
     private static final RecipeType<ElectrolyzerRecipe> ELECTROLYZER =
             RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
+    private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
+            RecipeType.create(NuclearCraft.MOD_ID, "salt_mixer", SaltMixerRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
     private static final RecipeType<SolidFissionRecipe> PEBBLE =
@@ -112,6 +115,11 @@ public final class NuclearCraftJei implements IModPlugin {
                                 List.of(outputs.get(index)));
                     }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(SALT_MIXER, NCRegistries.SALT_MIXER.get(), gui, (layout, recipe) -> {
+                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
+                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
+                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
+                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
@@ -151,6 +159,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
+        registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
@@ -170,6 +179,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
+        registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         for (NCGasCoolants gas : NCGasCoolants.values()) {
@@ -190,7 +200,15 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
-        registration.addRecipeClickArea(ElectrolyzerScreen.class, 68, 30, 37, 38, ELECTROLYZER);
+        registration.addGuiContainerHandler(FluidProcessorScreen.class, new IGuiContainerHandler<>() {
+            @Override
+            public Collection<IGuiClickableArea> getGuiClickableAreas(FluidProcessorScreen screen, double x, double y) {
+                return switch (screen.getMenu().type()) {
+                    case ELECTROLYZER -> List.of(IGuiClickableArea.createBasic(68, 30, 37, 38, ELECTROLYZER));
+                    case SALT_MIXER -> List.of(IGuiClickableArea.createBasic(84, 34, 37, 18, SALT_MIXER));
+                };
+            }
+        });
         registration.addGuiContainerHandler(ItemProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(ItemProcessorScreen screen, double x, double y) {

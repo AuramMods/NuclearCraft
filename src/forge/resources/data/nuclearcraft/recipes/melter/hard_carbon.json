@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/hard_carbon"
+    },
+    "result": {
+        "fluid": "nuclearcraft:hard_carbon",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

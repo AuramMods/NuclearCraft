@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/americium_243"
+    },
+    "result": {
+        "fluid": "nuclearcraft:americium_243",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

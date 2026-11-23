@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/aluminum"
+        },
+        {
+            "tag": "forge:dusts/aluminum"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:aluminum",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

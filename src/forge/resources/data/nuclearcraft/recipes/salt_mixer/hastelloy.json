@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:nichrome",
+            "amount": 108
+        },
+        {
+            "fluid": "nuclearcraft:molybdenum",
+            "amount": 36
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hastelloy",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

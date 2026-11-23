@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/lead_platinum"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lead_platinum",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

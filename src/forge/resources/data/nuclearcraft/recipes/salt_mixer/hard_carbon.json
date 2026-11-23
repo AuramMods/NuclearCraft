@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:coal",
+            "amount": 100
+        },
+        {
+            "fluid": "nuclearcraft:diamond",
+            "amount": 333
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hard_carbon",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

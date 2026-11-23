@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:leb_248",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:berkelium_248",
+            "amount": 16
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:heb_248",
+        "amount": 64
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

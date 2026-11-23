@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:dark_chocolate",
+            "amount": 144
+        },
+        {
+            "tag": "forge:milk",
+            "amount": 250
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:milk_chocolate",
+        "amount": 288
+    },
+    "ticks": 300,
+    "energy_per_tick": 10
+}

@@ -86,8 +86,16 @@ public final class NCFluids {
     }
 
     private static RegisteredFluid liquid(String name, String texture, int density, int tint, int temperature) {
-        return new RegisteredFluid(name, () -> tintedFluid(
-                FluidType.Properties.create().density(density).viscosity(1000).temperature(temperature)
+        return liquid(name, texture, density, tint, temperature, 1000);
+    }
+
+    static RegisteredFluid liquid(String name, String texture, int density, int tint, int temperature, int viscosity) {
+        return liquid(name, texture, density, tint, temperature, viscosity, 0);
+    }
+
+    static RegisteredFluid liquid(String name, String texture, int density, int tint, int temperature, int viscosity, int light) {
+        return new RegisteredFluid(name, light, () -> tintedFluid(
+                FluidType.Properties.create().density(density).viscosity(viscosity).temperature(temperature).lightLevel(light)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY),
                 NuclearCraft.id("block/fluids/" + texture + "_still"),
@@ -127,6 +135,7 @@ public final class NCFluids {
         registerElectrolyzerFluids();
         NCGasCoolants.registerFluids();
         NCSaltCoolants.registerFluids();
+        NCSaltMixerFluids.register();
         TYPES.register(bus);
         FLUIDS.register(bus);
     }

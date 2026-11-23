@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:dusts/arsenic"
+    },
+    "result": {
+        "fluid": "nuclearcraft:arsenic",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

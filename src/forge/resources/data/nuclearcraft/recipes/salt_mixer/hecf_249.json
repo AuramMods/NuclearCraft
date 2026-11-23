@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:lecf_249",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:californium_249",
+            "amount": 16
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hecf_249",
+        "amount": 64
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

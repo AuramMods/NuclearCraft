@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:villiaumite"
+    },
+    "result": {
+        "fluid": "nuclearcraft:villiaumite",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/magnesium"
+        },
+        {
+            "tag": "forge:dusts/magnesium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:magnesium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

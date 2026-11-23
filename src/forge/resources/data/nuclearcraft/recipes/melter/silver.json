@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/silver"
+        },
+        {
+            "tag": "forge:dusts/silver"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:silver",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

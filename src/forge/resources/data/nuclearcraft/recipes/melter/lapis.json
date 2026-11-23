@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:lapis_lazuli"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lapis",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

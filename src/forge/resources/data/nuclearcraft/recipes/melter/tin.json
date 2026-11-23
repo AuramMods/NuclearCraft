@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/tin"
+        },
+        {
+            "tag": "forge:dusts/tin"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:tin",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

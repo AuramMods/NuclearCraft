@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/beryllium"
+        },
+        {
+            "tag": "forge:dusts/beryllium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:beryllium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

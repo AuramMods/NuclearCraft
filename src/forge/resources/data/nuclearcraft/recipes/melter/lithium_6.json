@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/lithium_6"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lithium_6",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

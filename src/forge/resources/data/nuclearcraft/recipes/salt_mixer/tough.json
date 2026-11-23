@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:ferroboron",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:lithium",
+            "amount": 72
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:tough",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

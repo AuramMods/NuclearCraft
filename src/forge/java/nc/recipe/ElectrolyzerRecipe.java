@@ -3,17 +3,11 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCRegistries;
-import nc.processor.ProcessorInputs;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.Container;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
@@ -23,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidStack> results,
-                                 int ticks, int energyPerTick) implements Recipe<Container> {
+                                 int ticks, int energyPerTick) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 4;
 
     public ElectrolyzerRecipe {
@@ -36,33 +30,8 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
     }
 
     @Override
-    public boolean matches(Container container, Level level) {
-        return container instanceof ProcessorInputs processor && input.matches(processor.fluid());
-    }
-
-    @Override
-    public ItemStack assemble(Container container, RegistryAccess registries) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public ItemStack getResultItem(RegistryAccess registries) {
-        return ItemStack.EMPTY;
-    }
-
-    @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return false;
-    }
-
-    @Override
-    public boolean isSpecial() {
-        return true;
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return id;
+    public List<FluidIngredient> inputs() {
+        return List.of(input);
     }
 
     @Override

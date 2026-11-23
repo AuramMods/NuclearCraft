@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:ethanol",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:redstone",
+            "amount": 200
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:redstone_ethanol",
+        "amount": 250
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

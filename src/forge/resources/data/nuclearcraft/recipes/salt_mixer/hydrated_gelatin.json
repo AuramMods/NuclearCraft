@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:gelatin",
+            "amount": 72
+        },
+        {
+            "tag": "minecraft:water",
+            "amount": 250
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hydrated_gelatin",
+        "amount": 72
+    },
+    "ticks": 300,
+    "energy_per_tick": 10
+}

@@ -4,6 +4,29 @@ final class NCFissionFluids {
     private NCFissionFluids() {}
 
     static void registerFuels() {
+        fuel("uranium_233", 0x212E20);
+        fuel("uranium_235", 0x102D10);
+        fuel("uranium_238", 0x333E32);
+        fuel("neptunium_236", 0x293E40);
+        fuel("neptunium_237", 0x2E3A42);
+        fuel("plutonium_238", 0x999999);
+        fuel("plutonium_239", 0x9E9E9E);
+        fuel("plutonium_241", 0x909090);
+        fuel("plutonium_242", 0xABABAB);
+        fuel("americium_241", 0x393725);
+        fuel("americium_242", 0x332D1A);
+        fuel("americium_243", 0x2C280C);
+        fuel("curium_243", 0x311137);
+        fuel("curium_245", 0x2D102D);
+        fuel("curium_246", 0x3F2442);
+        fuel("curium_247", 0x321635);
+        fuel("berkelium_247", 0x5A2301);
+        fuel("berkelium_248", 0x602502);
+        fuel("californium_249", 0x460D12);
+        fuel("californium_250", 0x3E0C14);
+        fuel("californium_251", 0x3B0B16);
+        fuel("californium_252", 0x430B0E);
+
         fuel("tbu", 0x272727);
         fuel("leu_233", 0x1D321B);
         fuel("heu_233", 0x123B0D);
@@ -62,18 +85,17 @@ final class NCFissionFluids {
 
     private static void fuel(String name, int color) {
         NCFluids.molten(name, color);
-        NCFluids.molten(name + "_fluoride", fluorideColor(color));
+        NCFluids.molten(name + "_fluoride", blendWithSalt(color, 0xD3C85D, 7, 8));
+        NCFluids.molten(name + "_fluoride_flibe", blendWithSalt(color, 0xC1C8B0, 3, 5));
     }
 
-    private static int fluorideColor(int color) {
-        int fluoride = 0xD3C85D;
-        int red = blendChannel(color >> 16, fluoride >> 16);
-        int green = blendChannel(color >> 8, fluoride >> 8);
-        int blue = blendChannel(color, fluoride);
-        return red << 16 | green << 8 | blue;
-    }
-
-    private static int blendChannel(int channel, int fluoride) {
-        return ((channel & 255) * 7 + (fluoride & 255)) / 8;
+    private static int blendWithSalt(int base, int salt, int baseWeight, int totalWeight) {
+        int color = 0;
+        for (int shift = 0; shift <= 16; shift += 8) {
+            int baseChannel = (base >> shift) & 255;
+            int saltChannel = (salt >> shift) & 255;
+            color |= ((baseWeight * baseChannel + (totalWeight - baseWeight) * saltChannel) / totalWeight) << shift;
+        }
+        return color;
     }
 }

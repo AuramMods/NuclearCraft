@@ -1,0 +1,19 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:milk",
+        "nuclearcraft:flowing_milk",
+        {
+            "id": "forge:milk",
+            "required": false
+        },
+        {
+            "id": "forge:flowing_milk",
+            "required": false
+        },
+        {
+            "id": "create:milk",
+            "required": false
+        }
+    ]
+}

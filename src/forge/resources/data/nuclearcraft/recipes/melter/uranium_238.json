@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/uranium_238"
+    },
+    "result": {
+        "fluid": "nuclearcraft:uranium_238",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

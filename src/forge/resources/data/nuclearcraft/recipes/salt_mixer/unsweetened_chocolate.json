@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:chocolate_liquor",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:cocoa_butter",
+            "amount": 72
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:unsweetened_chocolate",
+        "amount": 144
+    },
+    "ticks": 300,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:coal"
+        },
+        {
+            "tag": "forge:dusts/coal"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:coal",
+        "amount": 100
+    },
+    "ticks": 400,
+    "energy_per_tick": 40
+}

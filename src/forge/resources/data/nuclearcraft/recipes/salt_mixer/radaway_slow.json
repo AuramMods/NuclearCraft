@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:radaway",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:redstone",
+            "amount": 200
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:radaway_slow",
+        "amount": 250
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:sodium",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:potassium",
+            "amount": 288
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:nak",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

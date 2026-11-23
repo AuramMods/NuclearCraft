@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:potassium_hydroxide"
+    },
+    "result": {
+        "fluid": "nuclearcraft:koh",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

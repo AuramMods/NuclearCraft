@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/neptunium_237"
+    },
+    "result": {
+        "fluid": "nuclearcraft:neptunium_237",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

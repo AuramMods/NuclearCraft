@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:prismarine_shard"
+    },
+    "result": {
+        "fluid": "nuclearcraft:prismarine",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/curium_245"
+    },
+    "result": {
+        "fluid": "nuclearcraft:curium_245",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

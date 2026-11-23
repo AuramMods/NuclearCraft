@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:glowstone",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:nak",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:glowstone_nak",
+        "amount": 144
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

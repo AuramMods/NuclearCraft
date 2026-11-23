@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:obsidian"
+    },
+    "result": {
+        "fluid": "nuclearcraft:obsidian",
+        "amount": 288
+    },
+    "ticks": 1600,
+    "energy_per_tick": 80
+}

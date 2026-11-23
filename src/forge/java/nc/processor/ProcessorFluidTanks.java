@@ -25,17 +25,23 @@ public final class ProcessorFluidTanks {
 
     private final BlockEntity owner;
     private final FluidTank[] tanks;
+    private final int inputs;
     private final int[] sideModes;
     private final EnumMap<Direction, Face> faces = new EnumMap<>(Direction.class);
     private Face unsided;
     private boolean transferring;
 
     ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> accepted, int outputs) {
+        this(owner, accepted, 1, outputs);
+    }
+
+    ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> accepted, int inputs, int outputs) {
         this.owner = owner;
-        tanks = new FluidTank[1 + outputs];
+        this.inputs = inputs;
+        tanks = new FluidTank[inputs + outputs];
         sideModes = new int[tanks.length];
         for (int index = 0; index < tanks.length; index++) {
-            tanks[index] = new FluidTank(CAPACITY, index == 0 ? accepted : stack -> true) {
+            tanks[index] = new FluidTank(CAPACITY, index < inputs ? accepted : stack -> true) {
                 @Override
                 protected void onContentsChanged() {
                     owner.setChanged();
@@ -51,7 +57,11 @@ public final class ProcessorFluidTanks {
     }
 
     void consume(int amount) {
-        tanks[0].drain(amount, EXECUTE);
+        consume(0, amount);
+    }
+
+    void consume(int index, int amount) {
+        tanks[index].drain(amount, EXECUTE);
     }
 
     boolean canProduce(int index, FluidStack stack) {
@@ -75,7 +85,7 @@ public final class ProcessorFluidTanks {
 
     void cycle(int index, Direction side) {
         int shift = 2 * side.ordinal();
-        Mode next = Mode.read(sideModes[index], side).next(index == 0);
+        Mode next = Mode.read(sideModes[index], side).next(index < inputs);
         sideModes[index] = (sideModes[index] & ~(3 << shift)) | (next.ordinal() << shift);
         faces.put(side, new Face(side)).invalidate();
     }
@@ -112,9 +122,9 @@ public final class ProcessorFluidTanks {
         sideModes[index] = saved.contains(modesKey) ? saved.getInt(modesKey) : defaultModes(index);
     }
 
-    private static int defaultModes(int index) {
+    private int defaultModes(int index) {
         // One two-bit mode per side. The six output modes begin in OUTPUT.
-        return index == 0 ? 0 : 0b01_01_01_01_01_01;
+        return index < inputs ? 0 : 0b01_01_01_01_01_01;
     }
 
     void push(Level level) {
@@ -196,7 +206,7 @@ public final class ProcessorFluidTanks {
         Face(@Nullable Direction side) {
             modes = new Mode[tanks.length];
             for (int index = 0; index < modes.length; index++) {
-                Mode fallback = index == 0 ? Mode.INPUT : Mode.OUTPUT;
+                Mode fallback = index < inputs ? Mode.INPUT : Mode.OUTPUT;
                 modes[index] = side == null ? fallback : Mode.read(sideModes[index], side);
             }
             capability = Arrays.stream(modes).allMatch(mode -> mode == Mode.OFF)
@@ -233,12 +243,27 @@ public final class ProcessorFluidTanks {
 
         @Override
         public boolean isFluidValid(int index, FluidStack stack) {
-            return index == 0 && active() && modes[0] == Mode.INPUT && tanks[0].isFluidValid(stack);
+            return index >= 0 && index < inputs && active() && modes[index] == Mode.INPUT && tanks[index].isFluidValid(stack);
         }
 
         @Override
         public int fill(FluidStack stack, FluidAction action) {
-            return active() && modes[0] == Mode.INPUT ? tanks[0].fill(stack, action) : 0;
+            if (!active() || stack.isEmpty()) {
+                return 0;
+            }
+            int empty = -1;
+            for (int index = 0; index < inputs; index++) {
+                if (modes[index] != Mode.INPUT || !tanks[index].isFluidValid(stack)) {
+                    continue;
+                }
+                if (tanks[index].getFluid().isFluidEqual(stack)) {
+                    return tanks[index].fill(stack, action);
+                }
+                if (empty == -1 && tanks[index].isEmpty()) {
+                    empty = index;
+                }
+            }
+            return empty == -1 ? 0 : tanks[empty].fill(stack, action);
         }
 
         @Override

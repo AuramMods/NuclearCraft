@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:redstone"
+    },
+    "result": {
+        "fluid": "nuclearcraft:redstone",
+        "amount": 100
+    },
+    "ticks": 200,
+    "energy_per_tick": 40
+}

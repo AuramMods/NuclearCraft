@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:uranium_238",
+            "amount": 128
+        },
+        {
+            "fluid": "nuclearcraft:uranium_233",
+            "amount": 16
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:leu_233",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

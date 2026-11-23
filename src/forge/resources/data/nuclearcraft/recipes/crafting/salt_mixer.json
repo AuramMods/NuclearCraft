@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PSP",
+        "BCB",
+        "PMP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "B": {
+            "item": "minecraft:bucket"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:salt_mixer",
+        "count": 1
+    }
+}

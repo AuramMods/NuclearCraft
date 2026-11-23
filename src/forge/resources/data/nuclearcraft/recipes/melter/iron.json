@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/iron"
+    },
+    "result": {
+        "fluid": "nuclearcraft:iron",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

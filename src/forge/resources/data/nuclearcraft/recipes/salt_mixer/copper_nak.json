@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "tag": "forge:molten_copper",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:nak",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:copper_nak",
+        "amount": 144
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

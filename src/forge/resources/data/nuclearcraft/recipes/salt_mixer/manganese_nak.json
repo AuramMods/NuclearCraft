@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:manganese",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:nak",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:manganese_nak",
+        "amount": 144
+    },
+    "ticks": 300,
+    "energy_per_tick": 20
+}

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/manganese"
+        },
+        {
+            "tag": "forge:dusts/manganese"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:manganese",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

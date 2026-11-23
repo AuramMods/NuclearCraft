@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/ferroboron"
+    },
+    "result": {
+        "fluid": "nuclearcraft:ferroboron",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:carobbiite"
+    },
+    "result": {
+        "fluid": "nuclearcraft:carobbiite",
+        "amount": 666
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/lead"
+        },
+        {
+            "tag": "forge:dusts/lead"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:lead",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_mixer",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:lead_platinum",
+            "amount": 144
+        },
+        {
+            "tag": "forge:ender",
+            "amount": 250
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:enderium",
+        "amount": 144
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}
