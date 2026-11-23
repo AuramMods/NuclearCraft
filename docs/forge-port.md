@@ -126,6 +126,8 @@ A second isolated run with all 539 mods loaded the Fuel Reprocessor build and co
 
 The isolated 539-mod client also assembled and ran a pebble-bed reactor in the same disposable world. JEI completed startup. The saved controller contained 567 mB of oxygen and 666 mB of hot oxygen after consuming 333 mB of its original charge. The saved chamber retained one reserved LEU-235 TRISO pellet with 156.63 ticks of fuel progress. Master volume was zero, OpenAL used its No Output device, and the native observer recorded no visible windows or focus changes. The Forge config-unload exception recurred after the world save. The watcher reported exit code zero.
 
+The packaged heat exchanger also ran in the isolated 539-mod Auram client. A KubeJS check and the saved world both showed empty inputs, 256 mB of recovered oxygen from 1,024 mB of turbine exhaust, and 256 mB of high-pressure steam from 64 mB of water. JEI finished loading. The client used master volume zero and the OpenAL No Output device, and the native observer recorded no visible windows or focus changes. This run and a separate clean Forge singleplayer run saved and exited normally with file-backed NuclearCraft server configs. The earlier Forge config-unload exception did not recur. Auram logged missing item models for its own `auram:nuclearcraft_*_rock` items.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
