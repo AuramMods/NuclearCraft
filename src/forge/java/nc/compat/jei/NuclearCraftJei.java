@@ -21,6 +21,7 @@ import nc.NuclearCraft;
 import nc.client.ElectrolyzerScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
+import nc.init.NCCollectors.Collector;
 import nc.init.NCFission;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRegistries;
@@ -67,6 +68,7 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
+        registration.addRecipeCategories(new CollectorCategory(gui));
         for (Machine machine : Machine.values()) {
             registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
                     NuclearCraftJei::itemRecipe, recipe -> energy(recipe.ticks(), recipe.energyPerTick())));
@@ -104,6 +106,7 @@ public final class NuclearCraftJei implements IModPlugin {
             return;
         }
         RecipeManager recipes = connection.getRecipeManager();
+        registration.addRecipes(CollectorCategory.TYPE, List.of(Collector.values()));
         for (Machine machine : Machine.values()) {
             registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()));
         }
@@ -115,6 +118,9 @@ public final class NuclearCraftJei implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        for (Collector collector : Collector.values()) {
+            registration.addRecipeCatalyst(collector.block(), CollectorCategory.TYPE);
+        }
         for (Machine machine : Machine.values()) {
             registration.addRecipeCatalyst(machine.block(), itemType(machine));
         }

@@ -1069,5 +1069,18 @@
     "gui.nuclearcraft.electrolyzer.output_mode": "Overflow: %s",
     "gui.nuclearcraft.fluid_output.hold": "Hold",
     "gui.nuclearcraft.fluid_output.void_excess": "Void excess",
-    "gui.nuclearcraft.fluid_output.void": "Void all"
+    "gui.nuclearcraft.fluid_output.void": "Void all",
+    "block.nuclearcraft.cobblestone_generator": "Cobblestone Generator",
+    "block.nuclearcraft.cobblestone_generator_compact": "Compact Cobblestone Generator",
+    "block.nuclearcraft.cobblestone_generator_dense": "Dense Cobblestone Generator",
+    "block.nuclearcraft.water_source": "Infinite Water Source",
+    "block.nuclearcraft.water_source_compact": "Compact Infinite Water Source",
+    "block.nuclearcraft.water_source_dense": "Dense Infinite Water Source",
+    "block.nuclearcraft.nitrogen_collector": "Nitrogen Collector",
+    "block.nuclearcraft.nitrogen_collector_compact": "Compact Nitrogen Collector",
+    "block.nuclearcraft.nitrogen_collector_dense": "Dense Nitrogen Collector",
+    "gui.nuclearcraft.jei.collector": "Passive Collectors",
+    "gui.nuclearcraft.jei.collector.items": "%s items/t",
+    "gui.nuclearcraft.jei.collector.fluid": "%s mB/t",
+    "gui.nuclearcraft.jei.collector.power": "%s FE/t"
 }

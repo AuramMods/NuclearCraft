@@ -1,5 +1,6 @@
 package nc;
 
+import nc.init.NCCollectors;
 import nc.init.NCFluids;
 import nc.init.NCRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -17,6 +18,7 @@ public final class NuclearCraft {
     }
 
     public NuclearCraft(FMLJavaModLoadingContext context) {
+        NCCollectors.register(context);
         NCRegistries.register(context.getModEventBus());
         NCFluids.register(context.getModEventBus());
     }

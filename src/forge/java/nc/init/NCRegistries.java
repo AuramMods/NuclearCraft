@@ -78,6 +78,7 @@ public final class NCRegistries {
                         output.accept(MELTER_ITEM.get());
                         output.accept(ELECTROLYZER_ITEM.get());
                         NCItemProcessors.displayItems(output);
+                        NCCollectors.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());

@@ -67,6 +67,15 @@
         "nuclearcraft:alloy_furnace",
         "nuclearcraft:separator",
         "nuclearcraft:infuser",
-        "nuclearcraft:electrolyzer"
+        "nuclearcraft:electrolyzer",
+        "nuclearcraft:cobblestone_generator",
+        "nuclearcraft:cobblestone_generator_compact",
+        "nuclearcraft:cobblestone_generator_dense",
+        "nuclearcraft:water_source",
+        "nuclearcraft:water_source_compact",
+        "nuclearcraft:water_source_dense",
+        "nuclearcraft:nitrogen_collector",
+        "nuclearcraft:nitrogen_collector_compact",
+        "nuclearcraft:nitrogen_collector_dense"
     ]
 }

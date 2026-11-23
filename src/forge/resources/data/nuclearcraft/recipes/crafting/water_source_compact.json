@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "CCC",
+        "CIC",
+        "CCC"
+    ],
+    "key": {
+        "C": {
+            "item": "nuclearcraft:water_source"
+        },
+        "I": {
+            "tag": "forge:ingots/bronze"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:water_source_compact"
+    }
+}

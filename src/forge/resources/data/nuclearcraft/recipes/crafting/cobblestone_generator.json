@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PIP",
+        "L W",
+        "PIP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "I": {
+            "tag": "forge:ingots/tin"
+        },
+        "L": {
+            "item": "minecraft:lava_bucket"
+        },
+        "W": {
+            "item": "minecraft:water_bucket"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:cobblestone_generator"
+    }
+}
