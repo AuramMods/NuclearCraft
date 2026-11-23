@@ -4,6 +4,8 @@ The Forge 1.20.1 port is in development. The original Overhauled release and its
 
 ## Forge development
 
+Build, test, and package NuclearCraft locally with the Gradle wrapper and the workstation’s Gradle cache. Keep GitHub Actions workflows out of this repository.
+
 Use Java 17. Run `./gradlew build` to produce the reobfuscated JAR in `build/libs`. Run `./gradlew runGameTestServer` for headless gameplay tests, or `./gradlew runServer` for a dedicated-server development run. Both server runs use disposable directories under `build/runs`.
 
 The active 1.20.1 code and data are in `src/forge`. Original sources are kept in `src/main` during migration, and the build reuses converted textures from that tree. See [port verification](docs/forge-port.md) for the current gameplay coverage and Auram targets.
