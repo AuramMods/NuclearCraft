@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/uranium_233"
+                },
+                {
+                    "tag": "forge:ingots/uranium_233_oxide"
+                },
+                {
+                    "tag": "forge:ingots/uranium_233_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:bismuth_dust"
+    },
+    "ticks": 1025,
+    "energy_per_tick": 10
+}

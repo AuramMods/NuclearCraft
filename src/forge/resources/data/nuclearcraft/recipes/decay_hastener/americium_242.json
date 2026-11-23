@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/americium_242"
+                },
+                {
+                    "tag": "forge:ingots/americium_242_oxide"
+                },
+                {
+                    "tag": "forge:ingots/americium_242_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lead_dust"
+    },
+    "ticks": 85,
+    "energy_per_tick": 10
+}

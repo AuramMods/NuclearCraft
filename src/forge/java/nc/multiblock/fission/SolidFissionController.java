@@ -141,6 +141,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (state.getValue(FissionWallBlock.FACING) != outward) {
             server.setBlock(worldPosition, state.setValue(FissionWallBlock.FACING, outward), Block.UPDATE_CLIENTS);
         }
+        for (BlockPos source : layout.sources()) {
+            BlockState sourceState = server.getBlockState(source);
+            BlockState aligned = sourceState.setValue(FissionWallBlock.FACING, layout.bounds().outward(source))
+                    .setValue(FissionWallBlock.ACTIVE, server.hasNeighborSignal(source));
+            if (aligned != sourceState) {
+                server.setBlock(source, aligned, Block.UPDATE_CLIENTS);
+            }
+        }
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.bind(this, port);

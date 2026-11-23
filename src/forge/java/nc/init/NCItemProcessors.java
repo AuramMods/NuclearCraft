@@ -32,6 +32,7 @@ public final class NCItemProcessors {
 
     public enum Machine {
         MANUFACTORY("manufactory", 1, 1, false, 56, -1, 116, 74, 35, 16),
+        DECAY_HASTENER("decay_hastener", 1, 1, false, 56, -1, 116, 74, 35, 16),
         SEPARATOR("separator", 1, 2, false, 42, -1, 102, 60, 34, 18),
         ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 84, 35, 16),
         INFUSER("infuser", 1, 1, true, 46, 66, 126, 84, 35, 16);

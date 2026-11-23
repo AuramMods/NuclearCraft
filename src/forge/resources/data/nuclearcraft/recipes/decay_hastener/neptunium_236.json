@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/neptunium_236"
+                },
+                {
+                    "tag": "forge:ingots/neptunium_236_oxide"
+                },
+                {
+                    "tag": "forge:ingots/neptunium_236_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:thorium_dust"
+    },
+    "ticks": 1005,
+    "energy_per_tick": 10
+}

@@ -76,6 +76,10 @@
         "nuclearcraft:water_source_dense",
         "nuclearcraft:nitrogen_collector",
         "nuclearcraft:nitrogen_collector_compact",
-        "nuclearcraft:nitrogen_collector_dense"
+        "nuclearcraft:nitrogen_collector_dense",
+        "nuclearcraft:decay_hastener",
+        "nuclearcraft:fission_source_radium_beryllium",
+        "nuclearcraft:fission_source_polonium_beryllium",
+        "nuclearcraft:fission_source_californium"
     ]
 }

@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/protactinium_233"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:uranium_233_ingot"
+    },
+    "ticks": 45,
+    "energy_per_tick": 10
+}

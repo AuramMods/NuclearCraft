@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/curium_247_oxide"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:americium_243_oxide_ingot"
+    },
+    "ticks": 5710,
+    "energy_per_tick": 10
+}

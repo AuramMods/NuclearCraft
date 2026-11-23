@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/thorium"
+                },
+                {
+                    "tag": "forge:dusts/thorium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lead_dust"
+    },
+    "ticks": 13555,
+    "energy_per_tick": 10
+}

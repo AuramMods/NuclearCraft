@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/promethium_147"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:samarium_ingot"
+    },
+    "ticks": 50,
+    "energy_per_tick": 10
+}

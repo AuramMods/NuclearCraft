@@ -10,7 +10,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import java.util.ArrayList;
 import java.util.List;
 
-record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports) {
+record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
+                          List<BlockPos> sources) {
     record Port(BlockPos pos, Direction side, boolean fluid, boolean output) {}
 
     record Validation(SolidFissionLayout layout, Component message) {}
@@ -31,6 +32,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         List<BlockPos> cells = new ArrayList<>();
         List<BlockPos> sinks = new ArrayList<>();
         List<Port> ports = new ArrayList<>();
+        List<BlockPos> sources = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(pos);
             FissionPartBlock.Role role = FissionPartBlock.role(state);
@@ -59,6 +61,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                                 return invalid("multiple_controllers", pos);
                             }
                         }
+                        case SOURCE -> sources.add(pos.immutable());
                         case VENT, FUEL_PORT -> {
                             if (!(level.getBlockEntity(pos) instanceof FissionPortBlockEntity)) {
                                 return invalid("wall", pos);
@@ -85,7 +88,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         if (hasUnpairedPorts(ports, true) || (!cells.isEmpty() && hasUnpairedPorts(ports, false))) {
             return invalid("port_pair", origin);
         }
-        return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks), List.copyOf(ports)),
+        return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
+                List.copyOf(ports), List.copyOf(sources)),
                 Component.translatable("message.nuclearcraft.fission.assembled"));
     }
 

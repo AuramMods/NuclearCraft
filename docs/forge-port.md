@@ -27,7 +27,10 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - A hidden Forge development client joined the packaged server, found all 64 Electrolyzer recipes in JEI, and verified separate tank contents and server synchronization of a selected output's face and overflow settings. Master volume was zero, and the native observer recorded no onscreen windows or focus changes.
 - The Cobblestone Generator, Water Source, and Nitrogen Collector are craftable in all three legacy tiers. The basic versions make 0.125 cobblestone items, 10 mB of water, and 5 mB of nitrogen per tick. Compact and dense versions multiply those rates by 8 and 64. Each collector stores its product for extraction through Forge capabilities and can push it into adjacent inventories and tanks. A clean Forge GameTest used a compact Nitrogen Collector to supply an Infuser and make one LEU-235 nitride fuel.
 - JEI displays all nine collectors. A hidden multiplayer client opened their JEI category and verified that a custom nitrogen rate supplied by the server was reflected in both the basic and compact tiers. The native observer recorded zero visible windows or focus changes, and master volume was zero.
-- Completing the fuel loop still requires neutron sources and reprocessing. Other remaining work includes the production chains for the Electrolyzer's advanced inputs, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
+- The Decay Hastener uses the shared Forge item and energy interfaces and has 87 recipes derived from the legacy catalog. The uranium-238 recipe takes 12,230 ticks and 122,300 FE per radium dust. A headless test produced the two dusts needed for the original shaped recipe and used them to craft two Ra-Be sources. Legacy recipes whose outputs would need thallium or barium items and additional TBP and protactinium forms still need mappings.
+- Ra-Be, Po-Be, and Cf-252 neutron sources align toward the reactor interior when a solid-fission shell assembles. Redstone activates each source. The source primes the first eligible fuel cell along that line unless a full reflector blocks it. The cell still needs enough flux to run. Headless tests used a source to start LEU-235 oxide, verified reflector blocking, and applied the stronger of two sources to the same cell.
+- A silent, hidden client opened the Decay Hastener, found its 87 recipes in JEI, and received a powered source's facing, activity, and custom 0.85 efficiency from the dedicated server. The focus observer recorded zero onscreen windows and zero focus changes.
+- Completing the fuel loop still requires native beryllium production from the Rock Crusher, neutron source managers, and reprocessing. Other remaining work includes the polonium production path, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -72,7 +75,9 @@ Two Electrolyzer-to-Infuser chains used the exact installed Ender IO or Mekanism
 
 With the same versions of Ender IO and Mekanism, each network transferred nitrogen to an Infuser and extracted one LEU-235 nitride. Compact Water Sources filled each destination tank to 16,000 mB. Compact Cobblestone Generators with the base power setting changed to 2.5 FE/t used a 400 FE buffer to produce exactly 20 cobblestone each, which the item conduit or transporter collected. Both networks preserved the amounts after a server restart and a confirmed chunk unload and reload.
 
-Full Auram instance testing is pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
+Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
+
+An isolated Auram copy contains all 539 installed mod JARs and the pack's configuration and scripts. No installed mod JAR declared the `nuclearcraft` mod ID. Full Auram instance testing is pending.
 
 ## Registry migration references
 
@@ -80,6 +85,9 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | --- | --- |
 | `nuclearcraft:solid_fission_sink`, 0 | `nuclearcraft:water_heat_sink` |
 | `nuclearcraft:fission_reflector`, 0 | `nuclearcraft:beryllium_carbon_reflector` |
+| `nuclearcraft:fission_source`, 0 | `nuclearcraft:fission_source_radium_beryllium` |
+| `nuclearcraft:fission_source`, 1 | `nuclearcraft:fission_source_polonium_beryllium` |
+| `nuclearcraft:fission_source`, 2 | `nuclearcraft:fission_source_californium` |
 | `nuclearcraft:fuel_californium`, 9 | `nuclearcraft:lecf_251_oxide` |
 | `nuclearcraft:depleted_fuel_californium`, 9 | `nuclearcraft:depleted_lecf_251_oxide` |
 | `nuclearcraft:uranium`, 5 | `nuclearcraft:uranium_235_ingot` |
@@ -93,10 +101,12 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
 
-The datapack recipe types include `nuclearcraft:manufactory`, `nuclearcraft:separator`, `nuclearcraft:alloy_furnace`, `nuclearcraft:infuser`, `nuclearcraft:electrolyzer`, `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Item processor recipes take counted Forge item ingredients. The Separator uses a `results` array in output slot order. Manufactory, Alloy Furnace, and Infuser recipes use a single `result` object. Alloy Furnace inputs are interchangeable. The Infuser and Electrolyzer have a `fluid_input` object with a `fluid` ID or a `tag` and an `amount` in mB. The Electrolyzer's `results` array contains up to four `fluid` and `amount` objects in outlet tank order. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
+The datapack recipe types include `nuclearcraft:manufactory`, `nuclearcraft:separator`, `nuclearcraft:alloy_furnace`, `nuclearcraft:decay_hastener`, `nuclearcraft:infuser`, `nuclearcraft:electrolyzer`, `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Item processor recipes take counted Forge item ingredients. The Separator uses a `results` array in output slot order. Manufactory, Alloy Furnace, Decay Hastener, and Infuser recipes use a single `result` object. Alloy Furnace inputs are interchangeable. The Infuser and Electrolyzer have a `fluid_input` object with a `fluid` ID or a `tag` and an `amount` in mB. The Electrolyzer's `results` array contains up to four `fluid` and `amount` objects in outlet tank order. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
 
 Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
 
 Ore generation uses Forge biome modifiers and configured and placed features. The default modifiers target the Overworld biome tag with the legacy height bands and attempts per chunk. A pack can override `data/nuclearcraft/forge/biome_modifier/ore_<material>.json` with `{"type":"forge:none"}` to disable an ore, or replace the configured and placed features to control its shape, height, and frequency.
 
 Collector settings moved to `world/serverconfig/nuclearcraft-collectors.toml`. Use `defaultconfigs/nuclearcraft-collectors.toml` as a template for new worlds. The three entries of legacy `processor_passive_rate` map to `collectors.cobblestone_rate`, `collectors.water_rate`, and `collectors.nitrogen_rate`. The collector-specific equivalents of `machine_update_rate`, `passive_push`, and `cobble_gen_power` are `collectors.update_interval`, `collectors.auto_output`, and `collectors.cobblestone_power`. Setting a family's production rate to zero stops generation while retaining its block IDs. The three legacy `register_passive` entries still need an explicit equivalent for registry availability.
+
+The three entries of legacy `fission_source_efficiency` map to the `neutron_sources` section in `world/serverconfig/nuclearcraft-fission.toml`. Its settings are `radium_beryllium_efficiency`, `polonium_beryllium_efficiency`, and `californium_efficiency`, with defaults of 0.9, 0.95, and 1 respectively.

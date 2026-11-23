@@ -17,7 +17,7 @@ public class FissionPartBlock extends Block {
     public static final int MAX_INTERIOR_LENGTH = 24;
 
     public enum Role {
-        CASING, CONTROLLER, VENT, FUEL_PORT, CELL, WATER_SINK, MODERATOR, REFLECTOR
+        CASING, CONTROLLER, VENT, FUEL_PORT, SOURCE, CELL, WATER_SINK, MODERATOR, REFLECTOR
     }
 
     private final Role role;

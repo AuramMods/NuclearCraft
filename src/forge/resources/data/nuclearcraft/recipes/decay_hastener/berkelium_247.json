@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/berkelium_247"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:americium_243_ingot"
+    },
+    "ticks": 125,
+    "energy_per_tick": 10
+}

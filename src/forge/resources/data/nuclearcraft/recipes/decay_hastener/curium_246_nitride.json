@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/curium_246_nitride"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:plutonium_242_nitride_ingot"
+    },
+    "ticks": 175,
+    "energy_per_tick": 10
+}

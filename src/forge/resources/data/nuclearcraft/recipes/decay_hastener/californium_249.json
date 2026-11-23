@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/californium_249"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:curium_245_ingot"
+    },
+    "ticks": 95,
+    "energy_per_tick": 10
+}

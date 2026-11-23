@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/plutonium_238"
+                },
+                {
+                    "tag": "forge:ingots/plutonium_238_oxide"
+                },
+                {
+                    "tag": "forge:ingots/plutonium_238_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lead_dust"
+    },
+    "ticks": 80,
+    "energy_per_tick": 10
+}

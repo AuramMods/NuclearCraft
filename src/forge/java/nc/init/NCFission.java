@@ -6,6 +6,7 @@ import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPartBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionPortBlockEntity;
+import nc.multiblock.fission.FissionSourceBlock;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
@@ -22,11 +23,30 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public final class NCFission {
+    private static final ForgeConfigSpec SOURCE_SPEC;
+    private static final ForgeConfigSpec.DoubleValue RADIUM_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue POLONIUM_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue CALIFORNIUM_EFFICIENCY;
+
+    static {
+        var builder = new ForgeConfigSpec.Builder();
+        builder.push("neutron_sources");
+        RADIUM_EFFICIENCY = builder.defineInRange("radium_beryllium_efficiency", 0.9D, 0D, 255D);
+        POLONIUM_EFFICIENCY = builder.defineInRange("polonium_beryllium_efficiency", 0.95D, 0D, 255D);
+        CALIFORNIUM_EFFICIENCY = builder.defineInRange("californium_efficiency", 1D, 0D, 255D);
+        builder.pop();
+        SOURCE_SPEC = builder.build();
+    }
+
     public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing", Role.CASING);
     public static final RegistryObject<FissionWallBlock> CONTROLLER = wall("solid_fission_controller", Role.CONTROLLER);
     public static final RegistryObject<FissionWallBlock> VENT = wall("fission_vent", Role.VENT);
@@ -37,6 +57,13 @@ public final class NCFission {
     public static final RegistryObject<FissionPartBlock> HEAVY_WATER_MODERATOR = part("heavy_water_moderator", Role.MODERATOR);
     public static final RegistryObject<FissionPartBlock> BERYLLIUM_CARBON_REFLECTOR =
             part("beryllium_carbon_reflector", Role.REFLECTOR);
+
+    public static final RegistryObject<FissionSourceBlock> RADIUM_BERYLLIUM_SOURCE =
+            source("fission_source_radium_beryllium", RADIUM_EFFICIENCY);
+    public static final RegistryObject<FissionSourceBlock> POLONIUM_BERYLLIUM_SOURCE =
+            source("fission_source_polonium_beryllium", POLONIUM_EFFICIENCY);
+    public static final RegistryObject<FissionSourceBlock> CALIFORNIUM_SOURCE =
+            source("fission_source_californium", CALIFORNIUM_EFFICIENCY);
 
     public static final RegistryObject<Item> LECF_251_OXIDE =
             NCRegistries.ITEMS.register("lecf_251_oxide", () -> new Item(new Item.Properties()));
@@ -73,6 +100,9 @@ public final class NCFission {
                         output.accept(WATER_SINK.get());
                         output.accept(HEAVY_WATER_MODERATOR.get());
                         output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
+                        output.accept(RADIUM_BERYLLIUM_SOURCE.get());
+                        output.accept(POLONIUM_BERYLLIUM_SOURCE.get());
+                        output.accept(CALIFORNIUM_SOURCE.get());
                         output.accept(LECF_251_OXIDE.get());
                         output.accept(DEPLETED_LECF_251_OXIDE.get());
                         NCFissionFuels.displayItems(output);
@@ -85,6 +115,11 @@ public final class NCFission {
 
     private static RegistryObject<FissionWallBlock> wall(String id, Role role) {
         return part(id, () -> new FissionWallBlock(properties(), role));
+    }
+
+    private static RegistryObject<FissionSourceBlock> source(String id, ForgeConfigSpec.DoubleValue efficiency) {
+        DoubleSupplier multiplier = () -> SOURCE_SPEC.isLoaded() ? efficiency.get() : efficiency.getDefault();
+        return part(id, () -> new FissionSourceBlock(properties(), multiplier));
     }
 
     private static <T extends Block> RegistryObject<T> part(String id, Supplier<T> supplier) {
@@ -101,5 +136,9 @@ public final class NCFission {
 
     static void register() {
         NCFissionFuels.register();
+    }
+
+    public static void registerConfig(ModLoadingContext context) {
+        context.registerConfig(ModConfig.Type.SERVER, SOURCE_SPEC, "nuclearcraft-fission.toml");
     }
 }

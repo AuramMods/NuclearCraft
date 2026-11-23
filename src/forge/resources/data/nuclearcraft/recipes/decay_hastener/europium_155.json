@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/europium_155"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:gadolinium_dust"
+    },
+    "ticks": 55,
+    "energy_per_tick": 10
+}

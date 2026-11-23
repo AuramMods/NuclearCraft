@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/uranium_238"
+                },
+                {
+                    "tag": "forge:ingots/uranium_238_oxide"
+                },
+                {
+                    "tag": "forge:ingots/uranium_238_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:radium_dust"
+    },
+    "ticks": 12230,
+    "energy_per_tick": 10
+}

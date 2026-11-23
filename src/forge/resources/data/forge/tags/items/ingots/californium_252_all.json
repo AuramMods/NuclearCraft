@@ -1,0 +1,10 @@
+{
+    "replace": false,
+    "values": [
+        "#forge:ingots/californium_252",
+        "#forge:ingots/californium_252_carbide",
+        "#forge:ingots/californium_252_oxide",
+        "#forge:ingots/californium_252_nitride",
+        "#forge:ingots/californium_252_za"
+    ]
+}

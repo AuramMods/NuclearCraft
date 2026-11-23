@@ -21,6 +21,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -107,6 +108,68 @@ public final class SolidFissionGameTests {
                 .thenWaitUntil(() -> requireAssembled(helper))
                 .thenExecute(() -> helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0)
                         .getAmount() == 350, "Reformation and reading saved controller data must preserve the coolant"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 170)
+    public static void wallSourcesPrimeStandardFuelWithoutBypassingFlux(GameTestHelper helper) {
+        buildReactor(helper);
+        var north = new BlockPos(2, 3, 1);
+        var west = new BlockPos(1, 3, 2);
+        var east = new BlockPos(5, 3, 2);
+        var fuelPos = new BlockPos(2, 3, 2);
+        helper.setBlock(CELL.east(), Blocks.AIR);
+        helper.setBlock(CELL.east(2), Blocks.AIR);
+        helper.setBlock(CELL.above(), Blocks.AIR);
+        helper.setBlock(CELL.below(), Blocks.AIR);
+        helper.setBlock(CELL.south(), Blocks.AIR);
+        helper.setBlock(fuelPos, NCFission.CELL.get());
+        helper.setBlock(fuelPos.east(), NCFission.HEAVY_WATER_MODERATOR.get());
+        helper.setBlock(fuelPos.east(2), NCFission.BERYLLIUM_CARBON_REFLECTOR.get());
+        helper.setBlock(CELL, NCFission.HEAVY_WATER_MODERATOR.get());
+        helper.setBlock(fuelPos.south(2), NCFission.BERYLLIUM_CARBON_REFLECTOR.get());
+        helper.setBlock(fuelPos.above(), NCFission.WATER_SINK.get());
+        helper.setBlock(fuelPos.below(), NCFission.WATER_SINK.get());
+        helper.setBlock(north, NCFission.RADIUM_BERYLLIUM_SOURCE.get());
+        helper.setBlock(west, NCFission.POLONIUM_BERYLLIUM_SOURCE.get());
+        helper.setBlock(east, NCFission.CALIFORNIUM_SOURCE.get());
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    helper.assertTrue(helper.getBlockState(north).getValue(FissionWallBlock.FACING) == Direction.NORTH
+                                    && helper.getBlockState(west).getValue(FissionWallBlock.FACING) == Direction.WEST
+                                    && helper.getBlockState(east).getValue(FissionWallBlock.FACING) == Direction.EAST,
+                            "Sources orient automatically with their active faces outside the shell");
+                    ItemStack fuel = new ItemStack(ForgeRegistries.ITEMS.getValue(NuclearCraft.id("leu_235_oxide")));
+                    helper.assertTrue(items(helper, FUEL_IN, Direction.DOWN).insertItem(0, fuel, false).isEmpty(),
+                            "Load a non-self-priming fuel through the inlet");
+                    IFluidHandler water = fluids(helper, WATER_IN, Direction.NORTH);
+                    helper.assertTrue(water.fill(new FluidStack(Fluids.WATER, 1000), FluidAction.EXECUTE) == 1000,
+                            "Add coolant for the test");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(east.east(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(10, () -> {
+                    helper.assertTrue(helper.getBlockState(east).getValue(FissionWallBlock.ACTIVE)
+                                    && helper.getBlockEntity(fuelPos).saveWithoutMetadata().getDouble("progress") == 0,
+                            "The powered Cf source cannot prime through the intervening reflector");
+                    helper.setBlock(north.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(helper.getBlockEntity(fuelPos).saveWithoutMetadata()
+                        .getDouble("progress") > 0, "The unobstructed Ra-Be source starts the fuel"))
+                .thenExecute(() -> {
+                    var cell = helper.getBlockEntity(fuelPos);
+                    helper.assertTrue(cell.saveWithoutMetadata().getDouble("source_efficiency") == 0.9D
+                                    && helper.getBlockState(north).getValue(FissionWallBlock.ACTIVE),
+                            "The Ra-Be source applies the configured 0.9 multiplier");
+                    helper.setBlock(west.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var saved = helper.getBlockEntity(fuelPos).saveWithoutMetadata();
+                    helper.assertTrue(saved.getDouble("source_efficiency") == 0.95D
+                                    && !fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0).isEmpty(),
+                            "The stronger unblocked Po-Be source applies without bypassing the coolant cycle");
+                })
                 .thenSucceed();
     }
 

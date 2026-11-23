@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "particle": "nuclearcraft:block/fission/source_out_off",
+        "north": "nuclearcraft:block/fission/source_out_off",
+        "south": "nuclearcraft:block/fission/source/californium",
+        "east": "nuclearcraft:block/fission/source_side",
+        "west": "nuclearcraft:block/fission/source_side",
+        "up": "nuclearcraft:block/fission/source_side",
+        "down": "nuclearcraft:block/fission/source_side"
+    }
+}

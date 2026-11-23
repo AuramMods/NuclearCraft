@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PCP",
+        "CFC",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "C": {
+            "tag": "forge:ingots/californium_252_all"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_source_californium",
+        "count": 2
+    }
+}

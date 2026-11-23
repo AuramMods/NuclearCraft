@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/plutonium_239_za"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:uranium_235_za_ingot"
+    },
+    "ticks": 320,
+    "energy_per_tick": 10
+}

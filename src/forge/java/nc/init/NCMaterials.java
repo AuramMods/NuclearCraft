@@ -61,6 +61,10 @@ final class NCMaterials {
                 "coal", "villiaumite", "carobbiite", "arsenic", "end_stone", "barite", "nichromite", "dysprholminite")) {
             item(name + "_dust");
         }
+        for (String name : List.of("bismuth", "radium", "polonium", "tbp", "protactinium_233", "strontium_90",
+                "molybdenum", "ruthenium_106", "caesium_137", "promethium_147", "europium_155")) {
+            item(name + "_dust");
+        }
         for (String name : List.of("calcium_sulfate", "crystal_binder", "energetic_blend", "sodium_fluoride",
                 "potassium_fluoride", "sodium_hydroxide", "potassium_hydroxide", "borax", "irradiated_borax",
                 "dimensional_blend", "c_mn_blend", "alugentum", "ammonium_sulfate", "ammonium_bisulfate",

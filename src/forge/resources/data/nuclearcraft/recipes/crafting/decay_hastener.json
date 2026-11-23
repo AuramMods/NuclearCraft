@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "ECE",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "G": {
+            "item": "minecraft:glowstone_dust"
+        },
+        "E": {
+            "item": "minecraft:ender_pearl"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:decay_hastener",
+        "count": 1
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "variants": {
+        "active=false,facing=down": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium",
+            "x": 90
+        },
+        "active=false,facing=up": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium",
+            "x": 270
+        },
+        "active=false,facing=north": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium"
+        },
+        "active=false,facing=east": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium",
+            "y": 90
+        },
+        "active=false,facing=south": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium",
+            "y": 180
+        },
+        "active=false,facing=west": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium",
+            "y": 270
+        },
+        "active=true,facing=down": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on",
+            "x": 90
+        },
+        "active=true,facing=up": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on",
+            "x": 270
+        },
+        "active=true,facing=north": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on"
+        },
+        "active=true,facing=east": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on",
+            "y": 90
+        },
+        "active=true,facing=south": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on",
+            "y": 180
+        },
+        "active=true,facing=west": {
+            "model": "nuclearcraft:block/fission_source_radium_beryllium_on",
+            "y": 270
+        }
+    }
+}

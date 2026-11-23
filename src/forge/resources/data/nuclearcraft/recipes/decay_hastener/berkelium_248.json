@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/berkelium_248"
+                },
+                {
+                    "tag": "forge:ingots/berkelium_248_oxide"
+                },
+                {
+                    "tag": "forge:ingots/berkelium_248_nitride"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:thorium_dust"
+    },
+    "ticks": 95,
+    "energy_per_tick": 10
+}

@@ -19,6 +19,7 @@ public final class FissionFuelCell extends BlockEntity {
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private ItemStack reservedFuel = ItemStack.EMPTY;
     private double progress;
+    private double sourceEfficiency = -1;
 
     public FissionFuelCell(BlockPos pos, BlockState state) {
         super(NCFission.CELL_ENTITY.get(), pos, state);
@@ -32,6 +33,10 @@ public final class FissionFuelCell extends BlockEntity {
         boolean needsFuel = reservedFuel.isEmpty();
         ItemStack input = needsFuel ? inventory.getStackInSlot(0) : reservedFuel;
         if (input.isEmpty()) {
+            if (sourceEfficiency >= 0) {
+                sourceEfficiency = -1;
+                setChanged();
+            }
             return null;
         }
         recipeInput.setItem(0, input);
@@ -48,6 +53,17 @@ public final class FissionFuelCell extends BlockEntity {
             return null;
         }
         return recipe;
+    }
+
+    void primeWith(double efficiency) {
+        if (efficiency > sourceEfficiency) {
+            sourceEfficiency = efficiency;
+            setChanged();
+        }
+    }
+
+    double sourceEfficiency() {
+        return sourceEfficiency < 0 ? 1 : sourceEfficiency;
     }
 
     void burn(SolidFissionRecipe recipe, ItemStackHandler inventory, double speed) {
@@ -74,6 +90,9 @@ public final class FissionFuelCell extends BlockEntity {
         super.saveAdditional(tag);
         tag.put("fuel", reservedFuel.save(new CompoundTag()));
         tag.putDouble("progress", progress);
+        if (sourceEfficiency >= 0) {
+            tag.putDouble("source_efficiency", sourceEfficiency);
+        }
     }
 
     @Override
@@ -82,5 +101,7 @@ public final class FissionFuelCell extends BlockEntity {
         reservedFuel = ItemStack.of(tag.getCompound("fuel"));
         double stored = tag.getDouble("progress");
         progress = Double.isFinite(stored) ? Math.max(0, stored) : 0;
+        double efficiency = tag.getDouble("source_efficiency");
+        sourceEfficiency = tag.contains("source_efficiency") && Double.isFinite(efficiency) && efficiency >= 0 ? efficiency : -1;
     }
 }

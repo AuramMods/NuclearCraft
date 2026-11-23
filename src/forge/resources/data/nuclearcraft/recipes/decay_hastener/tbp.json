@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/tbp"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:tbu_pellet"
+    },
+    "ticks": 60,
+    "energy_per_tick": 10
+}

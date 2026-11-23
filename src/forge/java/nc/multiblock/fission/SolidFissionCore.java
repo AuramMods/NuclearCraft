@@ -62,7 +62,7 @@ final class SolidFissionCore {
         private double effectiveHeat() {
             double fluxEfficiency = (1D + Math.exp(-2D * recipe.criticality()))
                     / (1D + Math.exp(2D * (flux - 2D * recipe.criticality())));
-            return recipe.heat() * recipe.efficiency() * moderatorEfficiency * fluxEfficiency;
+            return recipe.heat() * recipe.efficiency() * cell.sourceEfficiency() * moderatorEfficiency * fluxEfficiency;
         }
     }
 
@@ -85,9 +85,10 @@ final class SolidFissionCore {
                 }
             }
         }
+        Set<BlockPos> sourceTargets = primeFromWall(level, reactions);
         Set<BlockPos> moderatorPositions = new HashSet<>();
         Set<BlockPos> failedSources = new HashSet<>();
-        while (!distributeFlux(level, reactions, moderatorPositions, failedSources)) {
+        while (!distributeFlux(level, reactions, sourceTargets, moderatorPositions, failedSources)) {
             moderatorPositions.clear();
             for (Reaction reaction : reactions.values()) {
                 reaction.flux = 0;
@@ -163,14 +164,39 @@ final class SolidFissionCore {
         return false;
     }
 
-    private boolean distributeFlux(ServerLevel level, Map<BlockPos, Reaction> reactions, Set<BlockPos> moderatorPositions,
-                                   Set<BlockPos> failedSources) {
+    private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction> reactions) {
+        Set<BlockPos> primed = new HashSet<>();
+        for (BlockPos wall : layout.sources()) {
+            var state = level.getBlockState(wall);
+            if (!(state.getBlock() instanceof FissionSourceBlock source) || !state.getValue(FissionWallBlock.ACTIVE)) {
+                continue;
+            }
+            Direction direction = layout.bounds().outward(wall).getOpposite();
+            BlockPos pos = wall.relative(direction);
+            while (layout.bounds().contains(pos) && layout.bounds().boundaryAxes(pos) == 0) {
+                if (FissionPartBlock.role(level.getBlockState(pos)) == FissionPartBlock.Role.REFLECTOR) {
+                    break;
+                }
+                Reaction target = reactions.get(pos);
+                if (target != null) {
+                    target.cell.primeWith(source.efficiency());
+                    primed.add(pos);
+                    break;
+                }
+                pos = pos.relative(direction);
+            }
+        }
+        return primed;
+    }
+
+    private boolean distributeFlux(ServerLevel level, Map<BlockPos, Reaction> reactions, Set<BlockPos> sourceTargets,
+                                   Set<BlockPos> moderatorPositions, Set<BlockPos> failedSources) {
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();
         Set<BlockPos> sources = new HashSet<>();
         for (BlockPos pos : layout.cells()) {
             Reaction reaction = reactions.get(pos);
             if (reaction != null && !failedSources.contains(pos)
-                    && (reaction.recipe.selfPriming() || runningCells.contains(pos))) {
+                    && (reaction.recipe.selfPriming() || runningCells.contains(pos) || sourceTargets.contains(pos))) {
                 sources.add(pos);
                 pending.add(pos);
             }
