@@ -24,4 +24,11 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 | PneumaticCraft | 6.0.22 | Fluid and item automation and shared tags |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 
-Ender IO's sibling source uses sided Forge fluid capabilities and simulates source draining and destination filling before it executes a transfer. The headless Melter test exercises those capability semantics. Test runs with the actual conduits and other Auram devices are pending.
+## Verified with Auram mod JARs
+
+A disposable headless Forge 47.4.10 server ran the reobfuscated NuclearCraft JAR with the exact Ender IO and Mekanism JARs from Auram. Each Melter received one ice and 4,000 FE. Server block data confirmed both destinations held exactly 1,000 mB of water and both Melter output tanks were empty.
+
+- Melter → Ender IO Fluid Conduit → Ender IO Fluid Tank
+- Melter → Mekanism Basic Mechanical Pipe in pull mode → Ender IO Fluid Tank
+
+This covers fluid extraction from a single-block processor. Fluid input, multiblock ports, item and energy automation with these devices, and the full Auram instance still need testing. The installed Auram mod JARs were also checked for the `nuclearcraft` mod ID. None claimed it at the time of this test.
