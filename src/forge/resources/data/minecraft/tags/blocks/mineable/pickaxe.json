@@ -83,6 +83,14 @@
         "nuclearcraft:fission_source_californium",
         "nuclearcraft:soulless_sandstone",
         "nuclearcraft:rock_crusher",
-        "nuclearcraft:lead_steel_reflector"
+        "nuclearcraft:lead_steel_reflector",
+        "nuclearcraft:decay_generator",
+        "nuclearcraft:uranium_238_block",
+        "nuclearcraft:neptunium_237_block",
+        "nuclearcraft:plutonium_242_block",
+        "nuclearcraft:americium_243_block",
+        "nuclearcraft:curium_246_block",
+        "nuclearcraft:berkelium_247_block",
+        "nuclearcraft:californium_252_block"
     ]
 }

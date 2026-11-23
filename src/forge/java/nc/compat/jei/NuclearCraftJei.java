@@ -23,9 +23,11 @@ import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
 import nc.init.NCFission;
+import nc.init.NCGenerators;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
+import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
@@ -35,12 +37,14 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -60,6 +64,9 @@ public final class NuclearCraftJei implements IModPlugin {
     private static final RecipeType<TurbineRecipe> TURBINE =
             RecipeType.create("nuclearcraft", "turbine", TurbineRecipe.class);
 
+    private static final RecipeType<DecayGeneratorRecipe> DECAY =
+            RecipeType.create(NuclearCraft.MOD_ID, "decay_generator", DecayGeneratorRecipe.class);
+
     @Override
     public ResourceLocation getPluginUid() {
         return NuclearCraft.id("jei");
@@ -76,6 +83,12 @@ public final class NuclearCraftJei implements IModPlugin {
                     NuclearCraftJei::itemRecipe, recipe -> energy(recipe.ticks(), recipe.energyPerTick())));
         }
         registration.addRecipeCategories(
+                new Category<>(DECAY, NCGenerators.DECAY_GENERATOR.get(), gui, (layout, recipe) -> {
+                    layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(
+                            Arrays.stream(recipe.input().getItems()).filter(recipe::accepts).toList());
+                    layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(new ItemStack(recipe.resultBlock()));
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.decay_generator",
+                        decimal(recipe.power()), decimal(recipe.lifetime()))),
                 new Category<>(MELTER, NCRegistries.MELTER.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.input());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
@@ -114,6 +127,7 @@ public final class NuclearCraftJei implements IModPlugin {
         for (Machine machine : Machine.values()) {
             registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()));
         }
+        registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
@@ -128,6 +142,7 @@ public final class NuclearCraftJei implements IModPlugin {
         for (Machine machine : Machine.values()) {
             registration.addRecipeCatalyst(machine.block(), itemType(machine));
         }
+        registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
@@ -157,6 +172,10 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static RecipeType<ItemProcessorRecipe> itemType(Machine machine) {
         return RecipeType.create(NuclearCraft.MOD_ID, machine.id(), ItemProcessorRecipe.class);
+    }
+
+    private static String decimal(double value) {
+        return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
     }
 
     private static Component energy(int ticks, int power) {

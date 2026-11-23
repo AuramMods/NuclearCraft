@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": {
+        "tag": "forge:storage_blocks/uranium"
+    },
+    "result": "nuclearcraft:uranium_238_block",
+    "family": "uranium"
+}

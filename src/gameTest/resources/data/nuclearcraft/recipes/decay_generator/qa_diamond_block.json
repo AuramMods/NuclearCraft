@@ -1,0 +1,9 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": {
+        "item": "minecraft:diamond_block"
+    },
+    "result": "minecraft:emerald_block",
+    "lifetime": 1,
+    "power": 0
+}

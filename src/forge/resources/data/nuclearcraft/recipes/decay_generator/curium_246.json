@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": {
+        "tag": "forge:storage_blocks/curium_246"
+    },
+    "result": "nuclearcraft:plutonium_242_block",
+    "family": "curium_246"
+}

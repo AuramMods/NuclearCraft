@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "LCL",
+        "CRC",
+        "LCL"
+    ],
+    "key": {
+        "L": {
+            "tag": "forge:ingots/lead"
+        },
+        "C": {
+            "tag": "forge:cobblestone"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:decay_generator"
+    }
+}

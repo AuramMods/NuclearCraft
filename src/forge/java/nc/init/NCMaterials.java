@@ -50,6 +50,10 @@ final class NCMaterials {
         }
         metal("lithium", 1F, SoundType.METAL);
         metal("graphite", 3F, SoundType.STONE);
+        for (String isotope : List.of("uranium_238", "neptunium_237", "plutonium_242", "americium_243",
+                "curium_246", "berkelium_247", "californium_252")) {
+            block(isotope + "_block", BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5F, 6F));
+        }
         for (String name : List.of("bronze", "tough", "hard_carbon", "magnesium_diboride", "lithium_manganese_dioxide",
                 "steel", "ferroboron", "shibuichi", "tin_silver", "lead_platinum", "extreme", "thermoconducting",
                 "zircaloy", "silicon_carbide", "sic_sic_cmc", "hsla_steel", "zirconium_molybdenum", "hastelloy", "samarium")) {

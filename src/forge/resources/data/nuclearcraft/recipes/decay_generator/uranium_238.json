@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": [
+        {
+            "tag": "forge:storage_blocks/uranium_238"
+        },
+        {
+            "tag": "forge:storage_blocks/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:storage_blocks/uranium_238_nitride"
+        }
+    ],
+    "result": "nuclearcraft:lead_block",
+    "family": "uranium_238",
+    "result_tag": "forge:storage_blocks/radium"
+}

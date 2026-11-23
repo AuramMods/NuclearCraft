@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": [
+        {
+            "tag": "forge:storage_blocks/neptunium_237"
+        },
+        {
+            "tag": "forge:storage_blocks/neptunium_237_oxide"
+        },
+        {
+            "tag": "forge:storage_blocks/neptunium_237_nitride"
+        }
+    ],
+    "result": "nuclearcraft:lead_block",
+    "family": "neptunium_237",
+    "result_tag": "forge:storage_blocks/bismuth"
+}

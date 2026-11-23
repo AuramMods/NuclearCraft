@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:neptunium_237_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:neptunium_237_ingot",
+        "count": 9
+    }
+}

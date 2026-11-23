@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": [
+        {
+            "tag": "forge:storage_blocks/thorium"
+        },
+        {
+            "tag": "forge:storage_blocks/thorium_oxide"
+        },
+        {
+            "tag": "forge:storage_blocks/thorium_nitride"
+        }
+    ],
+    "result": "nuclearcraft:lead_block",
+    "family": "thorium"
+}

@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": [
+        {
+            "tag": "forge:storage_blocks/californium_252"
+        },
+        {
+            "tag": "forge:storage_blocks/californium_252_oxide"
+        },
+        {
+            "tag": "forge:storage_blocks/californium_252_nitride"
+        }
+    ],
+    "result": "nuclearcraft:lead_block",
+    "family": "californium_252"
+}

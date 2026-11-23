@@ -1,0 +1,13 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:californium_252_block"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:californium_252_ingot",
+        "count": 9
+    }
+}

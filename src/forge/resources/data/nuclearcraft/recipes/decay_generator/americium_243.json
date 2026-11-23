@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": [
+        {
+            "tag": "forge:storage_blocks/americium_243"
+        },
+        {
+            "tag": "forge:storage_blocks/americium_243_oxide"
+        },
+        {
+            "tag": "forge:storage_blocks/americium_243_nitride"
+        }
+    ],
+    "result": "nuclearcraft:lead_block",
+    "family": "americium_243"
+}

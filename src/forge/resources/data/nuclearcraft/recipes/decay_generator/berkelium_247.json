@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:decay_generator",
+    "ingredient": {
+        "tag": "forge:storage_blocks/berkelium_247"
+    },
+    "result": "nuclearcraft:americium_243_block",
+    "family": "berkelium_247"
+}
