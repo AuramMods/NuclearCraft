@@ -1,6 +1,9 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCGasCoolants;
+import nc.init.NCPebbleFission;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -29,23 +32,34 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
+    private final @Nullable NCGasCoolants coolant;
+
     public FissionWallBlock(Properties properties, Role role) {
+        this(properties, role, null);
+    }
+
+    public FissionWallBlock(Properties properties, Role role, @Nullable NCGasCoolants coolant) {
         super(properties, role);
+        this.coolant = coolant;
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ACTIVE, false));
+    }
+
+    @Nullable NCGasCoolants coolant() {
+        return coolant;
     }
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return switch (role(state)) {
-            case CONTROLLER -> new SolidFissionController(pos, state);
-            case VENT, FUEL_PORT -> new FissionPortBlockEntity(pos, state);
+            case CONTROLLER, PEBBLE_CONTROLLER -> new SolidFissionController(pos, state);
+            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT -> new FissionPortBlockEntity(pos, state);
             default -> throw new IllegalStateException("Unexpected reactor wall block " + state);
         };
     }
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level instanceof ServerLevel && type == NCFission.CONTROLLER_ENTITY.get()) {
+        if (level instanceof ServerLevel && (type == NCFission.CONTROLLER_ENTITY.get() || type == NCPebbleFission.CONTROLLER_ENTITY.get())) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
         }
         return null;
@@ -107,7 +121,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             } else {
                 return InteractionResult.PASS;
             }
-        } else if (role(state) != Role.CONTROLLER && !player.isShiftKeyDown()) {
+        } else if (role(state) != Role.CONTROLLER && role(state) != Role.PEBBLE_CONTROLLER && !player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

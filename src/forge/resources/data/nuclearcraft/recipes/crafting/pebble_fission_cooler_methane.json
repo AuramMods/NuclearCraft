@@ -1,0 +1,15 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:empty_cooler"
+        },
+        {
+            "item": "nuclearcraft:methane_bucket"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:pebble_fission_cooler_methane"
+    }
+}

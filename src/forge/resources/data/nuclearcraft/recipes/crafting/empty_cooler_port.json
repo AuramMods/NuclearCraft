@@ -14,7 +14,7 @@
             "item": "nuclearcraft:servo"
         },
         "C": {
-            "item": "nuclearcraft:pyrolytic_carbon"
+            "tag": "forge:ingots/pyrolytic_carbon"
         },
         "F": {
             "item": "nuclearcraft:steel_frame"

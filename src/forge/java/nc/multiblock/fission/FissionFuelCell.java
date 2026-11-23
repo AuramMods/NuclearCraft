@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCPebbleFission;
 import nc.recipe.SolidFissionRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -14,15 +15,17 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.ItemStackHandler;
 
 public final class FissionFuelCell extends BlockEntity {
-    private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes =
-            RecipeManager.createCheck(NCFission.FUEL_TYPE.get());
+    private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private ItemStack reservedFuel = ItemStack.EMPTY;
     private double progress;
     private double sourceEfficiency = -1;
 
     public FissionFuelCell(BlockPos pos, BlockState state) {
-        super(NCFission.CELL_ENTITY.get(), pos, state);
+        super(FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER
+                ? NCPebbleFission.CHAMBER_ENTITY.get() : NCFission.CELL_ENTITY.get(), pos, state);
+        recipes = RecipeManager.createCheck(getType() == NCPebbleFission.CHAMBER_ENTITY.get()
+                ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get());
     }
 
     ItemStack unspentFuel() {
@@ -53,6 +56,10 @@ public final class FissionFuelCell extends BlockEntity {
             return null;
         }
         return recipe;
+    }
+
+    ItemStack reservedFuel() {
+        return reservedFuel;
     }
 
     void primeWith(double efficiency) {

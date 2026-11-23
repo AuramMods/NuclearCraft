@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:ammonia_exhaust",
+        "nuclearcraft:flowing_ammonia_exhaust"
+    ]
+}

@@ -48,6 +48,8 @@ public final class NCFluids {
     public static final RegisteredFluid HYDROGEN = gas("hydrogen", 0xFFB37AC4);
     public static final RegisteredFluid DEUTERIUM = gas("deuterium", 0xFF9E6FEF);
     public static final RegisteredFluid FLUORINE = gas("fluorine", 0xFFD3C75D);
+    public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7);
+    public static final RegisteredFluid HEATED_EMERGENCY_COOLANT = liquid("emergency_coolant_heated", "liquid", 2000, 0xCDBEE7);
     public static final RegisteredFluid LOW_ENRICHED_WATER = liquid("le_water", "le_water", 1100, 0xFFFFFF);
     public static final RegisteredFluid HIGH_ENRICHED_WATER = liquid("he_water", "he_water", 1100, 0xFFFFFF);
     public static final RegisteredFluid HEAVY_WATER = liquid("heavy_water", "heavy_water", 1100, 0xFFFFFF);
@@ -97,7 +99,7 @@ public final class NCFluids {
         return gas(name, tint, 300);
     }
 
-    private static RegisteredFluid gas(String name, int tint, int temperature) {
+    static RegisteredFluid gas(String name, int tint, int temperature) {
         return new RegisteredFluid(name, () -> tintedFluid(
                 FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature).canDrown(false).canSwim(false)
                         .canPushEntity(false).sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
@@ -108,6 +110,7 @@ public final class NCFluids {
 
     public static void register(IEventBus bus) {
         registerElectrolyzerFluids();
+        NCGasCoolants.registerFluids();
         TYPES.register(bus);
         FLUIDS.register(bus);
     }

@@ -1,6 +1,9 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCGasCoolants;
+import nc.init.NCPebbleFission;
+import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,8 +43,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             setChanged();
         }
     };
-    private final FluidTank coolant = new ReactorTank(true);
-    private final FluidTank steam = new ReactorTank(false);
+    private final boolean pebbleBed;
+    private final FluidTank coolant;
+    private final FluidTank steam;
+    private final @Nullable PebbleCooling gasCooling;
     private final Map<BlockPos, Long> clusterHeat = new HashMap<>();
 
     private SolidFissionLayout layout;
@@ -52,7 +57,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private boolean dirty = true;
 
     public SolidFissionController(BlockPos pos, BlockState state) {
-        super(NCFission.CONTROLLER_ENTITY.get(), pos, state);
+        super(FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CONTROLLER
+                ? NCPebbleFission.CONTROLLER_ENTITY.get() : NCFission.CONTROLLER_ENTITY.get(), pos, state);
+        pebbleBed = getType() == NCPebbleFission.CONTROLLER_ENTITY.get();
+        coolant = new ReactorTank(true);
+        steam = new ReactorTank(false);
+        gasCooling = pebbleBed ? new PebbleCooling(this) : null;
     }
 
     public boolean assembled() {
@@ -90,14 +100,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         boolean active = false;
         if (layout != null && (enabled || server.hasNeighborSignal(worldPosition))) {
-            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat);
+            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling);
             if (!generated.overheatedCells().isEmpty()) {
                 melt(server, generated.overheatedCells());
                 return;
             }
 
             long capacity = heatCapacity();
-            casingHeat = Math.min(capacity, casingHeat + generated.raw());
+            casingHeat = Math.min(capacity, casingHeat + generated.casingHeat());
             if (casingHeat >= capacity) {
                 casingHeat = 0;
                 melt(server, List.of(worldPosition));
@@ -105,9 +115,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             }
             active = generated.raw() > 0;
             if (active) {
-                heatWater(generated.effective() / generated.raw());
+                if (!pebbleBed) {
+                    heatWater(generated.effective() / generated.raw());
+                }
                 setChanged();
             }
+        } else if (layout != null && pebbleBed && casingHeat > 0) {
+            coolCasing();
         }
         BlockState state = getBlockState();
         if (state.getValue(FissionWallBlock.ACTIVE) != active) {
@@ -135,6 +149,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         // A smaller re-formed reactor retains previously stored fluids until they can be drained.
         coolant.setCapacity(Math.max(capacity, coolant.getFluidAmount()));
         steam.setCapacity(Math.max(capacity, steam.getFluidAmount()));
+        if (gasCooling != null) {
+            gasCooling.resize(layout);
+        }
 
         BlockState state = getBlockState();
         Direction outward = layout.bounds().outward(worldPosition);
@@ -199,6 +216,21 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
     }
 
+    private void coolCasing() {
+        double heatPerMb = NCPebbleFission.emergencyMultiplier();
+        int amount = Math.min(coolant.getFluidAmount(), Math.min(steam.getCapacity() - steam.getFluidAmount(),
+                (int) (casingHeat / heatPerMb)));
+        if (amount > 0) {
+            var product = new FluidStack(NCFluids.HEATED_EMERGENCY_COOLANT.source().get(), amount);
+            if (steam.fill(product, FluidAction.SIMULATE) == amount) {
+                steam.fill(product, FluidAction.EXECUTE);
+                coolant.drain(amount, FluidAction.EXECUTE);
+                casingHeat = (long) Math.max(0, casingHeat - amount * heatPerMb);
+                setChanged();
+            }
+        }
+    }
+
     private long heatCapacity() {
         return layout == null ? 0 : SolidFissionCore.BASE_HEAT_CAPACITY * layout.bounds().capacityMultiplier();
     }
@@ -211,13 +243,24 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return steam;
     }
 
+    FluidTank fluidTank(@Nullable NCGasCoolants gas, boolean output) {
+        if (gas != null && gasCooling != null) {
+            return gasCooling.tank(gas, output);
+        }
+        return output ? steam : coolant;
+    }
+
+    boolean pebbleBed() {
+        return pebbleBed;
+    }
+
     ItemStackHandler inventory() {
         return inventory;
     }
 
     boolean acceptsFuel(ItemStack stack) {
         return level != null && !stack.isEmpty() && level.getRecipeManager()
-                .getRecipeFor(NCFission.FUEL_TYPE.get(), new SimpleContainer(stack), level).isPresent();
+                .getRecipeFor(pebbleBed ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get(), new SimpleContainer(stack), level).isPresent();
     }
 
     void toggle() {
@@ -244,6 +287,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         tag.put("inventory", inventory.serializeNBT());
         tag.put("coolant", coolant.writeToNBT(new CompoundTag()));
         tag.put("steam", steam.writeToNBT(new CompoundTag()));
+        if (gasCooling != null) {
+            tag.put("gas_cooling", gasCooling.save());
+        }
         tag.putLong("heat", casingHeat);
         tag.putBoolean("enabled", enabled);
         ListTag storedClusters = new ListTag();
@@ -264,6 +310,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         inventory.deserializeNBT(tag.getCompound("inventory"));
         coolant.readFromNBT(tag.getCompound("coolant"));
         steam.readFromNBT(tag.getCompound("steam"));
+        if (gasCooling != null) {
+            gasCooling.load(tag.getCompound("gas_cooling"));
+        }
         casingHeat = Math.max(0, tag.getLong("heat"));
         enabled = tag.getBoolean("enabled");
         clusterHeat.clear();
@@ -277,6 +326,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     private static int tankFill(FluidTank tank) {
         return (int) (1000L * tank.getFluidAmount() / tank.getCapacity());
+    }
+
+    private int coolerFill(boolean output) {
+        if (gasCooling == null) {
+            return tankFill(output ? steam : coolant);
+        }
+        int capacity = gasCooling.gasCapacity(output);
+        return capacity == 0 ? 0 : (int) (1000L * gasCooling.gasAmount(output) / capacity);
     }
 
     @Override
@@ -293,8 +350,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                     case SolidFissionMenu.ENABLED -> enabled ? 1 : 0;
                     case SolidFissionMenu.ACTIVE -> getBlockState().getValue(FissionWallBlock.ACTIVE) ? 1 : 0;
                     case SolidFissionMenu.HEAT -> heatCapacity() == 0 ? 0 : (int) (1000 * casingHeat / heatCapacity());
-                    case SolidFissionMenu.COOLANT -> tankFill(coolant);
-                    case SolidFissionMenu.STEAM -> tankFill(steam);
+                    case SolidFissionMenu.COOLANT -> coolerFill(false);
+                    case SolidFissionMenu.STEAM -> coolerFill(true);
                     default -> 0;
                 };
             }
@@ -311,8 +368,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     private final class ReactorTank extends FluidTank {
         ReactorTank(boolean water) {
-            super(BASE_TANK_CAPACITY, fluid -> water ? fluid.getFluid() == Fluids.WATER
-                    : fluid.getFluid() == NCFluids.HIGH_PRESSURE_STEAM.source().get());
+            super(BASE_TANK_CAPACITY, fluid -> water
+                    ? fluid.getFluid() == (pebbleBed ? NCFluids.EMERGENCY_COOLANT.source().get() : Fluids.WATER)
+                    : fluid.getFluid() == (pebbleBed ? NCFluids.HEATED_EMERGENCY_COOLANT.source().get()
+                            : NCFluids.HIGH_PRESSURE_STEAM.source().get()));
         }
 
         @Override

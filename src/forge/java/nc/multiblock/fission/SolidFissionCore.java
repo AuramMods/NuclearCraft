@@ -1,11 +1,15 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCGasCoolants;
+import nc.init.NCPebbleFission;
 import nc.multiblock.Cuboid;
 import nc.recipe.SolidFissionRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayDeque;
@@ -22,18 +26,65 @@ final class SolidFissionCore {
     private static final int COOLING_LENIENCY = 10;
     private static final int WATER_SINK_COOLING = 55;
 
-    record Heat(long raw, double effective, List<BlockPos> overheatedCells) {}
+    record Heat(long raw, long casingHeat, double effective, List<BlockPos> overheatedCells) {}
+
+    private record GasLoad(BlockPos pos, NCGasCoolants gas, double efficiency) {}
+
+    private static final class Bunch {
+        final List<BlockPos> cells;
+        final int surface;
+        final int packing;
+        long flux;
+        int sources;
+
+        Bunch(List<BlockPos> cells, int openFaces) {
+            this.cells = cells;
+            surface = Math.max(1, openFaces / 6);
+            packing = 6 * cells.size() / openFaces;
+        }
+    }
 
     private record Cluster(BlockPos anchor, List<BlockPos> cells, List<BlockPos> sinks, boolean connectedToWall) {
         long capacity() {
             return BASE_HEAT_CAPACITY * (cells.size() + sinks.size());
+        }
+
+        long previousHeat(Map<BlockPos, Long> stored) {
+            long result = 0;
+            for (BlockPos cell : cells) {
+                result += stored.getOrDefault(cell, 0L);
+            }
+            for (BlockPos sink : sinks) {
+                result += stored.getOrDefault(sink, 0L);
+            }
+            return result;
+        }
+
+        void retainHeat(Map<BlockPos, Long> stored, long heat) {
+            int count = cells.size() + sinks.size();
+            long share = heat / count;
+            long remainder = heat % count;
+            for (BlockPos cell : cells) {
+                keepHeat(stored, cell, share + (remainder-- > 0 ? 1 : 0));
+            }
+            for (BlockPos sink : sinks) {
+                keepHeat(stored, sink, share + (remainder-- > 0 ? 1 : 0));
+            }
+        }
+
+        private static void keepHeat(Map<BlockPos, Long> stored, BlockPos pos, long amount) {
+            if (amount == 0) {
+                stored.remove(pos);
+            } else {
+                stored.put(pos, amount);
+            }
         }
     }
 
     private static final class Reaction {
         private final FissionFuelCell cell;
         private final SolidFissionRecipe recipe;
-        private long flux;
+        private Bunch bunch;
         private int lines;
         private double moderatorEfficiency;
 
@@ -43,36 +94,38 @@ final class SolidFissionCore {
         }
 
         private void receive(long addedFlux, double efficiency) {
-            flux += addedFlux;
+            bunch.flux += addedFlux;
             lines++;
             moderatorEfficiency += efficiency;
         }
 
         private boolean active() {
-            return lines > 0 && flux >= recipe.criticality();
+            return bunch.flux >= (long) bunch.surface * recipe.criticality() && (lines > 0 || bunch.cells.size() > 1);
         }
 
         private long heat() {
-            return (long) recipe.heat() * lines;
+            return (long) recipe.heat() * lines * bunch.packing;
         }
 
         private double effectiveHeat() {
             double fluxEfficiency = (1D + Math.exp(-2D * recipe.criticality()))
-                    / (1D + Math.exp(2D * (flux - 2D * recipe.criticality())));
-            return recipe.heat() * recipe.efficiency() * cell.sourceEfficiency() * moderatorEfficiency * fluxEfficiency;
+                    / (1D + Math.exp(2D * ((double) bunch.flux / bunch.surface - 2D * recipe.criticality())));
+            return bunch.packing * recipe.heat() * recipe.efficiency() * cell.sourceEfficiency() * moderatorEfficiency * fluxEfficiency;
         }
     }
 
     private final SolidFissionLayout layout;
-    private final List<Cluster> clusters;
+    private List<Cluster> clusters;
+    private Set<BlockPos> activeCoolers = Set.of();
     private final Set<BlockPos> runningCells = new HashSet<>();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
-        this.clusters = findClusters(layout);
+        clusters = findClusters(layout, layout.pebbleBed() ? activeCoolers : null);
     }
 
-    Heat tick(ServerLevel level, ItemStackHandler inventory, Map<BlockPos, Long> storedHeat) {
+    Heat tick(ServerLevel level, ItemStackHandler inventory, Map<BlockPos, Long> storedHeat,
+              @Nullable PebbleCooling gasCooling) {
         Map<BlockPos, Reaction> reactions = new HashMap<>();
         for (BlockPos pos : layout.cells()) {
             if (level.getBlockEntity(pos) instanceof FissionFuelCell cell) {
@@ -82,31 +135,48 @@ final class SolidFissionCore {
                 }
             }
         }
+        assembleBunches(reactions);
         Set<BlockPos> sourceTargets = primeFromWall(level, reactions);
         Set<BlockPos> moderatorPositions = new HashSet<>();
         Set<BlockPos> failedSources = new HashSet<>();
         while (!distributeFlux(level, reactions, sourceTargets, moderatorPositions, failedSources)) {
             moderatorPositions.clear();
             for (Reaction reaction : reactions.values()) {
-                reaction.flux = 0;
+                reaction.bunch.flux = 0;
                 reaction.lines = 0;
                 reaction.moderatorEfficiency = 0;
             }
         }
 
+        Set<BlockPos> burning = new HashSet<>();
+        for (BlockPos pos : reactions.keySet()) {
+            if (reactions.get(pos).active()) {
+                burning.add(pos);
+            }
+        }
+        Map<BlockPos, NCGasCoolants> coolers = gasCooling == null ? Map.of()
+                : gasCooling.available(level, layout, burning, moderatorPositions);
+        if (gasCooling != null && !coolers.keySet().equals(activeCoolers)) {
+            activeCoolers = Set.copyOf(coolers.keySet());
+            clusters = findClusters(layout, activeCoolers);
+        }
+        var gasLoads = new ArrayList<GasLoad>();
         long raw = 0;
+        long casing = 0;
         double effective = 0;
         int usefulParts = moderatorPositions.size();
         runningCells.clear();
         for (Cluster cluster : clusters) {
             long rawCluster = 0;
             double effectiveCluster = 0;
+            double baseCluster = 0;
             int activeCells = 0;
             for (BlockPos pos : cluster.cells()) {
                 Reaction reaction = reactions.get(pos);
                 if (reaction != null && reaction.active()) {
                     rawCluster += reaction.heat();
                     effectiveCluster += reaction.effectiveHeat();
+                    baseCluster += (double) reaction.recipe.heat() * reaction.bunch.packing;
                     activeCells++;
                     runningCells.add(pos);
                 }
@@ -114,10 +184,22 @@ final class SolidFissionCore {
 
             int cooling = 0;
             for (BlockPos sink : cluster.sinks()) {
-                if (hasActiveNeighbor(sink, reactions)) {
-                    cooling += WATER_SINK_COOLING;
+                NCGasCoolants gas = coolers.get(sink);
+                int rate = gasCooling == null ? (hasActiveNeighbor(sink, reactions) ? WATER_SINK_COOLING : 0)
+                        : (gas == null ? 0 : NCPebbleFission.cooling(gas));
+                if (rate > 0) {
+                    cooling += rate;
                     if (cluster.connectedToWall()) {
                         usefulParts++;
+                    }
+                }
+            }
+            if (gasCooling != null && baseCluster > 0 && cooling > 0) {
+                double efficiency = effectiveCluster / baseCluster * Math.min(1D, (double) rawCluster / cooling);
+                for (BlockPos sink : cluster.sinks()) {
+                    NCGasCoolants gas = coolers.get(sink);
+                    if (gas != null) {
+                        gasLoads.add(new GasLoad(sink, gas, efficiency));
                     }
                 }
             }
@@ -131,24 +213,42 @@ final class SolidFissionCore {
                 }
             }
 
-            long previous = storedHeat.getOrDefault(cluster.anchor(), 0L);
-            long next = Math.max(0, Math.min(cluster.capacity(), previous + rawCluster - cooling));
+            long previous = gasCooling == null ? storedHeat.getOrDefault(cluster.anchor(), 0L)
+                    : cluster.previousHeat(storedHeat);
+            long netHeat = rawCluster - cooling;
+            boolean heatToWall = gasCooling != null && netHeat > 0 && cluster.connectedToWall();
+            long next = Math.max(0, Math.min(cluster.capacity(), previous + (heatToWall ? 0 : netHeat)));
             if (next != previous) {
-                storedHeat.put(cluster.anchor(), next);
+                if (gasCooling == null) {
+                    storedHeat.put(cluster.anchor(), next);
+                } else {
+                    cluster.retainHeat(storedHeat, next);
+                }
             }
             if (next >= cluster.capacity() && rawCluster > 0) {
-                return new Heat(raw, effective, cluster.cells());
+                if (gasCooling != null) {
+                    cluster.retainHeat(storedHeat, 0);
+                }
+                return new Heat(raw, casing, effective, cluster.cells());
             }
             if (cluster.connectedToWall()) {
                 raw += rawCluster;
+                casing += gasCooling == null ? rawCluster : Math.max(0, netHeat);
                 effective += cooling == 0 ? effectiveCluster
                         : effectiveCluster * Math.min(1D, (double) (rawCluster + COOLING_LENIENCY) / cooling);
                 usefulParts += activeCells;
+            } else if (gasCooling != null) {
+                raw += rawCluster;
             }
         }
         double density = Math.min(0.75D, (double) usefulParts / layout.bounds().interiorVolume());
         double sparsityEfficiency = 0.5D + 0.5D * Math.sin(density * Math.PI / 1.5D);
-        return new Heat(raw, effective * sparsityEfficiency, List.of());
+        if (gasCooling != null) {
+            for (GasLoad load : gasLoads) {
+                gasCooling.heatGas(load.pos(), load.gas(), load.efficiency() * sparsityEfficiency);
+            }
+        }
+        return new Heat(raw, casing, effective * sparsityEfficiency, List.of());
     }
 
     private static boolean hasActiveNeighbor(BlockPos pos, Map<BlockPos, Reaction> reactions) {
@@ -178,7 +278,9 @@ final class SolidFissionCore {
                 Reaction target = reactions.get(pos);
                 if (target != null) {
                     target.cell.primeWith(source.efficiency());
-                    primed.add(pos);
+                    if (++target.bunch.sources >= target.bunch.surface) {
+                        primed.addAll(target.bunch.cells);
+                    }
                     break;
                 }
                 pos = pos.relative(direction);
@@ -196,8 +298,7 @@ final class SolidFissionCore {
             Reaction reaction = reactions.get(pos);
             if (reaction != null && !failedSources.contains(pos)
                     && (reaction.recipe.selfPriming() || runningCells.contains(pos) || sourceTargets.contains(pos))) {
-                sources.add(pos);
-                pending.add(pos);
+                enqueueBunch(reaction, pending, sources, failedSources);
             }
         }
 
@@ -208,9 +309,10 @@ final class SolidFissionCore {
                 BlockPos adjacent = origin.relative(direction);
                 Reaction direct = reactions.get(adjacent);
                 if (direct != null && source.recipe.intrinsicFlux() > 0) {
-                    direct.receive(source.recipe.intrinsicFlux(), NCFission.intrinsicFluxEfficiency());
-                    if (direct.active() && !failedSources.contains(adjacent) && sources.add(adjacent)) {
-                        pending.add(adjacent);
+                    direct.receive(source.recipe.intrinsicFlux(), layout.pebbleBed() ? NCPebbleFission.intrinsicEfficiency()
+                            : NCFission.intrinsicFluxEfficiency());
+                    if (direct.active()) {
+                        enqueueBunch(direct, pending, sources, failedSources);
                     }
                     continue;
                 }
@@ -237,8 +339,8 @@ final class SolidFissionCore {
                         if (target != null) {
                             target.receive(flux, efficiency);
                             recordModerators(moderatorPositions, origin, direction, moderators);
-                            if (target.active() && !failedSources.contains(pos) && sources.add(pos)) {
-                                pending.add(pos);
+                            if (target.active()) {
+                                enqueueBunch(target, pending, sources, failedSources);
                             }
                         } else if (moderators <= reach / 2) {
                             var reflector = NCFission.reflector(block);
@@ -256,11 +358,56 @@ final class SolidFissionCore {
         boolean stable = true;
         for (BlockPos source : sources) {
             if (!reactions.get(source).active()) {
-                failedSources.add(source);
+                failedSources.addAll(reactions.get(source).bunch.cells);
                 stable = false;
             }
         }
         return stable;
+    }
+
+    private static void enqueueBunch(Reaction reaction, ArrayDeque<BlockPos> pending, Set<BlockPos> sources,
+                                     Set<BlockPos> failed) {
+        for (BlockPos member : reaction.bunch.cells) {
+            if (!failed.contains(member) && sources.add(member)) {
+                pending.add(member);
+            }
+        }
+    }
+
+    private void assembleBunches(Map<BlockPos, Reaction> reactions) {
+        for (BlockPos start : layout.cells()) {
+            Reaction initial = reactions.get(start);
+            if (initial == null || initial.bunch != null) {
+                continue;
+            }
+            if (!layout.pebbleBed()) {
+                initial.bunch = new Bunch(List.of(start), 6);
+                continue;
+            }
+            var members = new LinkedHashSet<BlockPos>();
+            var pending = new ArrayDeque<BlockPos>();
+            members.add(start);
+            pending.add(start);
+            int openFaces = 0;
+            while (!pending.isEmpty()) {
+                BlockPos pos = pending.removeFirst();
+                for (Direction side : Direction.values()) {
+                    BlockPos neighbor = pos.relative(side);
+                    Reaction other = reactions.get(neighbor);
+                    if (other != null && ItemStack.isSameItemSameTags(initial.cell.reservedFuel(), other.cell.reservedFuel())) {
+                        if (members.add(neighbor)) {
+                            pending.add(neighbor);
+                        }
+                    } else {
+                        openFaces++;
+                    }
+                }
+            }
+            Bunch bunch = new Bunch(List.copyOf(members), openFaces);
+            for (BlockPos member : members) {
+                reactions.get(member).bunch = bunch;
+            }
+        }
     }
 
     private static void recordModerators(Set<BlockPos> positions, BlockPos origin, Direction direction, int count) {
@@ -269,12 +416,19 @@ final class SolidFissionCore {
         }
     }
 
-    private static List<Cluster> findClusters(SolidFissionLayout layout) {
+    private static List<Cluster> findClusters(SolidFissionLayout layout, @Nullable Set<BlockPos> activeCoolers) {
         Set<BlockPos> cellPositions = Set.copyOf(layout.cells());
-        Set<BlockPos> sinks = Set.copyOf(layout.sinks());
+        Set<BlockPos> sinks = activeCoolers == null ? Set.copyOf(layout.sinks()) : activeCoolers;
         Set<BlockPos> remaining = new LinkedHashSet<>(layout.cells());
         // A water sink's rule requires an adjacent fuel cell. Off-line sinks provide no cooling.
         for (BlockPos sink : layout.sinks()) {
+            if (activeCoolers != null && activeCoolers.contains(sink)) {
+                remaining.add(sink);
+                continue;
+            }
+            if (activeCoolers != null) {
+                continue;
+            }
             for (Direction side : Direction.values()) {
                 if (cellPositions.contains(sink.relative(side))) {
                     remaining.add(sink);

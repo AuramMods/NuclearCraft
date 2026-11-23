@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:pebble_fission",
+    "fuel": {
+        "tag": "forge:ingots/hecf_249_triso"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hecf_249_triso"
+    },
+    "ticks": 1066,
+    "heat": 1620,
+    "efficiency": 1.8,
+    "criticality": 25,
+    "intrinsic_flux": 10,
+    "self_priming": true
+}

@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "tag": "forge:hydrogen_hot",
+        "amount": 1
+    },
+    "output": {
+        "fluid": "nuclearcraft:hydrogen_exhaust",
+        "amount": 2
+    },
+    "power_per_mb": 32,
+    "expansion": 2,
+    "spin_up": 1
+}

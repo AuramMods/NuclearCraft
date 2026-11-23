@@ -3,6 +3,7 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCFission;
+import nc.init.NCPebbleFission;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +18,7 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.CraftingHelper;
 
 public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack depleted, int ticks, int heat,
-                                 double efficiency, int criticality, int intrinsicFlux, boolean selfPriming)
+                                 double efficiency, int criticality, int intrinsicFlux, boolean selfPriming, boolean pebbleBed)
         implements Recipe<Container> {
     @Override
     public boolean matches(Container input, Level level) {
@@ -56,15 +57,19 @@ public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return NCFission.FUEL_SERIALIZER.get();
+        return pebbleBed ? NCPebbleFission.FUEL_SERIALIZER.get() : NCFission.FUEL_SERIALIZER.get();
     }
 
     @Override
     public RecipeType<?> getType() {
-        return NCFission.FUEL_TYPE.get();
+        return pebbleBed ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get();
     }
 
-    public static final class Serializer implements RecipeSerializer<SolidFissionRecipe> {
+    public record Serializer(boolean pebbleBed) implements RecipeSerializer<SolidFissionRecipe> {
+        public Serializer() {
+            this(false);
+        }
+
         @Override
         public SolidFissionRecipe fromJson(ResourceLocation id, JsonObject json) {
             Ingredient fuel = Ingredient.fromJson(GsonHelper.getNonNull(json, "fuel"));
@@ -76,16 +81,16 @@ public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack
             int intrinsicFlux = GsonHelper.getAsInt(json, "intrinsic_flux", 0);
             if (depleted.isEmpty() || ticks <= 0 || heat < 0 || !Double.isFinite(efficiency)
                     || efficiency < 0 || criticality < 0 || intrinsicFlux < 0) {
-                throw new JsonSyntaxException("Invalid solid fission recipe " + id);
+                throw new JsonSyntaxException("Invalid fission fuel recipe " + id);
             }
             return new SolidFissionRecipe(id, fuel, depleted, ticks, heat, efficiency, criticality, intrinsicFlux,
-                    GsonHelper.getAsBoolean(json, "self_priming", false));
+                    GsonHelper.getAsBoolean(json, "self_priming", false), pebbleBed);
         }
 
         @Override
         public SolidFissionRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new SolidFissionRecipe(id, Ingredient.fromNetwork(buffer), buffer.readItem(), buffer.readVarInt(),
-                    buffer.readVarInt(), buffer.readDouble(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean());
+                    buffer.readVarInt(), buffer.readDouble(), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean(), pebbleBed);
         }
 
         @Override

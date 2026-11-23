@@ -11,10 +11,14 @@ import net.minecraft.world.entity.player.Inventory;
 
 final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu> {
     private static final ResourceLocation TEXTURE = NuclearCraft.id("textures/gui/container/solid_fission_controller.png");
+    private static final ResourceLocation PEBBLE_TEXTURE = NuclearCraft.id("textures/gui/container/pebble_fission_controller.png");
     private Button control;
 
     SolidFissionScreen(SolidFissionMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        if (menu.pebbleBed()) {
+            imageHeight = 114;
+        }
     }
 
     @Override
@@ -22,7 +26,7 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
         super.init();
         control = addRenderableWidget(Button.builder(toggleLabel(), button ->
                 minecraft.gameMode.handleInventoryButtonClick(menu.containerId, SolidFissionMenu.TOGGLE))
-                .bounds(leftPos + 44, topPos + 125, 88, 20).build());
+                .bounds(leftPos + 44, topPos + (menu.pebbleBed() ? 90 : 125), 88, 20).build());
     }
 
     @Override
@@ -45,25 +49,33 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-        bar(graphics, 22, 42, menu.heat(), 0xFFD84320);
-        bar(graphics, 72, 42, menu.coolant(), 0xFF315ED4);
-        bar(graphics, 122, 42, menu.steam(), 0xFFBDBDBD);
+        boolean pebble = menu.pebbleBed();
+        graphics.blit(pebble ? PEBBLE_TEXTURE : TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        int top = pebble ? 34 : 42;
+        int height = pebble ? 40 : 54;
+        bar(graphics, 22, top, height, menu.heat(), 0xFFD84320);
+        bar(graphics, 72, top, height, menu.coolant(), 0xFF315ED4);
+        bar(graphics, 122, top, height, menu.steam(), 0xFFBDBDBD);
     }
 
-    private void bar(GuiGraphics graphics, int x, int y, float progress, int color) {
-        int height = (int) (54 * progress);
-        graphics.fill(leftPos + x, topPos + y, leftPos + x + 26, topPos + y + 54, 0xFF222222);
-        graphics.fill(leftPos + x + 1, topPos + y + 54 - height, leftPos + x + 25, topPos + y + 54, color);
+    private void bar(GuiGraphics graphics, int x, int y, int height, float progress, int color) {
+        int fill = (int) (height * progress);
+        graphics.fill(leftPos + x, topPos + y, leftPos + x + 26, topPos + y + height, 0xFF222222);
+        graphics.fill(leftPos + x + 1, topPos + y + height - fill, leftPos + x + 25, topPos + y + height, color);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        graphics.drawString(font, title, titleLabelX, titleLabelY, 0x404040, false);
-        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission.heat"), 22, 30, 0x404040, false);
-        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission.water"), 72, 30, 0x404040, false);
-        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission.steam"), 122, 30, 0x404040, false);
+        boolean pebble = menu.pebbleBed();
+        int labels = pebble ? 22 : 30;
+        int titleX = pebble ? (imageWidth - font.width(title)) / 2 : titleLabelX;
+        graphics.drawString(font, title, titleX, titleLabelY, 0x404040, false);
+        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission.heat"), 22, labels, 0x404040, false);
+        graphics.drawString(font, Component.translatable(menu.pebbleBed()
+                ? "gui.nuclearcraft.fission.cold_gas" : "gui.nuclearcraft.fission.water"), pebble ? 62 : 72, labels, 0x404040, false);
+        graphics.drawString(font, Component.translatable(menu.pebbleBed()
+                ? "gui.nuclearcraft.fission.hot_gas" : "gui.nuclearcraft.fission.steam"), pebble ? 116 : 122, labels, 0x404040, false);
         graphics.drawCenteredString(font, Component.translatable(menu.active()
-                ? "gui.nuclearcraft.fission.running" : "gui.nuclearcraft.fission.idle"), 88, 106, 0xFFFFFF);
+                ? "gui.nuclearcraft.fission.running" : "gui.nuclearcraft.fission.idle"), 88, pebble ? 78 : 106, 0xFFFFFF);
     }
 }

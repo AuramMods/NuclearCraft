@@ -220,7 +220,7 @@ public final class TurbineGameTests {
                 .thenSucceed();
     }
 
-    private static void buildTurbine(GameTestHelper helper, BlockPos offset) {
+    static void buildTurbine(GameTestHelper helper, BlockPos offset) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 5, 4))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 5
                     || pos.getZ() == 1 || pos.getZ() == 4) {

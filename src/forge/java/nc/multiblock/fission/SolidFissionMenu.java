@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCPebbleFission;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -19,15 +20,26 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
     public static final int TOGGLE = 0;
 
     private final SolidFissionController controller;
+    private final boolean pebbleBed;
     private final ContainerLevelAccess access;
     private final ContainerData data;
 
     public SolidFissionMenu(int id, Inventory player) {
-        this(id, null, ContainerLevelAccess.NULL, new SimpleContainerData(DATA_COUNT));
+        this(id, player, false);
+    }
+
+    public SolidFissionMenu(int id, Inventory player, boolean pebbleBed) {
+        this(id, null, ContainerLevelAccess.NULL, new SimpleContainerData(DATA_COUNT), pebbleBed);
     }
 
     SolidFissionMenu(int id, SolidFissionController controller, ContainerLevelAccess access, ContainerData data) {
-        super(NCFission.MENU.get(), id);
+        this(id, controller, access, data, controller.pebbleBed());
+    }
+
+    private SolidFissionMenu(int id, SolidFissionController controller, ContainerLevelAccess access,
+                             ContainerData data, boolean pebbleBed) {
+        super(pebbleBed ? NCPebbleFission.MENU.get() : NCFission.MENU.get(), id);
+        this.pebbleBed = pebbleBed;
         this.controller = controller;
         this.access = access;
         this.data = data;
@@ -36,7 +48,7 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return (controller == null || controller.assembled()) && stillValid(access, player, NCFission.CONTROLLER.get());
+        return (controller == null || controller.assembled()) && stillValid(access, player, pebbleBed ? NCPebbleFission.CONTROLLER.get() : NCFission.CONTROLLER.get());
     }
 
     @Override
@@ -51,6 +63,10 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;
+    }
+
+    public boolean pebbleBed() {
+        return pebbleBed;
     }
 
     public boolean enabled() {

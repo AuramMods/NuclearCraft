@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/fission/pebble/controller_top",
+        "down": "nuclearcraft:block/fission/pebble/controller_bottom",
+        "north": "nuclearcraft:block/fission/pebble/controller_front_on",
+        "south": "nuclearcraft:block/fission/pebble/controller_back",
+        "east": "nuclearcraft:block/fission/pebble/controller_side",
+        "west": "nuclearcraft:block/fission/pebble/controller_side",
+        "particle": "nuclearcraft:block/fission/pebble/controller_front_on"
+    }
+}

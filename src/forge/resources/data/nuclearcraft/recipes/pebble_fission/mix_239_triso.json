@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:pebble_fission",
+    "fuel": {
+        "tag": "forge:ingots/mix_239_triso"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_mix_239_triso"
+    },
+    "ticks": 4354,
+    "heat": 132,
+    "efficiency": 1.05,
+    "criticality": 80,
+    "intrinsic_flux": 10,
+    "self_priming": false
+}

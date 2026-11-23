@@ -24,7 +24,9 @@ import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
 import nc.init.NCFission;
 import nc.init.NCGenerators;
+import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
+import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import nc.recipe.DecayGeneratorRecipe;
@@ -61,6 +63,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
+    private static final RecipeType<SolidFissionRecipe> PEBBLE =
+            RecipeType.create("nuclearcraft", "pebble_fission", SolidFissionRecipe.class);
     private static final RecipeType<TurbineRecipe> TURBINE =
             RecipeType.create("nuclearcraft", "turbine", TurbineRecipe.class);
 
@@ -75,7 +79,7 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
-        registration.addRecipeCategories(new CollectorCategory(gui),
+        registration.addRecipeCategories(new CollectorCategory(gui), new GasCoolerCategory(gui),
                 new FissionMaterialCategory(FissionMaterialCategory.MODERATORS, NCFission.HEAVY_WATER_MODERATOR.get(), gui),
                 new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
         for (Machine machine : Machine.values()) {
@@ -101,10 +105,10 @@ public final class NuclearCraftJei implements IModPlugin {
                                 List.of(outputs.get(index)));
                     }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
-                new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, (layout, recipe) -> {
-                    layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.fuel());
-                    layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.depleted());
-                }, recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
+                new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
+                new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(TURBINE, NCTurbine.CONTROLLER.get(), gui, (layout, recipe) -> {
                     var fluids = ForgeRegistries.FLUIDS.getValues().stream()
                             .filter(fluid -> fluid.isSource(fluid.defaultFluidState()))
@@ -131,6 +135,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
+        registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
+        registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
     }
 
@@ -146,6 +152,10 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
+        registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
+        for (NCGasCoolants gas : NCGasCoolants.values()) {
+            registration.addRecipeCatalyst(NCPebbleFission.cooler(gas), GasCoolerCategory.TYPE);
+        }
         for (var moderator : FissionMaterialCategory.moderators()) {
             for (var item : moderator.items()) {
                 registration.addRecipeCatalyst(item.getItem(), FissionMaterialCategory.MODERATORS);
@@ -180,6 +190,11 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static Component energy(int ticks, int power) {
         return Component.translatable("gui.nuclearcraft.jei.energy", ticks, power);
+    }
+
+    private static void fissionFuel(IRecipeLayoutBuilder layout, SolidFissionRecipe recipe) {
+        layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.fuel());
+        layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.depleted());
     }
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {

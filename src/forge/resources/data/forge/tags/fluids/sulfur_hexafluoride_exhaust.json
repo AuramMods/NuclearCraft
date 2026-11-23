@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:sulfur_hexafluoride_exhaust",
+        "nuclearcraft:flowing_sulfur_hexafluoride_exhaust"
+    ]
+}

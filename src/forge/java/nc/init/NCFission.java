@@ -33,6 +33,8 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
@@ -105,7 +107,7 @@ public final class NCFission {
                     BlockEntityType.Builder.of(SolidFissionController::new, CONTROLLER.get()).build(null));
     public static final RegistryObject<BlockEntityType<FissionPortBlockEntity>> PORT_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("fission_port", () ->
-                    BlockEntityType.Builder.of(FissionPortBlockEntity::new, CELL_PORT.get(), VENT.get()).build(null));
+                    BlockEntityType.Builder.of(FissionPortBlockEntity::new, portBlocks()).build(null));
     public static final RegistryObject<BlockEntityType<FissionFuelCell>> CELL_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("solid_fission_cell", () ->
                     BlockEntityType.Builder.of(FissionFuelCell::new, CELL.get()).build(null));
@@ -137,6 +139,7 @@ public final class NCFission {
                         output.accept(LECF_251_OXIDE.get());
                         output.accept(DEPLETED_LECF_251_OXIDE.get());
                         NCFissionFuels.displayItems(output);
+                        NCPebbleFission.displayItems(output);
                         output.accept(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
                     }).build());
 
@@ -144,7 +147,7 @@ public final class NCFission {
         return part(id, () -> new FissionPartBlock(properties(), role));
     }
 
-    private static RegistryObject<FissionWallBlock> wall(String id, Role role) {
+    static RegistryObject<FissionWallBlock> wall(String id, Role role) {
         return part(id, () -> new FissionWallBlock(properties(), role));
     }
 
@@ -212,13 +215,13 @@ public final class NCFission {
         public double efficiency() { return configured(efficiencyValue); }
     }
 
-    private static <T extends Block> RegistryObject<T> part(String id, Supplier<T> supplier) {
+    static <T extends Block> RegistryObject<T> part(String id, Supplier<T> supplier) {
         RegistryObject<T> block = NCRegistries.BLOCKS.register(id, supplier);
         NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
         return block;
     }
 
-    private static BlockBehaviour.Properties properties() {
+    static BlockBehaviour.Properties properties() {
         return BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK);
     }
 
@@ -226,6 +229,14 @@ public final class NCFission {
 
     static void register() {
         NCFissionFuels.register();
+    }
+
+    private static Block[] portBlocks() {
+        List<Block> blocks = new ArrayList<>(List.of(CELL_PORT.get(), VENT.get(), NCPebbleFission.CHAMBER_PORT.get()));
+        for (NCGasCoolants gas : NCGasCoolants.values()) {
+            blocks.add(NCPebbleFission.port(gas));
+        }
+        return blocks.toArray(Block[]::new);
     }
 
     public static void registerConfig(ModLoadingContext context) {

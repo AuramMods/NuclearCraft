@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:pebble_fission",
+    "fuel": {
+        "tag": "forge:ingots/leb_248_triso"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_leb_248_triso"
+    },
+    "ticks": 2166,
+    "heat": 266,
+    "efficiency": 1.65,
+    "criticality": 62,
+    "intrinsic_flux": 10,
+    "self_priming": false
+}

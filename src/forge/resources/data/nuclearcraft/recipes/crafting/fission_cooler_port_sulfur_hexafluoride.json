@@ -1,0 +1,15 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:empty_cooler_port"
+        },
+        {
+            "item": "nuclearcraft:sulfur_hexafluoride_bucket"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:fission_cooler_port_sulfur_hexafluoride"
+    }
+}

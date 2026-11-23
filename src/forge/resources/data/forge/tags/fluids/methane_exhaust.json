@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:methane_exhaust",
+        "nuclearcraft:flowing_methane_exhaust"
+    ]
+}

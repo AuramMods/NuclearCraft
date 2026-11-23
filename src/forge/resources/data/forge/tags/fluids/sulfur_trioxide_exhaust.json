@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:sulfur_trioxide_exhaust",
+        "nuclearcraft:flowing_sulfur_trioxide_exhaust"
+    ]
+}

@@ -2,6 +2,7 @@ package nc;
 
 import nc.init.NCCollectors;
 import nc.init.NCFission;
+import nc.init.NCPebbleFission;
 import nc.init.NCFluids;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors;
@@ -24,6 +25,7 @@ public final class NuclearCraft {
         NCCollectors.register(context);
         NCGenerators.register(context);
         NCFission.registerConfig(context);
+        NCPebbleFission.registerConfig(context);
         NCItemProcessors.registerConfig(context);
         NCRegistries.register(context.getModEventBus());
         NCFluids.register(context.getModEventBus());

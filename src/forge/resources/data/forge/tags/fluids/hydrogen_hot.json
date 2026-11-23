@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:hydrogen_hot",
+        "nuclearcraft:flowing_hydrogen_hot"
+    ]
+}

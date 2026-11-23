@@ -43,7 +43,10 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - A silent, hidden client opened the Fuel Reprocessor against a packaged dedicated server. It displayed all eight output slots, the stored energy, and 108 JEI recipes. The native observer recorded zero visible windows and focus changes.
 - The Pressurizer makes pyrolytic carbon from graphite and includes the legacy gem, obsidian, sintered-material, flour, and compression recipes that have native or Forge-tagged ingredients. The Assembler coats all 27 NuclearCraft carbide fuels. Its four item inputs are shapeless and cannot reuse one input slot for two ingredients.
 - Headless tests pressed graphite and coated nine LEU-235 fuel items. The Pressurizer used 24,000 FE and the Assembler used 6,000 FE. A separate test checked that overlapping ingredients still match each required slot. A silent, hidden client opened the Assembler with its four input slots and found all 27 recipes plus the Pressurizer’s pyrolytic carbon entry in JEI.
-- Remaining work includes the pebble-bed and molten-salt reactors, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
+- Pebble-bed reactors have their own controller, chamber, and fuel port. The 27 legacy TRISO recipes retain their burn time, heat, efficiency, criticality, intrinsic flux, and self-priming values. Neighboring chambers with the same fuel share flux and criticality. The shell uses the shared graphite and beryllium moderation and neutron sources.
+- All 16 gas cooler and port variants have independent Forge tanks, configurable cooling rates, and the legacy default placement rules. Each cooler turns 1 mB of cold gas into 2 mB of hot gas. Dry or blocked coolers stop conducting heat. The idle reactor can use separate emergency coolant vents. The turbine accepts every hot gas and produces 2 mB of the matching exhaust per mB of input.
+- Headless tests sent the reactor’s hot gas to a turbine, verified mixed oxygen and nitrogen circuits with exact amounts through reassembly, and confirmed that a dry, detached chamber overheats before the casing. A silent, hidden client opened the controller, received both gas tank levels and a custom cooling rate from the server, and found all TRISO, cooler, and hot gas recipes in JEI.
+- Remaining work includes the molten-salt reactor, cold-gas chemical production and recovery, per-chamber and per-cooler filter menus, configurable placement rule overrides, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -102,6 +105,8 @@ On a headless server with Auram’s Immersive Engineering JAR, a Compact Water S
 
 Two Decay Generators sent power through an Ender IO Energy Conduit and a Mekanism Basic Universal Cable. Each was surrounded by five uranium blocks. Both Manufactory machines started with an empty energy buffer, consumed one coal, and produced one coal dust.
 
+Two pebble-bed reactors used Auram’s Ender IO conduits and Mekanism transmitters across their gas, item, and energy connections. Each consumed 2,000 mB of oxygen and produced 4,000 mB of hot oxygen. Each turbine delivered 28,131 FE to a paused Melter and exhausted 8,000 mB of oxygen exhaust. After activation, each Melter spent 4,000 FE to make 1,000 mB of water from ice. Each output barrel collected one depleted LEU-235 TRISO. Both networks preserved the exhaust, recovered fuel, Melter water, and remaining FE after a server restart and a confirmed chunk unload and reload.
+
 Two Pressurizer-to-Assembler chains moved their supplies and pressed carbon through the exact Ender IO Item Conduits and Mekanism Basic Logistical Transporters in Auram. Each extracted exactly nine coated LEU-235 items. Both input barrels and machine inventories emptied in each chain, and both machines used their full preloaded charge.
 
 A headless Forge run used Auram’s installed Create, Applied Energistics 2, and Mekanism. Their tagged wheat flour, ender dust, and steel dust each completed a Pressurizer recipe, yielding one graham cracker, one ender pearl, and one sintered steel respectively. Each machine spent its full preloaded charge.
@@ -114,6 +119,8 @@ A second isolated run with all 539 mods loaded the Fuel Reprocessor build and co
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
 | --- | --- |
+| `nuclearcraft:pebble_fission_cooler`, 0–15 | `nuclearcraft:pebble_fission_cooler_<gas>` |
+| `nuclearcraft:fission_cooler_port`, 0–15 | `nuclearcraft:fission_cooler_port_<gas>` |
 | `nuclearcraft:solid_fission_sink`, 0 | `nuclearcraft:water_heat_sink` |
 | `nuclearcraft:fission_reflector`, 0 | `nuclearcraft:beryllium_carbon_reflector` |
 | `nuclearcraft:fission_reflector`, 1 | `nuclearcraft:lead_steel_reflector` |
@@ -134,6 +141,10 @@ A second isolated run with all 539 mods loaded the Fuel Reprocessor build and co
 | `nuclearcraft:turbine_dynamo_coil`, 3 | `nuclearcraft:turbine_dynamo_coil_gold` |
 | `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
+
+The pebble cooler metadata order is oxygen, hydrogen, helium, nitrogen, fluorine, methane, carbon dioxide, carbon monoxide, ethene, ethyne, fluoromethane, ammonia, diborane, sulfur dioxide, sulfur trioxide, and sulfur hexafluoride. Replace spaces with underscores in registry IDs. The original `pebble_fission_controller`, `pebble_fission_chamber`, and `fission_chamber_port` names are retained. The datapack recipe type `nuclearcraft:pebble_fission` uses the same fuel fields as `nuclearcraft:solid_fission`.
+
+The legacy `fission_cooler_cooling_rate` array maps to the `cooling_rate` section of `world/serverconfig/nuclearcraft-pebble-fission.toml`, using the gas names as keys. Its `coolant_heat_per_mb`, `intrinsic_flux_efficiency`, and `emergency_cooling_multiplier` replace `fission_cooler_coolant_heat_per_mb`, `fission_chamber_intrinsic_flux_efficiency`, and `fission_emergency_cooling_multiplier`. Gas inputs use the corresponding `forge:<gas>` fluid tag. Hot gas and turbine exhaust use the `<gas>_hot` and `<gas>_exhaust` suffixes.
 
 Legacy `nuclearcraft:material_block` metadata 0 and 1 maps to `nuclearcraft:molybdenum_block` and `nuclearcraft:copper_oxide_block`. Pressurizer and Assembler recipes use `nuclearcraft:pressurizer` and `nuclearcraft:assembler` with a single `result`. The Assembler takes four counted ingredients and matches them in any order.
 

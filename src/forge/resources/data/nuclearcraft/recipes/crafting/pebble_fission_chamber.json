@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PCP",
+        "ZFZ",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "C": {
+            "tag": "forge:ingots/pyrolytic_carbon"
+        },
+        "Z": {
+            "tag": "forge:ingots/zircaloy"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:pebble_fission_chamber",
+        "count": 4
+    }
+}

@@ -11,7 +11,7 @@
             "item": "nuclearcraft:plate_advanced"
         },
         "C": {
-            "item": "nuclearcraft:pyrolytic_carbon"
+            "tag": "forge:ingots/pyrolytic_carbon"
         },
         "T": {
             "tag": "forge:ingots/tough"

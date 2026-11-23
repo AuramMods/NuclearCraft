@@ -9,7 +9,11 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public final class FissionFuelCellBlock extends FissionPartBlock implements EntityBlock {
     public FissionFuelCellBlock(Properties properties) {
-        super(properties, Role.CELL);
+        this(properties, Role.CELL);
+    }
+
+    public FissionFuelCellBlock(Properties properties, Role role) {
+        super(properties, role);
     }
 
     @Override

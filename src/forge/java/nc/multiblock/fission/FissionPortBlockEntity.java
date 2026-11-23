@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.init.NCGasCoolants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
@@ -27,7 +28,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     void bind(SolidFissionController controller, SolidFissionLayout.Port port) {
-        Binding next = new Binding(controller, port.side(), port.output());
+        Binding next = new Binding(controller, port.side(), port.output(), port.gas());
         if (next.equals(binding)) {
             return;
         }
@@ -72,7 +73,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return !isRemoved() && binding == connection && connection.controller.assembled();
     }
 
-    private record Binding(SolidFissionController controller, Direction side, boolean output) {}
+    private record Binding(SolidFissionController controller, Direction side, boolean output, @Nullable NCGasCoolants gas) {}
 
     private final class VentHandler implements IFluidHandler {
         private final Binding connection;
@@ -80,7 +81,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         private VentHandler(Binding connection) {
             this.connection = connection;
-            tank = connection.output ? connection.controller.steam() : connection.controller.coolant();
+            tank = connection.controller.fluidTank(connection.gas, connection.output);
         }
 
         @Override
@@ -135,7 +136,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public @NotNull ItemStack getStackInSlot(int slot) {
-            return slot == 0 && connected(connection) ? inventory.getStackInSlot(connection.output ? 1 : 0) : ItemStack.EMPTY;
+            return slot == 0 && connected(connection) ? inventory.getStackInSlot(connection.output ? 1 : 0).copy() : ItemStack.EMPTY;
         }
 
         @Override
