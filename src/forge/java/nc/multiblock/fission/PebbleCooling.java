@@ -1,11 +1,8 @@
 package nc.multiblock.fission;
 
-import nc.init.NCFission;
 import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
-import nc.multiblock.Cuboid;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -70,62 +67,9 @@ final class PebbleCooling {
                 }
             }
         }
-        Map<BlockPos, NCGasCoolants> available = new HashMap<>();
-        // Each dependent default rule refers to a gas earlier in the legacy metadata order.
-        for (var entry : eligible.entrySet()) {
-            for (BlockPos pos : entry.getValue()) {
-                if (matchesRule(level, layout.bounds(), pos, entry.getKey(), chambers, moderators, available)) {
-                    available.put(pos, entry.getKey());
-                }
-            }
-        }
-        return available;
-    }
-
-    private static boolean matchesRule(ServerLevel level, Cuboid bounds, BlockPos pos, NCGasCoolants gas,
-                                       Set<BlockPos> chambers, Set<BlockPos> moderators, Map<BlockPos, NCGasCoolants> active) {
-        Predicate<BlockPos> moderator = neighbor -> moderators.contains(neighbor)
-                && NCFission.moderator(level.getBlockState(neighbor)) != null;
-        Predicate<BlockPos> casing = neighbor -> bounds.boundaryAxes(neighbor) == 1;
-        return switch (gas) {
-            case OXYGEN -> count(pos, chambers::contains) >= 1;
-            case HYDROGEN -> count(pos, chambers::contains) == 2;
-            case HELIUM -> count(pos, chambers::contains) >= 3;
-            case NITROGEN -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.OXYGEN) == 2;
-            case FLUORINE -> count(pos, moderator) >= 1;
-            case METHANE -> axial(pos, moderator);
-            case CARBON_DIOXIDE -> count(pos, moderator) >= 3;
-            case CARBON_MONOXIDE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.OXYGEN) == 1;
-            case ETHENE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.METHANE) == 1;
-            case ETHYNE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.ETHENE) >= 1 && count(pos, moderator) == 1;
-            case FLUOROMETHANE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.FLUORINE) >= 1;
-            case AMMONIA -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.NITROGEN) == 2 && count(pos, casing) >= 1;
-            case DIBORANE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.HYDROGEN) >= 2;
-            case SULFUR_DIOXIDE -> count(pos, neighbor -> moderators.contains(neighbor)
-                    && NCFission.reflector(level.getBlockState(neighbor)) != null) >= 1;
-            case SULFUR_TRIOXIDE -> count(pos, neighbor -> active.get(neighbor) == NCGasCoolants.SULFUR_DIOXIDE) >= 1;
-            case SULFUR_HEXAFLUORIDE -> axial(pos, neighbor -> active.get(neighbor) == NCGasCoolants.SULFUR_TRIOXIDE)
-                    && count(pos, casing) >= 1;
-        };
-    }
-
-    private static int count(BlockPos pos, Predicate<BlockPos> match) {
-        int count = 0;
-        for (Direction face : Direction.values()) {
-            if (match.test(pos.relative(face))) {
-                count++;
-            }
-        }
-        return count;
-    }
-
-    private static boolean axial(BlockPos pos, Predicate<BlockPos> match) {
-        for (Direction face : new Direction[]{Direction.UP, Direction.NORTH, Direction.EAST}) {
-            if (match.test(pos.relative(face)) && match.test(pos.relative(face.getOpposite()))) {
-                return true;
-            }
-        }
-        return false;
+        return NCPebbleFission.placementRules().active(eligible,
+                FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CHAMBER,
+                        chambers, moderators));
     }
 
     void heatGas(BlockPos pos, NCGasCoolants gas, double multiplier) {

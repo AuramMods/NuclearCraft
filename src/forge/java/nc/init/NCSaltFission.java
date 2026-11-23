@@ -1,6 +1,7 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionVariant;
 import nc.multiblock.fission.FissionWallBlock;
@@ -18,8 +19,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
@@ -31,6 +31,7 @@ public final class NCSaltFission {
     private static final Map<NCSaltCoolants, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCSaltCoolants.class);
     private static final Map<SaltFissionPartMenu.Kind, RegistryObject<MenuType<SaltFissionPartMenu>>> PART_MENUS =
             new EnumMap<>(SaltFissionPartMenu.Kind.class);
+    private static final CoolingPlacementConfig<NCSaltCoolants> PLACEMENT;
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
@@ -57,6 +58,20 @@ public final class NCSaltFission {
                     () -> FissionWallBlock.heaterPort(NCFission.properties(), coolant)));
         }
         builder.pop();
+        PLACEMENT = new CoolingPlacementConfig<>(builder, NCSaltCoolants.class,
+                FissionPlacementRules.Part.HEATER, NCSaltCoolants::material, new String[] {
+                    "one vessel", "one moderator", "one vessel && one moderator",
+                    "one redstone heater", "two axial glowstone heaters", "one obsidian heater",
+                    "two moderators", "one vessel && one casing", "exactly two iron heaters",
+                    "two standard heaters", "exactly one standard heater && two lead heaters", "one reflector",
+                    "one reflector && one iron heater", "one vessel && one gold heater", "one moderator && one prismarine heater",
+                    "one standard heater", "two axial lapis heaters", "one iron heater",
+                    "exactly one quartz heater && one casing", "exactly two axial lead heaters && one casing", "exactly one moderator && one casing",
+                    "two vessels", "one quartz heater && one lapis heater", "two glowstone heaters && one tin heater",
+                    "one gold heater && one prismarine heater", "one redstone heater && one end_stone heater", "one end_stone heater && one copper heater",
+                    "two axial reflectors", "two copper heaters && one purpur heater", "exactly two redstone heaters",
+                    "three moderators", "three vessels"
+                });
         SPEC = builder.build();
         for (var kind : SaltFissionPartMenu.Kind.values()) {
             PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
@@ -83,8 +98,8 @@ public final class NCSaltFission {
 
     private NCSaltFission() {}
 
-    public static void registerConfig(ModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-salt-fission.toml");
+    public static void registerConfig(FMLJavaModLoadingContext context) {
+        PLACEMENT.register(context, SPEC, "nuclearcraft-salt-fission.toml");
     }
 
     static void displayItems(CreativeModeTab.Output output) {
@@ -97,6 +112,7 @@ public final class NCSaltFission {
         }
     }
 
+    public static FissionPlacementRules<NCSaltCoolants> placementRules() { return PLACEMENT.rules(); }
     public static MenuType<SaltFissionPartMenu> partMenu(SaltFissionPartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
     public static SaltHeaterBlock heater(NCSaltCoolants coolant) { return HEATERS.get(coolant).get(); }
     public static FissionWallBlock port(NCSaltCoolants coolant) { return PORTS.get(coolant).get(); }

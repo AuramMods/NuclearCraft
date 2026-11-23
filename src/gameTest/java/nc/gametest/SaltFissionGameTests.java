@@ -157,20 +157,18 @@ public final class SaltFissionGameTests {
         String accelerated = "hecf_251_fluoride_flibe";
         shell(helper);
         addVessel(helper, FIRST_VESSEL, Direction.EAST, accelerated, FUEL_IN, FUEL_OUT);
-        helper.runAtTickTime(15, () -> {
-            var input = fluids(helper, FUEL_IN, Direction.NORTH);
-            var output = fluids(helper, FUEL_OUT, Direction.SOUTH);
-            input.fill(stack(accelerated, 20), EXECUTE);
-            helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
-            helper.onEachTick(() -> {
-                var product = output.getFluidInTank(0);
-                if (!product.isEmpty()) {
-                    helper.assertTrue(product.isFluidStackIdentical(stack("depleted_" + accelerated, 3)),
-                            "69 ticks of fuel progress complete three whole doses during the first undercooled tick");
-                    helper.succeed();
-                }
-            });
-        });
+        helper.startSequence()
+                .thenIdle(15)
+                .thenExecute(() -> {
+                    fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(accelerated, 20), EXECUTE);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(!fluids(helper, FUEL_OUT, Direction.SOUTH)
+                        .getFluidInTank(0).isEmpty(), "Waiting for the first undercooled batch"))
+                .thenExecute(() -> helper.assertTrue(fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0)
+                                .isFluidStackIdentical(stack("depleted_" + accelerated, 3)),
+                        "69 ticks of fuel progress complete three whole doses during the first undercooled tick"))
+                .thenSucceed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 95)
@@ -206,18 +204,20 @@ public final class SaltFissionGameTests {
             helper.assertTrue(!menu.connected() && !menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_OUTPUT),
                     "A disconnected port cannot clear the controller's previous output");
             helper.setBlock(CASE, NCFission.CASING.get());
-            helper.runAtTickTime(22, () -> {
-                menu.broadcastChanges();
-                helper.assertTrue(menu.connected() && menu.fluid(false).getAmount() == 50_001
-                                && menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT),
-                        "The linked screen follows reassembly and clears only the currently bound tank");
-                helper.assertTrue(fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
-                        "A valid tank clear reaches the shared buffer");
-                helper.setBlock(FUEL_IN, Blocks.AIR);
-                helper.setBlock(FUEL_IN, NCSaltFission.VESSEL_PORT.get());
-                helper.assertTrue(!menu.stillValid(player), "Replacing the port invalidates its old menu");
-                helper.succeed();
-            });
+            helper.startSequence()
+                    .thenIdle(7)
+                    .thenExecute(() -> {
+                        menu.broadcastChanges();
+                        helper.assertTrue(menu.connected() && menu.fluid(false).getAmount() == 50_001
+                                        && menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT),
+                                "The linked screen follows reassembly and clears only the currently bound tank");
+                        helper.assertTrue(fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                                "A valid tank clear reaches the shared buffer");
+                        helper.setBlock(FUEL_IN, Blocks.AIR);
+                        helper.setBlock(FUEL_IN, NCSaltFission.VESSEL_PORT.get());
+                        helper.assertTrue(!menu.stillValid(player), "Replacing the port invalidates its old menu");
+                    })
+                    .thenSucceed();
         });
     }
 

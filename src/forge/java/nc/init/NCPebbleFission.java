@@ -1,6 +1,7 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
@@ -16,8 +17,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
@@ -27,6 +27,7 @@ public final class NCPebbleFission {
     private static final Map<NCGasCoolants, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCGasCoolants.class);
     private static final Map<NCGasCoolants, RegistryObject<PebbleCoolerBlock>> COOLERS = new EnumMap<>(NCGasCoolants.class);
     private static final Map<NCGasCoolants, RegistryObject<FissionWallBlock>> PORTS = new EnumMap<>(NCGasCoolants.class);
+    private static final CoolingPlacementConfig<NCGasCoolants> PLACEMENT;
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue HEAT_PER_MB;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_EFFICIENCY;
@@ -44,6 +45,15 @@ public final class NCPebbleFission {
             PORTS.put(gas, NCFission.part(gas.portId(), () -> new FissionWallBlock(NCFission.properties(), Role.COOLER_PORT, gas)));
         }
         builder.pop();
+        PLACEMENT = new CoolingPlacementConfig<>(builder, NCGasCoolants.class,
+                FissionPlacementRules.Part.COOLER, NCGasCoolants::id, new String[] {
+                    "one chamber", "exactly two chambers", "three chambers",
+                    "exactly two oxygen coolers", "one moderator", "two axial moderators",
+                    "three moderators", "exactly one oxygen cooler", "exactly one methane cooler",
+                    "one ethene cooler && exactly one moderator", "one fluorine cooler", "exactly two nitrogen coolers && one casing",
+                    "two hydrogen coolers", "one reflector", "one sulfur_dioxide cooler",
+                    "two axial sulfur_trioxide coolers && one casing"
+                });
         SPEC = builder.build();
     }
 
@@ -67,8 +77,8 @@ public final class NCPebbleFission {
 
     private NCPebbleFission() {}
 
-    public static void registerConfig(ModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-pebble-fission.toml");
+    public static void registerConfig(FMLJavaModLoadingContext context) {
+        PLACEMENT.register(context, SPEC, "nuclearcraft-pebble-fission.toml");
     }
 
     static void displayItems(CreativeModeTab.Output output) {
@@ -86,6 +96,7 @@ public final class NCPebbleFission {
         output.accept(NCFluids.HEATED_EMERGENCY_COOLANT.bucket().get());
     }
 
+    public static FissionPlacementRules<NCGasCoolants> placementRules() { return PLACEMENT.rules(); }
     public static PebbleCoolerBlock cooler(NCGasCoolants gas) { return COOLERS.get(gas).get(); }
     public static FissionWallBlock port(NCGasCoolants gas) { return PORTS.get(gas).get(); }
     public static int cooling(NCGasCoolants gas) { return value(COOLING.get(gas)); }
