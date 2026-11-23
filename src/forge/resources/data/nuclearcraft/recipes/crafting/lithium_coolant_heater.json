@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " L ",
+        "LHL",
+        " L "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "L": {
+            "tag": "forge:ingots/lithium"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_coolant_heater",
+        "count": 1
+    }
+}

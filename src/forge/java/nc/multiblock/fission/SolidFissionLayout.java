@@ -2,19 +2,29 @@ package nc.multiblock.fission;
 
 import nc.multiblock.Cuboid;
 import nc.init.NCGasCoolants;
+import nc.init.NCSaltCoolants;
+import nc.multiblock.fission.FissionPartBlock.Role;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashSet;
+import java.util.Objects;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
-                          List<BlockPos> sources, boolean pebbleBed) {
-    record Port(BlockPos pos, Direction side, boolean fluid, boolean output, @Nullable NCGasCoolants gas) {}
+                          List<BlockPos> sources, FissionVariant variant) {
+    record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
+                @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
+        boolean fluid() {
+            return role != Role.FUEL_PORT && role != Role.CHAMBER_PORT;
+        }
+    }
 
     record Validation(SolidFissionLayout layout, Component message) {}
 
@@ -31,7 +41,17 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             return invalid("unloaded", origin);
         }
 
-        boolean pebble = FissionPartBlock.role(level.getBlockState(origin)) == FissionPartBlock.Role.PEBBLE_CONTROLLER;
+        FissionVariant variant = FissionVariant.forController(FissionPartBlock.role(level.getBlockState(origin)));
+        Role fuelPart = switch (variant) {
+            case SOLID -> Role.CELL;
+            case PEBBLE -> Role.PEBBLE_CHAMBER;
+            case SALT -> Role.VESSEL;
+        };
+        Role coolingPart = switch (variant) {
+            case SOLID -> Role.WATER_SINK;
+            case PEBBLE -> Role.PEBBLE_COOLER;
+            case SALT -> Role.SALT_HEATER;
+        };
         List<BlockPos> cells = new ArrayList<>();
         List<BlockPos> sinks = new ArrayList<>();
         List<Port> ports = new ArrayList<>();
@@ -45,14 +65,14 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                         continue;
                     }
                     switch (role) {
-                        case CELL, PEBBLE_CHAMBER -> {
-                            if (pebble != (role == FissionPartBlock.Role.PEBBLE_CHAMBER)) {
+                        case CELL, PEBBLE_CHAMBER, VESSEL -> {
+                            if (role != fuelPart) {
                                 return invalid("interior", pos);
                             }
                             cells.add(pos.immutable());
                         }
-                        case WATER_SINK, PEBBLE_COOLER -> {
-                            if (pebble != (role == FissionPartBlock.Role.PEBBLE_COOLER)) {
+                        case WATER_SINK, PEBBLE_COOLER, SALT_HEATER -> {
+                            if (role != coolingPart) {
                                 return invalid("interior", pos);
                             }
                             sinks.add(pos.immutable());
@@ -69,22 +89,19 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                     }
                     switch (role) {
                         case CASING -> {}
-                        case CONTROLLER, PEBBLE_CONTROLLER -> {
+                        case CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER -> {
                             if (!pos.equals(origin)) {
                                 return invalid("multiple_controllers", pos);
                             }
                         }
                         case SOURCE -> sources.add(pos.immutable());
-                        case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT -> {
-                            if (role != FissionPartBlock.Role.VENT && pebble == (role == FissionPartBlock.Role.FUEL_PORT)) {
+                        case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT -> {
+                            if (!validPort(variant, role) || !(level.getBlockEntity(pos) instanceof FissionPortBlockEntity entity)) {
                                 return invalid("wall", pos);
                             }
-                            if (!(level.getBlockEntity(pos) instanceof FissionPortBlockEntity)) {
-                                return invalid("wall", pos);
-                            }
-                            var gas = ((FissionWallBlock) state.getBlock()).coolant();
-                            ports.add(new Port(pos.immutable(), bounds.outward(pos), role == FissionPartBlock.Role.VENT || gas != null,
-                                    state.getValue(FissionWallBlock.ACTIVE), gas));
+                            var wall = (FissionWallBlock) state.getBlock();
+                            ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),
+                                    wall.coolant(), wall.saltCoolant(), role == Role.VESSEL_PORT ? entity.fuelFilter() : null));
                         }
                         default -> {
                             return invalid("wall", pos);
@@ -102,31 +119,63 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         if (bounds.boundaryAxes(origin) != 1) {
             return invalid("wall", origin);
         }
-        if (hasUnpairedPorts(ports, true, null) || (!cells.isEmpty() && hasUnpairedPorts(ports, false, null))) {
+        if (hasUnpairedPorts(ports, Role.VENT, null)
+                || (!cells.isEmpty() && (hasUnpairedPorts(ports, Role.FUEL_PORT, null)
+                || hasUnpairedPorts(ports, Role.CHAMBER_PORT, null)))) {
             return invalid("port_pair", origin);
         }
-        if (pebble) {
+        if (variant == FissionVariant.PEBBLE) {
             for (NCGasCoolants gas : NCGasCoolants.values()) {
-                if (hasUnpairedPorts(ports, true, gas)) {
+                if (hasUnpairedPorts(ports, Role.COOLER_PORT, gas)) {
+                    return invalid("port_pair", origin);
+                }
+            }
+        }
+        if (variant == FissionVariant.SALT) {
+            var filters = new HashSet<ResourceLocation>();
+            for (Port port : ports) {
+                if (port.role() == Role.VESSEL_PORT) {
+                    filters.add(port.fuelFilter());
+                }
+            }
+            if (filters.stream().anyMatch(filter -> hasUnpairedPorts(ports, Role.VESSEL_PORT, filter))) {
+                return invalid("port_pair", origin);
+            }
+            for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
+                if (hasUnpairedPorts(ports, Role.HEATER_PORT, coolant)) {
                     return invalid("port_pair", origin);
                 }
             }
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
-                List.copyOf(ports), List.copyOf(sources), pebble),
+                List.copyOf(ports), List.copyOf(sources), variant),
                 Component.translatable("message.nuclearcraft.fission.assembled"));
+    }
+
+    private static boolean validPort(FissionVariant variant, Role role) {
+        return role == Role.VENT || switch (variant) {
+            case SOLID -> role == Role.FUEL_PORT;
+            case PEBBLE -> role == Role.CHAMBER_PORT || role == Role.COOLER_PORT;
+            case SALT -> role == Role.VESSEL_PORT || role == Role.HEATER_PORT;
+        };
     }
 
     private static boolean connectsReactor(BlockState state) {
         var role = FissionPartBlock.role(state);
-        return role != null && role != FissionPartBlock.Role.MODERATOR && role != FissionPartBlock.Role.REFLECTOR;
+        return role != null && role != Role.MODERATOR && role != Role.REFLECTOR;
     }
 
-    private static boolean hasUnpairedPorts(List<Port> ports, boolean fluid, @Nullable NCGasCoolants gas) {
+    private static boolean hasUnpairedPorts(List<Port> ports, Role role, @Nullable Object filter) {
         boolean input = false;
         boolean output = false;
         for (Port port : ports) {
-            if (port.fluid() == fluid && port.gas() == gas) {
+            Object current = switch (role) {
+                case VESSEL_PORT -> port.fuelFilter();
+                case HEATER_PORT -> port.salt();
+                case COOLER_PORT -> port.gas();
+                default -> null;
+            };
+            if (port.role() == role && Objects.equals(current, filter)) {
                 input |= !port.output();
                 output |= port.output();
             }

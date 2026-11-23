@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:salt_fission",
+    "fuel": {
+        "fluid": "nuclearcraft:hep_239_fluoride_flibe",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:depleted_hep_239_fluoride_flibe",
+        "amount": 1
+    },
+    "ticks": 40.0,
+    "heat": 300,
+    "efficiency": 1.25,
+    "criticality": 49,
+    "intrinsic_flux": 0,
+    "self_priming": false,
+    "decay_factor": 0.075,
+    "radiation": 0.0007372842013888889
+}

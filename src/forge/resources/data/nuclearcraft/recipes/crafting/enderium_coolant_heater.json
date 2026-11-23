@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "EHE",
+        " E "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "E": {
+            "tag": "forge:ingots/enderium"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:enderium_coolant_heater",
+        "count": 1
+    }
+}

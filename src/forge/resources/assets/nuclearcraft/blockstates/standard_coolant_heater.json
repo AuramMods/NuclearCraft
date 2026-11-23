@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "nuclearcraft:block/standard_coolant_heater"
+        }
+    }
+}

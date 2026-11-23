@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " R ",
+        "RPR",
+        " R "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "R": {
+            "item": "minecraft:prismarine_crystals"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_prismarine",
+        "count": 1
+    }
+}

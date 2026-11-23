@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PMP",
+        "ZFZ",
+        "PMP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "M": {
+            "item": "nuclearcraft:zirconium_molybdenum_ingot"
+        },
+        "Z": {
+            "item": "nuclearcraft:zircaloy_ingot"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:salt_fission_vessel",
+        "count": 4
+    }
+}

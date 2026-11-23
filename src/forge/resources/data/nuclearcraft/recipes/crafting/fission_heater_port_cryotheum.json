@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " C ",
+        "CPC",
+        " C "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "C": {
+            "tag": "forge:dusts/cryotheum"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_cryotheum",
+        "count": 1
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "EHE",
+        " E "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "E": {
+            "item": "minecraft:emerald"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:emerald_coolant_heater",
+        "count": 1
+    }
+}

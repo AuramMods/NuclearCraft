@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "BHB",
+        "BBB"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "B": {
+            "item": "minecraft:slime_ball"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:slime_coolant_heater",
+        "count": 1
+    }
+}

@@ -24,6 +24,8 @@ import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
+import nc.init.NCSaltCoolants;
+import nc.init.NCSaltFission;
 import nc.init.NCGenerators;
 import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
@@ -39,6 +41,7 @@ import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
+import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -77,6 +80,10 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
     private static final RecipeType<SolidFissionRecipe> PEBBLE =
             RecipeType.create("nuclearcraft", "pebble_fission", SolidFissionRecipe.class);
+    private static final RecipeType<SaltFissionRecipe> SALT_FISSION =
+            RecipeType.create(NuclearCraft.MOD_ID, "salt_fission", SaltFissionRecipe.class);
+    private static final RecipeType<NCSaltCoolants> SALT_HEATING =
+            RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", NCSaltCoolants.class);
     private static final RecipeType<HeatExchangerRecipe> HEAT_EXCHANGER =
             RecipeType.create(NuclearCraft.MOD_ID, "heat_exchanger", HeatExchangerRecipe.class);
     private static final RecipeType<CondenserRecipe> CONDENSER =
@@ -145,6 +152,16 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
+                new Category<>(SALT_FISSION, NCSaltFission.CONTROLLER.get(), gui, (layout, recipe) -> {
+                    fluidSlot(layout, INPUT, 20, recipe.fuel().alternatives());
+                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.depleted()));
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.fission",
+                        decimal(recipe.ticks()), recipe.heat())),
+                new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, coolant) -> {
+                    layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStack(new ItemStack(NCSaltFission.heater(coolant)));
+                    fluidSlot(layout, INPUT, 43, List.of(new FluidStack(coolant.cold(), 1)));
+                    fluidSlot(layout, OUTPUT, 104, List.of(new FluidStack(coolant.hot(), 1)));
+                }, coolant -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", NCSaltFission.cooling(coolant))),
                 new Category<>(HEAT_EXCHANGER, NCHeatExchangers.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
@@ -185,6 +202,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
+        registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
+        registration.addRecipes(SALT_HEATING, List.of(NCSaltCoolants.values()));
         registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
         registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
@@ -207,6 +226,11 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
+        registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), SALT_FISSION);
+        registration.addRecipeCatalyst(NCSaltFission.VESSEL.get(), SALT_FISSION);
+        for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
+            registration.addRecipeCatalyst(NCSaltFission.heater(coolant), SALT_HEATING);
+        }
         for (NCGasCoolants gas : NCGasCoolants.values()) {
             registration.addRecipeCatalyst(NCPebbleFission.cooler(gas), GasCoolerCategory.TYPE);
         }
@@ -304,7 +328,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 .setFluidRenderer(capacity, true, 16, 16).addIngredients(ForgeTypes.FLUID_STACK, fluids);
     }
 
-    private static final class Category<R extends Recipe<?>> implements IRecipeCategory<R> {
+    private static final class Category<R> implements IRecipeCategory<R> {
         private final RecipeType<R> type;
         private final Block block;
         private final IDrawable icon;
@@ -342,7 +366,10 @@ public final class NuclearCraftJei implements IModPlugin {
                 default -> 48;
             };
         }
-        @Override public ResourceLocation getRegistryName(R recipe) { return recipe.getId(); }
+        @Override
+        public ResourceLocation getRegistryName(R recipe) {
+            return recipe instanceof Recipe<?> registered ? registered.getId() : null;
+        }
 
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, R recipe, IFocusGroup focuses) {

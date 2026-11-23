@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "LLL",
+        "LPL",
+        "LLL"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "L": {
+            "item": "minecraft:lapis_lazuli"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_lapis",
+        "count": 1
+    }
+}

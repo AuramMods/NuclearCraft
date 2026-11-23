@@ -19,7 +19,7 @@ import net.minecraftforge.common.crafting.CraftingHelper;
 
 public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack depleted, int ticks, int heat,
                                  double efficiency, int criticality, int intrinsicFlux, boolean selfPriming, boolean pebbleBed)
-        implements Recipe<Container> {
+        implements Recipe<Container>, FissionFuelStats {
     @Override
     public boolean matches(Container input, Level level) {
         return fuel.test(input.getItem(0));

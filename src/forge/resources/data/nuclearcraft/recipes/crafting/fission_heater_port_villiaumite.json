@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "VVV",
+        "VPV",
+        "VVV"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "V": {
+            "tag": "forge:gems/villiaumite"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_villiaumite",
+        "count": 1
+    }
+}

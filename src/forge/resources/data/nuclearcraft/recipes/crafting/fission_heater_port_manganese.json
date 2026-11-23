@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " M ",
+        "MPM",
+        " M "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "M": {
+            "tag": "forge:ingots/manganese"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_manganese",
+        "count": 1
+    }
+}

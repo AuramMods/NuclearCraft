@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        {
+            "item": "nuclearcraft:liquid_helium_bucket"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:liquid_helium_coolant_heater",
+        "count": 1
+    }
+}

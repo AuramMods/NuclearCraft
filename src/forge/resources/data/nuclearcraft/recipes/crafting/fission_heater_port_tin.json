@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " T ",
+        "TPT",
+        " T "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "T": {
+            "tag": "forge:ingots/tin"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_tin",
+        "count": 1
+    }
+}

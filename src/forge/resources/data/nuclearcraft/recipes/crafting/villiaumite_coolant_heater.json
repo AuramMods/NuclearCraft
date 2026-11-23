@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "VVV",
+        "VHV",
+        "VVV"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "V": {
+            "tag": "forge:gems/villiaumite"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:villiaumite_coolant_heater",
+        "count": 1
+    }
+}

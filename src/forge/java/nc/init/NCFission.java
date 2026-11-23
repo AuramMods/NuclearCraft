@@ -140,6 +140,7 @@ public final class NCFission {
                         output.accept(DEPLETED_LECF_251_OXIDE.get());
                         NCFissionFuels.displayItems(output);
                         NCPebbleFission.displayItems(output);
+                        NCSaltFission.displayItems(output);
                         output.accept(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
                     }).build());
 
@@ -232,9 +233,12 @@ public final class NCFission {
     }
 
     private static Block[] portBlocks() {
-        List<Block> blocks = new ArrayList<>(List.of(CELL_PORT.get(), VENT.get(), NCPebbleFission.CHAMBER_PORT.get()));
+        List<Block> blocks = new ArrayList<>(List.of(CELL_PORT.get(), VENT.get(), NCPebbleFission.CHAMBER_PORT.get(), NCSaltFission.VESSEL_PORT.get()));
         for (NCGasCoolants gas : NCGasCoolants.values()) {
             blocks.add(NCPebbleFission.port(gas));
+        }
+        for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
+            blocks.add(NCSaltFission.port(coolant));
         }
         return blocks.toArray(Block[]::new);
     }

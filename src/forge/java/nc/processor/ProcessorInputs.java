@@ -7,7 +7,7 @@ public final class ProcessorInputs extends SimpleContainer {
     private FluidStack fluid = FluidStack.EMPTY;
     private FluidStack secondFluid = FluidStack.EMPTY;
 
-    ProcessorInputs(int slots) {
+    public ProcessorInputs(int slots) {
         super(slots);
     }
 
@@ -23,7 +23,7 @@ public final class ProcessorInputs extends SimpleContainer {
         this.secondFluid = secondFluid;
     }
 
-    void setFluid(FluidStack fluid) {
+    public void setFluid(FluidStack fluid) {
         this.fluid = fluid;
     }
 }

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " B ",
+        "BPB",
+        " B "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "B": {
+            "tag": "forge:ingots/boron"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_boron",
+        "count": 1
+    }
+}

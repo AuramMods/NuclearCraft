@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " M ",
+        "MHM",
+        " M "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "M": {
+            "tag": "forge:ingots/manganese"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:manganese_coolant_heater",
+        "count": 1
+    }
+}

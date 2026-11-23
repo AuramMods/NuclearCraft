@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " A ",
+        "AHA",
+        " A "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "A": {
+            "tag": "forge:ingots/aluminum"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:aluminum_coolant_heater",
+        "count": 1
+    }
+}

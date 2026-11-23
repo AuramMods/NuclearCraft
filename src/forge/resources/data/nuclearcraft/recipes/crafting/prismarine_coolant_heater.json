@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " P ",
+        "PHP",
+        " P "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "P": {
+            "item": "minecraft:prismarine_crystals"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:prismarine_coolant_heater",
+        "count": 1
+    }
+}

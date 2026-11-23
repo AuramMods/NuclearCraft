@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "CCC",
+        "CHC",
+        "CCC"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "C": {
+            "tag": "forge:gems/carobbiite"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:carobbiite_coolant_heater",
+        "count": 1
+    }
+}

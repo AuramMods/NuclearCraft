@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " G ",
+        "GPG",
+        " G "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "G": {
+            "tag": "forge:ingots/gold"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_gold",
+        "count": 1
+    }
+}

@@ -1,8 +1,10 @@
 package nc.init;
 
+import net.minecraft.world.level.material.Fluid;
+
 import java.util.function.Consumer;
 
-enum NCSaltCoolants {
+public enum NCSaltCoolants {
     NAK("nak", 0xFFE5BC),
     IRON("iron_nak", 0x8D1515),
     REDSTONE("redstone_nak", 0xAB1C09),
@@ -53,6 +55,22 @@ enum NCSaltCoolants {
             coolant.cold = NCFluids.saltCoolant(coolant.id, cold, false);
             coolant.hot = NCFluids.saltCoolant(coolant.id + "_hot", hot, true);
         }
+    }
+
+    public String id() {
+        return id;
+    }
+
+    public String material() {
+        return this == NAK ? "standard" : id.substring(0, id.length() - "_nak".length());
+    }
+
+    public Fluid cold() {
+        return cold.source().get();
+    }
+
+    public Fluid hot() {
+        return hot.source().get();
     }
 
     static void displayBuckets(Consumer<NCFluids.RegisteredFluid> add) {

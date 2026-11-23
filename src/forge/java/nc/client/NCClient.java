@@ -5,6 +5,7 @@ import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
+import nc.init.NCSaltFission;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -30,6 +31,7 @@ public final class NCClient {
             }
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCPebbleFission.MENU.get(), SolidFissionScreen::new);
+            MenuScreens.register(NCSaltFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCTurbine.MENU.get(), TurbineScreen::new);
             MenuScreens.register(NCHeatExchangers.CONDENSER_MENU.get(), ExchangerScreen::new);
             MenuScreens.register(NCHeatExchangers.MENU.get(), ExchangerScreen::new);

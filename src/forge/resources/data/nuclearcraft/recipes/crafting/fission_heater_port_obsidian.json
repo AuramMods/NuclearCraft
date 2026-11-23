@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "DOD",
+        "OPO",
+        "DOD"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "O": {
+            "item": "minecraft:obsidian"
+        },
+        "D": {
+            "item": "nuclearcraft:obsidian_dust"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_obsidian",
+        "count": 1
+    }
+}

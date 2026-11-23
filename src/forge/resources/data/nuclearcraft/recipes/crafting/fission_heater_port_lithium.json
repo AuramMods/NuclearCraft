@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " L ",
+        "LPL",
+        " L "
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "L": {
+            "tag": "forge:ingots/lithium"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_lithium",
+        "count": 1
+    }
+}

@@ -1,6 +1,7 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionVariant;
 import nc.multiblock.fission.SolidFissionMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -12,11 +13,12 @@ import net.minecraft.world.entity.player.Inventory;
 final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu> {
     private static final ResourceLocation TEXTURE = NuclearCraft.id("textures/gui/container/solid_fission_controller.png");
     private static final ResourceLocation PEBBLE_TEXTURE = NuclearCraft.id("textures/gui/container/pebble_fission_controller.png");
+    private static final ResourceLocation SALT_TEXTURE = NuclearCraft.id("textures/gui/container/salt_fission_controller.png");
     private Button control;
 
     SolidFissionScreen(SolidFissionMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        if (menu.pebbleBed()) {
+        if (compact()) {
             imageHeight = 114;
         }
     }
@@ -26,7 +28,7 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
         super.init();
         control = addRenderableWidget(Button.builder(toggleLabel(), button ->
                 minecraft.gameMode.handleInventoryButtonClick(menu.containerId, SolidFissionMenu.TOGGLE))
-                .bounds(leftPos + 44, topPos + (menu.pebbleBed() ? 90 : 125), 88, 20).build());
+                .bounds(leftPos + 44, topPos + (compact() ? 90 : 125), 88, 20).build());
     }
 
     @Override
@@ -49,8 +51,13 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        boolean pebble = menu.pebbleBed();
-        graphics.blit(pebble ? PEBBLE_TEXTURE : TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        boolean pebble = compact();
+        ResourceLocation texture = switch (menu.variant()) {
+            case SOLID -> TEXTURE;
+            case PEBBLE -> PEBBLE_TEXTURE;
+            case SALT -> SALT_TEXTURE;
+        };
+        graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         int top = pebble ? 34 : 42;
         int height = pebble ? 40 : 54;
         bar(graphics, 22, top, height, menu.heat(), 0xFFD84320);
@@ -66,16 +73,28 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        boolean pebble = menu.pebbleBed();
+        boolean pebble = compact();
         int labels = pebble ? 22 : 30;
         int titleX = pebble ? (imageWidth - font.width(title)) / 2 : titleLabelX;
         graphics.drawString(font, title, titleX, titleLabelY, 0x404040, false);
         graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission.heat"), 22, labels, 0x404040, false);
-        graphics.drawString(font, Component.translatable(menu.pebbleBed()
-                ? "gui.nuclearcraft.fission.cold_gas" : "gui.nuclearcraft.fission.water"), pebble ? 62 : 72, labels, 0x404040, false);
-        graphics.drawString(font, Component.translatable(menu.pebbleBed()
-                ? "gui.nuclearcraft.fission.hot_gas" : "gui.nuclearcraft.fission.steam"), pebble ? 116 : 122, labels, 0x404040, false);
+        String cold = switch (menu.variant()) {
+            case SOLID -> "water";
+            case PEBBLE -> "cold_gas";
+            case SALT -> "cold_nak";
+        };
+        String hot = switch (menu.variant()) {
+            case SOLID -> "steam";
+            case PEBBLE -> "hot_gas";
+            case SALT -> "hot_nak";
+        };
+        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission." + cold), pebble ? 62 : 72, labels, 0x404040, false);
+        graphics.drawString(font, Component.translatable("gui.nuclearcraft.fission." + hot), pebble ? 116 : 122, labels, 0x404040, false);
         graphics.drawCenteredString(font, Component.translatable(menu.active()
                 ? "gui.nuclearcraft.fission.running" : "gui.nuclearcraft.fission.idle"), 88, pebble ? 78 : 106, 0xFFFFFF);
+    }
+
+    private boolean compact() {
+        return menu.variant() != FissionVariant.SOLID;
     }
 }

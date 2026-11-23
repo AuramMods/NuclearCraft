@@ -1,7 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCFission;
-import nc.init.NCPebbleFission;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -20,7 +18,7 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
     public static final int TOGGLE = 0;
 
     private final SolidFissionController controller;
-    private final boolean pebbleBed;
+    private final FissionVariant variant;
     private final ContainerLevelAccess access;
     private final ContainerData data;
 
@@ -29,17 +27,21 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
     }
 
     public SolidFissionMenu(int id, Inventory player, boolean pebbleBed) {
-        this(id, null, ContainerLevelAccess.NULL, new SimpleContainerData(DATA_COUNT), pebbleBed);
+        this(id, player, pebbleBed ? FissionVariant.PEBBLE : FissionVariant.SOLID);
+    }
+
+    public SolidFissionMenu(int id, Inventory player, FissionVariant variant) {
+        this(id, null, ContainerLevelAccess.NULL, new SimpleContainerData(DATA_COUNT), variant);
     }
 
     SolidFissionMenu(int id, SolidFissionController controller, ContainerLevelAccess access, ContainerData data) {
-        this(id, controller, access, data, controller.pebbleBed());
+        this(id, controller, access, data, controller.variant());
     }
 
     private SolidFissionMenu(int id, SolidFissionController controller, ContainerLevelAccess access,
-                             ContainerData data, boolean pebbleBed) {
-        super(pebbleBed ? NCPebbleFission.MENU.get() : NCFission.MENU.get(), id);
-        this.pebbleBed = pebbleBed;
+                             ContainerData data, FissionVariant variant) {
+        super(variant.menu(), id);
+        this.variant = variant;
         this.controller = controller;
         this.access = access;
         this.data = data;
@@ -48,7 +50,7 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return (controller == null || controller.assembled()) && stillValid(access, player, pebbleBed ? NCPebbleFission.CONTROLLER.get() : NCFission.CONTROLLER.get());
+        return (controller == null || controller.assembled()) && stillValid(access, player, variant.controller());
     }
 
     @Override
@@ -65,8 +67,12 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
+    public FissionVariant variant() {
+        return variant;
+    }
+
     public boolean pebbleBed() {
-        return pebbleBed;
+        return variant == FissionVariant.PEBBLE;
     }
 
     public boolean enabled() {

@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "DED",
+        "EHE",
+        "DED"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "E": {
+            "item": "minecraft:end_stone"
+        },
+        "D": {
+            "item": "nuclearcraft:end_stone_dust"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:end_stone_coolant_heater",
+        "count": 1
+    }
+}

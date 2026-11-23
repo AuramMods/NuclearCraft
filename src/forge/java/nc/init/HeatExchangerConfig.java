@@ -54,7 +54,8 @@ public final class HeatExchangerConfig {
     public static double conductivity(int tube) { return value(CONDUCTIVITY[tube]); }
     public static double retention(int tube) { return value(RETENTION[tube]); }
     public static double gasHeat() { return NCPebbleFission.heatPerMb() * value(GAS_MULTIPLIER); }
-    public static double nakHeat() { return value(NAK_HEAT) * value(NAK_MULTIPLIER); }
+    public static double nakHeat() { return nakHeatPerMb() * value(NAK_MULTIPLIER); }
+    public static double nakHeatPerMb() { return value(NAK_HEAT); }
     public static boolean alternateHighPressure() { return value(ALT_HIGH_PRESSURE); }
     public static boolean alternateExhaust() { return value(ALT_EXHAUST); }
 

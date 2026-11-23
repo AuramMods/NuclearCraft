@@ -1,9 +1,10 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -20,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 
 public final class FissionPortBlockEntity extends BlockEntity {
     private Binding binding;
+    private @Nullable ResourceLocation fuelFilter;
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
     private LazyOptional<IItemHandler> items = LazyOptional.empty();
 
@@ -28,7 +30,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     void bind(SolidFissionController controller, SolidFissionLayout.Port port) {
-        Binding next = new Binding(controller, port.side(), port.output(), port.gas());
+        Binding next = new Binding(controller, port);
         if (next.equals(binding)) {
             return;
         }
@@ -58,7 +60,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction side) {
         Binding current = binding;
-        if (current != null && current.controller.assembled() && (side == null || side == current.side)) {
+        if (current != null && current.controller.assembled() && (side == null || side == current.port.side())) {
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return fluid.cast();
             }
@@ -73,7 +75,36 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return !isRemoved() && binding == connection && connection.controller.assembled();
     }
 
-    private record Binding(SolidFissionController controller, Direction side, boolean output, @Nullable NCGasCoolants gas) {}
+    @Nullable ResourceLocation fuelFilter() {
+        return fuelFilter;
+    }
+
+    void fuelFilter(@Nullable ResourceLocation next) {
+        fuelFilter = next;
+        setChanged();
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        if (fuelFilter != null) {
+            tag.putString("fuel_filter", fuelFilter.toString());
+        }
+    }
+
+    @Override
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        var next = tag.contains("fuel_filter") ? ResourceLocation.tryParse(tag.getString("fuel_filter")) : null;
+        if (!java.util.Objects.equals(fuelFilter, next)) {
+            fuelFilter = next;
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                FissionPartBlock.geometryChanged(server, worldPosition);
+            }
+        }
+    }
+
+    private record Binding(SolidFissionController controller, SolidFissionLayout.Port port) {}
 
     private final class VentHandler implements IFluidHandler {
         private final Binding connection;
@@ -81,7 +112,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         private VentHandler(Binding connection) {
             this.connection = connection;
-            tank = connection.controller.fluidTank(connection.gas, connection.output);
+            tank = connection.controller.fluidTank(connection.port);
         }
 
         @Override
@@ -101,22 +132,22 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public boolean isFluidValid(int index, @NotNull FluidStack stack) {
-            return index == 0 && !connection.output && connected(connection) && tank.isFluidValid(stack);
+            return index == 0 && !connection.port.output() && connected(connection) && tank.isFluidValid(stack);
         }
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            return !connection.output && connected(connection) ? tank.fill(resource, action) : 0;
+            return !connection.port.output() && connected(connection) ? tank.fill(resource, action) : 0;
         }
 
         @Override
         public @NotNull FluidStack drain(FluidStack resource, FluidAction action) {
-            return connection.output && connected(connection) ? tank.drain(resource, action) : FluidStack.EMPTY;
+            return connection.port.output() && connected(connection) ? tank.drain(resource, action) : FluidStack.EMPTY;
         }
 
         @Override
         public @NotNull FluidStack drain(int amount, FluidAction action) {
-            return connection.output && connected(connection) ? tank.drain(amount, action) : FluidStack.EMPTY;
+            return connection.port.output() && connected(connection) ? tank.drain(amount, action) : FluidStack.EMPTY;
         }
     }
 
@@ -136,7 +167,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public @NotNull ItemStack getStackInSlot(int slot) {
-            return slot == 0 && connected(connection) ? inventory.getStackInSlot(connection.output ? 1 : 0).copy() : ItemStack.EMPTY;
+            return slot == 0 && connected(connection) ? inventory.getStackInSlot(connection.port.output() ? 1 : 0).copy() : ItemStack.EMPTY;
         }
 
         @Override
@@ -146,18 +177,18 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot == 0 && connection.output && connected(connection)
+            return slot == 0 && connection.port.output() && connected(connection)
                     ? inventory.extractItem(1, amount, simulate) : ItemStack.EMPTY;
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return slot == 0 && connected(connection) ? inventory.getSlotLimit(connection.output ? 1 : 0) : 0;
+            return slot == 0 && connected(connection) ? inventory.getSlotLimit(connection.port.output() ? 1 : 0) : 0;
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot == 0 && !connection.output && connected(connection) && connection.controller.acceptsFuel(stack);
+            return slot == 0 && !connection.port.output() && connected(connection) && connection.controller.acceptsFuel(stack);
         }
     }
 }

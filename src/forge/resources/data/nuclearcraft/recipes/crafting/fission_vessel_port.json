@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PSP",
+        "ZFZ",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        },
+        "Z": {
+            "item": "nuclearcraft:zircaloy_ingot"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_vessel_port",
+        "count": 4
+    }
+}

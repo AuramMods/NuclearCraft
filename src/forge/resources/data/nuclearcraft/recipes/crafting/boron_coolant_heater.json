@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " B ",
+        "BHB",
+        " B "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "B": {
+            "tag": "forge:ingots/boron"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:boron_coolant_heater",
+        "count": 1
+    }
+}

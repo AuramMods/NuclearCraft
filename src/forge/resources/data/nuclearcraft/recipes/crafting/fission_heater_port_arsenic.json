@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "AAA",
+        "APA",
+        "AAA"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "A": {
+            "item": "nuclearcraft:arsenic_dust"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_arsenic",
+        "count": 1
+    }
+}

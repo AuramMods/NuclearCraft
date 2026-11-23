@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "FFF",
+        "FHF",
+        "FFF"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "F": {
+            "tag": "forge:gems/fluorite"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fluorite_coolant_heater",
+        "count": 1
+    }
+}

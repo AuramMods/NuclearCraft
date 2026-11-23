@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        {
+            "item": "nuclearcraft:liquid_nitrogen_bucket"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_liquid_nitrogen",
+        "count": 1
+    }
+}

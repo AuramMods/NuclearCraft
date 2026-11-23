@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " G ",
+        "GHG",
+        " G "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "G": {
+            "tag": "forge:ingots/gold"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:gold_coolant_heater",
+        "count": 1
+    }
+}

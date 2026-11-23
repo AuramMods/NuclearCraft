@@ -1,8 +1,8 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
+import nc.init.NCSaltFission;
 import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
 import net.minecraft.core.BlockPos;
@@ -43,10 +43,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             setChanged();
         }
     };
-    private final boolean pebbleBed;
+    private final FissionVariant variant;
     private final FluidTank coolant;
     private final FluidTank steam;
     private final @Nullable PebbleCooling gasCooling;
+    private final @Nullable SaltCooling saltCooling;
+    private final @Nullable SaltFuelBank saltFuel;
     private final Map<BlockPos, Long> clusterHeat = new HashMap<>();
 
     private SolidFissionLayout layout;
@@ -57,12 +59,17 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private boolean dirty = true;
 
     public SolidFissionController(BlockPos pos, BlockState state) {
-        super(FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CONTROLLER
-                ? NCPebbleFission.CONTROLLER_ENTITY.get() : NCFission.CONTROLLER_ENTITY.get(), pos, state);
-        pebbleBed = getType() == NCPebbleFission.CONTROLLER_ENTITY.get();
+        this(pos, state, FissionVariant.forController(FissionPartBlock.role(state)));
+    }
+
+    private SolidFissionController(BlockPos pos, BlockState state, FissionVariant variant) {
+        super(variant.entity(), pos, state);
+        this.variant = variant;
         coolant = new ReactorTank(true);
         steam = new ReactorTank(false);
-        gasCooling = pebbleBed ? new PebbleCooling(this) : null;
+        gasCooling = variant == FissionVariant.PEBBLE ? new PebbleCooling(this) : null;
+        saltCooling = variant == FissionVariant.SALT ? new SaltCooling(this) : null;
+        saltFuel = variant == FissionVariant.SALT ? new SaltFuelBank(this) : null;
     }
 
     public boolean assembled() {
@@ -100,7 +107,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         boolean active = false;
         if (layout != null && (enabled || server.hasNeighborSignal(worldPosition))) {
-            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling);
+            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling, saltFuel, saltCooling);
             if (!generated.overheatedCells().isEmpty()) {
                 melt(server, generated.overheatedCells());
                 return;
@@ -115,12 +122,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             }
             active = generated.raw() > 0;
             if (active) {
-                if (!pebbleBed) {
+                if (variant == FissionVariant.SOLID) {
                     heatWater(generated.effective() / generated.raw());
                 }
                 setChanged();
             }
-        } else if (layout != null && pebbleBed && casingHeat > 0) {
+        } else if (layout != null && variant != FissionVariant.SOLID && casingHeat > 0) {
             coolCasing();
         }
         BlockState state = getBlockState();
@@ -151,6 +158,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         steam.setCapacity(Math.max(capacity, steam.getFluidAmount()));
         if (gasCooling != null) {
             gasCooling.resize(layout);
+        }
+        if (saltCooling != null && saltFuel != null) {
+            saltCooling.resize(layout);
+            saltFuel.resize(layout);
         }
 
         BlockState state = getBlockState();
@@ -217,7 +228,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     private void coolCasing() {
-        double heatPerMb = NCPebbleFission.emergencyMultiplier();
+        double heatPerMb = variant == FissionVariant.SALT ? NCSaltFission.emergencyMultiplier() : NCPebbleFission.emergencyMultiplier();
         int amount = Math.min(coolant.getFluidAmount(), Math.min(steam.getCapacity() - steam.getFluidAmount(),
                 (int) (casingHeat / heatPerMb)));
         if (amount > 0) {
@@ -243,15 +254,21 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return steam;
     }
 
-    FluidTank fluidTank(@Nullable NCGasCoolants gas, boolean output) {
-        if (gas != null && gasCooling != null) {
-            return gasCooling.tank(gas, output);
+    FluidTank fluidTank(SolidFissionLayout.Port port) {
+        if (port.gas() != null && gasCooling != null) {
+            return gasCooling.tank(port.gas(), port.output());
         }
-        return output ? steam : coolant;
+        if (port.salt() != null && saltCooling != null) {
+            return saltCooling.tank(port.salt(), port.output());
+        }
+        if (port.role() == FissionPartBlock.Role.VESSEL_PORT && saltFuel != null) {
+            return saltFuel.tank(port.fuelFilter(), port.output());
+        }
+        return port.output() ? steam : coolant;
     }
 
-    boolean pebbleBed() {
-        return pebbleBed;
+    FissionVariant variant() {
+        return variant;
     }
 
     ItemStackHandler inventory() {
@@ -260,7 +277,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     boolean acceptsFuel(ItemStack stack) {
         return level != null && !stack.isEmpty() && level.getRecipeManager()
-                .getRecipeFor(pebbleBed ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get(), new SimpleContainer(stack), level).isPresent();
+                .getRecipeFor(variant == FissionVariant.PEBBLE ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get(), new SimpleContainer(stack), level).isPresent();
     }
 
     void toggle() {
@@ -290,6 +307,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (gasCooling != null) {
             tag.put("gas_cooling", gasCooling.save());
         }
+        if (saltCooling != null && saltFuel != null) {
+            tag.put("salt_cooling", saltCooling.save());
+            tag.put("salt_fuel", saltFuel.save());
+        }
         tag.putLong("heat", casingHeat);
         tag.putBoolean("enabled", enabled);
         ListTag storedClusters = new ListTag();
@@ -313,6 +334,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (gasCooling != null) {
             gasCooling.load(tag.getCompound("gas_cooling"));
         }
+        if (saltCooling != null && saltFuel != null) {
+            saltCooling.load(tag.getCompound("salt_cooling"));
+            saltFuel.load(tag.getList("salt_fuel", Tag.TAG_COMPOUND));
+        }
         casingHeat = Math.max(0, tag.getLong("heat"));
         enabled = tag.getBoolean("enabled");
         clusterHeat.clear();
@@ -329,6 +354,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     private int coolerFill(boolean output) {
+        if (saltCooling != null) {
+            int capacity = saltCooling.capacity(output);
+            return capacity == 0 ? 0 : (int) (1000L * saltCooling.amount(output) / capacity);
+        }
         if (gasCooling == null) {
             return tankFill(output ? steam : coolant);
         }
@@ -369,8 +398,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final class ReactorTank extends FluidTank {
         ReactorTank(boolean water) {
             super(BASE_TANK_CAPACITY, fluid -> water
-                    ? fluid.getFluid() == (pebbleBed ? NCFluids.EMERGENCY_COOLANT.source().get() : Fluids.WATER)
-                    : fluid.getFluid() == (pebbleBed ? NCFluids.HEATED_EMERGENCY_COOLANT.source().get()
+                    ? fluid.getFluid() == (variant != FissionVariant.SOLID ? NCFluids.EMERGENCY_COOLANT.source().get() : Fluids.WATER)
+                    : fluid.getFluid() == (variant != FissionVariant.SOLID ? NCFluids.HEATED_EMERGENCY_COOLANT.source().get()
                             : NCFluids.HIGH_PRESSURE_STEAM.source().get()));
         }
 

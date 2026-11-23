@@ -1,0 +1,50 @@
+{
+    "variants": {
+        "active=false,facing=down": {
+            "model": "nuclearcraft:block/fission_heater_port_standard",
+            "x": 90
+        },
+        "active=false,facing=up": {
+            "model": "nuclearcraft:block/fission_heater_port_standard",
+            "x": 270
+        },
+        "active=false,facing=north": {
+            "model": "nuclearcraft:block/fission_heater_port_standard"
+        },
+        "active=false,facing=east": {
+            "model": "nuclearcraft:block/fission_heater_port_standard",
+            "y": 90
+        },
+        "active=false,facing=south": {
+            "model": "nuclearcraft:block/fission_heater_port_standard",
+            "y": 180
+        },
+        "active=false,facing=west": {
+            "model": "nuclearcraft:block/fission_heater_port_standard",
+            "y": 270
+        },
+        "active=true,facing=down": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active",
+            "x": 90
+        },
+        "active=true,facing=up": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active",
+            "x": 270
+        },
+        "active=true,facing=north": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active"
+        },
+        "active=true,facing=east": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active",
+            "y": 90
+        },
+        "active=true,facing=south": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active",
+            "y": 180
+        },
+        "active=true,facing=west": {
+            "model": "nuclearcraft:block/fission_heater_port_standard_active",
+            "y": 270
+        }
+    }
+}

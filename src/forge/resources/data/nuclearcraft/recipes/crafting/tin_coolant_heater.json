@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " T ",
+        "THT",
+        " T "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "T": {
+            "tag": "forge:ingots/tin"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:tin_coolant_heater",
+        "count": 1
+    }
+}

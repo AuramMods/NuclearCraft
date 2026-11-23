@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " C ",
+        "CHC",
+        " C "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "C": {
+            "tag": "forge:ingots/copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:copper_coolant_heater",
+        "count": 1
+    }
+}

@@ -4,6 +4,7 @@ import nc.init.HeatExchangerConfig;
 import nc.init.NCCollectors;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
+import nc.init.NCSaltFission;
 import nc.init.NCFluids;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors;
@@ -27,6 +28,7 @@ public final class NuclearCraft {
         NCGenerators.register(context);
         NCFission.registerConfig(context);
         NCPebbleFission.registerConfig(context);
+        NCSaltFission.registerConfig(context);
         HeatExchangerConfig.register(context);
         NCItemProcessors.registerConfig(context);
         NCRegistries.register(context.getModEventBus());

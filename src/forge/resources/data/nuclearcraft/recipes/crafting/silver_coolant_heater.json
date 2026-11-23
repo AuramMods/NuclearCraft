@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " I ",
+        "IHI",
+        " I "
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "I": {
+            "tag": "forge:ingots/silver"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:silver_coolant_heater",
+        "count": 1
+    }
+}

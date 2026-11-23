@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "CCC",
+        "CPC",
+        "CCC"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "C": {
+            "tag": "forge:gems/carobbiite"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_carobbiite",
+        "count": 1
+    }
+}

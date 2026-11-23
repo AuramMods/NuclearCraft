@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "BPB",
+        "BBB"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:fission_heater_port_standard"
+        },
+        "B": {
+            "item": "minecraft:slime_ball"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_slime",
+        "count": 1
+    }
+}

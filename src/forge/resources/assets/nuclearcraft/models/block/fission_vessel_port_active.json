@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/fission/port/top",
+        "down": "nuclearcraft:block/fission/port/top",
+        "north": "nuclearcraft:block/fission/port/vessel_out",
+        "south": "nuclearcraft:block/fission/port/vessel_out",
+        "east": "nuclearcraft:block/fission/port/side",
+        "west": "nuclearcraft:block/fission/port/side",
+        "particle": "nuclearcraft:block/fission/port/vessel_out"
+    }
+}

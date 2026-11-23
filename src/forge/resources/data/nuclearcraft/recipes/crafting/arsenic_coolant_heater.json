@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "AAA",
+        "AHA",
+        "AAA"
+    ],
+    "key": {
+        "H": {
+            "item": "nuclearcraft:standard_coolant_heater"
+        },
+        "A": {
+            "item": "nuclearcraft:arsenic_dust"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:arsenic_coolant_heater",
+        "count": 1
+    }
+}

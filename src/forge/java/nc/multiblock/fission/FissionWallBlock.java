@@ -1,8 +1,7 @@
 package nc.multiblock.fission;
 
-import nc.init.NCFission;
 import nc.init.NCGasCoolants;
-import nc.init.NCPebbleFission;
+import nc.init.NCSaltCoolants;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,20 +26,32 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.fluids.FluidUtil;
 
 public final class FissionWallBlock extends FissionPartBlock implements EntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     private final @Nullable NCGasCoolants coolant;
+    private final @Nullable NCSaltCoolants saltCoolant;
 
     public FissionWallBlock(Properties properties, Role role) {
         this(properties, role, null);
     }
 
     public FissionWallBlock(Properties properties, Role role, @Nullable NCGasCoolants coolant) {
+        this(properties, role, coolant, null);
+    }
+
+    public static FissionWallBlock heaterPort(Properties properties, NCSaltCoolants coolant) {
+        return new FissionWallBlock(properties, Role.HEATER_PORT, null, coolant);
+    }
+
+    private FissionWallBlock(Properties properties, Role role, @Nullable NCGasCoolants coolant,
+                             @Nullable NCSaltCoolants saltCoolant) {
         super(properties, role);
         this.coolant = coolant;
+        this.saltCoolant = saltCoolant;
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ACTIVE, false));
     }
 
@@ -48,18 +59,27 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         return coolant;
     }
 
+    @Nullable NCSaltCoolants saltCoolant() {
+        return saltCoolant;
+    }
+
+    private static boolean isController(Role role) {
+        return role == Role.CONTROLLER || role == Role.PEBBLE_CONTROLLER || role == Role.SALT_CONTROLLER;
+    }
+
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return switch (role(state)) {
-            case CONTROLLER, PEBBLE_CONTROLLER -> new SolidFissionController(pos, state);
-            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT -> new FissionPortBlockEntity(pos, state);
+            case CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER -> new SolidFissionController(pos, state);
+            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT -> new FissionPortBlockEntity(pos, state);
             default -> throw new IllegalStateException("Unexpected reactor wall block " + state);
         };
     }
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level instanceof ServerLevel && (type == NCFission.CONTROLLER_ENTITY.get() || type == NCPebbleFission.CONTROLLER_ENTITY.get())) {
+        Role role = role(state);
+        if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
         }
         return null;
@@ -106,12 +126,22 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
 
         if (level instanceof ServerLevel server) {
             BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof FissionPortBlockEntity && player.isShiftKeyDown()) {
+            if (entity instanceof FissionPortBlockEntity port && player.isShiftKeyDown()) {
+                if (role(state) == Role.VESSEL_PORT) {
+                    var result = SaltVesselBlock.selectFilter(player, hand, server, pos, port::fuelFilter);
+                    if (result != InteractionResult.PASS) {
+                        return result;
+                    }
+                }
                 boolean output = !state.getValue(ACTIVE);
                 level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
                 geometryChanged(server, pos);
                 player.displayClientMessage(Component.translatable(output
                         ? "message.nuclearcraft.fission.port_output" : "message.nuclearcraft.fission.port_input"), true);
+            } else if (entity instanceof FissionPortBlockEntity
+                    && (role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)
+                    && FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                return InteractionResult.CONSUME;
             } else if (entity instanceof SolidFissionController controller) {
                 if (controller.assembled()) {
                     player.openMenu(controller);
@@ -121,7 +151,8 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             } else {
                 return InteractionResult.PASS;
             }
-        } else if (role(state) != Role.CONTROLLER && role(state) != Role.PEBBLE_CONTROLLER && !player.isShiftKeyDown()) {
+        } else if (!isController(role(state)) && role(state) != Role.VESSEL_PORT && role(state) != Role.HEATER_PORT
+                && !player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
