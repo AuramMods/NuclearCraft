@@ -2,12 +2,14 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -25,11 +27,12 @@ import java.util.Arrays;
 import java.util.List;
 
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
-                                  @Nullable FluidIngredient fluidInput, List<ItemStack> results,
+                                  @Nullable FluidIngredient fluidInput, List<Product> results, List<Product> alternateResults,
                                   int ticks, int energyPerTick) implements Recipe<Container> {
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
-        results = results.stream().map(ItemStack::copy).toList();
+        results = List.copyOf(results);
+        alternateResults = List.copyOf(alternateResults);
     }
 
     /** Counts are indexed by inventory slot, so the furnace can consume either ingredient order. */
@@ -84,13 +87,12 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         return result(0);
     }
 
-    @Override
-    public List<ItemStack> results() {
-        return results.stream().map(ItemStack::copy).toList();
+    public List<Product> products() {
+        return !alternateResults.isEmpty() && NCItemProcessors.alternateRockCrusherOutputs() ? alternateResults : results;
     }
 
     public ItemStack result(int index) {
-        return results.get(index).copy();
+        return products().get(index).stack();
     }
 
     @Override
@@ -137,6 +139,31 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         }
     }
 
+    public record Product(ItemStack stack, int chancePercent, int minCount) {
+        public Product {
+            stack = stack.copy();
+        }
+
+        @Override
+        public ItemStack stack() {
+            return stack.copy();
+        }
+
+        public ItemStack roll(RandomSource random) {
+            int maximum = stack.getCount();
+            if (chancePercent == 100 || minCount == maximum) {
+                return stack.copy();
+            }
+            int count = minCount;
+            for (int roll = minCount; roll < maximum; roll++) {
+                if (random.nextInt(100) < chancePercent) {
+                    count++;
+                }
+            }
+            return stack.copyWithCount(count);
+        }
+    }
+
     public record Serializer(Machine machine) implements RecipeSerializer<ItemProcessorRecipe> {
         @Override
         public ItemProcessorRecipe fromJson(ResourceLocation id, JsonObject json) {
@@ -154,13 +181,21 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
             }
             FluidIngredient fluid = readFluidInput(id, json);
-            List<ItemStack> results = readResults(id, json);
+            List<Product> results = json.has("results") ? readResults(id, json, "results")
+                    : validateResults(id, List.of(readProduct(GsonHelper.getAsJsonObject(json, "result"))));
+            List<Product> alternate = List.of();
+            if (json.has("alternate_results")) {
+                if (machine != Machine.ROCK_CRUSHER) {
+                    throw new JsonSyntaxException("Unexpected alternate outputs for " + id);
+                }
+                alternate = readResults(id, json, "alternate_results");
+            }
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
             if (ticks <= 0 || energy < 0) {
                 throw new JsonSyntaxException("Invalid item processor recipe " + id);
             }
-            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, ticks, energy);
+            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, alternate, ticks, energy);
         }
 
         private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
@@ -173,17 +208,26 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             return FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), recipeId);
         }
 
-        private List<ItemStack> readResults(ResourceLocation id, JsonObject json) {
-            List<ItemStack> results = new ArrayList<>(machine.outputs());
-            if (json.has("results")) {
-                for (var entry : GsonHelper.getAsJsonArray(json, "results")) {
-                    results.add(CraftingHelper.getItemStack(GsonHelper.convertToJsonObject(entry, "result"), true));
-                }
-            } else {
-                results.add(CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true));
+        private List<Product> readResults(ResourceLocation id, JsonObject json, String key) {
+            List<Product> results = new ArrayList<>(machine.outputs());
+            for (var entry : GsonHelper.getAsJsonArray(json, key)) {
+                results.add(readProduct(GsonHelper.convertToJsonObject(entry, "result")));
             }
-            if (results.size() != machine.outputs() || results.stream().anyMatch(
-                    stack -> stack.isEmpty() || stack.getCount() > stack.getMaxStackSize())) {
+            return validateResults(id, results);
+        }
+
+        private static Product readProduct(JsonObject json) {
+            var stack = CraftingHelper.getItemStack(json, true);
+            int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
+            int minimum = GsonHelper.getAsInt(json, "min_count", 0);
+            return new Product(stack, chance, minimum);
+        }
+
+        private List<Product> validateResults(ResourceLocation id, List<Product> results) {
+            if (results.size() != machine.outputs() || results.stream().anyMatch(product ->
+                    product.stack.isEmpty() || product.stack.getCount() > product.stack.getMaxStackSize()
+                            || product.chancePercent < 0 || product.chancePercent > 100
+                            || product.minCount < 0 || product.minCount > product.stack.getCount())) {
                 throw new JsonSyntaxException("Expected " + machine.outputs() + " valid item outputs for " + id);
             }
             return results;
@@ -197,11 +241,10 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             }
             FluidIngredient fluid = machine.hasFluidInput()
                     ? FluidIngredient.fromNetwork(buffer) : null;
-            List<ItemStack> results = new ArrayList<>(machine.outputs());
-            for (int index = 0; index < machine.outputs(); index++) {
-                results.add(buffer.readItem());
-            }
-            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, buffer.readVarInt(), buffer.readVarInt());
+            List<Product> results = readProducts(buffer);
+            List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
+            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, alternate,
+                    buffer.readVarInt(), buffer.readVarInt());
         }
 
         @Override
@@ -213,11 +256,29 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             if (recipe.fluidInput != null) {
                 recipe.fluidInput.toNetwork(buffer);
             }
-            for (ItemStack result : recipe.results) {
-                buffer.writeItem(result);
+            writeProducts(buffer, recipe.results);
+            buffer.writeBoolean(!recipe.alternateResults.isEmpty());
+            if (!recipe.alternateResults.isEmpty()) {
+                writeProducts(buffer, recipe.alternateResults);
             }
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+        }
+
+        private List<Product> readProducts(FriendlyByteBuf buffer) {
+            List<Product> results = new ArrayList<>(machine.outputs());
+            for (int index = 0; index < machine.outputs(); index++) {
+                results.add(new Product(buffer.readItem(), buffer.readUnsignedByte(), buffer.readUnsignedByte()));
+            }
+            return results;
+        }
+
+        private static void writeProducts(FriendlyByteBuf buffer, List<Product> products) {
+            for (Product result : products) {
+                buffer.writeItem(result.stack);
+                buffer.writeByte(result.chancePercent);
+                buffer.writeByte(result.minCount);
+            }
         }
     }
 }

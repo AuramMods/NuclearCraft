@@ -35,6 +35,8 @@ final class NCMaterials {
         for (String name : List.of("copper", "tin", "lead", "thorium", "uranium", "boron", "lithium", "magnesium")) {
             block(name + "_ore", BlockBehaviour.Properties.copy(Blocks.IRON_ORE));
         }
+        block("soulless_sand", BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F));
+        block("soulless_sandstone", BlockBehaviour.Properties.copy(Blocks.SANDSTONE).strength(0.8F));
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);
         }

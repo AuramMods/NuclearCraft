@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SS",
+        "SS"
+    ],
+    "key": {
+        "S": {
+            "item": "nuclearcraft:soulless_sand"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:soulless_sandstone"
+    }
+}

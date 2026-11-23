@@ -163,7 +163,13 @@ public final class NuclearCraftJei implements IModPlugin {
             fluidSlot(layout, INPUT, 43, fluid.alternatives());
         }
         for (int index = 0; index < recipe.machine().outputs(); index++) {
-            layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(recipe.result(index));
+            var product = recipe.products().get(index);
+            var stack = product.stack();
+            var slot = layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(stack);
+            if (product.chancePercent() < 100 && product.minCount() < stack.getCount()) {
+                slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
+                        "gui.nuclearcraft.jei.product_chance", product.minCount(), stack.getCount(), product.chancePercent())));
+            }
         }
     }
 
@@ -198,7 +204,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override public RecipeType<R> getRecipeType() { return type; }
         @Override public Component getTitle() { return block.getName(); }
         @Override public IDrawable getIcon() { return icon; }
-        @Override public int getWidth() { return 140; }
+        @Override public int getWidth() { return type.getUid().getPath().equals(Machine.ROCK_CRUSHER.id()) ? 166 : 140; }
         @Override public int getHeight() { return type.equals(ELECTROLYZER) ? 58 : 48; }
         @Override public ResourceLocation getRegistryName(R recipe) { return recipe.getId(); }
 

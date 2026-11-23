@@ -80,6 +80,8 @@
         "nuclearcraft:decay_hastener",
         "nuclearcraft:fission_source_radium_beryllium",
         "nuclearcraft:fission_source_polonium_beryllium",
-        "nuclearcraft:fission_source_californium"
+        "nuclearcraft:fission_source_californium",
+        "nuclearcraft:soulless_sandstone",
+        "nuclearcraft:rock_crusher"
     ]
 }

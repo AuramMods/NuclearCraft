@@ -120,7 +120,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         if (recipe == null) {
             return false;
         }
-        List<ItemStack> products = recipe.results();
+        List<ItemProcessorRecipe.Product> products = recipe.products();
         boolean room = hasOutputSpace(products);
         if (!room || halted || !power.spend(recipe.energyPerTick())) {
             if (progressHalfTicks > 0) {
@@ -144,9 +144,11 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             }
             for (int index = 0; index < products.size(); index++) {
                 int slot = machine.inputs() + index;
-                ItemStack product = products.get(index);
-                product.grow(inventory.getStackInSlot(slot).getCount());
-                inventory.setStackInSlot(slot, product);
+                ItemStack product = products.get(index).roll(level.random);
+                if (!product.isEmpty()) {
+                    product.grow(inventory.getStackInSlot(slot).getCount());
+                    inventory.setStackInSlot(slot, product);
+                }
             }
             progressHalfTicks = 0;
         }
@@ -154,13 +156,15 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         return true;
     }
 
-    private boolean hasOutputSpace(List<ItemStack> products) {
+    private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products) {
         for (int index = 0; index < products.size(); index++) {
             ItemStack stored = inventory.getStackInSlot(machine.inputs() + index);
-            ItemStack product = products.get(index);
-            if (!stored.isEmpty() && (!ItemStack.isSameItemSameTags(stored, product)
-                    || product.getCount() > stored.getMaxStackSize() - stored.getCount())) {
-                return false;
+            if (!stored.isEmpty()) {
+                ItemStack product = products.get(index).stack();
+                if (!ItemStack.isSameItemSameTags(stored, product)
+                        || product.getCount() > stored.getMaxStackSize() - stored.getCount()) {
+                    return false;
+                }
             }
         }
         return true;

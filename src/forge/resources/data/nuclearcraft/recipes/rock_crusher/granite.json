@@ -1,0 +1,52 @@
+{
+    "type": "nuclearcraft:rock_crusher",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:granite"
+                },
+                {
+                    "item": "minecraft:polished_granite"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:rhodochrosite_dust",
+            "count": 2,
+            "chance_percent": 40
+        },
+        {
+            "item": "nuclearcraft:sulfur_dust",
+            "count": 2,
+            "chance_percent": 30
+        },
+        {
+            "item": "nuclearcraft:villiaumite_dust",
+            "count": 1,
+            "chance_percent": 35
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "alternate_results": [
+        {
+            "item": "nuclearcraft:rhodochrosite_dust",
+            "count": 2,
+            "chance_percent": 20
+        },
+        {
+            "item": "nuclearcraft:rhodochrosite_dust",
+            "count": 2,
+            "chance_percent": 20
+        },
+        {
+            "item": "nuclearcraft:villiaumite_dust",
+            "count": 1,
+            "chance_percent": 35
+        }
+    ]
+}

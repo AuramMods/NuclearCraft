@@ -15,13 +15,36 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 
 public final class NCItemProcessors {
+    private static final ForgeConfigSpec SPEC;
+    private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
+
+    static {
+        var builder = new ForgeConfigSpec.Builder();
+        builder.push("rock_crusher");
+        ROCK_CRUSHER_ALTERNATE = builder.comment("Use the legacy alternate granite and andesite products.")
+                .define("alternate_outputs", false);
+        builder.pop();
+        SPEC = builder.build();
+    }
+
     private NCItemProcessors() {}
 
     static void register() {
         Machine.values();
+    }
+
+    public static void registerConfig(ModLoadingContext context) {
+        context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-processors.toml");
+    }
+
+    public static boolean alternateRockCrusherOutputs() {
+        return SPEC.isLoaded() ? ROCK_CRUSHER_ALTERNATE.get() : ROCK_CRUSHER_ALTERNATE.getDefault();
     }
 
     static void displayItems(CreativeModeTab.Output output) {
@@ -31,11 +54,12 @@ public final class NCItemProcessors {
     }
 
     public enum Machine {
-        MANUFACTORY("manufactory", 1, 1, false, 56, -1, 116, 74, 35, 16),
-        DECAY_HASTENER("decay_hastener", 1, 1, false, 56, -1, 116, 74, 35, 16),
-        SEPARATOR("separator", 1, 2, false, 42, -1, 102, 60, 34, 18),
-        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 84, 35, 16),
-        INFUSER("infuser", 1, 1, true, 46, 66, 126, 84, 35, 16);
+        MANUFACTORY("manufactory", 1, 1, false, 56, -1, 116, 0, 74, 35, 16),
+        DECAY_HASTENER("decay_hastener", 1, 1, false, 56, -1, 116, 0, 74, 35, 16),
+        SEPARATOR("separator", 1, 2, false, 42, -1, 102, 28, 60, 34, 18),
+        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 0, 84, 35, 16),
+        INFUSER("infuser", 1, 1, true, 46, 66, 126, 0, 84, 35, 16),
+        ROCK_CRUSHER("rock_crusher", 1, 3, false, 38, -1, 94, 20, 56, 35, 16);
 
         private final String id;
         private final int inputs;
@@ -44,6 +68,7 @@ public final class NCItemProcessors {
         private final int inputX;
         private final int fluidInputX;
         private final int outputX;
+        private final int outputSpacing;
         private final int progressX;
         private final int progressY;
         private final int progressHeight;
@@ -55,7 +80,7 @@ public final class NCItemProcessors {
         private final RegistryObject<RecipeSerializer<ItemProcessorRecipe>> serializer;
 
         Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
-                int progressX, int progressY, int progressHeight) {
+                int outputSpacing, int progressX, int progressY, int progressHeight) {
             this.id = id;
             this.inputs = inputs;
             this.outputs = outputs;
@@ -63,6 +88,7 @@ public final class NCItemProcessors {
             this.inputX = inputX;
             this.fluidInputX = fluidInputX;
             this.outputX = outputX;
+            this.outputSpacing = outputSpacing;
             this.progressX = progressX;
             this.progressY = progressY;
             this.progressHeight = progressHeight;
@@ -109,7 +135,7 @@ public final class NCItemProcessors {
         }
 
         public int outputX(int slot) {
-            return outputX + slot * 28;
+            return outputX + slot * outputSpacing;
         }
 
         public int progressX() {
