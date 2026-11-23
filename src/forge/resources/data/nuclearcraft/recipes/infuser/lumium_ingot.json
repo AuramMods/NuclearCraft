@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/tin_silver"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:glowstone",
+        "amount": 250
+    },
+    "result": {
+        "item": "thermal:lumium_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "thermal:lumium_ingot"
+        }
+    ]
+}

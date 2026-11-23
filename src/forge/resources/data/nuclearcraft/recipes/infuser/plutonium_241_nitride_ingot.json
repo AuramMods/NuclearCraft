@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/plutonium_241"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:nitrogen",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:plutonium_241_nitride_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

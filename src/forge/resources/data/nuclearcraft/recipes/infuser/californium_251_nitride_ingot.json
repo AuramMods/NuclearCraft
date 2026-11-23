@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/californium_251"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:nitrogen",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:californium_251_nitride_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

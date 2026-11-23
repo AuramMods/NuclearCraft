@@ -63,6 +63,9 @@ public final class NCRegistries {
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
                         output.accept(NCFluids.LOW_PRESSURE_STEAM.bucket().get());
                         output.accept(NCFluids.LOW_QUALITY_STEAM.bucket().get());
+                        output.accept(NCFluids.OXYGEN.bucket().get());
+                        output.accept(NCFluids.NITROGEN.bucket().get());
+                        output.accept(NCFluids.HEAVY_WATER.bucket().get());
                     })
                     .build());
 

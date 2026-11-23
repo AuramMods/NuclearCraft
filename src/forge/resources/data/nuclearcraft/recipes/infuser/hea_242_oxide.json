@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/hea_242"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:oxygen",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:hea_242_oxide",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

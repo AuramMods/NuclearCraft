@@ -31,15 +31,17 @@ public final class NCItemProcessors {
     }
 
     public enum Machine {
-        MANUFACTORY("manufactory", 1, 1, false, 56, 116, 74, 35, 16),
-        SEPARATOR("separator", 1, 2, false, 42, 102, 60, 34, 18),
-        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, 126, 84, 35, 16);
+        MANUFACTORY("manufactory", 1, 1, false, 56, -1, 116, 74, 35, 16),
+        SEPARATOR("separator", 1, 2, false, 42, -1, 102, 60, 34, 18),
+        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 84, 35, 16),
+        INFUSER("infuser", 1, 1, true, 46, 66, 126, 84, 35, 16);
 
         private final String id;
         private final int inputs;
         private final int outputs;
         private final boolean losesProgress;
         private final int inputX;
+        private final int fluidInputX;
         private final int outputX;
         private final int progressX;
         private final int progressY;
@@ -51,13 +53,14 @@ public final class NCItemProcessors {
         private final RegistryObject<RecipeType<ItemProcessorRecipe>> recipes;
         private final RegistryObject<RecipeSerializer<ItemProcessorRecipe>> serializer;
 
-        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int outputX,
+        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
                 int progressX, int progressY, int progressHeight) {
             this.id = id;
             this.inputs = inputs;
             this.outputs = outputs;
             this.losesProgress = losesProgress;
             this.inputX = inputX;
+            this.fluidInputX = fluidInputX;
             this.outputX = outputX;
             this.progressX = progressX;
             this.progressY = progressY;
@@ -94,6 +97,14 @@ public final class NCItemProcessors {
 
         public int inputX(int slot) {
             return inputX + slot * 20;
+        }
+
+        public boolean hasFluidInput() {
+            return fluidInputX >= 0;
+        }
+
+        public int fluidInputX() {
+            return fluidInputX;
         }
 
         public int outputX(int slot) {

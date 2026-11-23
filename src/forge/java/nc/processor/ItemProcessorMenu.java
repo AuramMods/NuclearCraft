@@ -3,6 +3,7 @@ package nc.processor;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity.SideMode;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -11,6 +12,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
@@ -20,6 +22,11 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     static final int ENERGY = 1;
     static final int FIRST_SIDE = 2;
     static final int DATA_COUNT = FIRST_SIDE + 6;
+    static final int FLUID_ID = DATA_COUNT;
+    static final int FLUID_AMOUNT = FLUID_ID + 1;
+    static final int FLUID_SIDES = FLUID_AMOUNT + 1;
+    static final int FLUID_DATA_COUNT = FLUID_SIDES + 1;
+    public static final int FLUID_SIDE_BUTTON = 6;
 
     private static final Direction[] SIDES = Direction.values();
     private final Machine machine;
@@ -28,7 +35,8 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     private final @Nullable ItemProcessorBlockEntity processor;
 
     public ItemProcessorMenu(int id, Inventory player, Machine machine) {
-        this(id, player, machine, new ItemStackHandler(machine.slots()), new SimpleContainerData(DATA_COUNT),
+        this(id, player, machine, new ItemStackHandler(machine.slots()),
+                new SimpleContainerData(machine.hasFluidInput() ? FLUID_DATA_COUNT : DATA_COUNT),
                 ContainerLevelAccess.NULL, null);
     }
 
@@ -77,13 +85,32 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         return SideMode.byId(data.get(FIRST_SIDE + side.ordinal()));
     }
 
+    public FluidStack fluid() {
+        if (!machine.hasFluidInput()) {
+            return FluidStack.EMPTY;
+        }
+        return new FluidStack(BuiltInRegistries.FLUID.byId(data.get(FLUID_ID)), data.get(FLUID_AMOUNT));
+    }
+
+    public ProcessorFluidInput.Mode fluidSideMode(Direction side) {
+        return ProcessorFluidInput.Mode.read(data.get(FLUID_SIDES), side);
+    }
+
     @Override
     public boolean clickMenuButton(Player player, int button) {
-        if (processor == null || button < 0 || button >= SIDES.length || !stillValid(player)) {
+        if (processor == null || button < 0 || !stillValid(player)) {
             return false;
         }
-        processor.cycleSide(SIDES[button]);
-        return true;
+        if (button < SIDES.length) {
+            processor.cycleSide(SIDES[button]);
+            return true;
+        }
+        int fluidSide = button - FLUID_SIDE_BUTTON;
+        if (machine.hasFluidInput() && fluidSide >= 0 && fluidSide < SIDES.length) {
+            processor.cycleFluidSide(SIDES[fluidSide]);
+            return true;
+        }
+        return false;
     }
 
     @Override

@@ -23,6 +23,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 
+import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.function.Function;
@@ -87,6 +88,9 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide) {
+            if (FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                return InteractionResult.CONSUME;
+            }
             player.openMenu(menu);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

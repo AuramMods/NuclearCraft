@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "minecraft:sandstone"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:ender",
+        "amount": 250
+    },
+    "result": {
+        "item": "minecraft:end_stone",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

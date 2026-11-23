@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/shibuichi"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:redstone",
+        "amount": 250
+    },
+    "result": {
+        "item": "thermal:signalum_dust",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "thermal:signalum_dust"
+        }
+    ]
+}

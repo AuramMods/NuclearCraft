@@ -137,6 +137,13 @@ public final class NuclearCraftJei implements IModPlugin {
             layout.addSlot(INPUT, 20 + index * 23, 12).setStandardSlotBackground().addItemStacks(
                     Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
         }
+        var fluid = recipe.fluidInput();
+        if (fluid != null) {
+            var alternatives = ForgeRegistries.FLUIDS.getValues().stream()
+                    .filter(candidate -> candidate.isSource(candidate.defaultFluidState()))
+                    .map(candidate -> new FluidStack(candidate, fluid.amount())).filter(fluid::accepts).toList();
+            fluidSlot(layout, INPUT, 43, alternatives);
+        }
         for (int index = 0; index < recipe.machine().outputs(); index++) {
             layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(recipe.result(index));
         }

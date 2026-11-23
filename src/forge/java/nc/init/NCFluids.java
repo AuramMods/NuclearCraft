@@ -32,6 +32,7 @@ public final class NCFluids {
     private static final ResourceLocation MOLTEN_FLOW = NuclearCraft.id("block/fluids/molten_flow");
 
     private static final ResourceLocation STEAM = NuclearCraft.id("block/fluids/steam");
+    private static final ResourceLocation GAS = NuclearCraft.id("block/fluids/gas");
 
     public static final RegisteredFluid SULFUR = new RegisteredFluid("sulfur",
             () -> tintedFluid(FluidType.Properties.create().density(5000).viscosity(8000).temperature(1200).lightLevel(10)
@@ -45,12 +46,27 @@ public final class NCFluids {
     public static final RegisteredFluid LOW_PRESSURE_STEAM = steam("low_pressure_steam", 550, 0xFFA8A8A8);
     public static final RegisteredFluid LOW_QUALITY_STEAM = steam("low_quality_steam", 350, 0xFF828282);
     public static final RegisteredFluid STANDARD_STEAM = steam("steam", 550, 0xFF929292);
+    public static final RegisteredFluid OXYGEN = gas("oxygen", 0xFF7E8CC8);
+    public static final RegisteredFluid NITROGEN = gas("nitrogen", 0xFF7CC37B);
+    public static final RegisteredFluid HEAVY_WATER = new RegisteredFluid("heavy_water", () ->
+            tintedFluid(FluidType.Properties.create().density(1100).viscosity(1000)
+                            .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
+                            .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY),
+                    NuclearCraft.id("block/fluids/heavy_water_still"), NuclearCraft.id("block/fluids/heavy_water_flow"),
+                    0xFFFFFFFF));
 
     private static RegisteredFluid steam(String name, int temperature, int tint) {
         return new RegisteredFluid(name, () ->
                 tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), STEAM, STEAM, tint));
+    }
+
+    private static RegisteredFluid gas(String name, int tint) {
+        return new RegisteredFluid(name, () -> tintedFluid(
+                FluidType.Properties.create().density(-10).viscosity(40).canDrown(false).canSwim(false)
+                        .canPushEntity(false).sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
+                        .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), GAS, GAS, tint));
     }
 
     private NCFluids() {}

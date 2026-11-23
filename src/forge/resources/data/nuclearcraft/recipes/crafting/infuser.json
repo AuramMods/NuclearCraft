@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PBP",
+        "GCG",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "B": {
+            "item": "minecraft:bucket"
+        },
+        "G": {
+            "tag": "forge:ingots/gold"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:infuser"
+    }
+}

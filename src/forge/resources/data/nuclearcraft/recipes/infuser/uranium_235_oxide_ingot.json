@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/uranium_235"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:oxygen",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:uranium_235_oxide_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/leb_248"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:nitrogen",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:leb_248_nitride",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

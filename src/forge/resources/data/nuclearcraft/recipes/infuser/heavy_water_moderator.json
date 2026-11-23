@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:empty_frame"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:heavy_water",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:heavy_water_moderator",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

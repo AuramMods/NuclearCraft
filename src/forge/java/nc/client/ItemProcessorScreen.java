@@ -2,6 +2,7 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.processor.ItemProcessorMenu;
+import nc.processor.ProcessorFluidInput;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -9,7 +10,11 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.fluids.FluidStack;
 
 import java.util.EnumMap;
 
@@ -28,7 +33,8 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         for (Direction face : Direction.values()) {
             int index = face.ordinal();
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + face.getName() + ".short"),
-                    ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, index))
+                    ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
+                            menu.machine().hasFluidInput() && hasShiftDown() ? ItemProcessorMenu.FLUID_SIDE_BUTTON + index : index))
                     .bounds(leftPos + 44 + index * 20, topPos + 63, 19, 17)
                     .build();
             sideButtons.put(face, addRenderableWidget(button));
@@ -37,12 +43,21 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        sideButtons.forEach((side, button) -> button.setTooltip(Tooltip.create(Component.translatable(
-                "gui.nuclearcraft.item_side.tooltip", Component.translatable("gui.nuclearcraft.face." + side.getName()),
-                menu.sideMode(side).label()))));
+        sideButtons.forEach((side, button) -> {
+            Component face = Component.translatable("gui.nuclearcraft.face." + side.getName());
+            Component itemMode = menu.sideMode(side).label();
+            button.setTooltip(Tooltip.create(menu.machine().hasFluidInput()
+                    ? Component.translatable("gui.nuclearcraft.fluid_side.tooltip", face, itemMode, menu.fluidSideMode(side).label())
+                    : Component.translatable("gui.nuclearcraft.item_side.tooltip", face, itemMode)));
+        });
         renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
+        FluidStack fluid = menu.fluid();
+        if (!fluid.isEmpty() && isHovering(menu.machine().fluidInputX(), 35, 16, 16, mouseX, mouseY)) {
+            graphics.renderTooltip(font, Component.translatable("gui.nuclearcraft.fluid_amount",
+                    fluid.getDisplayName(), fluid.getAmount()), mouseX, mouseY);
+        }
     }
 
     @Override
@@ -54,5 +69,15 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         var machine = menu.machine();
         graphics.blit(texture, leftPos + machine.progressX(), topPos + machine.progressY(),
                 176, 3, progressWidth, machine.progressHeight());
+        FluidStack fluid = menu.fluid();
+        if (!fluid.isEmpty()) {
+            int height = Math.max(1, 16 * fluid.getAmount() / ProcessorFluidInput.CAPACITY);
+            var extension = IClientFluidTypeExtensions.of(fluid.getFluid());
+            var sprite = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(extension.getStillTexture(fluid));
+            int color = extension.getTintColor(fluid);
+            graphics.blit(leftPos + machine.fluidInputX(), topPos + 51 - height, 0, 16, height, sprite,
+                    FastColor.ARGB32.red(color) / 255F, FastColor.ARGB32.green(color) / 255F,
+                    FastColor.ARGB32.blue(color) / 255F, FastColor.ARGB32.alpha(color) / 255F);
+        }
     }
 }

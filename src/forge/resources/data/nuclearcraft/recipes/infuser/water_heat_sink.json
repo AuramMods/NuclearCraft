@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:empty_sink"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:water_heat_sink",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

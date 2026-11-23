@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:brick"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 2000
+    },
+    "result": {
+        "item": "minecraft:clay_ball",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

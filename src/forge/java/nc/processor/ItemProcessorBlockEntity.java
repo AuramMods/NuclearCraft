@@ -4,12 +4,12 @@ import nc.init.NCItemProcessors.Machine;
 import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
@@ -23,6 +23,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +39,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ItemProcessorRecipe> recipes;
     private final ProcessorEnergy power = new ProcessorEnergy(this, 512_000);
-    private final SimpleContainer input;
+    private final ProcessorInputs input;
     private final ItemStackHandler inventory;
+    private final @Nullable ProcessorFluidInput fluid;
     private final EnumMap<Direction, SideMode> sideModes = new EnumMap<>(Direction.class);
     private final EnumMap<Direction, ItemAccess> ports = new EnumMap<>(Direction.class);
     private ItemAccess unsided = new ItemAccess(SideMode.BOTH);
@@ -52,7 +54,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         super(machine.entityType(), pos, state);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
-        input = new SimpleContainer(machine.inputs());
+        input = new ProcessorInputs(machine.inputs());
+        fluid = machine.hasFluidInput() ? new ProcessorFluidInput(this, this::acceptsFluid) : null;
         inventory = new ItemStackHandler(machine.slots()) {
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -85,12 +88,23 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {
         boolean running = processor.process(level, level.hasNeighborSignal(pos));
         ProcessorBlock.setRunning(level, pos, state, running);
+        if (processor.fluid != null) {
+            processor.fluid.push(level);
+        }
     }
 
     private void refreshInput() {
         for (int slot = 0; slot < machine.inputs(); slot++) {
             input.setItem(slot, inventory.getStackInSlot(slot));
         }
+        if (fluid != null) {
+            input.setFluid(fluid.stored());
+        }
+    }
+
+    private boolean acceptsFluid(FluidStack stack) {
+        return level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+                .map(ItemProcessorRecipe::fluidInput).filter(Objects::nonNull).anyMatch(ingredient -> ingredient.accepts(stack));
     }
 
     private boolean process(Level level, boolean halted) {
@@ -125,6 +139,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             for (int slot = 0; slot < amounts.length; slot++) {
                 inventory.extractItem(slot, amounts[slot], false);
             }
+            if (fluid != null && recipe.fluidInput() != null) {
+                fluid.consume(recipe.fluidInput().amount());
+            }
             for (int index = 0; index < products.size(); index++) {
                 int slot = machine.inputs() + index;
                 ItemStack product = products.get(index);
@@ -153,6 +170,17 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         SideMode next = sideModes.get(side).next();
         sideModes.put(side, next);
         ports.put(side, new ItemAccess(next)).invalidate();
+        updateConnections();
+    }
+
+    public void cycleFluidSide(Direction side) {
+        if (fluid != null) {
+            fluid.cycle(side);
+            updateConnections();
+        }
+    }
+
+    private void updateConnections() {
         setChanged();
         if (level != null) {
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
@@ -168,6 +196,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             if (capability == ForgeCapabilities.ENERGY) {
                 return energy.cast();
             }
+            if (capability == ForgeCapabilities.FLUID_HANDLER && fluid != null) {
+                return fluid.capability(side).cast();
+            }
         }
         return super.getCapability(capability, side);
     }
@@ -178,6 +209,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         unsided.invalidate();
         ports.values().forEach(ItemAccess::invalidate);
         energy.invalidate();
+        if (fluid != null) {
+            fluid.invalidate();
+        }
     }
 
     @Override
@@ -186,6 +220,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         unsided = new ItemAccess(SideMode.BOTH);
         sideModes.forEach((side, mode) -> ports.put(side, new ItemAccess(mode)));
         energy = LazyOptional.of(() -> power);
+        if (fluid != null) {
+            fluid.revive();
+        }
     }
 
     @Override
@@ -202,6 +239,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             modes[side.ordinal()] = sideModes.get(side).ordinal();
         }
         tag.putIntArray("item_sides", modes);
+        if (fluid != null) {
+            fluid.save(tag);
+        }
     }
 
     @Override
@@ -219,6 +259,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                 ports.put(side, new ItemAccess(mode)).invalidate();
             }
         }
+        if (fluid != null) {
+            fluid.load(tag);
+        }
     }
 
     @Override
@@ -235,6 +278,10 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                     case ItemProcessorMenu.PROGRESS -> recipeTicks == 0 ? 0
                             : (int) (1000L * Math.min(progressHalfTicks, 2L * recipeTicks) / (2L * recipeTicks));
                     case ItemProcessorMenu.ENERGY -> (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
+                    case ItemProcessorMenu.FLUID_ID -> fluid == null ? 0
+                            : BuiltInRegistries.FLUID.getId(fluid.stored().getFluid());
+                    case ItemProcessorMenu.FLUID_AMOUNT -> fluid == null ? 0 : fluid.stored().getAmount();
+                    case ItemProcessorMenu.FLUID_SIDES -> fluid == null ? 0 : fluid.sideModes();
                     default -> sideModes.get(SIDES[index - ItemProcessorMenu.FIRST_SIDE]).ordinal();
                 };
             }
@@ -244,7 +291,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
 
             @Override
             public int getCount() {
-                return ItemProcessorMenu.DATA_COUNT;
+                return machine.hasFluidInput() ? ItemProcessorMenu.FLUID_DATA_COUNT : ItemProcessorMenu.DATA_COUNT;
             }
         };
         return new ItemProcessorMenu(id, playerInventory, machine, inventory, data,

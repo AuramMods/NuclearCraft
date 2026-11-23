@@ -666,5 +666,20 @@
     "item.nuclearcraft.depleted_hecf_251_nitride": "Depleted HECf-251 Nitride Fuel Pellet",
     "item.nuclearcraft.hecf_251_za": "HECf-251-Zirconium Alloy Fuel Pellet",
     "item.nuclearcraft.depleted_hecf_251_za": "Depleted HECf-251-Zirconium Alloy Fuel Pellet",
-    "block.nuclearcraft.separator": "Separator"
+    "block.nuclearcraft.separator": "Separator",
+    "block.nuclearcraft.oxygen": "Oxygen",
+    "fluid_type.nuclearcraft.oxygen": "Oxygen",
+    "item.nuclearcraft.oxygen_bucket": "Oxygen Bucket",
+    "block.nuclearcraft.nitrogen": "Nitrogen",
+    "fluid_type.nuclearcraft.nitrogen": "Nitrogen",
+    "item.nuclearcraft.nitrogen_bucket": "Nitrogen Bucket",
+    "block.nuclearcraft.heavy_water": "Heavy Water",
+    "fluid_type.nuclearcraft.heavy_water": "Heavy Water",
+    "item.nuclearcraft.heavy_water_bucket": "Heavy Water Bucket",
+    "block.nuclearcraft.infuser": "Infuser",
+    "gui.nuclearcraft.fluid_side.input": "Input",
+    "gui.nuclearcraft.fluid_side.output": "Output",
+    "gui.nuclearcraft.fluid_side.auto_output": "Auto-output",
+    "gui.nuclearcraft.fluid_side.off": "Disabled",
+    "gui.nuclearcraft.fluid_side.tooltip": "%s items: %s. Fluid: %s. Shift-click to change fluid mode."
 }
