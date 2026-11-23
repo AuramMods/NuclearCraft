@@ -35,6 +35,11 @@ final class SaltFuelBank {
         return output ? circuit.output : circuit.input;
     }
 
+    @Nullable FluidTank existingTank(@Nullable ResourceLocation filter, boolean output) {
+        Circuit circuit = circuits.get(filter);
+        return circuit == null ? null : output ? circuit.output : circuit.input;
+    }
+
     void resize(SolidFissionLayout layout) {
         var ports = new HashMap<ResourceLocation, Integer>();
         for (var port : layout.ports()) {

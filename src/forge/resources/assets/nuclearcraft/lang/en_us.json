@@ -2343,5 +2343,14 @@
     "message.nuclearcraft.fission.fuel_filter_cleared": "Fuel filter cleared",
     "gui.nuclearcraft.fission.cold_nak": "Cold NaK",
     "gui.nuclearcraft.fission.hot_nak": "Hot NaK",
-    "gui.nuclearcraft.jei.coolant_heater": "%s H/t cooling"
+    "gui.nuclearcraft.jei.coolant_heater": "%s H/t cooling",
+    "gui.nuclearcraft.salt_part.heat": "Cluster heat  %s / %s H",
+    "gui.nuclearcraft.salt_part.no_cluster": "No heat cluster",
+    "gui.nuclearcraft.salt_part.capacity": "Capacity %s mB",
+    "gui.nuclearcraft.salt_part.filter": "Filter %s",
+    "gui.nuclearcraft.salt_part.reserved": "Reserved %s (%s mB)",
+    "gui.nuclearcraft.salt_part.clear": "Shift-click to clear",
+    "gui.nuclearcraft.salt_part.disconnected": "Unassembled",
+    "gui.nuclearcraft.salt_part.input": "Input",
+    "gui.nuclearcraft.salt_part.output": "Output"
 }

@@ -75,6 +75,12 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return !isRemoved() && binding == connection && connection.controller.assembled();
     }
 
+    @Nullable SolidFissionController saltController() {
+        Binding current = binding;
+        return current != null && connected(current) && current.controller.variant() == FissionVariant.SALT
+                ? current.controller : null;
+    }
+
     @Nullable ResourceLocation fuelFilter() {
         return fuelFilter;
     }

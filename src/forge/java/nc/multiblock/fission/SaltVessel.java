@@ -81,6 +81,23 @@ public final class SaltVessel extends BlockEntity {
         return recipe;
     }
 
+    @Nullable ResourceLocation outputCircuit() {
+        return reserved.isEmpty() ? filter : reservedCircuit;
+    }
+
+    FluidStack reservedForInspection() {
+        return reserved.copy();
+    }
+
+    double progressForInspection() {
+        if (level == null || reserved.isEmpty()) {
+            return 0;
+        }
+        recipeInput.setFluid(reserved);
+        return recipes.getRecipeFor(recipeInput, level).map(recipe ->
+                Math.min(1, progress / (recipe.ticks() * NCSaltFission.timeMultiplier()))).orElse(0D);
+    }
+
     boolean sameFuel(SaltVessel other) {
         return Objects.equals(reservedCircuit, other.reservedCircuit) && reserved.isFluidEqual(other.reserved);
     }

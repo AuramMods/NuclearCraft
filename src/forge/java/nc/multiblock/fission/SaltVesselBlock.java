@@ -29,13 +29,16 @@ public final class SaltVesselBlock extends FissionPartBlock implements EntityBlo
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                  InteractionHand hand, BlockHitResult hit) {
-        if (!player.isShiftKeyDown() || hand != InteractionHand.MAIN_HAND) {
+        if (hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
         if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof SaltVessel vessel) {
-            return selectFilter(player, hand, server, pos, vessel::filter);
+            if (player.isShiftKeyDown()) {
+                return selectFilter(player, hand, server, pos, vessel::filter);
+            }
+            SaltFissionPartMenu.open(player, server, pos, SaltFissionPartMenu.Kind.VESSEL);
         }
-        return InteractionResult.SUCCESS;
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     static InteractionResult selectFilter(Player player, InteractionHand hand, ServerLevel level, BlockPos pos,

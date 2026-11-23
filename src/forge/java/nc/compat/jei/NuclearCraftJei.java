@@ -19,6 +19,7 @@ import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import nc.NuclearCraft;
 import nc.client.FluidProcessorScreen;
+import nc.client.SaltFissionPartScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
@@ -248,6 +249,14 @@ public final class NuclearCraftJei implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(SaltFissionPartScreen.class, new IGuiContainerHandler<>() {
+            @Override
+            public Collection<IGuiClickableArea> getGuiClickableAreas(SaltFissionPartScreen screen, double x, double y) {
+                var kind = screen.getMenu().kind();
+                return kind.port() ? List.of() : List.of(IGuiClickableArea.createBasic(74, 35, 37, 16,
+                        kind.fuel() ? SALT_FISSION : SALT_HEATING));
+            }
+        });
         registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
         registration.addGuiContainerHandler(FluidProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override

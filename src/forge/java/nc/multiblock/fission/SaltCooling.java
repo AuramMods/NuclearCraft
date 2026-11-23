@@ -13,6 +13,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -47,6 +48,16 @@ final class SaltCooling {
     FluidTank tank(NCSaltCoolants coolant, boolean output) {
         Circuit circuit = circuits.computeIfAbsent(coolant, Circuit::new);
         return output ? circuit.hot : circuit.cold;
+    }
+
+    @Nullable FluidTank existingTank(NCSaltCoolants coolant, boolean output) {
+        Circuit circuit = circuits.get(coolant);
+        return circuit == null ? null : output ? circuit.hot : circuit.cold;
+    }
+
+    double progress(BlockPos pos, NCSaltCoolants coolant) {
+        Fraction fraction = credit.get(pos);
+        return fraction != null && fraction.coolant() == coolant ? fraction.amount() : 0;
     }
 
     void resize(SolidFissionLayout layout) {
@@ -162,10 +173,10 @@ final class SaltCooling {
         };
     }
 
-    void heat(BlockPos pos, NCSaltCoolants coolant, double efficiency) {
+    boolean heat(BlockPos pos, NCSaltCoolants coolant, double efficiency) {
         Circuit circuit = circuits.get(coolant);
         if (circuit.transferable() <= 0 || efficiency <= 0) {
-            return;
+            return false;
         }
         Fraction previous = credit.get(pos);
         double progress = (previous != null && previous.coolant() == coolant ? previous.amount() : 0)
@@ -177,6 +188,7 @@ final class SaltCooling {
             circuit.cold.drain(amount, EXECUTE);
         }
         owner.setChanged();
+        return true;
     }
 
     int amount(boolean output) {

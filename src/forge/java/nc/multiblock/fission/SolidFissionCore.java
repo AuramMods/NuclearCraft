@@ -32,6 +32,10 @@ final class SolidFissionCore {
 
     record Heat(long raw, long casingHeat, double effective, List<BlockPos> overheatedCells) {}
 
+    record PartHeat(long amount, long capacity, boolean processing) {
+        static final PartHeat NONE = new PartHeat(0, 0, false);
+    }
+
     private record GasLoad(BlockPos pos, NCGasCoolants gas, double efficiency) {}
     private record SaltLoad(BlockPos pos, NCSaltCoolants coolant, double efficiency) {}
 
@@ -175,11 +179,22 @@ final class SolidFissionCore {
     private final SolidFissionLayout layout;
     private List<Cluster> clusters;
     private Set<BlockPos> activeCoolers = Set.of();
+    private Set<BlockPos> heatingSalts = Set.of();
     private final Set<BlockPos> runningCells = new HashSet<>();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
         clusters = findClusters(layout, layout.variant() == FissionVariant.SOLID ? null : activeCoolers);
+    }
+
+    PartHeat partHeat(BlockPos pos, Map<BlockPos, Long> storedHeat, boolean running) {
+        for (Cluster cluster : clusters) {
+            if (cluster.cells().contains(pos) || cluster.sinks().contains(pos)) {
+                return new PartHeat(cluster.previousHeat(storedHeat), cluster.capacity(),
+                        running && (runningCells.contains(pos) || heatingSalts.contains(pos)));
+            }
+        }
+        return PartHeat.NONE;
     }
 
     Heat tick(ServerLevel level, ItemStackHandler inventory, Map<BlockPos, Long> storedHeat,
@@ -322,9 +337,13 @@ final class SolidFissionCore {
             }
         }
         if (saltCooling != null) {
+            var heating = new HashSet<BlockPos>();
             for (SaltLoad load : saltLoads) {
-                saltCooling.heat(load.pos(), load.coolant(), load.efficiency() * sparsityEfficiency);
+                if (saltCooling.heat(load.pos(), load.coolant(), load.efficiency() * sparsityEfficiency)) {
+                    heating.add(load.pos());
+                }
             }
+            heatingSalts = heating;
         }
         return new Heat(raw, casing, effective * sparsityEfficiency, List.of());
     }

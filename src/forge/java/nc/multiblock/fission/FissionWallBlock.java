@@ -133,15 +133,20 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
                         return result;
                     }
                 }
+                if ((role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)
+                        && !player.getItemInHand(hand).isEmpty()) {
+                    return InteractionResult.PASS;
+                }
                 boolean output = !state.getValue(ACTIVE);
                 level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
                 geometryChanged(server, pos);
                 player.displayClientMessage(Component.translatable(output
                         ? "message.nuclearcraft.fission.port_output" : "message.nuclearcraft.fission.port_input"), true);
-            } else if (entity instanceof FissionPortBlockEntity
-                    && (role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)
-                    && FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
-                return InteractionResult.CONSUME;
+            } else if (entity instanceof FissionPortBlockEntity && (role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)) {
+                if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                    SaltFissionPartMenu.open(player, server, pos, role(state) == Role.VESSEL_PORT
+                            ? SaltFissionPartMenu.Kind.VESSEL_PORT : SaltFissionPartMenu.Kind.HEATER_PORT);
+                }
             } else if (entity instanceof SolidFissionController controller) {
                 if (controller.assembled()) {
                     player.openMenu(controller);

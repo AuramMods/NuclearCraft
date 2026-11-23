@@ -2,6 +2,7 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
+import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
@@ -11,6 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -265,6 +267,28 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return saltFuel.tank(port.fuelFilter(), port.output());
         }
         return port.output() ? steam : coolant;
+    }
+
+    boolean containsSaltComponent(BlockPos pos, SaltFissionPartMenu.Kind kind) {
+        return variant == FissionVariant.SALT && assembled() && layout.bounds().contains(pos)
+                && (kind == SaltFissionPartMenu.Kind.VESSEL ? layout.cells() : layout.sinks()).contains(pos);
+    }
+
+    @Nullable FluidTank existingSaltFuelTank(@Nullable ResourceLocation filter, boolean output) {
+        return saltFuel == null ? null : saltFuel.existingTank(filter, output);
+    }
+
+    @Nullable FluidTank existingSaltCoolantTank(NCSaltCoolants coolant, boolean output) {
+        return saltCooling == null ? null : saltCooling.existingTank(coolant, output);
+    }
+
+    double heaterProgress(BlockPos pos, NCSaltCoolants coolant) {
+        return saltCooling == null ? 0 : saltCooling.progress(pos, coolant);
+    }
+
+    SolidFissionCore.PartHeat partHeat(BlockPos pos) {
+        return core == null ? SolidFissionCore.PartHeat.NONE
+                : core.partHeat(pos, clusterHeat, getBlockState().getValue(FissionWallBlock.ACTIVE));
     }
 
     FissionVariant variant() {

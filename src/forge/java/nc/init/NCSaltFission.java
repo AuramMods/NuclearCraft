@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionVariant;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.SaltFissionPartMenu;
 import nc.multiblock.fission.SaltHeaterBlock;
 import nc.multiblock.fission.SaltVessel;
 import nc.multiblock.fission.SaltVesselBlock;
@@ -28,6 +29,8 @@ public final class NCSaltFission {
     private static final Map<NCSaltCoolants, RegistryObject<SaltHeaterBlock>> HEATERS = new EnumMap<>(NCSaltCoolants.class);
     private static final Map<NCSaltCoolants, RegistryObject<FissionWallBlock>> PORTS = new EnumMap<>(NCSaltCoolants.class);
     private static final Map<NCSaltCoolants, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCSaltCoolants.class);
+    private static final Map<SaltFissionPartMenu.Kind, RegistryObject<MenuType<SaltFissionPartMenu>>> PART_MENUS =
+            new EnumMap<>(SaltFissionPartMenu.Kind.class);
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
@@ -55,6 +58,10 @@ public final class NCSaltFission {
         }
         builder.pop();
         SPEC = builder.build();
+        for (var kind : SaltFissionPartMenu.Kind.values()) {
+            PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
+                    () -> new MenuType<>((id, inventory) -> new SaltFissionPartMenu(id, inventory, kind), FeatureFlags.DEFAULT_FLAGS)));
+        }
     }
 
     public static final RegistryObject<FissionWallBlock> CONTROLLER = NCFission.wall("salt_fission_controller", Role.SALT_CONTROLLER);
@@ -90,6 +97,7 @@ public final class NCSaltFission {
         }
     }
 
+    public static MenuType<SaltFissionPartMenu> partMenu(SaltFissionPartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
     public static SaltHeaterBlock heater(NCSaltCoolants coolant) { return HEATERS.get(coolant).get(); }
     public static FissionWallBlock port(NCSaltCoolants coolant) { return PORTS.get(coolant).get(); }
     public static int cooling(NCSaltCoolants coolant) { return value(COOLING.get(coolant)); }

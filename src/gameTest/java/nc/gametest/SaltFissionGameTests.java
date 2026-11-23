@@ -1,10 +1,12 @@
 package nc.gametest;
 
+import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
 import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.SaltFissionPartMenu;
 import nc.multiblock.fission.SolidFissionController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,14 +14,19 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.OptionalInt;
+import java.util.UUID;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
@@ -162,6 +169,54 @@ public final class SaltFissionGameTests {
                             "69 ticks of fuel progress complete three whole doses during the first undercooled tick");
                     helper.succeed();
                 }
+            });
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 95)
+    public static void saltInspectionChecksDistanceAndDisassemblyBeforeChangingTanks(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        helper.runAtTickTime(15, () -> {
+            var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "SaltInspector")) {
+                @Override
+                public OptionalInt openMenu(MenuProvider provider) {
+                    containerMenu = provider.createMenu(1, getInventory(), this);
+                    return OptionalInt.of(1);
+                }
+            };
+            BlockPos absolutePort = helper.absolutePos(FUEL_IN);
+            player.moveTo(absolutePort.getX() + 0.5, absolutePort.getY(), absolutePort.getZ() - 1.0);
+            var initial = fluids(helper, FUEL_IN, Direction.NORTH);
+            helper.assertTrue(initial.fill(stack(FUEL, 50_001), EXECUTE) == 50_001,
+                    "Seed more than a signed short can represent through the input port");
+            helper.useBlock(FUEL_IN, player);
+            helper.assertTrue(player.containerMenu instanceof SaltFissionPartMenu, "Use the port to open the real inspection menu");
+            var menu = (SaltFissionPartMenu) player.containerMenu;
+            helper.assertTrue(menu.kind() == SaltFissionPartMenu.Kind.VESSEL_PORT && menu.connected()
+                            && menu.fluid(false).getAmount() == 50_001 && menu.capacity(false) == 72_000,
+                    "The menu reads the exact input, its capacity, and its current assembly");
+            player.moveTo(absolutePort.getX() + 20, absolutePort.getY(), absolutePort.getZ());
+            helper.assertTrue(!menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT)
+                            && initial.getFluidInTank(0).getAmount() == 50_001,
+                    "An out-of-range clear request must leave the tank alone");
+            player.moveTo(absolutePort.getX() + 0.5, absolutePort.getY(), absolutePort.getZ() - 1.0);
+            helper.setBlock(CASE, Blocks.AIR);
+            menu.broadcastChanges();
+            helper.assertTrue(!menu.connected() && !menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_OUTPUT),
+                    "A disconnected port cannot clear the controller's previous output");
+            helper.setBlock(CASE, NCFission.CASING.get());
+            helper.runAtTickTime(22, () -> {
+                menu.broadcastChanges();
+                helper.assertTrue(menu.connected() && menu.fluid(false).getAmount() == 50_001
+                                && menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT),
+                        "The linked screen follows reassembly and clears only the currently bound tank");
+                helper.assertTrue(fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "A valid tank clear reaches the shared buffer");
+                helper.setBlock(FUEL_IN, Blocks.AIR);
+                helper.setBlock(FUEL_IN, NCSaltFission.VESSEL_PORT.get());
+                helper.assertTrue(!menu.stillValid(player), "Replacing the port invalidates its old menu");
+                helper.succeed();
             });
         });
     }

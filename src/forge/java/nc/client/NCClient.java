@@ -8,6 +8,7 @@ import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
+import nc.multiblock.fission.SaltFissionPartMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -32,6 +33,9 @@ public final class NCClient {
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCPebbleFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCSaltFission.MENU.get(), SolidFissionScreen::new);
+            for (var kind : SaltFissionPartMenu.Kind.values()) {
+                MenuScreens.register(NCSaltFission.partMenu(kind), SaltFissionPartScreen::new);
+            }
             MenuScreens.register(NCTurbine.MENU.get(), TurbineScreen::new);
             MenuScreens.register(NCHeatExchangers.CONDENSER_MENU.get(), ExchangerScreen::new);
             MenuScreens.register(NCHeatExchangers.MENU.get(), ExchangerScreen::new);
