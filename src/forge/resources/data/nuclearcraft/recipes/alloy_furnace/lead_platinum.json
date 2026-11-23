@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/lead"
+                },
+                {
+                    "tag": "forge:dusts/lead"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/platinum"
+                },
+                {
+                    "tag": "forge:dusts/platinum"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lead_platinum_ingot",
+        "count": 4
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

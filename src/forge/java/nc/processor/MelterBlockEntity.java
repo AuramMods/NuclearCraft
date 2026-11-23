@@ -18,13 +18,11 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -56,7 +54,7 @@ public final class MelterBlockEntity extends BlockEntity implements MenuProvider
         }
     };
     private final OutputTank tank = new OutputTank();
-    private final PowerBuffer power = new PowerBuffer();
+    private final ProcessorEnergy power = new ProcessorEnergy(this, ENERGY_CAPACITY);
 
     private LazyOptional<IItemHandler> itemCapability = LazyOptional.of(() -> automationInput);
     private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.of(() -> tank);
@@ -75,9 +73,7 @@ public final class MelterBlockEntity extends BlockEntity implements MenuProvider
 
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
         boolean processing = melter.process(level, level.hasNeighborSignal(pos));
-        if (processing != state.getValue(MelterBlock.LIT)) {
-            level.setBlock(pos, state.setValue(MelterBlock.LIT, processing), Block.UPDATE_CLIENTS);
-        }
+        ProcessorBlock.setRunning(level, pos, state, processing);
     }
 
     private boolean process(Level level, boolean halted) {
@@ -224,33 +220,6 @@ public final class MelterBlockEntity extends BlockEntity implements MenuProvider
         @Override
         protected void onContentsChanged() {
             setChanged();
-        }
-    }
-
-    private final class PowerBuffer extends EnergyStorage {
-        private PowerBuffer() {
-            super(ENERGY_CAPACITY, ENERGY_CAPACITY, 0);
-        }
-
-        @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
-            int accepted = super.receiveEnergy(Math.max(0, maxReceive), simulate);
-            if (!simulate && accepted > 0) {
-                setChanged();
-            }
-            return accepted;
-        }
-
-        private boolean spend(int amount) {
-            if (energy < amount) {
-                return false;
-            }
-            energy -= amount;
-            return true;
-        }
-
-        private void load(int stored) {
-            energy = Math.max(0, Math.min(stored, capacity));
         }
     }
 }

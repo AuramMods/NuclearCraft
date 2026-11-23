@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ores/lithium"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lithium_dust",
+        "count": 2
+    },
+    "ticks": 500,
+    "energy_per_tick": 20
+}

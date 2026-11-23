@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ores/magnesium"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:magnesium_dust",
+        "count": 2
+    },
+    "ticks": 500,
+    "energy_per_tick": 20
+}

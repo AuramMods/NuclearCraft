@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/copper"
+                },
+                {
+                    "tag": "forge:dusts/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/tin"
+                },
+                {
+                    "tag": "forge:dusts/tin"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:bronze_ingot",
+        "count": 4
+    },
+    "ticks": 400,
+    "energy_per_tick": 20
+}

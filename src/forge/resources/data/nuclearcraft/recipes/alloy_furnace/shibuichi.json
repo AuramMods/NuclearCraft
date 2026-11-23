@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/copper"
+                },
+                {
+                    "tag": "forge:dusts/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/silver"
+                },
+                {
+                    "tag": "forge:dusts/silver"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:shibuichi_ingot",
+        "count": 4
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

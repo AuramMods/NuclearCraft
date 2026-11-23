@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "minecraft:crimson_stems"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:crimson_planks",
+        "count": 6
+    },
+    "ticks": 200,
+    "energy_per_tick": 10
+}

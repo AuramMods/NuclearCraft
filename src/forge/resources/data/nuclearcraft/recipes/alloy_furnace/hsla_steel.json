@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/iron"
+                },
+                {
+                    "tag": "forge:dusts/iron"
+                }
+            ],
+            "count": 15
+        },
+        {
+            "ingredient": {
+                "item": "nuclearcraft:c_mn_blend"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hsla_steel_ingot",
+        "count": 16
+    },
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

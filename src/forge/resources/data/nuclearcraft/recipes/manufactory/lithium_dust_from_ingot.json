@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/lithium"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lithium_dust",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20
+}

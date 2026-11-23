@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "LRL",
+        "FPF",
+        "LSL"
+    ],
+    "key": {
+        "L": {
+            "tag": "forge:ingots/lead"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "F": {
+            "item": "minecraft:flint"
+        },
+        "P": {
+            "item": "minecraft:piston"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:manufactory"
+    }
+}

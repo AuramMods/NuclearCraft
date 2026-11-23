@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:silicon"
+                },
+                {
+                    "tag": "forge:ingots/silicon"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/graphite"
+                },
+                {
+                    "tag": "forge:dusts/graphite"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:silicon_carbide_ingot",
+        "count": 2
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

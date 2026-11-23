@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/lithium"
+                },
+                {
+                    "tag": "forge:dusts/lithium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/manganese_dioxide"
+                },
+                {
+                    "tag": "forge:dusts/manganese_dioxide"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lithium_manganese_dioxide_ingot",
+        "count": 2
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

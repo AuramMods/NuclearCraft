@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/gold"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "mekanism:dust_gold",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "mekanism:dust_gold"
+        }
+    ]
+}

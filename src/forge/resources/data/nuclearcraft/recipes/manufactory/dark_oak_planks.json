@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "minecraft:dark_oak_logs"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:dark_oak_planks",
+        "count": 6
+    },
+    "ticks": 200,
+    "energy_per_tick": 10
+}

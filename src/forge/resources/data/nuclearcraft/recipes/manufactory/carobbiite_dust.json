@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:gems/carobbiite"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:carobbiite_dust",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 30
+}

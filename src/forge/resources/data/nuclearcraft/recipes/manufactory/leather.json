@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:rotten_flesh"
+            },
+            "count": 4
+        }
+    ],
+    "result": {
+        "item": "minecraft:leather",
+        "count": 1
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

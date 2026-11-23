@@ -62,6 +62,8 @@
         "nuclearcraft:iridium_oxide_block",
         "nuclearcraft:holmium_block",
         "nuclearcraft:dysprosium_block",
-        "nuclearcraft:gadolinium_block"
+        "nuclearcraft:gadolinium_block",
+        "nuclearcraft:manufactory",
+        "nuclearcraft:alloy_furnace"
     ]
 }

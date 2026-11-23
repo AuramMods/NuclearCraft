@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:charcoal"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "mekanism:dust_charcoal",
+        "count": 1
+    },
+    "ticks": 200,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "mekanism:dust_charcoal"
+        }
+    ]
+}

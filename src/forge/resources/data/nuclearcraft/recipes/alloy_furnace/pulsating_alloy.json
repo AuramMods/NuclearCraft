@@ -1,0 +1,34 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/iron"
+                },
+                {
+                    "tag": "forge:dusts/iron"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "item": "minecraft:ender_pearl"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "enderio:pulsating_alloy_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:pulsating_alloy_ingot"
+        }
+    ]
+}

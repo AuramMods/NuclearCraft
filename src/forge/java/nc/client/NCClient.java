@@ -2,6 +2,7 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.init.NCFission;
+import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -18,6 +19,9 @@ public final class NCClient {
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new);
+            for (Machine machine : Machine.values()) {
+                MenuScreens.register(machine.menu(), ItemProcessorScreen::new);
+            }
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCTurbine.MENU.get(), TurbineScreen::new);
         });

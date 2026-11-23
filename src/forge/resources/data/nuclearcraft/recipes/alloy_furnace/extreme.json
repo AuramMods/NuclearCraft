@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/tough"
+                },
+                {
+                    "tag": "forge:dusts/tough"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/hard_carbon"
+                },
+                {
+                    "tag": "forge:dusts/hard_carbon"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:extreme_ingot",
+        "count": 1
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

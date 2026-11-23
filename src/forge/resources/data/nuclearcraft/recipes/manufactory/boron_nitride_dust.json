@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:gems/boron_nitride"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:boron_nitride_dust",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 30
+}

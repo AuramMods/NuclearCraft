@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:coal"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:coal_dust",
+        "count": 1
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

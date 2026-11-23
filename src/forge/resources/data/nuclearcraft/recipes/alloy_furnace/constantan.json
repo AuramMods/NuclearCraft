@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/copper"
+                },
+                {
+                    "tag": "forge:dusts/copper"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/nickel"
+                },
+                {
+                    "tag": "forge:dusts/nickel"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "thermal:constantan_ingot",
+        "count": 2
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "thermal:constantan_ingot"
+        }
+    ]
+}

@@ -1,0 +1,34 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/steel"
+                },
+                {
+                    "tag": "forge:dusts/steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "item": "minecraft:obsidian"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "enderio:dark_steel_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:dark_steel_ingot"
+        }
+    ]
+}

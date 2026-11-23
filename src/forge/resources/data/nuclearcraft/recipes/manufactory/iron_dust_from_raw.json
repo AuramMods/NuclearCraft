@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:raw_materials/iron"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "mekanism:dust_iron",
+        "count": 1
+    },
+    "ticks": 500,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "mekanism:dust_iron"
+        }
+    ]
+}

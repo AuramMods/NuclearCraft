@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/nichrome"
+                },
+                {
+                    "tag": "forge:dusts/nichrome"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/molybdenum"
+                },
+                {
+                    "tag": "forge:dusts/molybdenum"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hastelloy_ingot",
+        "count": 4
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

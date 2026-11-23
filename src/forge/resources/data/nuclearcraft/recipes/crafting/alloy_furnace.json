@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PRP",
+        "BFB",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "B": {
+            "item": "minecraft:brick"
+        },
+        "F": {
+            "item": "minecraft:furnace"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:alloy_furnace"
+    }
+}

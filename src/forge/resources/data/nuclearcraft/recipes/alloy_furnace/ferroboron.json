@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/steel"
+                },
+                {
+                    "tag": "forge:dusts/steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/boron"
+                },
+                {
+                    "tag": "forge:dusts/boron"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:ferroboron_ingot",
+        "count": 2
+    },
+    "ticks": 400,
+    "energy_per_tick": 30
+}

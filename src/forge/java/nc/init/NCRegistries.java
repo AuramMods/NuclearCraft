@@ -57,6 +57,7 @@ public final class NCRegistries {
                     .icon(() -> MELTER_ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(MELTER_ITEM.get());
+                        NCItemProcessors.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
@@ -69,6 +70,7 @@ public final class NCRegistries {
 
     public static void register(IEventBus bus) {
         NCMaterials.register();
+        NCItemProcessors.register();
         NCFission.register();
         NCTurbine.register();
         BLOCKS.register(bus);

@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/zirconium"
+                },
+                {
+                    "tag": "forge:dusts/zirconium"
+                }
+            ],
+            "count": 7
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/tin"
+                },
+                {
+                    "tag": "forge:dusts/tin"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:zircaloy_ingot",
+        "count": 8
+    },
+    "ticks": 1600,
+    "energy_per_tick": 20
+}

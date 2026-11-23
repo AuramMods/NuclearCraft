@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:sintered_zirconia"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:zirconia_dust",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20
+}

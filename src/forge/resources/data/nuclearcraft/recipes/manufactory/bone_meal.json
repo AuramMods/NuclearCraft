@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:bone"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:bone_meal",
+        "count": 6
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

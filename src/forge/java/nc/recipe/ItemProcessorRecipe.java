@@ -1,0 +1,162 @@
+package nc.recipe;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import nc.init.NCItemProcessors.Machine;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.world.Container;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.Level;
+import net.minecraftforge.common.crafting.CraftingHelper;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs, ItemStack result,
+                                  int ticks, int energyPerTick) implements Recipe<Container> {
+    public ItemProcessorRecipe {
+        inputs = List.copyOf(inputs);
+        result = result.copy();
+    }
+
+    /** Counts are indexed by inventory slot, so the furnace can consume either ingredient order. */
+    public int[] match(Container container) {
+        int[] amounts = match(container, false);
+        return amounts == null && inputs.size() == 2 ? match(container, true) : amounts;
+    }
+
+    private int[] match(Container container, boolean reversed) {
+        if (container.getContainerSize() < inputs.size()) {
+            return null;
+        }
+        int[] amounts = new int[inputs.size()];
+        for (int slot = 0; slot < inputs.size(); slot++) {
+            Input input = inputAt(slot, reversed);
+            ItemStack stack = container.getItem(slot);
+            if (stack.getCount() < input.count() || !input.ingredient().test(stack)) {
+                return null;
+            }
+            amounts[slot] = input.count();
+        }
+        return amounts;
+    }
+
+    public boolean canInsert(Container container, int slot, ItemStack stack) {
+        return canInsert(container, slot, stack, false)
+                || (inputs.size() == 2 && canInsert(container, slot, stack, true));
+    }
+
+    private boolean canInsert(Container container, int slot, ItemStack stack, boolean reversed) {
+        for (int index = 0; index < inputs.size(); index++) {
+            ItemStack current = index == slot ? stack : container.getItem(index);
+            if (!current.isEmpty() && !inputAt(index, reversed).ingredient().test(current)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Input inputAt(int slot, boolean reversed) {
+        return inputs.get(reversed ? 1 - slot : slot);
+    }
+
+    @Override
+    public boolean matches(Container container, Level level) {
+        return match(container) != null;
+    }
+
+    @Override
+    public ItemStack assemble(Container container, RegistryAccess registries) {
+        return result();
+    }
+
+    @Override
+    public ItemStack result() {
+        return result.copy();
+    }
+
+    @Override
+    public ItemStack getResultItem(RegistryAccess registries) {
+        return result();
+    }
+
+    @Override
+    public boolean canCraftInDimensions(int width, int height) {
+        return width * height >= inputs.size();
+    }
+
+    @Override
+    public boolean isSpecial() {
+        return true;
+    }
+
+    @Override
+    public ResourceLocation getId() {
+        return id;
+    }
+
+    @Override
+    public RecipeSerializer<?> getSerializer() {
+        return machine.serializer();
+    }
+
+    @Override
+    public RecipeType<?> getType() {
+        return machine.recipes();
+    }
+
+    public record Input(Ingredient ingredient, int count) {}
+
+    public record Serializer(Machine machine) implements RecipeSerializer<ItemProcessorRecipe> {
+        @Override
+        public ItemProcessorRecipe fromJson(ResourceLocation id, JsonObject json) {
+            var entries = GsonHelper.getAsJsonArray(json, "ingredients");
+            if (entries.size() != machine.inputs()) {
+                throw new JsonSyntaxException("Expected " + machine.inputs() + " item inputs for " + id);
+            }
+            List<Input> inputs = new ArrayList<>(entries.size());
+            for (var entry : entries) {
+                JsonObject ingredient = GsonHelper.convertToJsonObject(entry, "ingredient");
+                int count = GsonHelper.getAsInt(ingredient, "count", 1);
+                if (count < 1 || count > 64) {
+                    throw new JsonSyntaxException("Invalid ingredient count for " + id);
+                }
+                inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
+            }
+            ItemStack result = CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true);
+            int ticks = GsonHelper.getAsInt(json, "ticks");
+            int energy = GsonHelper.getAsInt(json, "energy_per_tick");
+            if (result.isEmpty() || result.getCount() > result.getMaxStackSize() || ticks <= 0 || energy < 0) {
+                throw new JsonSyntaxException("Invalid item processor recipe " + id);
+            }
+            return new ItemProcessorRecipe(id, machine, inputs, result, ticks, energy);
+        }
+
+        @Override
+        public ItemProcessorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
+            List<Input> inputs = new ArrayList<>(machine.inputs());
+            for (int index = 0; index < machine.inputs(); index++) {
+                inputs.add(new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
+            }
+            return new ItemProcessorRecipe(id, machine, inputs, buffer.readItem(), buffer.readVarInt(), buffer.readVarInt());
+        }
+
+        @Override
+        public void toNetwork(FriendlyByteBuf buffer, ItemProcessorRecipe recipe) {
+            for (Input input : recipe.inputs) {
+                input.ingredient.toNetwork(buffer);
+                buffer.writeVarInt(input.count);
+            }
+            buffer.writeItem(recipe.result);
+            buffer.writeVarInt(recipe.ticks);
+            buffer.writeVarInt(recipe.energyPerTick);
+        }
+    }
+}

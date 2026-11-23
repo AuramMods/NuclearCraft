@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/tin"
+                },
+                {
+                    "tag": "forge:dusts/tin"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/silver"
+                },
+                {
+                    "tag": "forge:dusts/silver"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:tin_silver_ingot",
+        "count": 4
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

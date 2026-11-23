@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/extreme"
+                },
+                {
+                    "tag": "forge:dusts/extreme"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "tag": "forge:gems/boron_arsenide"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:thermoconducting_ingot",
+        "count": 2
+    },
+    "ticks": 600,
+    "energy_per_tick": 30
+}

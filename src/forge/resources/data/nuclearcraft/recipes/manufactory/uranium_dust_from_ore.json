@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ores/uranium"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:uranium_dust",
+        "count": 2
+    },
+    "ticks": 500,
+    "energy_per_tick": 20
+}

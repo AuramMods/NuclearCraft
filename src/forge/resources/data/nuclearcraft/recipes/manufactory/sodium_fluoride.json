@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/villiaumite"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:sodium_fluoride",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20
+}

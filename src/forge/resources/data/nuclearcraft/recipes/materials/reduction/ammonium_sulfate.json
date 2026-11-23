@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:ammonium_sulfate"
+    },
+    "result": "nuclearcraft:ammonium_bisulfate",
+    "experience": 0.0,
+    "cookingtime": 200
+}

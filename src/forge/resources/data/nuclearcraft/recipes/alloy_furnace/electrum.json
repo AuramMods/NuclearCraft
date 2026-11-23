@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/gold"
+                },
+                {
+                    "tag": "forge:dusts/gold"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/silver"
+                },
+                {
+                    "tag": "forge:dusts/silver"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "thermal:electrum_ingot",
+        "count": 2
+    },
+    "ticks": 400,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "thermal:electrum_ingot"
+        }
+    ]
+}

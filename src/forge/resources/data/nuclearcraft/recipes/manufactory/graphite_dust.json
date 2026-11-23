@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/coal"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:graphite_dust",
+        "count": 1
+    },
+    "ticks": 100,
+    "energy_per_tick": 10
+}

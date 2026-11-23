@@ -56,8 +56,17 @@ minecraft {
     }
 }
 
+repositories {
+    maven {
+        url = 'https://modmaven.dev'
+        content { includeGroup 'mezz.jei' }
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
+    compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
 }
 
 tasks.named('processResources', ProcessResources) {
@@ -69,6 +78,8 @@ tasks.named('processResources', ProcessResources) {
         include 'logo.png'
         include 'assets/nuclearcraft/textures/blocks/processor_*.png'
         include 'assets/nuclearcraft/textures/blocks/melter_front_*.png'
+        include 'assets/nuclearcraft/textures/blocks/manufactory_front_*.png'
+        include 'assets/nuclearcraft/textures/blocks/alloy_furnace_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/fluids/molten_*.png*'
         include 'assets/nuclearcraft/textures/blocks/fluids/steam.png*'
         include 'assets/nuclearcraft/textures/blocks/fission/casing/wall.png'
@@ -88,6 +99,8 @@ tasks.named('processResources', ProcessResources) {
         exclude 'assets/nuclearcraft/textures/blocks/turbine/**/*_ctm.png'
         include 'assets/nuclearcraft/textures/gui/container/turbine_controller.png'
         include 'assets/nuclearcraft/textures/gui/container/melter.png'
+        include 'assets/nuclearcraft/textures/gui/container/manufactory.png'
+        include 'assets/nuclearcraft/textures/gui/container/alloy_furnace.png'
         include 'assets/nuclearcraft/textures/blocks/ore/*.png'
         include 'assets/nuclearcraft/textures/blocks/ingot_block/*.png'
         include 'assets/nuclearcraft/textures/items/ingot/*.png'

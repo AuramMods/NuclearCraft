@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/graphite"
+                },
+                {
+                    "tag": "forge:dusts/graphite"
+                }
+            ],
+            "count": 2
+        },
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:diamond"
+                },
+                {
+                    "tag": "forge:dusts/diamond"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hard_carbon_ingot",
+        "count": 2
+    },
+    "ticks": 400,
+    "energy_per_tick": 40
+}

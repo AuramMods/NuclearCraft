@@ -1,0 +1,29 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:silicon"
+            },
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "item": "minecraft:redstone"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "enderio:redstone_alloy_ingot",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:redstone_alloy_ingot"
+        }
+    ]
+}

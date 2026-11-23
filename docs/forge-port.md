@@ -13,7 +13,9 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Four headless turbine tests cover sided access, simulated transfers, full exhaust backpressure, save and reassembly, reversed flow through a two-wide shaft, rejection of mixed blade tiers, and a complete reactor-to-turbine-to-Melter chain.
 - The legacy ore, ingot, dust, storage block, alloy, gem, compound, and part families have individual registry IDs. The port includes the original crafting patterns for the Melter and available solid-fission and turbine parts, plus vanilla smelting and blasting for ores and metal dusts. A headless GameTest crafted copper wire with mixed vanilla and NuclearCraft ingots and verified that crafting a water heat sink returns the bucket.
 - A new world on a clean Forge dedicated server generated all eight legacy NuclearCraft ores using the packaged JAR. The ore recipes and drops preserve the default legacy ore-to-ingot progression.
-- Remaining work includes the survival processing chains for intermediate materials and fuel, the rest of the Melter and reactor catalogs, upgrades and side configuration, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems. Client menus and chunk unload and reload still need runtime verification.
+- The Manufactory and Alloy Furnace have legacy crafting patterns, block models and screens. They accept Forge Energy on all faces and support per-face item modes. Their datapack recipes cover the graphite chain, ore processing, bronze, steel, ferroboron, tough alloy, and other starter materials, with optional outputs for installed tech mods.
+- Headless tests verified the 5,000 FE coal-to-graphite chain and the 8,000 FE bronze recipe with either ingredient order. The Alloy Furnace test checked a full output, handler invalidation, and restoration of in-progress processing and face modes. Optional JEI categories cover all currently ported processing, reactor fuel, and turbine recipes.
+- Remaining work includes the rest of the survival processing and fuel chains, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems. Client menus and chunk unload and reload still need broader runtime verification.
 
 ## Auram targets
 
@@ -48,6 +50,8 @@ In a separate headless test with Auram's installed KubeJS JAR, a server script r
 
 With Auram's Almost Unified JAR and config alongside Mekanism, a furnace smelted one NuclearCraft copper dust into one vanilla copper ingot, matching the pack's priority for copper.
 
+With separate north input and south output faces, Auram's Ender IO Item Conduits and Mekanism Basic Logistical Transporters each supplied one coal to a Manufactory and three copper plus one tin to an Alloy Furnace. Each network emptied its source barrels and collected one coal dust and four bronze ingots in the corresponding destination barrels.
+
 Full Auram instance testing is pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
 
 ## Registry migration references
@@ -65,7 +69,7 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
 
-The datapack recipe types are `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
+The datapack recipe types are `nuclearcraft:manufactory`, `nuclearcraft:alloy_furnace`, `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. The new item processor recipes take counted Forge item ingredients. Alloy Furnace inputs are interchangeable. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
 
 Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
 
