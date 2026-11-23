@@ -104,6 +104,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/fission/solid/sink/water.png'
         include 'assets/nuclearcraft/textures/blocks/fission/heavy_water_moderator.png'
         include 'assets/nuclearcraft/textures/blocks/fission/reflector/beryllium_carbon.png'
+        include 'assets/nuclearcraft/textures/blocks/fission/reflector/lead_steel.png'
         include 'assets/nuclearcraft/textures/blocks/fission/vent_*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/source_*.png'
         exclude 'assets/nuclearcraft/textures/blocks/fission/source_manager_*.png'

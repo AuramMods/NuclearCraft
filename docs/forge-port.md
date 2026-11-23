@@ -33,7 +33,10 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - The Rock Crusher restores four recipes with three ordered output slots. Granite, diorite, and andesite accept their polished forms. Each possible output item is rolled independently. A normal andesite batch can yield up to two beryllium dust at 40% per item. The dust can be smelted into beryllium ingots. The alternate profile gives granite and andesite the original duplicated primary product slots, each at 20% per item.
 - A headless test verified the default and alternate profiles against the legacy recipe values. A separate batch verified that a full third slot stalls the machine before spending energy. The same test checked guaranteed, minimum, and zero-quantity products, and verified the beryllium smelting recipe.
 - A silent, hidden client opened the Rock Crusher, verified the position of all three output slots, and found the four recipes and the server-selected alternate probabilities in JEI. The native observer measured zero visible windows and focus changes.
-- A full native fuel loop still requires graphite or beryllium moderation to provide a survival alternative to heavy water, and fuel reprocessing. Other remaining work includes neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
+- Solid-fission reactors accept graphite and beryllium storage blocks through the shared Forge tags. The three moderator defaults are graphite at 10 flux and 1.1× efficiency, beryllium at 22 and 1.05×, and heavy water at 36 and 1×. Moderator lines sum flux and average their efficiencies. The two reflectors use their legacy reflectivity and efficiency values. A lead-steel reflector passes a source beam, while a fully reflective block stops it.
+- A headless mixed-material reactor started LEU-235 oxide and generated steam using ordinary graphite and beryllium. One line alone stayed below criticality. Adding the second line supplied 108 flux. Graphite and a reflector touching the outside of the reactor left its shell dimensions intact.
+- A silent, hidden client running Auram’s JEI version listed all three moderators and both reflectors. It displayed server-configured graphite flux and lead-steel reflectivity. The native observer recorded zero visible windows or focus changes.
+- A full native fuel loop still requires starter power generation and fuel reprocessing. Other remaining work includes neutron source managers, the polonium production path, the Extractor that produces the input for Soulless Sandstone, the Electrolyzer's advanced ingredients, extra coolers and cryogenic fluids, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -82,6 +85,10 @@ Using those same networks, two Decay Hasteners received uranium-238 and output a
 
 Ender IO supplied 12 andesite to one Rock Crusher and Mekanism supplied 12 polished andesite to another. Both ran with the alternate profile and used 96,000 FE each. Ender IO collected 10 beryllium dust and 3 arsenic dust. Mekanism collected 11 beryllium dust and 3 arsenic dust. All input barrels and machine slots emptied. Both setups preserved the exact item counts after restart and after a confirmed chunk unload and reload.
 
+Ender IO conduits and Mekanism transmitters each supplied water and fuel to a graphite-and-beryllium reactor. Each reactor consumed 4,229 mB of water, delivered 16,916 mB of high-pressure steam, and moved one depleted LEU-235 oxide to its output barrel. The remaining coolant, collected steam, and depleted fuel survived a server restart and a confirmed chunk unload and reload.
+
+On a headless server with Auram’s Immersive Engineering JAR, a Compact Water Source supplied an Infuser through an Immersive Engineering Fluid Pipe. The Infuser used 1,000 mB of that water and 1,500 FE to make one white concrete.
+
 The isolated Auram client reached the title screen using all 539 installed mod JARs, the pack's configuration and scripts, and the packaged NuclearCraft JAR. It used Forge 47.4.10 and Java 17. The launcher disabled Forge's early loading window for this hidden test and used the OpenAL No Output device. The native observer recorded zero onscreen windows and focus changes, and the client exited normally. No installed mod JAR declared the `nuclearcraft` mod ID. Full-pack world and interaction testing is pending.
 
 ## Registry migration references
@@ -90,6 +97,7 @@ The isolated Auram client reached the title screen using all 539 installed mod J
 | --- | --- |
 | `nuclearcraft:solid_fission_sink`, 0 | `nuclearcraft:water_heat_sink` |
 | `nuclearcraft:fission_reflector`, 0 | `nuclearcraft:beryllium_carbon_reflector` |
+| `nuclearcraft:fission_reflector`, 1 | `nuclearcraft:lead_steel_reflector` |
 | `nuclearcraft:fission_source`, 0 | `nuclearcraft:fission_source_radium_beryllium` |
 | `nuclearcraft:fission_source`, 1 | `nuclearcraft:fission_source_polonium_beryllium` |
 | `nuclearcraft:fission_source`, 2 | `nuclearcraft:fission_source_californium` |
@@ -117,5 +125,7 @@ Ore generation uses Forge biome modifiers and configured and placed features. Th
 Collector settings moved to `world/serverconfig/nuclearcraft-collectors.toml`. Use `defaultconfigs/nuclearcraft-collectors.toml` as a template for new worlds. The three entries of legacy `processor_passive_rate` map to `collectors.cobblestone_rate`, `collectors.water_rate`, and `collectors.nitrogen_rate`. The collector-specific equivalents of `machine_update_rate`, `passive_push`, and `cobble_gen_power` are `collectors.update_interval`, `collectors.auto_output`, and `collectors.cobblestone_power`. Setting a family's production rate to zero stops generation while retaining its block IDs. The three legacy `register_passive` entries still need an explicit equivalent for registry availability.
 
 The three entries of legacy `fission_source_efficiency` map to the `neutron_sources` section in `world/serverconfig/nuclearcraft-fission.toml`. Its settings are `radium_beryllium_efficiency`, `polonium_beryllium_efficiency`, and `californium_efficiency`, with defaults of 0.9, 0.95, and 1 respectively.
+
+In the same file, `neutrons.reach` and `neutrons.intrinsic_flux_efficiency` replace legacy `fission_neutron_reach` and `fission_cell_intrinsic_flux_efficiency`. The entries of `fission_moderator_flux_factor` and `fission_moderator_efficiency` map to `flux` and `efficiency` in `moderators.graphite`, `moderators.beryllium`, and `moderators.heavy_water`. The entries of `fission_reflector_reflectivity` and `fission_reflector_efficiency` map to `reflectivity` and `efficiency` in `reflectors.beryllium_carbon` and `reflectors.lead_steel`.
 
 Legacy `rock_crusher_alternate` maps to `rock_crusher.alternate_outputs` in `world/serverconfig/nuclearcraft-processors.toml`. The `nuclearcraft:rock_crusher` recipe type uses `results` in slot order and can use `alternate_results` with the same format. Each result specifies an item and maximum `count`, with optional `min_count` and `chance_percent` fields. The chance applies independently to each possible item above the minimum.

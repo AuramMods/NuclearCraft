@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.init.NCFission;
 import nc.multiblock.Cuboid;
 import nc.recipe.SolidFissionRecipe;
 import net.minecraft.core.BlockPos;
@@ -18,12 +19,8 @@ import java.util.Set;
 
 final class SolidFissionCore {
     static final long BASE_HEAT_CAPACITY = 32_000;
-    private static final int NEUTRON_REACH = 4;
     private static final int COOLING_LENIENCY = 10;
     private static final int WATER_SINK_COOLING = 55;
-    private static final int HEAVY_WATER_FLUX = 36;
-    private static final double BERYLLIUM_CARBON_REFLECTIVITY = 1;
-    private static final double BERYLLIUM_CARBON_EFFICIENCY = 0.5;
 
     record Heat(long raw, double effective, List<BlockPos> overheatedCells) {}
 
@@ -174,7 +171,8 @@ final class SolidFissionCore {
             Direction direction = layout.bounds().outward(wall).getOpposite();
             BlockPos pos = wall.relative(direction);
             while (layout.bounds().contains(pos) && layout.bounds().boundaryAxes(pos) == 0) {
-                if (FissionPartBlock.role(level.getBlockState(pos)) == FissionPartBlock.Role.REFLECTOR) {
+                var reflector = NCFission.reflector(level.getBlockState(pos));
+                if (reflector != null && reflector.reflectivity() >= 1D) {
                     break;
                 }
                 Reaction target = reactions.get(pos);
@@ -193,6 +191,7 @@ final class SolidFissionCore {
                                    Set<BlockPos> moderatorPositions, Set<BlockPos> failedSources) {
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();
         Set<BlockPos> sources = new HashSet<>();
+        int reach = NCFission.neutronReach();
         for (BlockPos pos : layout.cells()) {
             Reaction reaction = reactions.get(pos);
             if (reaction != null && !failedSources.contains(pos)
@@ -209,7 +208,7 @@ final class SolidFissionCore {
                 BlockPos adjacent = origin.relative(direction);
                 Reaction direct = reactions.get(adjacent);
                 if (direct != null && source.recipe.intrinsicFlux() > 0) {
-                    direct.receive(source.recipe.intrinsicFlux(), 1D);
+                    direct.receive(source.recipe.intrinsicFlux(), NCFission.intrinsicFluxEfficiency());
                     if (direct.active() && !failedSources.contains(adjacent) && sources.add(adjacent)) {
                         pending.add(adjacent);
                     }
@@ -217,30 +216,37 @@ final class SolidFissionCore {
                 }
 
                 int moderators = 0;
-                for (int distance = 1; distance <= NEUTRON_REACH + 1; distance++) {
+                long flux = source.recipe.intrinsicFlux();
+                double efficiencySum = 0;
+                for (int distance = 1; distance <= reach + 1; distance++) {
                     BlockPos pos = origin.relative(direction, distance);
                     if (!layout.bounds().contains(pos)) {
                         break;
                     }
-                    FissionPartBlock.Role role = FissionPartBlock.role(level.getBlockState(pos));
-                    if (role == FissionPartBlock.Role.MODERATOR && distance <= NEUTRON_REACH) {
+                    var block = level.getBlockState(pos);
+                    var moderator = NCFission.moderator(block);
+                    if (moderator != null && distance <= reach) {
                         moderators++;
+                        flux += moderator.flux();
+                        efficiencySum += moderator.efficiency();
                         continue;
                     }
                     if (moderators > 0) {
-                        long flux = (long) moderators * HEAVY_WATER_FLUX;
+                        double efficiency = efficiencySum / moderators;
                         Reaction target = reactions.get(pos);
                         if (target != null) {
-                            target.receive(flux, 1D);
+                            target.receive(flux, efficiency);
                             recordModerators(moderatorPositions, origin, direction, moderators);
                             if (target.active() && !failedSources.contains(pos) && sources.add(pos)) {
                                 pending.add(pos);
                             }
-                        } else if (role == FissionPartBlock.Role.REFLECTOR && moderators <= NEUTRON_REACH / 2) {
-                            source.receive((long) (2D * flux * BERYLLIUM_CARBON_REFLECTIVITY),
-                                    BERYLLIUM_CARBON_EFFICIENCY);
-                            recordModerators(moderatorPositions, origin, direction, moderators);
-                            moderatorPositions.add(pos);
+                        } else if (moderators <= reach / 2) {
+                            var reflector = NCFission.reflector(block);
+                            if (reflector != null) {
+                                source.receive((long) (2D * flux * reflector.reflectivity()), efficiency * reflector.efficiency());
+                                recordModerators(moderatorPositions, origin, direction, moderators);
+                                moderatorPositions.add(pos);
+                            }
                         }
                     }
                     break;

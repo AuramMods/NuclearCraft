@@ -11,7 +11,10 @@ import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.SolidFissionRecipe;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -23,19 +26,31 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public final class NCFission {
-    private static final ForgeConfigSpec SOURCE_SPEC;
+    private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue RADIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue POLONIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue CALIFORNIUM_EFFICIENCY;
+    private static final ForgeConfigSpec.IntValue NEUTRON_REACH;
+    private static final ForgeConfigSpec.DoubleValue INTRINSIC_FLUX_EFFICIENCY;
+
+    private static final TagKey<Block> GRAPHITE_BLOCKS = storageBlocks("graphite");
+    private static final TagKey<Block> BERYLLIUM_BLOCKS = storageBlocks("beryllium");
+    public static final Moderator GRAPHITE;
+    public static final Moderator BERYLLIUM;
+    public static final Moderator HEAVY_WATER;
+    public static final Reflector BERYLLIUM_CARBON;
+    public static final Reflector LEAD_STEEL;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
@@ -44,7 +59,20 @@ public final class NCFission {
         POLONIUM_EFFICIENCY = builder.defineInRange("polonium_beryllium_efficiency", 0.95D, 0D, 255D);
         CALIFORNIUM_EFFICIENCY = builder.defineInRange("californium_efficiency", 1D, 0D, 255D);
         builder.pop();
-        SOURCE_SPEC = builder.build();
+        builder.push("neutrons");
+        NEUTRON_REACH = builder.defineInRange("reach", 4, 1, 255);
+        INTRINSIC_FLUX_EFFICIENCY = builder.defineInRange("intrinsic_flux_efficiency", 1D, 0D, 255D);
+        builder.pop();
+        builder.push("moderators");
+        GRAPHITE = moderator(builder, "graphite", 10, 1.1D);
+        BERYLLIUM = moderator(builder, "beryllium", 22, 1.05D);
+        HEAVY_WATER = moderator(builder, "heavy_water", 36, 1D);
+        builder.pop();
+        builder.push("reflectors");
+        BERYLLIUM_CARBON = reflector(builder, "beryllium_carbon", 1D, 0.5D);
+        LEAD_STEEL = reflector(builder, "lead_steel", 0.5D, 0.25D);
+        builder.pop();
+        SPEC = builder.build();
     }
 
     public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing", Role.CASING);
@@ -57,6 +85,8 @@ public final class NCFission {
     public static final RegistryObject<FissionPartBlock> HEAVY_WATER_MODERATOR = part("heavy_water_moderator", Role.MODERATOR);
     public static final RegistryObject<FissionPartBlock> BERYLLIUM_CARBON_REFLECTOR =
             part("beryllium_carbon_reflector", Role.REFLECTOR);
+    public static final RegistryObject<FissionPartBlock> LEAD_STEEL_REFLECTOR =
+            part("lead_steel_reflector", Role.REFLECTOR);
 
     public static final RegistryObject<FissionSourceBlock> RADIUM_BERYLLIUM_SOURCE =
             source("fission_source_radium_beryllium", RADIUM_EFFICIENCY);
@@ -100,6 +130,7 @@ public final class NCFission {
                         output.accept(WATER_SINK.get());
                         output.accept(HEAVY_WATER_MODERATOR.get());
                         output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
+                        output.accept(LEAD_STEEL_REFLECTOR.get());
                         output.accept(RADIUM_BERYLLIUM_SOURCE.get());
                         output.accept(POLONIUM_BERYLLIUM_SOURCE.get());
                         output.accept(CALIFORNIUM_SOURCE.get());
@@ -118,8 +149,67 @@ public final class NCFission {
     }
 
     private static RegistryObject<FissionSourceBlock> source(String id, ForgeConfigSpec.DoubleValue efficiency) {
-        DoubleSupplier multiplier = () -> SOURCE_SPEC.isLoaded() ? efficiency.get() : efficiency.getDefault();
+        DoubleSupplier multiplier = () -> configured(efficiency);
         return part(id, () -> new FissionSourceBlock(properties(), multiplier));
+    }
+
+    public static @Nullable Moderator moderator(BlockState state) {
+        if (state.is(GRAPHITE_BLOCKS)) {
+            return GRAPHITE;
+        }
+        if (state.is(BERYLLIUM_BLOCKS)) {
+            return BERYLLIUM;
+        }
+        return state.is(HEAVY_WATER_MODERATOR.get()) ? HEAVY_WATER : null;
+    }
+
+    public static @Nullable Reflector reflector(BlockState state) {
+        if (state.is(BERYLLIUM_CARBON_REFLECTOR.get())) {
+            return BERYLLIUM_CARBON;
+        }
+        return state.is(LEAD_STEEL_REFLECTOR.get()) ? LEAD_STEEL : null;
+    }
+
+    public static int neutronReach() {
+        return configured(NEUTRON_REACH);
+    }
+
+    public static double intrinsicFluxEfficiency() {
+        return configured(INTRINSIC_FLUX_EFFICIENCY);
+    }
+
+    private static TagKey<Block> storageBlocks(String material) {
+        return TagKey.create(Registries.BLOCK, ResourceLocation.tryBuild("forge", "storage_blocks/" + material));
+    }
+
+    private static Moderator moderator(ForgeConfigSpec.Builder builder, String name, int flux, double efficiency) {
+        builder.push(name);
+        var rule = new Moderator(builder.defineInRange("flux", flux, 0, 32_767),
+                builder.defineInRange("efficiency", efficiency, 0D, 255D));
+        builder.pop();
+        return rule;
+    }
+
+    private static Reflector reflector(ForgeConfigSpec.Builder builder, String name, double reflectivity, double efficiency) {
+        builder.push(name);
+        var rule = new Reflector(builder.defineInRange("reflectivity", reflectivity, 0D, 1D),
+                builder.defineInRange("efficiency", efficiency, 0D, 255D));
+        builder.pop();
+        return rule;
+    }
+
+    private static <T> T configured(ForgeConfigSpec.ConfigValue<T> value) {
+        return SPEC.isLoaded() ? value.get() : value.getDefault();
+    }
+
+    public record Moderator(ForgeConfigSpec.IntValue fluxValue, ForgeConfigSpec.DoubleValue efficiencyValue) {
+        public int flux() { return configured(fluxValue); }
+        public double efficiency() { return configured(efficiencyValue); }
+    }
+
+    public record Reflector(ForgeConfigSpec.DoubleValue reflectivityValue, ForgeConfigSpec.DoubleValue efficiencyValue) {
+        public double reflectivity() { return configured(reflectivityValue); }
+        public double efficiency() { return configured(efficiencyValue); }
     }
 
     private static <T extends Block> RegistryObject<T> part(String id, Supplier<T> supplier) {
@@ -139,6 +229,6 @@ public final class NCFission {
     }
 
     public static void registerConfig(ModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.SERVER, SOURCE_SPEC, "nuclearcraft-fission.toml");
+        context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-fission.toml");
     }
 }

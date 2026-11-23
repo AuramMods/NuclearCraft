@@ -68,7 +68,9 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
-        registration.addRecipeCategories(new CollectorCategory(gui));
+        registration.addRecipeCategories(new CollectorCategory(gui),
+                new FissionMaterialCategory(FissionMaterialCategory.MODERATORS, NCFission.HEAVY_WATER_MODERATOR.get(), gui),
+                new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
         for (Machine machine : Machine.values()) {
             registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
                     NuclearCraftJei::itemRecipe, recipe -> energy(recipe.ticks(), recipe.energyPerTick())));
@@ -107,6 +109,8 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         RecipeManager recipes = connection.getRecipeManager();
         registration.addRecipes(CollectorCategory.TYPE, List.of(Collector.values()));
+        registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
+        registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
         for (Machine machine : Machine.values()) {
             registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()));
         }
@@ -127,6 +131,13 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
+        for (var moderator : FissionMaterialCategory.moderators()) {
+            for (var item : moderator.items()) {
+                registration.addRecipeCatalyst(item.getItem(), FissionMaterialCategory.MODERATORS);
+            }
+        }
+        registration.addRecipeCatalyst(NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
+        registration.addRecipeCatalyst(NCFission.LEAD_STEEL_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
         registration.addRecipeCatalyst(NCTurbine.CONTROLLER.get(), TURBINE);
     }
 

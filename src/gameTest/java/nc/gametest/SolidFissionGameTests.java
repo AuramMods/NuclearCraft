@@ -173,6 +173,64 @@ public final class SolidFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 170)
+    public static void nativeModeratorsAndBothReflectorsRunStandardFuel(GameTestHelper helper) {
+        for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(7, 5, 7))) {
+            if (pos.getX() == 1 || pos.getX() == 7 || pos.getY() == 1 || pos.getY() == 5
+                    || pos.getZ() == 1 || pos.getZ() == 7) {
+                helper.setBlock(pos, NCFission.CASING.get());
+            }
+        }
+        var cell = new BlockPos(3, 3, 3);
+        var source = new BlockPos(3, 3, 1);
+        var water = new BlockPos(4, 3, 1);
+        var steam = new BlockPos(4, 3, 7);
+        var graphite = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("graphite_block"));
+        var beryllium = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("beryllium_block"));
+        helper.setBlock(CONTROLLER, NCFission.CONTROLLER.get());
+        helper.setBlock(FUEL_IN, NCFission.CELL_PORT.get());
+        helper.setBlock(FUEL_OUT, NCFission.CELL_PORT.get().defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        helper.setBlock(water, NCFission.VENT.get());
+        helper.setBlock(steam, NCFission.VENT.get().defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        helper.setBlock(cell, NCFission.CELL.get());
+        helper.setBlock(cell.above(), NCFission.WATER_SINK.get());
+        helper.setBlock(cell.below(), NCFission.WATER_SINK.get());
+        helper.setBlock(source, NCFission.RADIUM_BERYLLIUM_SOURCE.get());
+        helper.setBlock(cell.north(), NCFission.LEAD_STEEL_REFLECTOR.get());
+        helper.setBlock(cell.east(), graphite);
+        helper.setBlock(cell.east(2), beryllium);
+        helper.setBlock(cell.east(3), NCFission.BERYLLIUM_CARBON_REFLECTOR.get());
+        helper.setBlock(cell.south(), beryllium);
+        helper.setBlock(cell.south(3), NCFission.LEAD_STEEL_REFLECTOR.get());
+        helper.setBlock(CONTROLLER.above().west(), NCFission.BERYLLIUM_CARBON_REFLECTOR.get());
+        helper.setBlock(CONTROLLER.below().west(), graphite);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    ItemStack fuel = new ItemStack(ForgeRegistries.ITEMS.getValue(NuclearCraft.id("leu_235_oxide")));
+                    helper.assertTrue(items(helper, FUEL_IN, Direction.DOWN).insertItem(0, fuel, false).isEmpty(),
+                            "Load ordinary LEU-235 without requiring heavy water");
+                    helper.assertTrue(fluids(helper, water, Direction.NORTH)
+                                    .fill(new FluidStack(Fluids.WATER, 1000), FluidAction.EXECUTE) == 1000,
+                            "Accept plain water through the formed vent");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(source.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(12, () -> {
+                    CompoundTag before = helper.getBlockEntity(cell).saveWithoutMetadata();
+                    helper.assertTrue(before.getDouble("source_efficiency") == 0.9 && before.getDouble("progress") == 0,
+                            "The source passes through a partial reflector, but the first line alone is below criticality");
+                    helper.setBlock(cell.south(2), beryllium);
+                })
+                .thenWaitUntil(() -> {
+                    var tank = fluids(helper, steam, Direction.SOUTH);
+                    helper.assertTrue(tank.getFluidInTank(0).getAmount() > 0
+                                    && tank.getFluidInTank(0).getFluid() == NCFluids.HIGH_PRESSURE_STEAM.source().get(),
+                            "The two lines supply 108 flux and produce steam using ordinary graphite and beryllium");
+                })
+                .thenSucceed();
+    }
+
     static void buildReactor(GameTestHelper helper) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 5, 5))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 5

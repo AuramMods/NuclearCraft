@@ -18,7 +18,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
 
     static Validation find(ServerLevel level, BlockPos origin) {
         Cuboid bounds = Cuboid.findConnected(level, origin, FissionPartBlock.MAX_INTERIOR_LENGTH + 2,
-                state -> FissionPartBlock.role(state) != null);
+                SolidFissionLayout::connectsReactor);
         if (bounds == null) {
             return invalid("too_large", origin);
         }
@@ -91,6 +91,11 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources)),
                 Component.translatable("message.nuclearcraft.fission.assembled"));
+    }
+
+    private static boolean connectsReactor(BlockState state) {
+        var role = FissionPartBlock.role(state);
+        return role != null && role != FissionPartBlock.Role.MODERATOR && role != FissionPartBlock.Role.REFLECTOR;
     }
 
     private static boolean hasUnpairedPorts(List<Port> ports, boolean fluid) {

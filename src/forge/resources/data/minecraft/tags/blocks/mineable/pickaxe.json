@@ -82,6 +82,7 @@
         "nuclearcraft:fission_source_polonium_beryllium",
         "nuclearcraft:fission_source_californium",
         "nuclearcraft:soulless_sandstone",
-        "nuclearcraft:rock_crusher"
+        "nuclearcraft:rock_crusher",
+        "nuclearcraft:lead_steel_reflector"
     ]
 }

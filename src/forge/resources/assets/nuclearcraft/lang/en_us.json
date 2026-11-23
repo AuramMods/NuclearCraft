@@ -1102,5 +1102,11 @@
     "block.nuclearcraft.rock_crusher": "Rock Crusher",
     "block.nuclearcraft.soulless_sand": "Soulless Sand",
     "block.nuclearcraft.soulless_sandstone": "Soulless Sandstone",
-    "gui.nuclearcraft.jei.product_chance": "%s–%s items, %s%% chance per additional item"
+    "gui.nuclearcraft.jei.product_chance": "%s–%s items, %s%% chance per additional item",
+    "block.nuclearcraft.lead_steel_reflector": "Lead-Steel Reflector",
+    "gui.nuclearcraft.jei.fission_moderator": "Fission Moderators",
+    "gui.nuclearcraft.jei.fission_reflector": "Fission Reflectors",
+    "gui.nuclearcraft.jei.neutron_flux": "%s flux added",
+    "gui.nuclearcraft.jei.reflectivity": "Reflectivity ×%s",
+    "gui.nuclearcraft.jei.neutron_efficiency": "Efficiency ×%s"
 }
