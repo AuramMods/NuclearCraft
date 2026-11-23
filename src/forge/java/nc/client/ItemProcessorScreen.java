@@ -2,7 +2,7 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.processor.ItemProcessorMenu;
-import nc.processor.ProcessorFluidInput;
+import nc.processor.ProcessorFluidTanks;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -10,10 +10,7 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.FastColor;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.EnumMap;
@@ -69,15 +66,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         var machine = menu.machine();
         graphics.blit(texture, leftPos + machine.progressX(), topPos + machine.progressY(),
                 176, 3, progressWidth, machine.progressHeight());
-        FluidStack fluid = menu.fluid();
-        if (!fluid.isEmpty()) {
-            int height = Math.max(1, 16 * fluid.getAmount() / ProcessorFluidInput.CAPACITY);
-            var extension = IClientFluidTypeExtensions.of(fluid.getFluid());
-            var sprite = minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(extension.getStillTexture(fluid));
-            int color = extension.getTintColor(fluid);
-            graphics.blit(leftPos + machine.fluidInputX(), topPos + 51 - height, 0, 16, height, sprite,
-                    FastColor.ARGB32.red(color) / 255F, FastColor.ARGB32.green(color) / 255F,
-                    FastColor.ARGB32.blue(color) / 255F, FastColor.ARGB32.alpha(color) / 255F);
-        }
+        FluidTankRenderer.draw(graphics, leftPos + machine.fluidInputX(), topPos + 35, 16,
+                menu.fluid(), ProcessorFluidTanks.CAPACITY);
     }
 }

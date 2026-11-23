@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:koh",
+        "amount": 333
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:potassium",
+            "amount": 72
+        },
+        {
+            "fluid": "minecraft:water",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:oxygen",
+            "amount": 125
+        }
+    ],
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:ammonium_bisulfate_solution",
+        "amount": 666
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:ammonium_persulfate_solution",
+            "amount": 333
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 500
+        }
+    ],
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

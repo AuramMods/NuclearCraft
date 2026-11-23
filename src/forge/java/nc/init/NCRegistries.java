@@ -1,9 +1,13 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.processor.ElectrolyzerBlockEntity;
+import nc.processor.ElectrolyzerMenu;
 import nc.processor.MelterBlock;
 import nc.processor.MelterBlockEntity;
 import nc.processor.MelterMenu;
+import nc.processor.ProcessorBlock;
+import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.MelterRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -51,12 +55,28 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<MelterRecipe>> MELTER_SERIALIZER =
             RECIPE_SERIALIZERS.register("melter", MelterRecipe.Serializer::new);
 
+    public static final RegistryObject<ProcessorBlock<ElectrolyzerBlockEntity>> ELECTROLYZER =
+            BLOCKS.register("electrolyzer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.ELECTROLYZER_ENTITY.get(), ElectrolyzerBlockEntity::tick, null));
+    public static final RegistryObject<Item> ELECTROLYZER_ITEM =
+            ITEMS.register("electrolyzer", () -> new BlockItem(ELECTROLYZER.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<ElectrolyzerBlockEntity>> ELECTROLYZER_ENTITY =
+            BLOCK_ENTITIES.register("electrolyzer", () ->
+                    BlockEntityType.Builder.of(ElectrolyzerBlockEntity::new, ELECTROLYZER.get()).build(null));
+    public static final RegistryObject<MenuType<ElectrolyzerMenu>> ELECTROLYZER_MENU =
+            MENUS.register("electrolyzer", () -> new MenuType<>(ElectrolyzerMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<ElectrolyzerRecipe>> ELECTROLYSIS =
+            RECIPE_TYPES.register("electrolyzer", () -> RecipeType.simple(NuclearCraft.id("electrolyzer")));
+    public static final RegistryObject<RecipeSerializer<ElectrolyzerRecipe>> ELECTROLYZER_SERIALIZER =
+            RECIPE_SERIALIZERS.register("electrolyzer", ElectrolyzerRecipe.Serializer::new);
+
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
                     .icon(() -> MELTER_ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(MELTER_ITEM.get());
+                        output.accept(ELECTROLYZER_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
@@ -66,6 +86,11 @@ public final class NCRegistries {
                         output.accept(NCFluids.OXYGEN.bucket().get());
                         output.accept(NCFluids.NITROGEN.bucket().get());
                         output.accept(NCFluids.HEAVY_WATER.bucket().get());
+                        output.accept(NCFluids.HYDROGEN.bucket().get());
+                        output.accept(NCFluids.DEUTERIUM.bucket().get());
+                        output.accept(NCFluids.FLUORINE.bucket().get());
+                        output.accept(NCFluids.LOW_ENRICHED_WATER.bucket().get());
+                        output.accept(NCFluids.HIGH_ENRICHED_WATER.bucket().get());
                     })
                     .build());
 

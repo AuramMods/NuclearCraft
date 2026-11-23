@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:hydrofluoric_acid",
+        "amount": 250
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:fluorine",
+            "amount": 250
+        }
+    ],
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

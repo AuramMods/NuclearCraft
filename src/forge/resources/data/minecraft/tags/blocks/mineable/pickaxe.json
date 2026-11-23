@@ -66,6 +66,7 @@
         "nuclearcraft:manufactory",
         "nuclearcraft:alloy_furnace",
         "nuclearcraft:separator",
-        "nuclearcraft:infuser"
+        "nuclearcraft:infuser",
+        "nuclearcraft:electrolyzer"
     ]
 }

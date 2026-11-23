@@ -92,8 +92,8 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         return new FluidStack(BuiltInRegistries.FLUID.byId(data.get(FLUID_ID)), data.get(FLUID_AMOUNT));
     }
 
-    public ProcessorFluidInput.Mode fluidSideMode(Direction side) {
-        return ProcessorFluidInput.Mode.read(data.get(FLUID_SIDES), side);
+    public ProcessorFluidTanks.Mode fluidSideMode(Direction side) {
+        return ProcessorFluidTanks.Mode.read(data.get(FLUID_SIDES), side);
     }
 
     @Override

@@ -4,7 +4,7 @@ import nc.NuclearCraft;
 import nc.init.NCFluids;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity;
-import nc.processor.ProcessorFluidInput;
+import nc.processor.ProcessorFluidTanks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -102,11 +102,11 @@ public final class InfuserGameTests {
         var type = NCFluids.HEAVY_WATER.source().get();
         helper.assertTrue(sourceTank.fill(new FluidStack(type, 1200), FluidAction.EXECUTE) == 1200,
                 "Accept heavy water through the shared tag");
-        helper.assertTrue(targetTank.fill(new FluidStack(type, ProcessorFluidInput.CAPACITY - 100), FluidAction.EXECUTE)
-                == ProcessorFluidInput.CAPACITY - 100, "Leave exactly 100 mB of space in the recipient");
+        helper.assertTrue(targetTank.fill(new FluidStack(type, ProcessorFluidTanks.CAPACITY - 100), FluidAction.EXECUTE)
+                == ProcessorFluidTanks.CAPACITY - 100, "Leave exactly 100 mB of space in the recipient");
         source.cycleFluidSide(Direction.EAST);
         source.cycleFluidSide(Direction.EAST);
-        helper.succeedWhen(() -> helper.assertTrue(targetTank.getFluidInTank(0).getAmount() == ProcessorFluidInput.CAPACITY
+        helper.succeedWhen(() -> helper.assertTrue(targetTank.getFluidInTank(0).getAmount() == ProcessorFluidTanks.CAPACITY
                         && sourceTank.getFluidInTank(0).getAmount() == 1100,
                 "Auto-output sends exactly what the recipient can accept and retains the rest"));
     }

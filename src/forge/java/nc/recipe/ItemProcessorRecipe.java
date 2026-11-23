@@ -5,10 +5,8 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
@@ -20,7 +18,6 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -28,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
-                                  @Nullable FluidInput fluidInput, List<ItemStack> results,
+                                  @Nullable FluidIngredient fluidInput, List<ItemStack> results,
                                   int ticks, int energyPerTick) implements Recipe<Container> {
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
@@ -140,17 +137,6 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         }
     }
 
-    public record FluidInput(ResourceLocation id, boolean tag, int amount) {
-        public boolean accepts(FluidStack stack) {
-            return !stack.isEmpty() && (tag ? stack.getFluid().is(TagKey.create(Registries.FLUID, id))
-                    : stack.getFluid() == ForgeRegistries.FLUIDS.getValue(id));
-        }
-
-        public boolean matches(FluidStack stack) {
-            return stack.getAmount() >= amount && accepts(stack);
-        }
-    }
-
     public record Serializer(Machine machine) implements RecipeSerializer<ItemProcessorRecipe> {
         @Override
         public ItemProcessorRecipe fromJson(ResourceLocation id, JsonObject json) {
@@ -167,7 +153,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 }
                 inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
             }
-            FluidInput fluid = readFluidInput(id, json);
+            FluidIngredient fluid = readFluidInput(id, json);
             List<ItemStack> results = readResults(id, json);
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
@@ -177,22 +163,14 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             return new ItemProcessorRecipe(id, machine, inputs, fluid, results, ticks, energy);
         }
 
-        private @Nullable FluidInput readFluidInput(ResourceLocation recipeId, JsonObject json) {
+        private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
             if (!machine.hasFluidInput()) {
                 if (json.has("fluid_input")) {
                     throw new JsonSyntaxException("Unexpected fluid input for " + recipeId);
                 }
                 return null;
             }
-            JsonObject input = GsonHelper.getAsJsonObject(json, "fluid_input");
-            boolean tag = input.has("tag");
-            ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(input, tag ? "tag" : "fluid"));
-            int amount = GsonHelper.getAsInt(input, "amount");
-            if (id == null || amount < 1 || tag == input.has("fluid")
-                    || (!tag && !ForgeRegistries.FLUIDS.containsKey(id))) {
-                throw new JsonSyntaxException("Invalid fluid input for " + recipeId);
-            }
-            return new FluidInput(id, tag, amount);
+            return FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), recipeId);
         }
 
         private List<ItemStack> readResults(ResourceLocation id, JsonObject json) {
@@ -217,8 +195,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             for (int index = 0; index < machine.inputs(); index++) {
                 inputs.add(new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
             }
-            FluidInput fluid = machine.hasFluidInput()
-                    ? new FluidInput(buffer.readResourceLocation(), buffer.readBoolean(), buffer.readVarInt()) : null;
+            FluidIngredient fluid = machine.hasFluidInput()
+                    ? FluidIngredient.fromNetwork(buffer) : null;
             List<ItemStack> results = new ArrayList<>(machine.outputs());
             for (int index = 0; index < machine.outputs(); index++) {
                 results.add(buffer.readItem());
@@ -233,9 +211,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 buffer.writeVarInt(input.count);
             }
             if (recipe.fluidInput != null) {
-                buffer.writeResourceLocation(recipe.fluidInput.id);
-                buffer.writeBoolean(recipe.fluidInput.tag);
-                buffer.writeVarInt(recipe.fluidInput.amount);
+                recipe.fluidInput.toNetwork(buffer);
             }
             for (ItemStack result : recipe.results) {
                 buffer.writeItem(result);

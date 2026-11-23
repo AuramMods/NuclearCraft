@@ -25,6 +25,7 @@ import net.minecraft.world.phys.BlockHitResult;
 
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.items.ItemStackHandler;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -35,10 +36,10 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
 
     private final Supplier<BlockEntityType<E>> entityType;
     private final BlockEntityTicker<E> ticker;
-    private final Function<E, ItemStackHandler> inventory;
+    private final @Nullable Function<E, ItemStackHandler> inventory;
 
     public ProcessorBlock(Properties properties, Supplier<BlockEntityType<E>> entityType,
-                          BlockEntityTicker<E> ticker, Function<E, ItemStackHandler> inventory) {
+                          BlockEntityTicker<E> ticker, @Nullable Function<E, ItemStackHandler> inventory) {
         super(properties);
         this.entityType = entityType;
         this.ticker = ticker;
@@ -98,7 +99,7 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
-        if (!level.isClientSide && !state.is(replacement.getBlock())) {
+        if (inventory != null && !level.isClientSide && !state.is(replacement.getBlock())) {
             E entity = entityType.get().getBlockEntity(level, pos);
             if (entity != null) {
                 ItemStackHandler slots = inventory.apply(entity);

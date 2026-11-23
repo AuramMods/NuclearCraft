@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:he_water",
+        "amount": 500
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:deuterium",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:oxygen",
+            "amount": 250
+        }
+    ],
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

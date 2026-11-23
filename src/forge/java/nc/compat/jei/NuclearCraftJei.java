@@ -18,12 +18,14 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import nc.NuclearCraft;
+import nc.client.ElectrolyzerScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
 import nc.init.NCFission;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
+import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SolidFissionRecipe;
@@ -50,6 +52,8 @@ import static mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT;
 @JeiPlugin
 public final class NuclearCraftJei implements IModPlugin {
     private static final RecipeType<MelterRecipe> MELTER = RecipeType.create("nuclearcraft", "melter", MelterRecipe.class);
+    private static final RecipeType<ElectrolyzerRecipe> ELECTROLYZER =
+            RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
     private static final RecipeType<TurbineRecipe> TURBINE =
@@ -71,6 +75,14 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(MELTER, NCRegistries.MELTER.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.input());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
+                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(ELECTROLYZER, NCRegistries.ELECTROLYZER.get(), gui, (layout, recipe) -> {
+                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
+                    List<FluidStack> outputs = recipe.results();
+                    for (int index = 0; index < outputs.size(); index++) {
+                        fluidSlot(layout, OUTPUT, 98 + (index % 2) * 20, 2 + (index / 2) * 20,
+                                List.of(outputs.get(index)));
+                    }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.fuel());
@@ -96,6 +108,7 @@ public final class NuclearCraftJei implements IModPlugin {
             registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()));
         }
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
+        registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
     }
@@ -106,6 +119,7 @@ public final class NuclearCraftJei implements IModPlugin {
             registration.addRecipeCatalyst(machine.block(), itemType(machine));
         }
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
+        registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCTurbine.CONTROLLER.get(), TURBINE);
     }
@@ -113,6 +127,7 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
+        registration.addRecipeClickArea(ElectrolyzerScreen.class, 68, 30, 37, 38, ELECTROLYZER);
         registration.addGuiContainerHandler(ItemProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(ItemProcessorScreen screen, double x, double y) {
@@ -139,10 +154,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         var fluid = recipe.fluidInput();
         if (fluid != null) {
-            var alternatives = ForgeRegistries.FLUIDS.getValues().stream()
-                    .filter(candidate -> candidate.isSource(candidate.defaultFluidState()))
-                    .map(candidate -> new FluidStack(candidate, fluid.amount())).filter(fluid::accepts).toList();
-            fluidSlot(layout, INPUT, 43, alternatives);
+            fluidSlot(layout, INPUT, 43, fluid.alternatives());
         }
         for (int index = 0; index < recipe.machine().outputs(); index++) {
             layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(recipe.result(index));
@@ -150,8 +162,12 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, List<FluidStack> fluids) {
+        fluidSlot(layout, role, x, 12, fluids);
+    }
+
+    private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y, List<FluidStack> fluids) {
         long capacity = fluids.stream().mapToInt(FluidStack::getAmount).max().orElse(1);
-        layout.addSlot(role, x, 12).setStandardSlotBackground()
+        layout.addSlot(role, x, y).setStandardSlotBackground()
                 .setFluidRenderer(capacity, true, 16, 16).addIngredients(ForgeTypes.FLUID_STACK, fluids);
     }
 
@@ -177,7 +193,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override public Component getTitle() { return block.getName(); }
         @Override public IDrawable getIcon() { return icon; }
         @Override public int getWidth() { return 140; }
-        @Override public int getHeight() { return 48; }
+        @Override public int getHeight() { return type.equals(ELECTROLYZER) ? 58 : 48; }
         @Override public ResourceLocation getRegistryName(R recipe) { return recipe.getId(); }
 
         @Override
@@ -188,7 +204,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public void draw(R recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
             arrow.draw(graphics, 69, 12);
-            graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, 35, 0x404040, false);
+            graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, getHeight() - 13, 0x404040, false);
         }
     }
 }

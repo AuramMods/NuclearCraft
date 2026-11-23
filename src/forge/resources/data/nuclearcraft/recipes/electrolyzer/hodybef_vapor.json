@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:hodybef_vapor",
+        "amount": 250
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:holmium",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:dysprosium",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:beryllium",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:fluorine",
+            "amount": 1500
+        }
+    ],
+    "ticks": 6400,
+    "energy_per_tick": 40
+}

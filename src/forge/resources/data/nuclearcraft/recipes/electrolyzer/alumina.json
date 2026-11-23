@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:alumina",
+        "amount": 72
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:aluminum",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:oxygen",
+            "amount": 750
+        }
+    ],
+    "ticks": 6400,
+    "energy_per_tick": 40
+}

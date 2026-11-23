@@ -19,6 +19,7 @@ public final class NCClient {
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new);
+            MenuScreens.register(NCRegistries.ELECTROLYZER_MENU.get(), ElectrolyzerScreen::new);
             for (Machine machine : Machine.values()) {
                 MenuScreens.register(machine.menu(), ItemProcessorScreen::new);
             }

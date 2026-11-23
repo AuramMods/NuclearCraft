@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 500
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:oxygen",
+            "amount": 250
+        }
+    ],
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "SCS",
+        "PMP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "G": {
+            "tag": "forge:ingots/graphite"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:electrolyzer"
+    }
+}
