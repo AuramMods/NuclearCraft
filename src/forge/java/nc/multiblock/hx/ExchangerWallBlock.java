@@ -1,6 +1,6 @@
 package nc.multiblock.hx;
 
-import nc.init.NCCondenser;
+import nc.init.NCHeatExchangers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -34,13 +34,14 @@ public final class ExchangerWallBlock extends ExchangerPartBlock implements Enti
 
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return part(state) == Part.CONTROLLER ? new CondenserController(pos, state) : new CondenserPort(pos, state);
+        return part(state).controller() ? new ExchangerController(pos, state) : new ExchangerPort(pos, state);
     }
 
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        if (level instanceof ServerLevel && type == NCCondenser.CONTROLLER_ENTITY.get()) {
-            return (world, pos, blockState, entity) -> ((CondenserController) entity).tick((ServerLevel) world);
+        if (level instanceof ServerLevel && (type == NCHeatExchangers.CONTROLLER_ENTITY.get()
+                || type == NCHeatExchangers.CONDENSER_ENTITY.get())) {
+            return (world, pos, blockState, entity) -> ((ExchangerController) entity).tick((ServerLevel) world);
         }
         return null;
     }
@@ -68,10 +69,10 @@ public final class ExchangerWallBlock extends ExchangerPartBlock implements Enti
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                  BlockHitResult hit) {
-        if (part(state) != Part.CONTROLLER || hand != InteractionHand.MAIN_HAND) {
+        if (!part(state).controller() || hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
-        if (level instanceof ServerLevel && level.getBlockEntity(pos) instanceof CondenserController controller) {
+        if (level instanceof ServerLevel && level.getBlockEntity(pos) instanceof ExchangerController controller) {
             if (controller.assembled()) {
                 player.openMenu(controller);
             } else {

@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:high_pressure_steam",
+        "amount": 1
+    },
+    "output": {
+        "fluid": "nuclearcraft:low_pressure_steam",
+        "amount": 4
+    },
+    "heat": 4,
+    "input_temperature": 600,
+    "output_temperature": 550,
+    "alternate": "high_pressure",
+    "alternate_output": {
+        "fluid": "nuclearcraft:steam",
+        "amount": 4
+    }
+}

@@ -140,6 +140,8 @@
         "nuclearcraft:heat_exchanger_outlet",
         "nuclearcraft:heat_exchanger_tube_copper",
         "nuclearcraft:heat_exchanger_tube_hard_carbon",
-        "nuclearcraft:heat_exchanger_tube_thermoconducting"
+        "nuclearcraft:heat_exchanger_tube_thermoconducting",
+        "nuclearcraft:heat_exchanger_controller",
+        "nuclearcraft:heat_exchanger_baffle"
     ]
 }

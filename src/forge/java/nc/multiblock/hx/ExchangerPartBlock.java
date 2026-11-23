@@ -15,7 +15,11 @@ import nc.multiblock.Cuboid;
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class ExchangerPartBlock extends Block {
     public enum Part {
-        CASING, GLASS, REDSTONE, CONTROLLER, INLET, OUTLET, COPPER, HARD_CARBON, THERMOCONDUCTING
+        CASING, GLASS, REDSTONE, BAFFLE, CONDENSER, CONTROLLER, INLET, OUTLET, COPPER, HARD_CARBON, THERMOCONDUCTING;
+
+        boolean controller() {
+            return this == CONTROLLER || this == CONDENSER;
+        }
     }
 
     private final Part part;
@@ -46,7 +50,7 @@ public class ExchangerPartBlock extends Block {
     }
 
     static void notifyChange(ServerLevel level, BlockPos pos) {
-        Cuboid.visitNearby(level, new ChunkPos(pos), CondenserLayout.MAX_LENGTH, CondenserController.class,
+        Cuboid.visitNearby(level, new ChunkPos(pos), ExchangerLayout.maxLength(), ExchangerController.class,
                 controller -> controller.partChanged(pos));
     }
 
@@ -54,7 +58,7 @@ public class ExchangerPartBlock extends Block {
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
             ChunkPos chunk = event.getChunk().getPos();
-            Cuboid.visitNearby(level, chunk, CondenserLayout.MAX_LENGTH, CondenserController.class,
+            Cuboid.visitNearby(level, chunk, ExchangerLayout.maxLength(), ExchangerController.class,
                     controller -> controller.chunkUnloaded(chunk));
         }
     }

@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "tag": "minecraft:water",
+        "amount": 1
+    },
+    "output": {
+        "fluid": "nuclearcraft:high_pressure_steam",
+        "amount": 4
+    },
+    "heat": 64,
+    "input_temperature": 300,
+    "output_temperature": 600,
+    "preferred_flow": 1,
+    "flow_bonus": 0.5
+}

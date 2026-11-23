@@ -2,7 +2,7 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import nc.init.NCCondenser;
+import nc.init.NCHeatExchangers;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -27,8 +27,7 @@ public record CondenserRecipe(ResourceLocation id, FluidIngredient input, FluidS
     }
 
     public double flowMultiplier(Vec3 flow) {
-        double projection = preferredFlow == 0 ? flow.horizontalDistance() : preferredFlow * flow.y;
-        return Math.max(0D, 1D + flowBonus * (projection > 0.5D ? 1D : projection > -0.5D ? 0D : -1D));
+        return HeatExchangerRecipe.flowMultiplier(flow, preferredFlow, flowBonus);
     }
 
     @Override
@@ -63,12 +62,12 @@ public record CondenserRecipe(ResourceLocation id, FluidIngredient input, FluidS
 
     @Override
     public RecipeSerializer<?> getSerializer() {
-        return NCCondenser.SERIALIZER.get();
+        return NCHeatExchangers.SERIALIZER.get();
     }
 
     @Override
     public RecipeType<?> getType() {
-        return NCCondenser.RECIPES.get();
+        return NCHeatExchangers.RECIPES.get();
     }
 
     public static final class Serializer implements RecipeSerializer<CondenserRecipe> {

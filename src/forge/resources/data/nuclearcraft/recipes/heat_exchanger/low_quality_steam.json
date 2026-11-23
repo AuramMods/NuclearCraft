@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:low_quality_steam",
+        "amount": 32
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 1
+    },
+    "heat": 2,
+    "input_temperature": 350,
+    "output_temperature": 350,
+    "preferred_flow": -1,
+    "flow_bonus": 0.5
+}

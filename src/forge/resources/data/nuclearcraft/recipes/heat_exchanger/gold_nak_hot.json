@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:gold_nak_hot",
+        "amount": 1
+    },
+    "output": {
+        "fluid": "nuclearcraft:gold_nak",
+        "amount": 1
+    },
+    "heat": 1,
+    "input_temperature": 800,
+    "output_temperature": 400,
+    "heat_source": "nak"
+}

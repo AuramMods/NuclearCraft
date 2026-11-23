@@ -50,6 +50,7 @@ public final class NCFluids {
     public static final RegisteredFluid FLUORINE = gas("fluorine", 0xFFD3C75D);
     public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7);
     public static final RegisteredFluid HEATED_EMERGENCY_COOLANT = liquid("emergency_coolant_heated", "liquid", 2000, 0xCDBEE7);
+    public static final RegisteredFluid PREHEATED_WATER = liquid("preheated_water", "liquid", 1000, 0x4D85D6, 400);
     public static final RegisteredFluid CONDENSATE_WATER = liquid("condensate_water", "liquid", 1000, 0x4B95DB, 350);
     public static final RegisteredFluid LOW_ENRICHED_WATER = liquid("le_water", "le_water", 1100, 0xFFFFFF);
     public static final RegisteredFluid HIGH_ENRICHED_WATER = liquid("he_water", "he_water", 1100, 0xFFFFFF);
@@ -93,6 +94,15 @@ public final class NCFluids {
                 NuclearCraft.id("block/fluids/" + texture + "_flow"), 0xFF000000 | tint));
     }
 
+    static RegisteredFluid saltCoolant(String name, int tint, boolean hot) {
+        int light = hot ? 7 : 0;
+        return new RegisteredFluid(name, light, () -> tintedFluid(FluidType.Properties.create()
+                .density(hot ? 4000 : 5000).viscosity(hot ? 10000 : 15000).temperature(hot ? 800 : 400)
+                .lightLevel(light).sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
+                .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA), MOLTEN_STILL, MOLTEN_FLOW,
+                0xFF000000 | tint));
+    }
+
     private static RegisteredFluid steam(String name, int temperature, int tint) {
         return new RegisteredFluid(name, () ->
                 tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature)
@@ -116,6 +126,7 @@ public final class NCFluids {
     public static void register(IEventBus bus) {
         registerElectrolyzerFluids();
         NCGasCoolants.registerFluids();
+        NCSaltCoolants.registerFluids();
         TYPES.register(bus);
         FLUIDS.register(bus);
     }

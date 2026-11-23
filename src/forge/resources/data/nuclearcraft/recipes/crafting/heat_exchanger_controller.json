@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SES",
+        "TFT",
+        "SES"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "T": {
+            "tag": "forge:ingots/thermoconducting"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_controller",
+        "count": 1
+    }
+}

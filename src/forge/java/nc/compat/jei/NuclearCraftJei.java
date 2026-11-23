@@ -22,7 +22,7 @@ import nc.client.ElectrolyzerScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
-import nc.init.NCCondenser;
+import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
 import nc.init.NCGenerators;
 import nc.init.NCGasCoolants;
@@ -33,6 +33,7 @@ import nc.init.NCTurbine;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
+import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SolidFissionRecipe;
@@ -67,6 +68,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
     private static final RecipeType<SolidFissionRecipe> PEBBLE =
             RecipeType.create("nuclearcraft", "pebble_fission", SolidFissionRecipe.class);
+    private static final RecipeType<HeatExchangerRecipe> HEAT_EXCHANGER =
+            RecipeType.create(NuclearCraft.MOD_ID, "heat_exchanger", HeatExchangerRecipe.class);
     private static final RecipeType<CondenserRecipe> CONDENSER =
             RecipeType.create(NuclearCraft.MOD_ID, "condenser", CondenserRecipe.class);
     private static final RecipeType<TurbineRecipe> TURBINE =
@@ -113,7 +116,12 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
-                new Category<>(CONDENSER, NCCondenser.CONTROLLER.get(), gui, (layout, recipe) -> {
+                new Category<>(HEAT_EXCHANGER, NCHeatExchangers.CONTROLLER.get(), gui, (layout, recipe) -> {
+                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
+                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.heat_exchanger",
+                        decimal(recipe.heatRequired()), recipe.inputTemperature(), recipe.outputTemperature())),
+                new Category<>(CONDENSER, NCHeatExchangers.CONDENSER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.condenser",
@@ -146,7 +154,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
-        registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCCondenser.RECIPES.get()));
+        registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
+        registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
     }
 
@@ -173,7 +182,8 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         registration.addRecipeCatalyst(NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
         registration.addRecipeCatalyst(NCFission.LEAD_STEEL_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
-        registration.addRecipeCatalyst(NCCondenser.CONTROLLER.get(), CONDENSER);
+        registration.addRecipeCatalyst(NCHeatExchangers.CONDENSER.get(), CONDENSER);
+        registration.addRecipeCatalyst(NCHeatExchangers.CONTROLLER.get(), HEAT_EXCHANGER);
         registration.addRecipeCatalyst(NCTurbine.CONTROLLER.get(), TURBINE);
     }
 

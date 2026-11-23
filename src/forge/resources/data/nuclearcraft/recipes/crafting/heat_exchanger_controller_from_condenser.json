@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:condenser_controller"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_controller"
+    }
+}

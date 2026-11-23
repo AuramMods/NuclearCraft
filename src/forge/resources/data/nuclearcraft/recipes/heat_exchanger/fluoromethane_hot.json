@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:fluoromethane_hot",
+        "amount": 2
+    },
+    "output": {
+        "fluid": "nuclearcraft:fluoromethane",
+        "amount": 1
+    },
+    "heat": 1,
+    "input_temperature": 1000,
+    "output_temperature": 300,
+    "heat_source": "gas"
+}

@@ -1,7 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
-import nc.init.NCCondenser;
+import nc.init.NCHeatExchangers;
 import nc.init.NCFluids;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerTubeBlock.Setting;
@@ -121,9 +121,9 @@ public final class CondenserGameTests {
                             "Breaking the frame must invalidate even previously resolved handlers");
                     CompoundTag saved = helper.getBlockEntity(CONTROLLER).saveWithoutMetadata();
                     helper.setBlock(CONTROLLER, Blocks.AIR);
-                    helper.setBlock(CONTROLLER, NCCondenser.CONTROLLER.get());
+                    helper.setBlock(CONTROLLER, NCHeatExchangers.CONDENSER.get());
                     helper.getBlockEntity(CONTROLLER).load(saved);
-                    helper.setBlock(FRAME, NCCondenser.CASING.get());
+                    helper.setBlock(FRAME, NCHeatExchangers.CASING.get());
                 })
                 .thenWaitUntil(() -> fluid(helper, FIRST_OUT, Direction.EAST))
                 .thenExecute(() -> {
@@ -147,12 +147,12 @@ public final class CondenserGameTests {
     public static void multitoolConfiguresBothSidesOfATubeConnection(GameTestHelper helper) {
         BlockPos first = new BlockPos(2, 2, 2);
         BlockPos second = first.east();
-        var tube = NCCondenser.COPPER.get();
+        var tube = NCHeatExchangers.COPPER.get();
         helper.setBlock(first, tube);
         helper.setBlock(second, tube);
         var player = FakePlayerFactory.getMinecraft(helper.getLevel());
         ItemStack stored = player.getMainHandItem();
-        ItemStack multitool = new ItemStack(NCCondenser.MULTITOOL.get());
+        ItemStack multitool = new ItemStack(NCHeatExchangers.MULTITOOL.get());
         boolean previousSneaking = player.isShiftKeyDown();
         try {
             player.setItemInHand(InteractionHand.MAIN_HAND, multitool);
@@ -178,18 +178,18 @@ public final class CondenserGameTests {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 4, 4))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 4
                     || pos.getZ() == 1 || pos.getZ() == 4) {
-                helper.setBlock(pos, NCCondenser.CASING.get());
+                helper.setBlock(pos, NCHeatExchangers.CASING.get());
             }
         }
-        helper.setBlock(CONTROLLER, NCCondenser.CONTROLLER.get());
+        helper.setBlock(CONTROLLER, NCHeatExchangers.CONDENSER.get());
         for (BlockPos input : new BlockPos[]{FIRST_IN, SECOND_IN, COOLANT}) {
-            helper.setBlock(input, NCCondenser.INLET.get());
+            helper.setBlock(input, NCHeatExchangers.INLET.get());
         }
-        helper.setBlock(FIRST_OUT, NCCondenser.OUTLET.get());
-        helper.setBlock(SECOND_OUT, NCCondenser.OUTLET.get());
+        helper.setBlock(FIRST_OUT, NCHeatExchangers.OUTLET.get());
+        helper.setBlock(SECOND_OUT, NCHeatExchangers.OUTLET.get());
         for (int z = 2; z <= 3; z++) {
             for (int x = 2; x <= 4; x++) {
-                ExchangerTubeBlock block = z == 2 ? NCCondenser.COPPER.get() : NCCondenser.THERMOCONDUCTING.get();
+                ExchangerTubeBlock block = z == 2 ? NCHeatExchangers.COPPER.get() : NCHeatExchangers.THERMOCONDUCTING.get();
                 helper.setBlock(new BlockPos(x, 2, z), ExchangerTubeBlock.withSetting(
                         ExchangerTubeBlock.withSetting(block.defaultBlockState(), Direction.WEST, Setting.OPEN),
                         Direction.EAST, Setting.OPEN));

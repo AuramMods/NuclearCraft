@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:diborane_exhaust",
+        "amount": 4
+    },
+    "output": {
+        "fluid": "nuclearcraft:diborane",
+        "amount": 1
+    },
+    "heat": 0.5,
+    "input_temperature": 800,
+    "output_temperature": 300,
+    "heat_source": "gas"
+}
