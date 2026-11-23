@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hep_239_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hep_239_oxide"
+    },
+    "ticks": 4572,
+    "heat": 378,
+    "efficiency": 1.25,
+    "criticality": 49,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

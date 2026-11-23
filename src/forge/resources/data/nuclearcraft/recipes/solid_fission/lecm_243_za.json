@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/lecm_243_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lecm_243_za"
+    },
+    "ticks": 1200,
+    "heat": 480,
+    "efficiency": 1.45,
+    "criticality": 56,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

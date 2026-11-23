@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/lithium"
+                },
+                {
+                    "tag": "forge:dusts/lithium"
+                }
+            ],
+            "count": 10
+        }
+    ],
+    "ticks": 4000,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:lithium_7_ingot",
+            "count": 9
+        },
+        {
+            "item": "nuclearcraft:lithium_6_ingot",
+            "count": 1
+        }
+    ]
+}

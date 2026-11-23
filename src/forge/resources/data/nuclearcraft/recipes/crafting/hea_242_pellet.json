@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_243"
+        },
+        {
+            "tag": "forge:ingots/americium_242"
+        },
+        {
+            "tag": "forge:ingots/americium_242"
+        },
+        {
+            "tag": "forge:ingots/americium_242"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hea_242_pellet",
+        "count": 9
+    }
+}

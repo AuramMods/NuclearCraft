@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:hecm_243_nitride"
+    },
+    "result": "nuclearcraft:hecm_243_pellet",
+    "experience": 0.0,
+    "cookingtime": 200
+}

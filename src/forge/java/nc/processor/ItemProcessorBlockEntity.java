@@ -29,6 +29,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Objects;
 
 public final class ItemProcessorBlockEntity extends BlockEntity implements MenuProvider {
@@ -52,7 +53,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         input = new SimpleContainer(machine.inputs());
-        inventory = new ItemStackHandler(machine.inputs() + 1) {
+        inventory = new ItemStackHandler(machine.slots()) {
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
                 if (slot >= machine.inputs() || stack.isEmpty()) {
@@ -105,10 +106,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         if (recipe == null) {
             return false;
         }
-        ItemStack product = recipe.result();
-        ItemStack stored = inventory.getStackInSlot(machine.inputs());
-        boolean room = stored.isEmpty() || (ItemStack.isSameItemSameTags(stored, product)
-                && product.getCount() <= stored.getMaxStackSize() - stored.getCount());
+        List<ItemStack> products = recipe.results();
+        boolean room = hasOutputSpace(products);
         if (!room || halted || !power.spend(recipe.energyPerTick())) {
             if (progressHalfTicks > 0) {
                 long nextProgress = machine.losesProgress() && !halted ? Math.max(0, progressHalfTicks - 3)
@@ -126,11 +125,27 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             for (int slot = 0; slot < amounts.length; slot++) {
                 inventory.extractItem(slot, amounts[slot], false);
             }
-            product.grow(stored.getCount());
-            inventory.setStackInSlot(machine.inputs(), product);
+            for (int index = 0; index < products.size(); index++) {
+                int slot = machine.inputs() + index;
+                ItemStack product = products.get(index);
+                product.grow(inventory.getStackInSlot(slot).getCount());
+                inventory.setStackInSlot(slot, product);
+            }
             progressHalfTicks = 0;
         }
         setChanged();
+        return true;
+    }
+
+    private boolean hasOutputSpace(List<ItemStack> products) {
+        for (int index = 0; index < products.size(); index++) {
+            ItemStack stored = inventory.getStackInSlot(machine.inputs() + index);
+            ItemStack product = products.get(index);
+            if (!stored.isEmpty() && (!ItemStack.isSameItemSameTags(stored, product)
+                    || product.getCount() > stored.getMaxStackSize() - stored.getCount())) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -279,8 +294,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         }
 
         private boolean visible(int slot) {
-            return valid && !isRemoved() && slot >= 0 && (slot < machine.inputs() ? mode.input
-                    : slot == machine.inputs() && mode.output);
+            return valid && !isRemoved() && slot >= 0 && slot < machine.slots()
+                    && (slot < machine.inputs() ? mode.input : mode.output);
         }
 
         @Override
@@ -300,7 +315,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return visible(slot) && slot == machine.inputs() && amount > 0
+            return visible(slot) && slot >= machine.inputs() && amount > 0
                     ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 

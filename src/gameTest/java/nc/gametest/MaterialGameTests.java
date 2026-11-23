@@ -27,17 +27,7 @@ public final class MaterialGameTests {
         helper.assertTrue(item("copper_ingot").getDefaultInstance().is(copper)
                 && Items.COPPER_INGOT.getDefaultInstance().is(copper), "Both copper ingots belong to the Forge tag");
 
-        var crafting = new TransientCraftingContainer(new AbstractContainerMenu(null, 0) {
-            @Override
-            public ItemStack quickMoveStack(Player player, int index) {
-                return ItemStack.EMPTY;
-            }
-
-            @Override
-            public boolean stillValid(Player player) {
-                return true;
-            }
-        }, 2, 3);
+        var crafting = craftingGrid(2, 3);
         crafting.setItem(0, Items.COPPER_INGOT.getDefaultInstance());
         crafting.setItem(1, item("copper_ingot").getDefaultInstance());
         crafting.setItem(2, Items.IRON_INGOT.getDefaultInstance());
@@ -57,6 +47,20 @@ public final class MaterialGameTests {
         helper.assertTrue(sink.assemble(crafting, helper.getLevel().registryAccess()).is(item("water_heat_sink"))
                 && remainder.get(1).is(Items.BUCKET), "Crafting the water heat sink returns the empty bucket");
         helper.succeed();
+    }
+
+    static TransientCraftingContainer craftingGrid(int width, int height) {
+        return new TransientCraftingContainer(new AbstractContainerMenu(null, 0) {
+            @Override
+            public ItemStack quickMoveStack(Player player, int index) {
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public boolean stillValid(Player player) {
+                return true;
+            }
+        }, width, height);
     }
 
     private static Item item(String id) {

@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:uranium_235_nitride_ingot"
+    },
+    "result": "nuclearcraft:uranium_235_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

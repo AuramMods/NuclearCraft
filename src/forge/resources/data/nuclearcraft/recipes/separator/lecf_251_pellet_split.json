@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/lecf_251"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:californium_252_ingot",
+            "count": 8
+        },
+        {
+            "item": "nuclearcraft:californium_251_ingot",
+            "count": 1
+        }
+    ]
+}

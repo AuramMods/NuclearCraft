@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_nitride"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_nitride"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hen_236_nitride",
+        "count": 9
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_252_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_249_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_249_oxide"
+        },
+        {
+            "tag": "forge:ingots/californium_249_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hecf_249_oxide",
+        "count": 9
+    }
+}

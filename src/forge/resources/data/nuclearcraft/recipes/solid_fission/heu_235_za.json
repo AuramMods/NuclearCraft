@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/heu_235_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_heu_235_za"
+    },
+    "ticks": 3840,
+    "heat": 450,
+    "efficiency": 1.05,
+    "criticality": 43,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

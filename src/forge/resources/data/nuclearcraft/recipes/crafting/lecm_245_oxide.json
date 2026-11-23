@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_oxide"
+        },
+        {
+            "tag": "forge:ingots/curium_245_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lecm_245_oxide",
+        "count": 9
+    }
+}

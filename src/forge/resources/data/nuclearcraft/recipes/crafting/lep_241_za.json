@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_za"
+        },
+        {
+            "tag": "forge:ingots/plutonium_241_za"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lep_241_za",
+        "count": 9
+    }
+}

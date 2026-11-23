@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/hep_241"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:plutonium_242_ingot",
+            "count": 6
+        },
+        {
+            "item": "nuclearcraft:plutonium_241_ingot",
+            "count": 3
+        }
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_246_za"
+        },
+        {
+            "tag": "forge:ingots/curium_247_za"
+        },
+        {
+            "tag": "forge:ingots/curium_247_za"
+        },
+        {
+            "tag": "forge:ingots/curium_247_za"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hecm_247_za",
+        "count": 9
+    }
+}

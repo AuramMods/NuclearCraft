@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:lea_242_nitride"
+    },
+    "result": "nuclearcraft:lea_242_pellet",
+    "experience": 0.0,
+    "cookingtime": 200
+}

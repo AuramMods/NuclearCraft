@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:lecm_243_oxide"
+    },
+    "result": "nuclearcraft:lecm_243_pellet",
+    "experience": 0.0,
+    "cookingtime": 200
+}

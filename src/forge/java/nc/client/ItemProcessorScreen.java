@@ -51,7 +51,8 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         int energyHeight = (int) (74 * menu.energy());
         graphics.blit(texture, leftPos + 8, topPos + 80 - energyHeight, 176, 90 - energyHeight, 16, energyHeight);
         int progressWidth = (int) (37 * menu.progress());
-        int x = menu.machine().inputs() == 1 ? 74 : 84;
-        graphics.blit(texture, leftPos + x, topPos + 35, 176, 3, progressWidth, 16);
+        var machine = menu.machine();
+        graphics.blit(texture, leftPos + machine.progressX(), topPos + machine.progressY(),
+                176, 3, progressWidth, machine.progressHeight());
     }
 }

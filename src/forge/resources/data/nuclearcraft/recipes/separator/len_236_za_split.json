@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/len_236_za"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:len_236_pellet",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:zirconium_dust",
+            "count": 1
+        }
+    ]
+}

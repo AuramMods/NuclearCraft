@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/hecf_249_carbide"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:hecf_249_pellet",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:graphite_dust",
+            "count": 1
+        }
+    ]
+}

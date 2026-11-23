@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_233_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_233_za"
+        },
+        {
+            "tag": "forge:ingots/uranium_233_za"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:heu_233_za",
+        "count": 9
+    }
+}

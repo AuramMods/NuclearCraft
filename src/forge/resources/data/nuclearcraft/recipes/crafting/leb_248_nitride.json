@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_nitride"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248_nitride"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:leb_248_nitride",
+        "count": 9
+    }
+}

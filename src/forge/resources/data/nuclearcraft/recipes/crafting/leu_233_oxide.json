@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_oxide"
+        },
+        {
+            "tag": "forge:ingots/uranium_233_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:leu_233_oxide",
+        "count": 9
+    }
+}

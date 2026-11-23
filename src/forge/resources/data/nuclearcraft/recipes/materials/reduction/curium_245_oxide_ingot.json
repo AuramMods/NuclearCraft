@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:curium_245_oxide_ingot"
+    },
+    "result": "nuclearcraft:curium_245_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

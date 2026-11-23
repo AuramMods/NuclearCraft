@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_252_za"
+        },
+        {
+            "tag": "forge:ingots/californium_249_za"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lecf_249_za",
+        "count": 9
+    }
+}

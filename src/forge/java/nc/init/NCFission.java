@@ -75,6 +75,7 @@ public final class NCFission {
                         output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
                         output.accept(LECF_251_OXIDE.get());
                         output.accept(DEPLETED_LECF_251_OXIDE.get());
+                        NCFissionFuels.displayItems(output);
                         output.accept(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
                     }).build());
 
@@ -99,6 +100,6 @@ public final class NCFission {
     private NCFission() {}
 
     static void register() {
-        // Registers the entries above on the shared deferred registers before their events.
+        NCFissionFuels.register();
     }
 }

@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/tbu_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_tbu_za"
+    },
+    "ticks": 11520,
+    "heat": 50,
+    "efficiency": 1.25,
+    "criticality": 199,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

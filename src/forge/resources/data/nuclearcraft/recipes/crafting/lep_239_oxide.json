@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_oxide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_239_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lep_239_oxide",
+        "count": 9
+    }
+}

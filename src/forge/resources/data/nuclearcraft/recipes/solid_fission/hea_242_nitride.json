@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hea_242_nitride"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hea_242_nitride"
+    },
+    "ticks": 1846,
+    "heat": 936,
+    "efficiency": 1.4,
+    "criticality": 40,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

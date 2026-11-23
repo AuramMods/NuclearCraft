@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/len_236"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:neptunium_237_ingot",
+            "count": 8
+        },
+        {
+            "item": "nuclearcraft:neptunium_236_ingot",
+            "count": 1
+        }
+    ]
+}

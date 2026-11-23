@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248_oxide"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:heb_248_oxide",
+        "count": 9
+    }
+}

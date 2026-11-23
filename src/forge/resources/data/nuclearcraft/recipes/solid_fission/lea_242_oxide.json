@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/lea_242_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lea_242_oxide"
+    },
+    "ticks": 1476,
+    "heat": 390,
+    "efficiency": 1.35,
+    "criticality": 65,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

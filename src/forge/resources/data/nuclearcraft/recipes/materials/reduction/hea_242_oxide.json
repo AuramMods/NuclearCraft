@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:hea_242_oxide"
+    },
+    "result": "nuclearcraft:hea_242_pellet",
+    "experience": 0.0,
+    "cookingtime": 200
+}

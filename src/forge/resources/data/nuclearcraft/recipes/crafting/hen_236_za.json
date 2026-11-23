@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_za"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_za"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hen_236_za",
+        "count": 9
+    }
+}

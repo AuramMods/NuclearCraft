@@ -28,7 +28,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     private final @Nullable ItemProcessorBlockEntity processor;
 
     public ItemProcessorMenu(int id, Inventory player, Machine machine) {
-        this(id, player, machine, new ItemStackHandler(machine.inputs() + 1), new SimpleContainerData(DATA_COUNT),
+        this(id, player, machine, new ItemStackHandler(machine.slots()), new SimpleContainerData(DATA_COUNT),
                 ContainerLevelAccess.NULL, null);
     }
 
@@ -39,16 +39,17 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         this.data = data;
         this.access = access;
         this.processor = processor;
-        int firstInput = machine.inputs() == 1 ? 56 : 46;
         for (int index = 0; index < machine.inputs(); index++) {
-            addSlot(new SlotItemHandler(inventory, index, firstInput + index * 20, 35));
+            addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), 35));
         }
-        addSlot(new SlotItemHandler(inventory, machine.inputs(), firstInput + machine.inputs() * 20 + 40, 35) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false;
-            }
-        });
+        for (int index = 0; index < machine.outputs(); index++) {
+            addSlot(new SlotItemHandler(inventory, machine.inputs() + index, machine.outputX(index), 35) {
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return false;
+                }
+            });
+        }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
@@ -98,7 +99,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        int machineSlots = machine.inputs() + 1;
+        int machineSlots = machine.slots();
         boolean moved = index < machineSlots ? moveItemStackTo(stack, machineSlots, slots.size(), true)
                 : moveItemStackTo(stack, 0, machine.inputs(), false);
         if (!moved) {

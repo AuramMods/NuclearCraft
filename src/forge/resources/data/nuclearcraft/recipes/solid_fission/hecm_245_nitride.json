@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hecm_245_nitride"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hecm_245_nitride"
+    },
+    "ticks": 3032,
+    "heat": 570,
+    "efficiency": 1.55,
+    "criticality": 47,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

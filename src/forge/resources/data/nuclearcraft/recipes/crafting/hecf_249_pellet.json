@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_252"
+        },
+        {
+            "tag": "forge:ingots/californium_249"
+        },
+        {
+            "tag": "forge:ingots/californium_249"
+        },
+        {
+            "tag": "forge:ingots/californium_249"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hecf_249_pellet",
+        "count": 9
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/hecf_249_nitride"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:californium_252_nitride_ingot",
+            "count": 6
+        },
+        {
+            "item": "nuclearcraft:californium_249_nitride_ingot",
+            "count": 3
+        }
+    ]
+}

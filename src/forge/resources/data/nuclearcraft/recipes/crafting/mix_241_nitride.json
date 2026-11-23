@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/uranium_238_nitride"
+        },
+        {
+            "tag": "forge:ingots/plutonium_241_nitride"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:mix_241_nitride",
+        "count": 9
+    }
+}

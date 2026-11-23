@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_252_nitride"
+        },
+        {
+            "tag": "forge:ingots/californium_251_nitride"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lecf_251_nitride",
+        "count": 9
+    }
+}

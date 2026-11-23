@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hen_236_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hen_236_za"
+    },
+    "ticks": 1574,
+    "heat": 1098,
+    "efficiency": 1.15,
+    "criticality": 30,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

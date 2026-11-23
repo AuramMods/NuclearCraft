@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:californium_251_nitride_ingot"
+    },
+    "result": "nuclearcraft:californium_251_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_238"
+        },
+        {
+            "tag": "forge:ingots/uranium_233"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:leu_233_pellet",
+        "count": 9
+    }
+}

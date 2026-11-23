@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_246_nitride"
+        },
+        {
+            "tag": "forge:ingots/curium_247_nitride"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lecm_247_nitride",
+        "count": 9
+    }
+}

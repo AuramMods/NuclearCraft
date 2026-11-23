@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/curium_246"
+                },
+                {
+                    "tag": "forge:dusts/curium_246"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/zirconium"
+                },
+                {
+                    "tag": "forge:dusts/zirconium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "result": {
+        "item": "nuclearcraft:curium_246_za_ingot",
+        "count": 1
+    }
+}

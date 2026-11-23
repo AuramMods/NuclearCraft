@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/californium_251"
+                },
+                {
+                    "tag": "forge:dusts/californium_251"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/graphite"
+                },
+                {
+                    "tag": "forge:dusts/graphite"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "result": {
+        "item": "nuclearcraft:californium_251_carbide_ingot",
+        "count": 1
+    }
+}

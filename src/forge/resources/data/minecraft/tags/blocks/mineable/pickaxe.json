@@ -64,6 +64,7 @@
         "nuclearcraft:dysprosium_block",
         "nuclearcraft:gadolinium_block",
         "nuclearcraft:manufactory",
-        "nuclearcraft:alloy_furnace"
+        "nuclearcraft:alloy_furnace",
+        "nuclearcraft:separator"
     ]
 }

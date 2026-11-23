@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/lecm_247_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lecm_247_oxide"
+    },
+    "ticks": 2150,
+    "heat": 268,
+    "efficiency": 1.55,
+    "criticality": 72,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:americium_243_nitride_ingot"
+    },
+    "result": "nuclearcraft:americium_243_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

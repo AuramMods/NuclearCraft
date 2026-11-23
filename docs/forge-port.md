@@ -15,8 +15,11 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - A new world on a clean Forge dedicated server generated all eight legacy NuclearCraft ores using the packaged JAR. The ore recipes and drops preserve the default legacy ore-to-ingot progression.
 - The Manufactory and Alloy Furnace have legacy crafting patterns, block models and screens. They accept Forge Energy on all faces and support per-face item modes. Their datapack recipes cover the graphite chain, ore processing, bronze, steel, ferroboron, tough alloy, and other starter materials, with optional outputs for installed tech mods.
 - Headless tests verified the 5,000 FE coal-to-graphite chain and the 8,000 FE bronze recipe with either ingredient order. The Alloy Furnace test checked a full output, handler invalidation, and restoration of in-progress processing and face modes. Optional JEI categories cover all currently ported processing, reactor fuel, and turbine recipes.
+- The Separator uses two extractable outputs and waits for room in both slots before spending energy or ingredients. Its regular material and fuel recipes are available through Forge tags. The solid-fission catalog contains 81 oxide, nitride, and zirconium alloy recipes from the original fuel tables, with legacy times, heat, efficiency, criticality, intrinsic flux, and self-priming values.
+- The headless Separator test verified a 40,000 FE batch of ten uranium dust, a stall when the second output was full, and the exact nine-to-one output balance. The recovered items supplied the vanilla crafting recipe for nine unprocessed LEU-235 pellets.
 - A hidden Forge development client joined a clean dedicated server running the packaged JAR, opened the Alloy Furnace screen, and synced an input-only face change from the server. JEI 15.20.0.129 found the bronze recipe after login. The temporary test copy remapped JEI's access transformer for the development client. The client measured master volume at zero, and the native observer recorded no visible windows or focus changes.
-- Remaining work includes the rest of the survival processing and fuel chains, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems. Other client menus, the packaged client, and chunk unload and reload still need runtime verification.
+- A second hidden-client test opened the Separator, synced a side setting, and found both uranium outputs in JEI after multiplayer recipe sync. Master volume was zero and the native observer recorded no visible windows or focus changes.
+- Separation and crafting supply unprocessed pellets. The Infuser, neutron sources, and reprocessing are still needed for standard fuels to form a complete survival loop. Other remaining work includes the rest of the Melter and reactor catalogs and reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine hot gas recipes and animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -53,6 +56,8 @@ With Auram's Almost Unified JAR and config alongside Mekanism, a furnace smelted
 
 With separate north input and south output faces, Auram's Ender IO Item Conduits and Mekanism Basic Logistical Transporters each supplied one coal to a Manufactory and three copper plus one tin to an Alloy Furnace. Each network emptied its source barrels and collected one coal dust and four bronze ingots in the corresponding destination barrels.
 
+For the Separator, Ender IO supplied ten Mekanism uranium ingots and Mekanism supplied ten NuclearCraft uranium dust. Both source barrels emptied and each destination collected exactly nine uranium-238 ingots and one uranium-235 ingot. A full restart preserved those counts. The server then confirmed the test chunk was unloaded before it was loaded again, and both source and destination inventories still matched.
+
 Full Auram instance testing is pending. No installed Auram mod JAR claimed the `nuclearcraft` mod ID at the time of the test.
 
 ## Registry migration references
@@ -63,6 +68,10 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | `nuclearcraft:fission_reflector`, 0 | `nuclearcraft:beryllium_carbon_reflector` |
 | `nuclearcraft:fuel_californium`, 9 | `nuclearcraft:lecf_251_oxide` |
 | `nuclearcraft:depleted_fuel_californium`, 9 | `nuclearcraft:depleted_lecf_251_oxide` |
+| `nuclearcraft:uranium`, 5 | `nuclearcraft:uranium_235_ingot` |
+| `nuclearcraft:pellet_uranium`, 4 | `nuclearcraft:leu_235_pellet` |
+| `nuclearcraft:fuel_uranium`, 9 | `nuclearcraft:leu_235_oxide` |
+| `nuclearcraft:depleted_fuel_uranium`, 9 | `nuclearcraft:depleted_leu_235_oxide` |
 | `nuclearcraft:turbine_dynamo_coil`, 0 | `nuclearcraft:turbine_dynamo_coil_magnesium` |
 | `nuclearcraft:turbine_dynamo_coil`, 1 | `nuclearcraft:turbine_dynamo_coil_beryllium` |
 | `nuclearcraft:turbine_dynamo_coil`, 2 | `nuclearcraft:turbine_dynamo_coil_aluminum` |
@@ -70,7 +79,7 @@ Full Auram instance testing is pending. No installed Auram mod JAR claimed the `
 | `nuclearcraft:turbine_dynamo_coil`, 4 | `nuclearcraft:turbine_dynamo_coil_copper` |
 | `nuclearcraft:turbine_dynamo_coil`, 5 | `nuclearcraft:turbine_dynamo_coil_silver` |
 
-The datapack recipe types are `nuclearcraft:manufactory`, `nuclearcraft:alloy_furnace`, `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. The new item processor recipes take counted Forge item ingredients. Alloy Furnace inputs are interchangeable. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
+The datapack recipe types include `nuclearcraft:manufactory`, `nuclearcraft:separator`, `nuclearcraft:alloy_furnace`, `nuclearcraft:melter`, `nuclearcraft:solid_fission`, and `nuclearcraft:turbine`. Item processor recipes take counted Forge item ingredients. The Separator uses a `results` array in output slot order. Manufactory and Alloy Furnace recipes use a single `result` object, with interchangeable Alloy Furnace inputs. Turbine recipes accept Forge fluid tags. Legacy world data still requires an explicit conversion.
 
 Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
 

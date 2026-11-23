@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/lep_239"
+                },
+                {
+                    "tag": "forge:dusts/lep_239"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/zirconium"
+                },
+                {
+                    "tag": "forge:dusts/zirconium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "result": {
+        "item": "nuclearcraft:lep_239_za",
+        "count": 1
+    }
+}

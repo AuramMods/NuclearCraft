@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/mix_241_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_mix_241_oxide"
+    },
+    "ticks": 3014,
+    "heat": 192,
+    "efficiency": 1.15,
+    "criticality": 80,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_242_carbide"
+        },
+        {
+            "tag": "forge:ingots/plutonium_241_carbide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lep_241_pellet_carbide",
+        "count": 9
+    }
+}

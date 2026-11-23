@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_oxide"
+        },
+        {
+            "tag": "forge:ingots/americium_242_oxide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lea_242_oxide",
+        "count": 9
+    }
+}

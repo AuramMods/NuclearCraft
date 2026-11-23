@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_243_carbide"
+        },
+        {
+            "tag": "forge:ingots/americium_242_carbide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:lea_242_pellet_carbide",
+        "count": 9
+    }
+}

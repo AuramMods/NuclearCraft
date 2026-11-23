@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/uranium_za"
+                },
+                {
+                    "tag": "forge:dusts/uranium_za"
+                }
+            ],
+            "count": 10
+        }
+    ],
+    "ticks": 4000,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:uranium_238_za_ingot",
+            "count": 9
+        },
+        {
+            "item": "nuclearcraft:uranium_235_za_ingot",
+            "count": 1
+        }
+    ]
+}

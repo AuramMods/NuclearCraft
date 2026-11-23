@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hep_241_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hep_241_oxide"
+    },
+    "ticks": 3164,
+    "heat": 546,
+    "efficiency": 1.3,
+    "criticality": 42,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

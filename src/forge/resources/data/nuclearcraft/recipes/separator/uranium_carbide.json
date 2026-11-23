@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/uranium_carbide"
+                },
+                {
+                    "tag": "forge:dusts/uranium_carbide"
+                }
+            ],
+            "count": 10
+        }
+    ],
+    "ticks": 4000,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:uranium_238_carbide_ingot",
+            "count": 9
+        },
+        {
+            "item": "nuclearcraft:uranium_235_carbide_ingot",
+            "count": 1
+        }
+    ]
+}

@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_237_carbide"
+        },
+        {
+            "tag": "forge:ingots/neptunium_236_carbide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:len_236_pellet_carbide",
+        "count": 9
+    }
+}

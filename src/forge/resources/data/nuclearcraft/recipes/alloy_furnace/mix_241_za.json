@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/mix_241"
+                },
+                {
+                    "tag": "forge:dusts/mix_241"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/zirconium"
+                },
+                {
+                    "tag": "forge:dusts/zirconium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "result": {
+        "item": "nuclearcraft:mix_241_za",
+        "count": 1
+    }
+}

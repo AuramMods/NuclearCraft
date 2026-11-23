@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/hen_236_nitride"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:neptunium_237_nitride_ingot",
+            "count": 6
+        },
+        {
+            "item": "nuclearcraft:neptunium_236_nitride_ingot",
+            "count": 3
+        }
+    ]
+}

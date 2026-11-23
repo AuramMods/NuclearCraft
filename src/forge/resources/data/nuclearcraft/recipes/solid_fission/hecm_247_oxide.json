@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hecm_247_oxide"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hecm_247_oxide"
+    },
+    "ticks": 2150,
+    "heat": 804,
+    "efficiency": 1.6,
+    "criticality": 36,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

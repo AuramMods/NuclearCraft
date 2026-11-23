@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/berkelium_248_za"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:berkelium_248_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:zirconium_dust",
+            "count": 1
+        }
+    ]
+}

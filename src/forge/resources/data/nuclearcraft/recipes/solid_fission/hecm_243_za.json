@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/hecm_243_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_hecm_243_za"
+    },
+    "ticks": 1200,
+    "heat": 1440,
+    "efficiency": 1.5,
+    "criticality": 28,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

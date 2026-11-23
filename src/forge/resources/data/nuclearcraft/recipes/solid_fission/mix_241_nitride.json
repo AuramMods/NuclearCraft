@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/mix_241_nitride"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_mix_241_nitride"
+    },
+    "ticks": 3758,
+    "heat": 154,
+    "efficiency": 1.15,
+    "criticality": 100,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

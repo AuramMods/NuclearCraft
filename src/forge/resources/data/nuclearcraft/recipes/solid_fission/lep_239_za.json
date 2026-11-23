@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/lep_239_za"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lep_239_za"
+    },
+    "ticks": 3646,
+    "heat": 158,
+    "efficiency": 1.2,
+    "criticality": 84,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

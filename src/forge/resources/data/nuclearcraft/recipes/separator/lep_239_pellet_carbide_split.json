@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/lep_239_carbide"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:lep_239_pellet",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:graphite_dust",
+            "count": 1
+        }
+    ]
+}

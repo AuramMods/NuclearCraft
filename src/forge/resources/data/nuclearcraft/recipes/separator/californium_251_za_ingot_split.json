@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/californium_251_za"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:californium_251_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:zirconium_dust",
+            "count": 1
+        }
+    ]
+}

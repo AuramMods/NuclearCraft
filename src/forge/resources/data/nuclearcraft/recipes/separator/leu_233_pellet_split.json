@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/leu_233"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:uranium_238_ingot",
+            "count": 8
+        },
+        {
+            "item": "nuclearcraft:uranium_233_ingot",
+            "count": 1
+        }
+    ]
+}

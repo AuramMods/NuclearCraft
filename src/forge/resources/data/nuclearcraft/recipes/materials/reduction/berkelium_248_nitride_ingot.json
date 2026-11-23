@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:berkelium_248_nitride_ingot"
+    },
+    "result": "nuclearcraft:berkelium_248_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

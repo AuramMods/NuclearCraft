@@ -1,0 +1,15 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "fuel": {
+        "tag": "forge:ingots/lecm_247_nitride"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_lecm_247_nitride"
+    },
+    "ticks": 2692,
+    "heat": 214,
+    "efficiency": 1.55,
+    "criticality": 90,
+    "intrinsic_flux": 0,
+    "self_priming": false
+}

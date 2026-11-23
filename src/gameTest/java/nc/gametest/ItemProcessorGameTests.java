@@ -9,6 +9,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -100,6 +101,48 @@ public final class ItemProcessorGameTests {
                 var charge = restored.getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).orElseThrow(AssertionError::new);
                 helper.assertTrue(charge.getEnergyStored() == 0, "The recipe consumed its original 8,000 FE");
             });
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 4100)
+    public static void separatorWaitsForBothOutputsThenSuppliesFuelCrafting(GameTestHelper helper) {
+        helper.setBlock(POS, Machine.SEPARATOR.block());
+        ItemProcessorBlockEntity processor = (ItemProcessorBlockEntity) helper.getBlockEntity(POS);
+        processor.cycleSide(Direction.NORTH);
+        processor.cycleSide(Direction.NORTH);
+        IItemHandler input = items(processor, Direction.UP);
+        IItemHandler output = items(processor, Direction.NORTH);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        helper.assertTrue(input.insertItem(0, new ItemStack(Items.BARRIER, 10), true).getCount() == 10,
+                "Missing optional material tags cannot supply a barrier as an ingredient");
+        helper.assertTrue(input.insertItem(0, stack("uranium_dust", 10), false).isEmpty(),
+                "Shared uranium dust is a valid separator input");
+        power.receiveEnergy(40_000, false);
+        processor.inventory().setStackInSlot(2, stack("uranium_235_ingot", 64));
+        helper.runAtTickTime(12, () -> {
+            helper.assertTrue(output.getStackInSlot(1).isEmpty() && input.getStackInSlot(0).getCount() == 10
+                            && power.getEnergyStored() == 40_000,
+                    "A blocked second output prevents either product and preserves the input and energy");
+            helper.assertTrue(output.extractItem(2, 64, false).getCount() == 64, "Both outputs support extraction");
+        });
+        helper.succeedWhen(() -> {
+            ItemStack fertile = output.extractItem(1, 9, true);
+            ItemStack fissile = output.extractItem(2, 1, true);
+            helper.assertTrue(fertile.is(stack("uranium_238_ingot", 1).getItem()) && fertile.getCount() == 9
+                            && fissile.is(stack("uranium_235_ingot", 1).getItem()) && fissile.getCount() == 1,
+                    "Separation yields nine uranium-238 and one uranium-235");
+            helper.assertTrue(power.getEnergyStored() == 0 && input.getStackInSlot(0).isEmpty(),
+                    "The separator runs once and uses exactly 40,000 FE");
+            var crafting = MaterialGameTests.craftingGrid(3, 3);
+            for (int slot = 0; slot < 8; slot++) {
+                crafting.setItem(slot, fertile.copyWithCount(1));
+            }
+            crafting.setItem(8, fissile);
+            var level = helper.getLevel();
+            var recipe = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, crafting, level).orElseThrow();
+            var result = recipe.assemble(crafting, level.registryAccess());
+            helper.assertTrue(result.is(stack("leu_235_pellet", 1).getItem()) && result.getCount() == 9,
+                    "The separated materials can craft nine LEU-235 pellets");
         });
     }
 

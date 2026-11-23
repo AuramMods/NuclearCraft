@@ -9,6 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
@@ -17,13 +18,14 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.CraftingHelper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs, ItemStack result,
+public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs, List<ItemStack> results,
                                   int ticks, int energyPerTick) implements Recipe<Container> {
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
-        result = result.copy();
+        results = results.stream().map(ItemStack::copy).toList();
     }
 
     /** Counts are indexed by inventory slot, so the furnace can consume either ingredient order. */
@@ -40,7 +42,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         for (int slot = 0; slot < inputs.size(); slot++) {
             Input input = inputAt(slot, reversed);
             ItemStack stack = container.getItem(slot);
-            if (stack.getCount() < input.count() || !input.ingredient().test(stack)) {
+            if (stack.getCount() < input.count() || !input.accepts(stack)) {
                 return null;
             }
             amounts[slot] = input.count();
@@ -56,7 +58,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
     private boolean canInsert(Container container, int slot, ItemStack stack, boolean reversed) {
         for (int index = 0; index < inputs.size(); index++) {
             ItemStack current = index == slot ? stack : container.getItem(index);
-            if (!current.isEmpty() && !inputAt(index, reversed).ingredient().test(current)) {
+            if (!current.isEmpty() && !inputAt(index, reversed).accepts(current)) {
                 return false;
             }
         }
@@ -74,17 +76,21 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
 
     @Override
     public ItemStack assemble(Container container, RegistryAccess registries) {
-        return result();
+        return result(0);
     }
 
     @Override
-    public ItemStack result() {
-        return result.copy();
+    public List<ItemStack> results() {
+        return results.stream().map(ItemStack::copy).toList();
+    }
+
+    public ItemStack result(int index) {
+        return results.get(index).copy();
     }
 
     @Override
     public ItemStack getResultItem(RegistryAccess registries) {
-        return result();
+        return result(0);
     }
 
     @Override
@@ -112,7 +118,19 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         return machine.recipes();
     }
 
-    public record Input(Ingredient ingredient, int count) {}
+    public record Input(Ingredient ingredient, int count) {
+        boolean accepts(ItemStack stack) {
+            if (!ingredient.test(stack)) {
+                return false;
+            }
+            if (!stack.is(Items.BARRIER) || !ingredient.isVanilla()) {
+                return true;
+            }
+            // Forge represents a missing tag with a named barrier.
+            return Arrays.stream(ingredient.getItems())
+                    .anyMatch(candidate -> candidate.is(Items.BARRIER) && !candidate.hasCustomHoverName());
+        }
+    }
 
     public record Serializer(Machine machine) implements RecipeSerializer<ItemProcessorRecipe> {
         @Override
@@ -130,13 +148,29 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 }
                 inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
             }
-            ItemStack result = CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true);
+            List<ItemStack> results = readResults(id, json);
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (result.isEmpty() || result.getCount() > result.getMaxStackSize() || ticks <= 0 || energy < 0) {
+            if (ticks <= 0 || energy < 0) {
                 throw new JsonSyntaxException("Invalid item processor recipe " + id);
             }
-            return new ItemProcessorRecipe(id, machine, inputs, result, ticks, energy);
+            return new ItemProcessorRecipe(id, machine, inputs, results, ticks, energy);
+        }
+
+        private List<ItemStack> readResults(ResourceLocation id, JsonObject json) {
+            List<ItemStack> results = new ArrayList<>(machine.outputs());
+            if (json.has("results")) {
+                for (var entry : GsonHelper.getAsJsonArray(json, "results")) {
+                    results.add(CraftingHelper.getItemStack(GsonHelper.convertToJsonObject(entry, "result"), true));
+                }
+            } else {
+                results.add(CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true));
+            }
+            if (results.size() != machine.outputs() || results.stream().anyMatch(
+                    stack -> stack.isEmpty() || stack.getCount() > stack.getMaxStackSize())) {
+                throw new JsonSyntaxException("Expected " + machine.outputs() + " valid item outputs for " + id);
+            }
+            return results;
         }
 
         @Override
@@ -145,7 +179,11 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             for (int index = 0; index < machine.inputs(); index++) {
                 inputs.add(new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
             }
-            return new ItemProcessorRecipe(id, machine, inputs, buffer.readItem(), buffer.readVarInt(), buffer.readVarInt());
+            List<ItemStack> results = new ArrayList<>(machine.outputs());
+            for (int index = 0; index < machine.outputs(); index++) {
+                results.add(buffer.readItem());
+            }
+            return new ItemProcessorRecipe(id, machine, inputs, results, buffer.readVarInt(), buffer.readVarInt());
         }
 
         @Override
@@ -154,7 +192,9 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 input.ingredient.toNetwork(buffer);
                 buffer.writeVarInt(input.count);
             }
-            buffer.writeItem(recipe.result);
+            for (ItemStack result : recipe.results) {
+                buffer.writeItem(result);
+            }
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
         }

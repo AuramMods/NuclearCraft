@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:americium_241_oxide_ingot"
+    },
+    "result": "nuclearcraft:americium_241_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

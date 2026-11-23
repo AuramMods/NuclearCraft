@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_246_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_245_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_245_carbide"
+        },
+        {
+            "tag": "forge:ingots/curium_245_carbide"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:hecm_245_pellet_carbide",
+        "count": 9
+    }
+}

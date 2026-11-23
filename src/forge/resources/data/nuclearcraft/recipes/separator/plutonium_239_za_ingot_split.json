@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/plutonium_239_za"
+            },
+            "count": 1
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:plutonium_239_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:zirconium_dust",
+            "count": 1
+        }
+    ]
+}

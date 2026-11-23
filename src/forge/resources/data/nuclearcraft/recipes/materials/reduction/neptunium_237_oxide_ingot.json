@@ -1,0 +1,10 @@
+{
+    "type": "minecraft:smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:neptunium_237_oxide_ingot"
+    },
+    "result": "nuclearcraft:neptunium_237_ingot",
+    "experience": 0.0,
+    "cookingtime": 200
+}

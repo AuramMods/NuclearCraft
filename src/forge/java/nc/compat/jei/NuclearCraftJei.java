@@ -117,7 +117,8 @@ public final class NuclearCraftJei implements IModPlugin {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(ItemProcessorScreen screen, double x, double y) {
                 Machine machine = screen.getMenu().machine();
-                return List.of(IGuiClickableArea.createBasic(machine.inputs() == 1 ? 74 : 84, 35, 37, 16, itemType(machine)));
+                return List.of(IGuiClickableArea.createBasic(machine.progressX(), machine.progressY(),
+                        37, machine.progressHeight(), itemType(machine)));
             }
         });
     }
@@ -136,7 +137,9 @@ public final class NuclearCraftJei implements IModPlugin {
             layout.addSlot(INPUT, 20 + index * 23, 12).setStandardSlotBackground().addItemStacks(
                     Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
         }
-        layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.result());
+        for (int index = 0; index < recipe.machine().outputs(); index++) {
+            layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(recipe.result(index));
+        }
     }
 
     private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, List<FluidStack> fluids) {

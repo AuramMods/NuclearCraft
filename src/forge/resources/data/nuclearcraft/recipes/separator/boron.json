@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/boron"
+                },
+                {
+                    "tag": "forge:dusts/boron"
+                }
+            ],
+            "count": 12
+        }
+    ],
+    "ticks": 4800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:boron_11_ingot",
+            "count": 9
+        },
+        {
+            "item": "nuclearcraft:boron_10_ingot",
+            "count": 3
+        }
+    ]
+}

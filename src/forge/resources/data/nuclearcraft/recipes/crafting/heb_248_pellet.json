@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_247"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248"
+        },
+        {
+            "tag": "forge:ingots/berkelium_248"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:heb_248_pellet",
+        "count": 9
+    }
+}

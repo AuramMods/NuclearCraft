@@ -31,12 +31,19 @@ public final class NCItemProcessors {
     }
 
     public enum Machine {
-        MANUFACTORY("manufactory", 1, false),
-        ALLOY_FURNACE("alloy_furnace", 2, true);
+        MANUFACTORY("manufactory", 1, 1, false, 56, 116, 74, 35, 16),
+        SEPARATOR("separator", 1, 2, false, 42, 102, 60, 34, 18),
+        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, 126, 84, 35, 16);
 
         private final String id;
         private final int inputs;
+        private final int outputs;
         private final boolean losesProgress;
+        private final int inputX;
+        private final int outputX;
+        private final int progressX;
+        private final int progressY;
+        private final int progressHeight;
         private final RegistryObject<ProcessorBlock<ItemProcessorBlockEntity>> block;
         private final RegistryObject<Item> item;
         private final RegistryObject<BlockEntityType<ItemProcessorBlockEntity>> entity;
@@ -44,10 +51,17 @@ public final class NCItemProcessors {
         private final RegistryObject<RecipeType<ItemProcessorRecipe>> recipes;
         private final RegistryObject<RecipeSerializer<ItemProcessorRecipe>> serializer;
 
-        Machine(String id, int inputs, boolean losesProgress) {
+        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int outputX,
+                int progressX, int progressY, int progressHeight) {
             this.id = id;
             this.inputs = inputs;
+            this.outputs = outputs;
             this.losesProgress = losesProgress;
+            this.inputX = inputX;
+            this.outputX = outputX;
+            this.progressX = progressX;
+            this.progressY = progressY;
+            this.progressHeight = progressHeight;
             block = NCRegistries.BLOCKS.register(id, () -> new ProcessorBlock<>(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                             .lightLevel(state -> state.getValue(ProcessorBlock.LIT) ? 7 : 0),
@@ -68,6 +82,34 @@ public final class NCItemProcessors {
 
         public int inputs() {
             return inputs;
+        }
+
+        public int outputs() {
+            return outputs;
+        }
+
+        public int slots() {
+            return inputs + outputs;
+        }
+
+        public int inputX(int slot) {
+            return inputX + slot * 20;
+        }
+
+        public int outputX(int slot) {
+            return outputX + slot * 28;
+        }
+
+        public int progressX() {
+            return progressX;
+        }
+
+        public int progressY() {
+            return progressY;
+        }
+
+        public int progressHeight() {
+            return progressHeight;
         }
 
         public boolean losesProgress() {
