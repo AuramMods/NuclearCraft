@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:oxygen",
+            "amount": 250
+        },
+        {
+            "tag": "forge:fluorine",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:oxygen_difluoride",
+            "amount": 500
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

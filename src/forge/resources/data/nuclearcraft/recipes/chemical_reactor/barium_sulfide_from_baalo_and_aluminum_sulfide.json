@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:baalo",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:aluminum_sulfide",
+            "amount": 36
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:barium_sulfide",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:alumina",
+            "amount": 72
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 10
+}

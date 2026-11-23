@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:dimethyldifluorosilane",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:potassium",
+            "amount": 72
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:polydimethylsilylene",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:potassium_fluoride_solution",
+            "amount": 333
+        }
+    ],
+    "ticks": 1600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:nitrogen",
+            "amount": 250
+        },
+        {
+            "tag": "forge:hydrogen",
+            "amount": 750
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:ammonia",
+            "amount": 500
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

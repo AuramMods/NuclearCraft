@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:hydroquinone_solution",
+            "amount": 333
+        },
+        {
+            "fluid": "nuclearcraft:sodium_hydroxide_solution",
+            "amount": 666
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:sodium_hydroquinone_solution",
+            "amount": 333
+        },
+        {
+            "fluid": "minecraft:water",
+            "amount": 1000
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

@@ -143,6 +143,7 @@
         "nuclearcraft:heat_exchanger_tube_thermoconducting",
         "nuclearcraft:heat_exchanger_controller",
         "nuclearcraft:heat_exchanger_baffle",
-        "nuclearcraft:salt_mixer"
+        "nuclearcraft:salt_mixer",
+        "nuclearcraft:chemical_reactor"
     ]
 }

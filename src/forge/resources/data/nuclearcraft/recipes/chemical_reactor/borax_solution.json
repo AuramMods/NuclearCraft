@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:sodium_fluoride_solution",
+            "amount": 666
+        },
+        {
+            "fluid": "nuclearcraft:boric_acid",
+            "amount": 2000
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:borax_solution",
+            "amount": 333
+        },
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 1000
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

@@ -8,10 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,14 +53,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             }
             List<FluidStack> outputs = new ArrayList<>(entries.size());
             for (var entry : entries) {
-                JsonObject stack = GsonHelper.convertToJsonObject(entry, "result");
-                ResourceLocation fluidId = ResourceLocation.tryParse(GsonHelper.getAsString(stack, "fluid"));
-                Fluid fluid = fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
-                int amount = GsonHelper.getAsInt(stack, "amount");
-                if (fluid == null || fluid == Fluids.EMPTY || amount < 1) {
-                    throw new JsonSyntaxException("Invalid Electrolyzer result for " + id);
-                }
-                outputs.add(new FluidStack(fluid, amount));
+                outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
             }
             return new ElectrolyzerRecipe(id, input, outputs, ticks, energy);
         }

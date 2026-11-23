@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/leb_248"
+    },
+    "result": {
+        "fluid": "nuclearcraft:leb_248",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

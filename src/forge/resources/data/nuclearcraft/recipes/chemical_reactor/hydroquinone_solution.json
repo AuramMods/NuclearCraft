@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:phenol",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen_peroxide",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydroquinone_solution",
+            "amount": 333
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

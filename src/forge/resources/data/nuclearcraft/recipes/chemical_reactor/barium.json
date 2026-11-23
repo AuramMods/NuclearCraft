@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:barium_oxide",
+            "amount": 108
+        },
+        {
+            "tag": "forge:molten_aluminum",
+            "amount": 72
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:barium",
+            "amount": 108
+        },
+        {
+            "fluid": "nuclearcraft:alumina",
+            "amount": 36
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:carbon_dioxide",
+            "amount": 250
+        },
+        {
+            "tag": "forge:hydrogen",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:carbon_monoxide",
+            "amount": 250
+        },
+        {
+            "fluid": "minecraft:water",
+            "amount": 250
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

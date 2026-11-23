@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:ammonia",
+            "amount": 1000
+        },
+        {
+            "fluid": "nuclearcraft:sulfuric_acid",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:ammonium_sulfate_solution",
+            "amount": 333
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

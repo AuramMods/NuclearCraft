@@ -8,6 +8,7 @@ import nc.processor.MelterBlock;
 import nc.processor.MelterBlockEntity;
 import nc.processor.MelterMenu;
 import nc.processor.ProcessorBlock;
+import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
@@ -91,6 +92,23 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<SaltMixerRecipe>> SALT_MIXER_SERIALIZER =
             RECIPE_SERIALIZERS.register("salt_mixer", SaltMixerRecipe.Serializer::new);
 
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> CHEMICAL_REACTOR =
+            BLOCKS.register("chemical_reactor", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+    public static final RegistryObject<Item> CHEMICAL_REACTOR_ITEM =
+            ITEMS.register("chemical_reactor", () -> new BlockItem(CHEMICAL_REACTOR.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> CHEMICAL_REACTOR_ENTITY =
+            BLOCK_ENTITIES.register("chemical_reactor", () ->
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.CHEMICAL_REACTOR, pos, state),
+                            CHEMICAL_REACTOR.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> CHEMICAL_REACTOR_MENU =
+            MENUS.register("chemical_reactor", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.CHEMICAL_REACTOR), FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<ChemicalReactorRecipe>> CHEMICAL_REACTIONS =
+            RECIPE_TYPES.register("chemical_reactor", () -> RecipeType.simple(NuclearCraft.id("chemical_reactor")));
+    public static final RegistryObject<RecipeSerializer<ChemicalReactorRecipe>> CHEMICAL_REACTOR_SERIALIZER =
+            RECIPE_SERIALIZERS.register("chemical_reactor", ChemicalReactorRecipe.Serializer::new);
+
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
@@ -99,6 +117,7 @@ public final class NCRegistries {
                         output.accept(MELTER_ITEM.get());
                         output.accept(ELECTROLYZER_ITEM.get());
                         output.accept(SALT_MIXER_ITEM.get());
+                        output.accept(CHEMICAL_REACTOR_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);

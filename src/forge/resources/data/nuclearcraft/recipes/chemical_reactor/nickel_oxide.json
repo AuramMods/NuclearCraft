@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:molten_nickel",
+            "amount": 72
+        },
+        {
+            "tag": "forge:oxygen",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:nickel_oxide",
+            "amount": 72
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

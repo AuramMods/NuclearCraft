@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:deuterium",
+            "amount": 500
+        },
+        {
+            "tag": "forge:oxygen",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:heavy_water",
+            "amount": 500
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

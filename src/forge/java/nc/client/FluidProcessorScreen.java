@@ -18,25 +18,26 @@ import java.util.EnumMap;
 import java.util.List;
 
 public final class FluidProcessorScreen extends AbstractContainerScreen<FluidProcessorMenu> {
-    private static final ResourceLocation ELECTROLYZER = NuclearCraft.id("textures/gui/container/electrolyzer.png");
-    private static final ResourceLocation SALT_MIXER = NuclearCraft.id("textures/gui/container/salt_mixer.png");
-    private static final int[] ELECTROLYZER_TANK_X = {50, 106, 126, 106, 126};
-    private static final int[] ELECTROLYZER_TANK_Y = {41, 31, 31, 51, 51};
-    private static final int[] MIXER_TANK_X = {46, 66, 123};
-    private static final int[] MIXER_TANK_Y = {35, 35, 31};
+    private static final Layout ELECTROLYZER = new Layout(NuclearCraft.id("textures/gui/container/electrolyzer.png"),
+            List.of(new Tank(50, 41, 16), new Tank(106, 31, 16), new Tank(126, 31, 16),
+                    new Tank(106, 51, 16), new Tank(126, 51, 16)), 68);
+    private static final Layout SALT_MIXER = new Layout(NuclearCraft.id("textures/gui/container/salt_mixer.png"),
+            List.of(new Tank(46, 35, 16), new Tank(66, 35, 16), new Tank(123, 31, 24)), 84);
+    private static final Layout CHEMICAL_REACTOR = new Layout(NuclearCraft.id("textures/gui/container/chemical_reactor.png"),
+            List.of(new Tank(32, 35, 16), new Tank(52, 35, 16), new Tank(108, 31, 24), new Tank(136, 31, 24)), 70);
 
     private final EnumMap<Direction, Button> sides = new EnumMap<>(Direction.class);
-    private final boolean mixer;
-    private final int[] tankX;
-    private final int[] tankY;
+    private final Layout layout;
     private Button overflow;
     private int selectedTank;
 
     FluidProcessorScreen(FluidProcessorMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        mixer = menu.type() == Machine.SALT_MIXER;
-        tankX = mixer ? MIXER_TANK_X : ELECTROLYZER_TANK_X;
-        tankY = mixer ? MIXER_TANK_Y : ELECTROLYZER_TANK_Y;
+        layout = switch (menu.type()) {
+            case ELECTROLYZER -> ELECTROLYZER;
+            case SALT_MIXER -> SALT_MIXER;
+            case CHEMICAL_REACTOR -> CHEMICAL_REACTOR;
+        };
         imageHeight = 178;
         inventoryLabelY = 84;
         titleLabelX = 29;
@@ -80,7 +81,7 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
                     : Component.translatable("gui.nuclearcraft.fluid_amount", fluid.getDisplayName(), fluid.getAmount());
             Component configure;
             if (hovered < menu.type().inputs()) {
-                configure = mixer ? Component.translatable("gui.nuclearcraft.salt_mixer.select_input", hovered + 1)
+                configure = menu.type().inputs() > 1 ? Component.translatable("gui.nuclearcraft.fluid_processor.select_input", hovered + 1)
                         : Component.translatable("gui.nuclearcraft.electrolyzer.select_input");
             } else {
                 configure = Component.translatable("gui.nuclearcraft.electrolyzer.select_output",
@@ -94,35 +95,32 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         int progressWidth = (int) (37 * menu.progress());
         int energyHeight = (int) (86 * menu.energy());
-        if (mixer) {
-            graphics.blit(SALT_MIXER, leftPos, topPos, 0, 0, imageWidth, 61);
-            graphics.blit(SALT_MIXER, leftPos, topPos + 61, imageWidth, 19, 0F, 60F, imageWidth, 1, 256, 256);
-            graphics.blit(SALT_MIXER, leftPos, topPos + 80, 0, 80, 130, 1);
-            graphics.blit(SALT_MIXER, leftPos + 130, topPos + 80, 130, 81, imageWidth - 130, 1);
-            graphics.blit(SALT_MIXER, leftPos, topPos + 81, imageWidth, 13, 0F, 81F, imageWidth, 1, 256, 256);
-            graphics.blit(SALT_MIXER, leftPos, topPos + 94, 0, 82, imageWidth, 84);
-            int mixerEnergy = (int) (74 * menu.energy());
-            graphics.blit(SALT_MIXER, leftPos + 8, topPos + 80 - mixerEnergy, 176, 164 - mixerEnergy, 16, mixerEnergy);
-            graphics.blit(SALT_MIXER, leftPos + 84, topPos + 34, 176, 3, progressWidth, 18);
+        ResourceLocation texture = layout.texture;
+        if (menu.type() != Machine.ELECTROLYZER) {
+            graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, 61);
+            graphics.blit(texture, leftPos, topPos + 61, imageWidth, 19, 0F, 60F, imageWidth, 1, 256, 256);
+            graphics.blit(texture, leftPos, topPos + 80, 0, 80, 130, 1);
+            graphics.blit(texture, leftPos + 130, topPos + 80, 130, 81, imageWidth - 130, 1);
+            graphics.blit(texture, leftPos, topPos + 81, imageWidth, 13, 0F, 81F, imageWidth, 1, 256, 256);
+            graphics.blit(texture, leftPos, topPos + 94, 0, 82, imageWidth, 84);
+            int compactEnergy = (int) (74 * menu.energy());
+            graphics.blit(texture, leftPos + 8, topPos + 80 - compactEnergy, 176, 164 - compactEnergy, 16, compactEnergy);
+            graphics.blit(texture, leftPos + layout.progressX, topPos + 34, 176, 3, progressWidth, 18);
         } else {
-            graphics.blit(ELECTROLYZER, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-            graphics.blit(ELECTROLYZER, leftPos + 8, topPos + 92 - energyHeight, 176, 176 - energyHeight, 16, energyHeight);
-            graphics.blit(ELECTROLYZER, leftPos + 68, topPos + 30, 176, 3, progressWidth, 38);
+            graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+            graphics.blit(texture, leftPos + 8, topPos + 92 - energyHeight, 176, 176 - energyHeight, 16, energyHeight);
+            graphics.blit(texture, leftPos + layout.progressX, topPos + 30, 176, 3, progressWidth, 38);
         }
 
-        for (int tank = 0; tank < tankX.length; tank++) {
-            int x = leftPos + tankX[tank];
-            int y = topPos + tankY[tank];
-            int size = tankSize(tank);
-            FluidTankRenderer.draw(graphics, x, y, size, menu.fluid(tank), ProcessorFluidTanks.CAPACITY);
-            if (tank == selectedTank) {
-                graphics.renderOutline(x - 1, y - 1, size + 2, size + 2, 0xFFFFD37C);
+        for (int index = 0; index < layout.tanks.size(); index++) {
+            Tank tank = layout.tanks.get(index);
+            int x = leftPos + tank.x;
+            int y = topPos + tank.y;
+            FluidTankRenderer.draw(graphics, x, y, tank.size, menu.fluid(index), ProcessorFluidTanks.CAPACITY);
+            if (index == selectedTank) {
+                graphics.renderOutline(x - 1, y - 1, tank.size + 2, tank.size + 2, 0xFFFFD37C);
             }
         }
-    }
-
-    private int tankSize(int tank) {
-        return mixer && tank == 2 ? 24 : 16;
     }
 
     @Override
@@ -136,11 +134,15 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     }
 
     private int hoveredTank(double mouseX, double mouseY) {
-        for (int tank = 0; tank < tankX.length; tank++) {
-            if (isHovering(tankX[tank], tankY[tank], tankSize(tank), tankSize(tank), mouseX, mouseY)) {
-                return tank;
+        for (int index = 0; index < layout.tanks.size(); index++) {
+            Tank tank = layout.tanks.get(index);
+            if (isHovering(tank.x, tank.y, tank.size, tank.size, mouseX, mouseY)) {
+                return index;
             }
         }
         return -1;
     }
+
+    private record Tank(int x, int y, int size) {}
+    private record Layout(ResourceLocation texture, List<Tank> tanks, int progressX) {}
 }

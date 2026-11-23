@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:molten_nickel",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:sulfur",
+            "amount": 333
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:nickel_sulfide",
+            "amount": 72
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

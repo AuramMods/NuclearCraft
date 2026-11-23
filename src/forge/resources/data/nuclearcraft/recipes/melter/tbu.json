@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/tbu"
+    },
+    "result": {
+        "fluid": "nuclearcraft:tbu",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

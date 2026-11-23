@@ -1,0 +1,15 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:chlorine",
+        "nuclearcraft:flowing_chlorine",
+        {
+            "id": "mekanism:chlorine",
+            "required": false
+        },
+        {
+            "id": "mekanism:flowing_chlorine",
+            "required": false
+        }
+    ]
+}

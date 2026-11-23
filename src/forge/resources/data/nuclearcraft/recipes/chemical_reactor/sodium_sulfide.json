@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:sodium",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:sulfur",
+            "amount": 333
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:sodium_sulfide",
+            "amount": 72
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

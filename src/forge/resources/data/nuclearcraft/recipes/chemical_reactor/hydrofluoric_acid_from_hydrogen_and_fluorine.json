@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:hydrogen",
+            "amount": 250
+        },
+        {
+            "tag": "forge:fluorine",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 250
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

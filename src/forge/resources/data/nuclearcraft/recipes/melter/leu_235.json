@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/leu_235"
+    },
+    "result": {
+        "fluid": "nuclearcraft:leu_235",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

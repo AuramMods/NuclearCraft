@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:methanol",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:fluoromethane",
+            "amount": 250
+        },
+        {
+            "fluid": "minecraft:water",
+            "amount": 250
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 10
+}

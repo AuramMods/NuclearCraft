@@ -44,6 +44,29 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount) {
         return new FluidIngredient(id, tag, amount);
     }
 
+    static List<FluidIngredient> readPair(JsonObject json, ResourceLocation recipe) {
+        var inputs = GsonHelper.getAsJsonArray(json, "fluid_inputs");
+        if (inputs.size() != 2) {
+            throw new JsonSyntaxException("Expected two fluid inputs for " + recipe);
+        }
+        return List.of(fromJson(GsonHelper.convertToJsonObject(inputs.get(0), "fluid input"), recipe),
+                fromJson(GsonHelper.convertToJsonObject(inputs.get(1), "fluid input"), recipe));
+    }
+
+    static List<FluidIngredient> readPair(FriendlyByteBuf buffer) {
+        return List.of(fromNetwork(buffer), fromNetwork(buffer));
+    }
+
+    static FluidStack readResult(JsonObject json, ResourceLocation recipe) {
+        ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(json, "fluid"));
+        var fluid = id == null ? null : ForgeRegistries.FLUIDS.getValue(id);
+        int amount = GsonHelper.getAsInt(json, "amount");
+        if (fluid == null || fluid == Fluids.EMPTY || amount < 1) {
+            throw new JsonSyntaxException("Invalid fluid result for " + recipe);
+        }
+        return new FluidStack(fluid, amount);
+    }
+
     public static FluidIngredient fromNetwork(FriendlyByteBuf buffer) {
         return new FluidIngredient(buffer.readResourceLocation(), buffer.readBoolean(), buffer.readVarInt());
     }

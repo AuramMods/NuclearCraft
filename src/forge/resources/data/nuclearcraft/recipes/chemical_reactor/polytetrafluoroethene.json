@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:ethene",
+            "amount": 250
+        },
+        {
+            "tag": "forge:fluorine",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:polytetrafluoroethene",
+            "amount": 36
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 500
+        }
+    ],
+    "ticks": 1600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:boric_acid",
+            "amount": 500
+        },
+        {
+            "tag": "forge:ammonia",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:boron_nitride_solution",
+            "amount": 333
+        },
+        {
+            "fluid": "minecraft:water",
+            "amount": 1000
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:dfdps",
+            "amount": 333
+        },
+        {
+            "fluid": "nuclearcraft:sodium_hydroquinone_solution",
+            "amount": 333
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:polyethersulfone",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:sodium_fluoride_solution",
+            "amount": 666
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

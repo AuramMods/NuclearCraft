@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:diborane",
+            "amount": 250
+        },
+        {
+            "tag": "minecraft:water",
+            "amount": 1500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:boric_acid",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 1500
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

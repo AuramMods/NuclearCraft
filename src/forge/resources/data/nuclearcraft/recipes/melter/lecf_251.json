@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/lecf_251"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lecf_251",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:ethene",
+            "amount": 250
+        },
+        {
+            "tag": "forge:ethyne",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:benzene",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 250
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 20
+}

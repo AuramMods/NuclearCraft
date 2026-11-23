@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.init.NCRegistries;
+import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.FluidIngredient;
 import nc.recipe.FluidProcessorRecipe;
@@ -239,7 +240,9 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     }
 
     public enum Machine {
-        ELECTROLYZER(1, ElectrolyzerRecipe.OUTPUTS), SALT_MIXER(2, 1);
+        ELECTROLYZER(1, ElectrolyzerRecipe.OUTPUTS),
+        SALT_MIXER(2, 1),
+        CHEMICAL_REACTOR(2, ChemicalReactorRecipe.OUTPUTS);
 
         private final int inputs;
         private final int outputs;
@@ -258,19 +261,35 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         }
 
         Block block() {
-            return (this == ELECTROLYZER ? NCRegistries.ELECTROLYZER : NCRegistries.SALT_MIXER).get();
+            return switch (this) {
+                case ELECTROLYZER -> NCRegistries.ELECTROLYZER.get();
+                case SALT_MIXER -> NCRegistries.SALT_MIXER.get();
+                case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR.get();
+            };
         }
 
         BlockEntityType<FluidProcessorBlockEntity> entity() {
-            return (this == ELECTROLYZER ? NCRegistries.ELECTROLYZER_ENTITY : NCRegistries.SALT_MIXER_ENTITY).get();
+            return switch (this) {
+                case ELECTROLYZER -> NCRegistries.ELECTROLYZER_ENTITY.get();
+                case SALT_MIXER -> NCRegistries.SALT_MIXER_ENTITY.get();
+                case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get();
+            };
         }
 
         MenuType<FluidProcessorMenu> menu() {
-            return (this == ELECTROLYZER ? NCRegistries.ELECTROLYZER_MENU : NCRegistries.SALT_MIXER_MENU).get();
+            return switch (this) {
+                case ELECTROLYZER -> NCRegistries.ELECTROLYZER_MENU.get();
+                case SALT_MIXER -> NCRegistries.SALT_MIXER_MENU.get();
+                case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_MENU.get();
+            };
         }
 
         RecipeType<? extends FluidProcessorRecipe> recipes() {
-            return this == ELECTROLYZER ? NCRegistries.ELECTROLYSIS.get() : NCRegistries.MIXING.get();
+            return switch (this) {
+                case ELECTROLYZER -> NCRegistries.ELECTROLYSIS.get();
+                case SALT_MIXER -> NCRegistries.MIXING.get();
+                case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTIONS.get();
+            };
         }
     }
 

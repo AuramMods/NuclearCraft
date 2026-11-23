@@ -136,6 +136,7 @@ public final class NCFluids {
         NCGasCoolants.registerFluids();
         NCSaltCoolants.registerFluids();
         NCSaltMixerFluids.register();
+        NCChemicalFluids.register();
         TYPES.register(bus);
         FLUIDS.register(bus);
     }

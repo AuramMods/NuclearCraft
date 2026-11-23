@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:boron",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:arsenic",
+            "amount": 333
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:bas",
+            "amount": 333
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

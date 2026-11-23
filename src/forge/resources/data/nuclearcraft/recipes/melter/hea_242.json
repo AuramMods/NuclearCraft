@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/hea_242"
+    },
+    "result": {
+        "fluid": "nuclearcraft:hea_242",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

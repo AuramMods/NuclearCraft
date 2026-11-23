@@ -32,6 +32,7 @@ import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
+import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
@@ -65,6 +66,8 @@ public final class NuclearCraftJei implements IModPlugin {
     private static final RecipeType<MelterRecipe> MELTER = RecipeType.create("nuclearcraft", "melter", MelterRecipe.class);
     private static final RecipeType<ElectrolyzerRecipe> ELECTROLYZER =
             RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
+    private static final RecipeType<ChemicalReactorRecipe> CHEMICAL_REACTOR =
+            RecipeType.create(NuclearCraft.MOD_ID, "chemical_reactor", ChemicalReactorRecipe.class);
     private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
             RecipeType.create(NuclearCraft.MOD_ID, "salt_mixer", SaltMixerRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
@@ -115,6 +118,14 @@ public final class NuclearCraftJei implements IModPlugin {
                                 List.of(outputs.get(index)));
                     }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(CHEMICAL_REACTOR, NCRegistries.CHEMICAL_REACTOR.get(), gui, (layout, recipe) -> {
+                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
+                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
+                    List<FluidStack> results = recipe.results();
+                    for (int index = 0; index < results.size(); index++) {
+                        fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(results.get(index)));
+                    }
+                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(SALT_MIXER, NCRegistries.SALT_MIXER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
                     fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
@@ -159,6 +170,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
+        registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
@@ -180,6 +192,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
+        registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         for (NCGasCoolants gas : NCGasCoolants.values()) {
@@ -206,6 +219,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 return switch (screen.getMenu().type()) {
                     case ELECTROLYZER -> List.of(IGuiClickableArea.createBasic(68, 30, 37, 38, ELECTROLYZER));
                     case SALT_MIXER -> List.of(IGuiClickableArea.createBasic(84, 34, 37, 18, SALT_MIXER));
+                    case CHEMICAL_REACTOR -> List.of(IGuiClickableArea.createBasic(70, 34, 37, 18, CHEMICAL_REACTOR));
                 };
             }
         });

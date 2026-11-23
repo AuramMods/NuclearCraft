@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:sulfur",
+            "amount": 333
+        },
+        {
+            "tag": "forge:hydrogen",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:hydrogen_sulfide",
+            "amount": 500
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 5
+}

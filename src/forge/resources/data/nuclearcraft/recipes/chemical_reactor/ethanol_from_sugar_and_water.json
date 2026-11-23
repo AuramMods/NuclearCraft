@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:sugar",
+            "amount": 72
+        },
+        {
+            "tag": "minecraft:water",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:ethanol",
+            "amount": 2000
+        },
+        {
+            "fluid": "nuclearcraft:carbon_dioxide",
+            "amount": 2000
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

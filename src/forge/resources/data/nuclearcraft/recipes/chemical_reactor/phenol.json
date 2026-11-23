@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:benzene",
+            "amount": 500
+        },
+        {
+            "tag": "forge:oxygen",
+            "amount": 250
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:phenol",
+            "amount": 500
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

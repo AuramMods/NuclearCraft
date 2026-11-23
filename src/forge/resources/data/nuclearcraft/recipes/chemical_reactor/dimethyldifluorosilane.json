@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:fluoromethane",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:silicon",
+            "amount": 36
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:dimethyldifluorosilane",
+            "amount": 250
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 10
+}

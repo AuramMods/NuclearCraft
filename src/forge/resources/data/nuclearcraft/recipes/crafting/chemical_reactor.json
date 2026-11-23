@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PMP",
+        "GCG",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "G": {
+            "tag": "forge:dusts/glowstone"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:chemical_reactor",
+        "count": 1
+    }
+}

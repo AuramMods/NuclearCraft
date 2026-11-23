@@ -8,9 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.List;
 
@@ -44,28 +42,18 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
     public static final class Serializer implements RecipeSerializer<SaltMixerRecipe> {
         @Override
         public SaltMixerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            var entries = GsonHelper.getAsJsonArray(json, "fluid_inputs");
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (entries.size() != 2 || ticks < 1 || energy < 0) {
+            if (ticks < 1 || energy < 0) {
                 throw new JsonSyntaxException("Invalid Salt Mixer recipe " + id);
             }
-            List<FluidIngredient> inputs = List.of(
-                    FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entries.get(0), "fluid input"), id),
-                    FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entries.get(1), "fluid input"), id));
-            var output = GsonHelper.getAsJsonObject(json, "result");
-            ResourceLocation fluidId = ResourceLocation.tryParse(GsonHelper.getAsString(output, "fluid"));
-            var fluid = fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
-            int amount = GsonHelper.getAsInt(output, "amount");
-            if (fluid == null || fluid == Fluids.EMPTY || amount < 1) {
-                throw new JsonSyntaxException("Invalid Salt Mixer result for " + id);
-            }
-            return new SaltMixerRecipe(id, inputs, new FluidStack(fluid, amount), ticks, energy);
+            return new SaltMixerRecipe(id, FluidIngredient.readPair(json, id),
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy);
         }
 
         @Override
         public SaltMixerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var inputs = List.of(FluidIngredient.fromNetwork(buffer), FluidIngredient.fromNetwork(buffer));
+            var inputs = FluidIngredient.readPair(buffer);
             return new SaltMixerRecipe(id, inputs, buffer.readFluidStack(), buffer.readVarInt(), buffer.readVarInt());
         }
 

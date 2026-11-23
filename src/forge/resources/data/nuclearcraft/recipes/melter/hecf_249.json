@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "forge:ingots/hecf_249"
+    },
+    "result": {
+        "fluid": "nuclearcraft:hecf_249",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:hea_242",
+            "amount": 72
+        },
+        {
+            "tag": "forge:fluorine",
+            "amount": 500
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:hea_242_fluoride",
+            "amount": 72
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 5
+}

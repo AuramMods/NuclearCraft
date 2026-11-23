@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        {
+            "tag": "forge:fluoromethane",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:naoh",
+            "amount": 333
+        }
+    ],
+    "results": [
+        {
+            "fluid": "nuclearcraft:ethene",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:sodium_fluoride_solution",
+            "amount": 333
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}
