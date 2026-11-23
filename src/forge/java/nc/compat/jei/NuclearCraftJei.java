@@ -183,19 +183,27 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {
+        Machine machine = recipe.machine();
+        boolean fuelReprocessor = machine == Machine.FUEL_REPROCESSOR;
         for (int index = 0; index < recipe.inputs().size(); index++) {
             ItemProcessorRecipe.Input input = recipe.inputs().get(index);
-            layout.addSlot(INPUT, 20 + index * 23, 12).setStandardSlotBackground().addItemStacks(
+            layout.addSlot(INPUT, 20 + index * 23, fuelReprocessor ? 22 : 12).setStandardSlotBackground().addItemStacks(
                     Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
         }
         var fluid = recipe.fluidInput();
         if (fluid != null) {
             fluidSlot(layout, INPUT, 43, fluid.alternatives());
         }
-        for (int index = 0; index < recipe.machine().outputs(); index++) {
-            var product = recipe.products().get(index);
+        var products = recipe.products();
+        for (int index = 0; index < machine.outputs(); index++) {
+            var product = products.get(index);
             var stack = product.stack();
-            var slot = layout.addSlot(OUTPUT, 99 + index * 23, 12).setOutputSlotBackground().addItemStack(stack);
+            int x = fuelReprocessor ? machine.outputX(index) + 12 : 99 + index * 23;
+            int y = fuelReprocessor ? machine.outputY(index) - 19 : 12;
+            var slot = layout.addSlot(OUTPUT, x, y).setOutputSlotBackground();
+            if (!stack.isEmpty()) {
+                slot.addItemStack(stack);
+            }
             if (product.chancePercent() < 100 && product.minCount() < stack.getCount()) {
                 slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
                         "gui.nuclearcraft.jei.product_chance", product.minCount(), stack.getCount(), product.chancePercent())));
@@ -234,8 +242,23 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override public RecipeType<R> getRecipeType() { return type; }
         @Override public Component getTitle() { return block.getName(); }
         @Override public IDrawable getIcon() { return icon; }
-        @Override public int getWidth() { return type.getUid().getPath().equals(Machine.ROCK_CRUSHER.id()) ? 166 : 140; }
-        @Override public int getHeight() { return type.equals(ELECTROLYZER) ? 58 : 48; }
+        @Override
+        public int getWidth() {
+            return switch (type.getUid().getPath()) {
+                case "fuel_reprocessor" -> 178;
+                case "rock_crusher" -> 166;
+                default -> 140;
+            };
+        }
+
+        @Override
+        public int getHeight() {
+            return switch (type.getUid().getPath()) {
+                case "fuel_reprocessor" -> 70;
+                case "electrolyzer" -> 58;
+                default -> 48;
+            };
+        }
         @Override public ResourceLocation getRegistryName(R recipe) { return recipe.getId(); }
 
         @Override
@@ -245,7 +268,7 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void draw(R recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
-            arrow.draw(graphics, 69, 12);
+            arrow.draw(graphics, 69, type.getUid().getPath().equals(Machine.FUEL_REPROCESSOR.id()) ? 22 : 12);
             graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, getHeight() - 13, 0x404040, false);
         }
     }

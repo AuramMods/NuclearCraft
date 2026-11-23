@@ -1,0 +1,49 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_heb_248_triso"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:berkelium_248_carbide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:californium_249_carbide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:ruthenium_106_dust",
+            "count": 2,
+            "chance_percent": 90
+        },
+        {
+            "item": "nuclearcraft:graphite_dust",
+            "count": 4
+        },
+        {
+            "item": "nuclearcraft:californium_251_carbide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:californium_252_carbide_ingot",
+            "count": 3
+        },
+        {
+            "item": "nuclearcraft:promethium_147_dust",
+            "count": 2,
+            "chance_percent": 60
+        },
+        {
+            "item": "nuclearcraft:silicon_carbide_ingot",
+            "count": 1
+        }
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

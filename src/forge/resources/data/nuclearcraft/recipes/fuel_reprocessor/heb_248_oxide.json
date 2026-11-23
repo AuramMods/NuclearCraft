@@ -1,0 +1,43 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_heb_248_oxide"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:berkelium_248_oxide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:californium_249_oxide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:ruthenium_106_dust",
+            "count": 2,
+            "chance_percent": 90
+        },
+        null,
+        {
+            "item": "nuclearcraft:californium_251_oxide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:californium_252_oxide_ingot",
+            "count": 3
+        },
+        {
+            "item": "nuclearcraft:promethium_147_dust",
+            "count": 2,
+            "chance_percent": 60
+        },
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

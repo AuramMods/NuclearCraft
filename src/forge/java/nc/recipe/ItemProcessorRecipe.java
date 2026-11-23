@@ -29,6 +29,8 @@ import java.util.List;
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
                                   @Nullable FluidIngredient fluidInput, List<Product> results, List<Product> alternateResults,
                                   int ticks, int energyPerTick) implements Recipe<Container> {
+    private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
+
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
         results = List.copyOf(results);
@@ -84,7 +86,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
 
     @Override
     public ItemStack assemble(Container container, RegistryAccess registries) {
-        return result(0);
+        return getResultItem(registries);
     }
 
     public List<Product> products() {
@@ -97,7 +99,12 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
 
     @Override
     public ItemStack getResultItem(RegistryAccess registries) {
-        return result(0);
+        for (Product product : products()) {
+            if (!product.stack.isEmpty()) {
+                return product.stack();
+            }
+        }
+        return ItemStack.EMPTY;
     }
 
     @Override
@@ -211,7 +218,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         private List<Product> readResults(ResourceLocation id, JsonObject json, String key) {
             List<Product> results = new ArrayList<>(machine.outputs());
             for (var entry : GsonHelper.getAsJsonArray(json, key)) {
-                results.add(readProduct(GsonHelper.convertToJsonObject(entry, "result")));
+                results.add(entry.isJsonNull() && machine == Machine.FUEL_REPROCESSOR
+                        ? EMPTY_PRODUCT : readProduct(GsonHelper.convertToJsonObject(entry, "result")));
             }
             return validateResults(id, results);
         }
@@ -220,14 +228,15 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             var stack = CraftingHelper.getItemStack(json, true);
             int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
             int minimum = GsonHelper.getAsInt(json, "min_count", 0);
+            if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize() || chance < 0 || chance > 100
+                    || minimum < 0 || minimum > stack.getCount()) {
+                throw new JsonSyntaxException("Invalid item processor output " + json);
+            }
             return new Product(stack, chance, minimum);
         }
 
         private List<Product> validateResults(ResourceLocation id, List<Product> results) {
-            if (results.size() != machine.outputs() || results.stream().anyMatch(product ->
-                    product.stack.isEmpty() || product.stack.getCount() > product.stack.getMaxStackSize()
-                            || product.chancePercent < 0 || product.chancePercent > 100
-                            || product.minCount < 0 || product.minCount > product.stack.getCount())) {
+            if (results.size() != machine.outputs() || results.stream().allMatch(product -> product.stack.isEmpty())) {
                 throw new JsonSyntaxException("Expected " + machine.outputs() + " valid item outputs for " + id);
             }
             return results;

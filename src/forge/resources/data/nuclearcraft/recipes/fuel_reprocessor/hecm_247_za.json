@@ -1,0 +1,46 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_hecm_247_za"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:berkelium_247_za_ingot",
+            "count": 4
+        },
+        {
+            "item": "nuclearcraft:berkelium_248_za_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:molybdenum_dust",
+            "count": 2,
+            "chance_percent": 90
+        },
+        {
+            "item": "nuclearcraft:zirconium_dust",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:californium_249_za_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:californium_251_za_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:europium_155_dust",
+            "count": 2,
+            "chance_percent": 60
+        },
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

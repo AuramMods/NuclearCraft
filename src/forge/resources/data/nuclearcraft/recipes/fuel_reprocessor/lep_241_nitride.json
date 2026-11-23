@@ -1,0 +1,43 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_lep_241_nitride"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:plutonium_242_nitride_ingot",
+            "count": 5
+        },
+        {
+            "item": "nuclearcraft:americium_243_nitride_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:strontium_90_dust",
+            "count": 2,
+            "chance_percent": 25
+        },
+        null,
+        {
+            "item": "nuclearcraft:curium_246_nitride_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:berkelium_247_nitride_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:promethium_147_dust",
+            "count": 2,
+            "chance_percent": 25
+        },
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

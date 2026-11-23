@@ -48,23 +48,24 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         this.access = access;
         this.processor = processor;
         for (int index = 0; index < machine.inputs(); index++) {
-            addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), 35));
+            addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), machine.inputY()));
         }
         for (int index = 0; index < machine.outputs(); index++) {
-            addSlot(new SlotItemHandler(inventory, machine.inputs() + index, machine.outputX(index), 35) {
+            addSlot(new SlotItemHandler(inventory, machine.inputs() + index, machine.outputX(index), machine.outputY(index)) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return false;
                 }
             });
         }
+        int extraHeight = machine.menuExtension();
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
+                addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + extraHeight + row * 18));
             }
         }
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(player, column, 8 + column * 18, 142));
+            addSlot(new Slot(player, column, 8 + column * 18, 142 + extraHeight));
         }
         addDataSlots(data);
     }

@@ -1109,6 +1109,7 @@
     "block.nuclearcraft.fission_source_californium": "Cf-252 Fission Neutron Source",
     "tooltip.nuclearcraft.fission_source.efficiency": "Efficiency multiplier %s",
     "block.nuclearcraft.rock_crusher": "Rock Crusher",
+    "block.nuclearcraft.fuel_reprocessor": "Fuel Reprocessor",
     "block.nuclearcraft.soulless_sand": "Soulless Sand",
     "block.nuclearcraft.soulless_sandstone": "Soulless Sandstone",
     "gui.nuclearcraft.jei.product_chance": "%s–%s items, %s%% chance per additional item",

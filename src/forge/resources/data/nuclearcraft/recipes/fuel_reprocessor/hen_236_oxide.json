@@ -1,0 +1,43 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_hen_236_oxide"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:uranium_238_oxide_ingot",
+            "count": 4
+        },
+        {
+            "item": "nuclearcraft:plutonium_238_oxide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:molybdenum_dust",
+            "count": 2,
+            "chance_percent": 75
+        },
+        null,
+        {
+            "item": "nuclearcraft:plutonium_241_oxide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:plutonium_242_oxide_ingot",
+            "count": 1
+        },
+        {
+            "item": "nuclearcraft:caesium_137_dust",
+            "count": 2,
+            "chance_percent": 75
+        },
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

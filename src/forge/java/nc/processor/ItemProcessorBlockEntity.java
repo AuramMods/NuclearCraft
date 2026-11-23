@@ -161,8 +161,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             ItemStack stored = inventory.getStackInSlot(machine.inputs() + index);
             if (!stored.isEmpty()) {
                 ItemStack product = products.get(index).stack();
-                if (!ItemStack.isSameItemSameTags(stored, product)
-                        || product.getCount() > stored.getMaxStackSize() - stored.getCount()) {
+                if (!product.isEmpty() && (!ItemStack.isSameItemSameTags(stored, product)
+                        || product.getCount() > stored.getMaxStackSize() - stored.getCount())) {
                     return false;
                 }
             }

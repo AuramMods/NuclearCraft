@@ -1,0 +1,43 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_lecf_249_oxide"
+            },
+            "count": 9
+        }
+    ],
+    "results": [
+        {
+            "item": "nuclearcraft:californium_252_oxide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:californium_252_oxide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:ruthenium_106_dust",
+            "count": 2,
+            "chance_percent": 30
+        },
+        null,
+        {
+            "item": "nuclearcraft:californium_252_oxide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:californium_252_oxide_ingot",
+            "count": 2
+        },
+        {
+            "item": "nuclearcraft:promethium_147_dust",
+            "count": 2,
+            "chance_percent": 20
+        },
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

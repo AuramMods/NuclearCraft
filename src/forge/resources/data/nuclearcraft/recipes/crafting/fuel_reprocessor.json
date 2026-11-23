@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PBP",
+        "TCT",
+        "PAP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "B": {
+            "tag": "forge:ingots/boron"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "A": {
+            "item": "nuclearcraft:actuator"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fuel_reprocessor"
+    }
+}
