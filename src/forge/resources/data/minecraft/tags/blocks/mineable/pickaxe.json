@@ -131,6 +131,15 @@
         "nuclearcraft:americium_243_block",
         "nuclearcraft:curium_246_block",
         "nuclearcraft:berkelium_247_block",
-        "nuclearcraft:californium_252_block"
+        "nuclearcraft:californium_252_block",
+        "nuclearcraft:condenser_controller",
+        "nuclearcraft:heat_exchanger_casing",
+        "nuclearcraft:heat_exchanger_glass",
+        "nuclearcraft:heat_exchanger_redstone_port",
+        "nuclearcraft:heat_exchanger_inlet",
+        "nuclearcraft:heat_exchanger_outlet",
+        "nuclearcraft:heat_exchanger_tube_copper",
+        "nuclearcraft:heat_exchanger_tube_hard_carbon",
+        "nuclearcraft:heat_exchanger_tube_thermoconducting"
     ]
 }

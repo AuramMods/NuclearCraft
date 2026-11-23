@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/heat_exchanger/casing/wall",
+        "down": "nuclearcraft:block/heat_exchanger/casing/wall",
+        "north": "nuclearcraft:block/heat_exchanger/outlet_out",
+        "south": "nuclearcraft:block/heat_exchanger/outlet_in",
+        "east": "nuclearcraft:block/heat_exchanger/casing/wall",
+        "west": "nuclearcraft:block/heat_exchanger/casing/wall",
+        "particle": "nuclearcraft:block/heat_exchanger/outlet_out"
+    }
+}

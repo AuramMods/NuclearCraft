@@ -1,0 +1,40 @@
+{
+    "textures": {
+        "particle": "nuclearcraft:block/heat_exchanger/tube/closed_baffle_side",
+        "tube": "nuclearcraft:block/heat_exchanger/tube/closed_baffle_side"
+    },
+    "elements": [
+        {
+            "from": [
+                0,
+                0,
+                0
+            ],
+            "to": [
+                16,
+                16,
+                2
+            ],
+            "faces": {
+                "down": {
+                    "texture": "#tube"
+                },
+                "up": {
+                    "texture": "#tube"
+                },
+                "north": {
+                    "texture": "#tube"
+                },
+                "south": {
+                    "texture": "#tube"
+                },
+                "east": {
+                    "texture": "#tube"
+                },
+                "west": {
+                    "texture": "#tube"
+                }
+            }
+        }
+    ]
+}

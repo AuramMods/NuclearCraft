@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SRS",
+        "TFT",
+        "SRS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "R": {
+            "tag": "forge:dusts/redstone"
+        },
+        "T": {
+            "item": "minecraft:redstone_torch"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_redstone_port",
+        "count": 1
+    }
+}

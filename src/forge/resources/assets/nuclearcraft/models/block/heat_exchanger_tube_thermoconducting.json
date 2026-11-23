@@ -1,0 +1,40 @@
+{
+    "textures": {
+        "particle": "nuclearcraft:block/heat_exchanger/tube/thermoconducting/center",
+        "tube": "nuclearcraft:block/heat_exchanger/tube/thermoconducting/center"
+    },
+    "elements": [
+        {
+            "from": [
+                5,
+                5,
+                5
+            ],
+            "to": [
+                11,
+                11,
+                11
+            ],
+            "faces": {
+                "down": {
+                    "texture": "#tube"
+                },
+                "up": {
+                    "texture": "#tube"
+                },
+                "north": {
+                    "texture": "#tube"
+                },
+                "south": {
+                    "texture": "#tube"
+                },
+                "east": {
+                    "texture": "#tube"
+                },
+                "west": {
+                    "texture": "#tube"
+                }
+            }
+        }
+    ]
+}

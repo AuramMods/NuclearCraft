@@ -1,0 +1,16 @@
+{
+    "type": "nuclearcraft:condenser",
+    "input": {
+        "fluid": "nuclearcraft:exhaust_steam",
+        "amount": 16
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 1
+    },
+    "cooling": 32,
+    "input_temperature": 550,
+    "output_temperature": 350,
+    "preferred_flow": -1,
+    "flow_bonus": 1.0
+}

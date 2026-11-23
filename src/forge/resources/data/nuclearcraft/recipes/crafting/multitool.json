@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " F ",
+        "HSF",
+        "SB "
+    ],
+    "key": {
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "H": {
+            "tag": "forge:ingots/hard_carbon"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "B": {
+            "tag": "forge:ingots/bronze"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:multitool",
+        "count": 1
+    }
+}

@@ -1,0 +1,204 @@
+package nc.gametest;
+
+import nc.NuclearCraft;
+import nc.init.NCCondenser;
+import nc.init.NCFluids;
+import nc.multiblock.hx.ExchangerTubeBlock;
+import nc.multiblock.hx.ExchangerTubeBlock.Setting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestAssertException;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
+
+@GameTestHolder(NuclearCraft.MOD_ID)
+@PrefixGameTestTemplate(false)
+public final class CondenserGameTests {
+    private static final BlockPos CONTROLLER = new BlockPos(2, 2, 1);
+    private static final BlockPos COOLANT = new BlockPos(3, 2, 1);
+    private static final BlockPos FIRST_IN = new BlockPos(1, 2, 2);
+    private static final BlockPos FIRST_OUT = new BlockPos(5, 2, 2);
+    private static final BlockPos SECOND_IN = new BlockPos(1, 2, 3);
+    private static final BlockPos SECOND_OUT = new BlockPos(5, 2, 3);
+    private static final BlockPos FRAME = new BlockPos(1, 1, 1);
+
+    @GameTest(template = "turbine", timeoutTicks = 190)
+    public static void condenserProcessesTwoIndependentSteamCircuits(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, FIRST_IN, Direction.WEST))
+                .thenExecute(() -> {
+                    IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.fill(new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 1),
+                            FluidAction.SIMULATE) == 0, "Hot exhaust must be rejected by the coolant tank");
+                    FluidStack water = new FluidStack(Fluids.WATER, coolant.getTankCapacity(0));
+                    helper.assertTrue(coolant.fill(water, FluidAction.SIMULATE) == water.getAmount()
+                            && coolant.getFluidInTank(0).isEmpty(), "Coolant simulation must preserve the shell tank");
+                    IFluidHandler first = fluid(helper, FIRST_IN, Direction.WEST);
+                    IFluidHandler second = fluid(helper, SECOND_IN, Direction.WEST);
+                    helper.assertTrue(first.fill(new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 16000),
+                            FluidAction.EXECUTE) == 16000, "The first circuit must accept exhaust steam");
+                    helper.assertTrue(second.fill(new FluidStack(NCFluids.LOW_QUALITY_STEAM.source().get(), 32000),
+                            FluidAction.EXECUTE) == 32000, "The second circuit must accept its own steam");
+                    helper.assertTrue(!helper.getBlockEntity(FIRST_IN).getCapability(ForgeCapabilities.FLUID_HANDLER,
+                            Direction.EAST).isPresent(), "The inward inlet face must expose no capability");
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 16000
+                                    && fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0).isEmpty(),
+                            "An empty cooling shell must prevent steam consumption");
+                    IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    coolant.fill(new FluidStack(Fluids.WATER, coolant.getTankCapacity(0)), FluidAction.EXECUTE);
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0).getAmount() == 1000,
+                            "16,000 mB of exhaust must condense into precisely 1,000 mB");
+                    helper.assertTrue(fluid(helper, SECOND_OUT, Direction.EAST).getFluidInTank(0).getAmount() == 1000,
+                            "32,000 mB of low-quality steam must condense into precisely 1,000 mB");
+                })
+                .thenExecute(() -> {
+                    IFluidHandler first = fluid(helper, FIRST_OUT, Direction.EAST);
+                    IFluidHandler second = fluid(helper, SECOND_OUT, Direction.EAST);
+                    helper.assertTrue(first.drain(1000, FluidAction.SIMULATE).getAmount() == 1000
+                            && first.getFluidInTank(0).getAmount() == 1000, "Simulating a drain must preserve its contents");
+                    for (IFluidHandler output : new IFluidHandler[]{first, second}) {
+                        FluidStack product = output.drain(1000, FluidAction.EXECUTE);
+                        helper.assertTrue(product.getFluid() == NCFluids.CONDENSATE_WATER.source().get()
+                                && product.getAmount() == 1000 && output.getFluidInTank(0).isEmpty(),
+                                "Both circuits must independently export their condensate");
+                    }
+                    IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.getFluidInTank(0).getAmount() == coolant.getTankCapacity(0),
+                            "Cooling fluid must remain in the shell");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 180)
+    public static void condenserPreservesBuffersWhenBlockedAndReassembled(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, FIRST_IN, Direction.WEST))
+                .thenExecute(() -> {
+                    IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    coolant.fill(new FluidStack(Fluids.WATER, coolant.getTankCapacity(0)), FluidAction.EXECUTE);
+                    IFluidHandler input = fluid(helper, FIRST_IN, Direction.WEST);
+                    input.fill(new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 16), FluidAction.EXECUTE);
+                    var controller = helper.getBlockEntity(CONTROLLER);
+                    CompoundTag saved = controller.saveWithoutMetadata();
+                    CompoundTag circuit = saved.getList("circuits", Tag.TAG_COMPOUND).getCompound(0);
+                    int capacity = fluid(helper, FIRST_OUT, Direction.EAST).getTankCapacity(0);
+                    circuit.put("output", new FluidStack(NCFluids.CONDENSATE_WATER.source().get(), capacity)
+                            .writeToNBT(new CompoundTag()));
+                    controller.load(saved);
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(4, () -> {
+                    IFluidHandler input = fluid(helper, FIRST_IN, Direction.WEST);
+                    helper.assertTrue(input.getFluidInTank(0).getAmount() == 16,
+                            "A full output must prevent steam consumption");
+                    var old = helper.getBlockEntity(FIRST_OUT).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.EAST);
+                    IFluidHandler retained = old.orElseThrow(AssertionError::new);
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    helper.assertTrue(!old.isPresent() && retained.drain(1, FluidAction.EXECUTE).isEmpty(),
+                            "Breaking the frame must invalidate even previously resolved handlers");
+                    CompoundTag saved = helper.getBlockEntity(CONTROLLER).saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCCondenser.CONTROLLER.get());
+                    helper.getBlockEntity(CONTROLLER).load(saved);
+                    helper.setBlock(FRAME, NCCondenser.CASING.get());
+                })
+                .thenWaitUntil(() -> fluid(helper, FIRST_OUT, Direction.EAST))
+                .thenExecute(() -> {
+                    IFluidHandler output = fluid(helper, FIRST_OUT, Direction.EAST);
+                    helper.assertTrue(output.getFluidInTank(0).getAmount() == output.getTankCapacity(0),
+                            "Reassembly must restore the exact output buffer");
+                    helper.assertTrue(output.drain(1, FluidAction.EXECUTE).getAmount() == 1,
+                            "Clearing one mB of space should let the next batch finish");
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).isEmpty(),
+                            "The buffered steam should resume processing");
+                    IFluidHandler output = fluid(helper, FIRST_OUT, Direction.EAST);
+                    helper.assertTrue(output.getFluidInTank(0).getAmount() == output.getTankCapacity(0),
+                            "The resumed batch should replace precisely the drained product");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine")
+    public static void multitoolConfiguresBothSidesOfATubeConnection(GameTestHelper helper) {
+        BlockPos first = new BlockPos(2, 2, 2);
+        BlockPos second = first.east();
+        var tube = NCCondenser.COPPER.get();
+        helper.setBlock(first, tube);
+        helper.setBlock(second, tube);
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        ItemStack stored = player.getMainHandItem();
+        ItemStack multitool = new ItemStack(NCCondenser.MULTITOOL.get());
+        boolean previousSneaking = player.isShiftKeyDown();
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, multitool);
+            player.setShiftKeyDown(true);
+            BlockPos clicked = helper.absolutePos(first);
+            var hit = new BlockHitResult(Vec3.atCenterOf(clicked), Direction.WEST, clicked, false);
+            var context = new UseOnContext(player, InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(multitool.getItem().onItemUseFirst(multitool, context).consumesAction(),
+                    "The Multitool should configure a tube while sneaking");
+            helper.assertTrue(helper.getBlockState(first) == ExchangerTubeBlock.withSetting(
+                            tube.defaultBlockState(), Direction.EAST, Setting.OPEN)
+                            && helper.getBlockState(second) == ExchangerTubeBlock.withSetting(
+                            tube.defaultBlockState(), Direction.WEST, Setting.OPEN),
+                    "Sneaking must open the opposite face and mirror it on the adjacent tube");
+        } finally {
+            player.setShiftKeyDown(previousSneaking);
+            player.setItemInHand(InteractionHand.MAIN_HAND, stored);
+        }
+        helper.succeed();
+    }
+
+    private static void build(GameTestHelper helper) {
+        for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 4, 4))) {
+            if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 4
+                    || pos.getZ() == 1 || pos.getZ() == 4) {
+                helper.setBlock(pos, NCCondenser.CASING.get());
+            }
+        }
+        helper.setBlock(CONTROLLER, NCCondenser.CONTROLLER.get());
+        for (BlockPos input : new BlockPos[]{FIRST_IN, SECOND_IN, COOLANT}) {
+            helper.setBlock(input, NCCondenser.INLET.get());
+        }
+        helper.setBlock(FIRST_OUT, NCCondenser.OUTLET.get());
+        helper.setBlock(SECOND_OUT, NCCondenser.OUTLET.get());
+        for (int z = 2; z <= 3; z++) {
+            for (int x = 2; x <= 4; x++) {
+                ExchangerTubeBlock block = z == 2 ? NCCondenser.COPPER.get() : NCCondenser.THERMOCONDUCTING.get();
+                helper.setBlock(new BlockPos(x, 2, z), ExchangerTubeBlock.withSetting(
+                        ExchangerTubeBlock.withSetting(block.defaultBlockState(), Direction.WEST, Setting.OPEN),
+                        Direction.EAST, Setting.OPEN));
+            }
+        }
+    }
+
+    private static IFluidHandler fluid(GameTestHelper helper, BlockPos pos, Direction side) {
+        return helper.getBlockEntity(pos).getCapability(ForgeCapabilities.FLUID_HANDLER, side)
+                .orElseThrow(() -> new GameTestAssertException("Port not assembled at " + pos));
+    }
+}

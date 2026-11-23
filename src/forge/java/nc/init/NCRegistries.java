@@ -103,6 +103,7 @@ public final class NCRegistries {
         NCItemProcessors.register();
         NCFission.register();
         NCTurbine.register();
+        NCCondenser.register();
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);

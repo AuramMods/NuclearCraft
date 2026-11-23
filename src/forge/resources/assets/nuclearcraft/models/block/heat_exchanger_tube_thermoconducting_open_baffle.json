@@ -1,0 +1,72 @@
+{
+    "textures": {
+        "particle": "nuclearcraft:block/heat_exchanger/tube/thermoconducting/open_baffle",
+        "tube": "nuclearcraft:block/heat_exchanger/tube/thermoconducting/open_baffle"
+    },
+    "elements": [
+        {
+            "from": [
+                0,
+                0,
+                0
+            ],
+            "to": [
+                16,
+                16,
+                2
+            ],
+            "faces": {
+                "down": {
+                    "texture": "#tube"
+                },
+                "up": {
+                    "texture": "#tube"
+                },
+                "north": {
+                    "texture": "#tube"
+                },
+                "south": {
+                    "texture": "#tube"
+                },
+                "east": {
+                    "texture": "#tube"
+                },
+                "west": {
+                    "texture": "#tube"
+                }
+            }
+        },
+        {
+            "from": [
+                5,
+                5,
+                2
+            ],
+            "to": [
+                11,
+                11,
+                5
+            ],
+            "faces": {
+                "down": {
+                    "texture": "#tube"
+                },
+                "up": {
+                    "texture": "#tube"
+                },
+                "north": {
+                    "texture": "#tube"
+                },
+                "south": {
+                    "texture": "#tube"
+                },
+                "east": {
+                    "texture": "#tube"
+                },
+                "west": {
+                    "texture": "#tube"
+                }
+            }
+        }
+    ]
+}

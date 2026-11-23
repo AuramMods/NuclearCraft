@@ -1,6 +1,7 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.init.NCCondenser;
 import nc.init.NCFission;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
@@ -27,6 +28,7 @@ public final class NCClient {
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCPebbleFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCTurbine.MENU.get(), TurbineScreen::new);
+            MenuScreens.register(NCCondenser.MENU.get(), CondenserScreen::new);
         });
     }
 }

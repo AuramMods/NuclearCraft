@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SMS",
+        "MFM",
+        "SVS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "V": {
+            "item": "nuclearcraft:servo"
+        },
+        "M": {
+            "tag": "forge:ingots/thermoconducting"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_tube_thermoconducting",
+        "count": 8
+    }
+}

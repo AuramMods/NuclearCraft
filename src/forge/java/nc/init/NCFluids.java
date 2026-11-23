@@ -50,6 +50,7 @@ public final class NCFluids {
     public static final RegisteredFluid FLUORINE = gas("fluorine", 0xFFD3C75D);
     public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7);
     public static final RegisteredFluid HEATED_EMERGENCY_COOLANT = liquid("emergency_coolant_heated", "liquid", 2000, 0xCDBEE7);
+    public static final RegisteredFluid CONDENSATE_WATER = liquid("condensate_water", "liquid", 1000, 0x4B95DB, 350);
     public static final RegisteredFluid LOW_ENRICHED_WATER = liquid("le_water", "le_water", 1100, 0xFFFFFF);
     public static final RegisteredFluid HIGH_ENRICHED_WATER = liquid("he_water", "he_water", 1100, 0xFFFFFF);
     public static final RegisteredFluid HEAVY_WATER = liquid("heavy_water", "heavy_water", 1100, 0xFFFFFF);
@@ -80,8 +81,12 @@ public final class NCFluids {
     }
 
     private static RegisteredFluid liquid(String name, String texture, int density, int tint) {
+        return liquid(name, texture, density, tint, 300);
+    }
+
+    private static RegisteredFluid liquid(String name, String texture, int density, int tint, int temperature) {
         return new RegisteredFluid(name, () -> tintedFluid(
-                FluidType.Properties.create().density(density).viscosity(1000)
+                FluidType.Properties.create().density(density).viscosity(1000).temperature(temperature)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY),
                 NuclearCraft.id("block/fluids/" + texture + "_still"),

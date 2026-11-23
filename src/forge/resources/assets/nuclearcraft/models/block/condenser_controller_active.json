@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/heat_exchanger/condenser/controller_top",
+        "down": "nuclearcraft:block/heat_exchanger/condenser/controller_bottom",
+        "north": "nuclearcraft:block/heat_exchanger/condenser/controller_front_on",
+        "south": "nuclearcraft:block/heat_exchanger/condenser/controller_back",
+        "east": "nuclearcraft:block/heat_exchanger/condenser/controller_side",
+        "west": "nuclearcraft:block/heat_exchanger/condenser/controller_side",
+        "particle": "nuclearcraft:block/heat_exchanger/condenser/controller_front_on"
+    }
+}

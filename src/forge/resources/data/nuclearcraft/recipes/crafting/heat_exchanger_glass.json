@@ -1,0 +1,15 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:heat_exchanger_casing"
+        },
+        {
+            "tag": "forge:glass"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_glass"
+    }
+}
