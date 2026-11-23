@@ -1,0 +1,9 @@
+{
+    "block.nuclearcraft.melter": "Melter",
+    "block.nuclearcraft.sulfur": "Molten Sulfur",
+    "fluid_type.nuclearcraft.sulfur": "Molten Sulfur",
+    "item.nuclearcraft.sulfur_bucket": "Molten Sulfur Bucket",
+    "item.nuclearcraft.sulfur_dust": "Sulfur Dust",
+    "itemGroup.nuclearcraft.machines": "NuclearCraft Machines",
+    "gui.nuclearcraft.fluid_amount": "%s (%s mB)"
+}

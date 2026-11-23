@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[47,48)"
+license="MIT"
+
+[[mods]]
+modId="nuclearcraft"
+version="${mod_version}"
+displayName="NuclearCraft: Overhauled"
+authors="tomdodd4598, AuramMods"
+logoFile="logo.png"
+description="NuclearCraft: Overhauled for Minecraft Forge 1.20.1."
+
+[[dependencies.nuclearcraft]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.10,48)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.nuclearcraft]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
