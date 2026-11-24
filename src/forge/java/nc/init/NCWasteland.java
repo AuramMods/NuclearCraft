@@ -9,6 +9,7 @@ import nc.worldgen.WastelandEntrances;
 import nc.worldgen.WastelandPortalBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
@@ -24,6 +25,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.List;
+import java.util.stream.IntStream;
 
 public final class NCWasteland {
     public static final ResourceKey<Level> DIMENSION = ResourceKey.create(Registries.DIMENSION, NuclearCraft.id("wasteland"));
@@ -51,6 +55,11 @@ public final class NCWasteland {
             NCRegistries.BLOCKS.register("wasteland_portal", WastelandPortalBlock::new);
     public static final RegistryObject<Item> PORTAL_ITEM = NCRegistries.ITEMS.register("wasteland_portal",
             () -> new BlockItem(PORTAL.get(), new Item.Properties()));
+
+    public static final List<RegistryObject<SoundEvent>> AMBIENCE = IntStream.rangeClosed(1, 9).mapToObj(track -> {
+        String name = "music.nc.wasteland_ambience_" + track;
+        return NCRegistries.SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id(name)));
+    }).toList();
 
     private NCWasteland() {}
 

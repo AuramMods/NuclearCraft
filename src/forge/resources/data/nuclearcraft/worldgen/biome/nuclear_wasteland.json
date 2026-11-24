@@ -4,7 +4,12 @@
     "downfall": 0.0,
     "carvers": {},
     "spawn_costs": {},
-    "spawners": {},
+    "spawners": {
+        "monster": [
+            {"type": "nuclearcraft:feral_ghoul", "weight": 32767, "minCount": 1, "maxCount": 1},
+            {"type": "nuclearcraft:glowing_ghoul", "weight": 32767, "minCount": 1, "maxCount": 1}
+        ]
+    },
     "effects": {
         "sky_color": 10330225,
         "fog_color": 12638463,

@@ -2645,5 +2645,12 @@
     "fluid_type.nuclearcraft.roentgen_josh": "Roentgen Josh",
     "item.nuclearcraft.roentgen_josh_bucket": "Roentgen Josh Bucket",
     "block.nuclearcraft.wasteland_portal": "Wasteland Portal",
-    "biome.nuclearcraft.nuclear_wasteland": "Nuclear Wasteland"
+    "biome.nuclearcraft.nuclear_wasteland": "Nuclear Wasteland",
+    "entity.nuclearcraft.feral_ghoul": "Feral Ghoul",
+    "entity.nuclearcraft.glowing_ghoul": "Glowing Ghoul",
+    "item.nuclearcraft.feral_ghoul_spawn_egg": "Feral Ghoul Spawn Egg",
+    "item.nuclearcraft.glowing_ghoul_spawn_egg": "Glowing Ghoul Spawn Egg",
+    "subtitles.nuclearcraft.feral_ghoul_charge": "Ghoul charges",
+    "subtitles.nuclearcraft.feral_ghoul_death": "Ghoul dies",
+    "subtitles.nuclearcraft.wasteland_ambience": "Wasteland ambience"
 }

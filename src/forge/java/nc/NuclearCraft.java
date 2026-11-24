@@ -4,6 +4,7 @@ import nc.fluid.FluidConfig;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
+import nc.init.NCEntities;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
@@ -31,6 +32,7 @@ public final class NuclearCraft {
     public NuclearCraft(FMLJavaModLoadingContext context) {
         NCBatteries.register(context);
         NCCollectors.register(context);
+        NCEntities.register(context);
         NCGenerators.register(context);
         NCRadiation.register(context);
         FluidConfig.register(context);

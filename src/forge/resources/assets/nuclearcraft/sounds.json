@@ -30,5 +30,98 @@
     "player.rad_poisoning": {
         "subtitle": "subtitles.nuclearcraft.rad_poisoning",
         "sounds": ["nuclearcraft:player/rad_poisoning"]
+    },
+    "entity.nc.feral_ghoul_charge": {
+        "subtitle": "subtitles.nuclearcraft.feral_ghoul_charge",
+        "sounds": [
+            "nuclearcraft:entity/feral_ghoul_charge"
+        ]
+    },
+    "entity.nc.feral_ghoul_death": {
+        "subtitle": "subtitles.nuclearcraft.feral_ghoul_death",
+        "sounds": [
+            "nuclearcraft:entity/feral_ghoul_death"
+        ]
+    },
+    "music.nc.wasteland_ambience_1": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_1",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_2": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_2",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_3": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_3",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_4": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_4",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_5": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_5",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_6": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_6",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_7": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_7",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_8": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_8",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.wasteland_ambience_9": {
+        "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wasteland_ambience_9",
+                "stream": true
+            }
+        ]
     }
 }

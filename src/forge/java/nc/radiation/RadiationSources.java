@@ -38,7 +38,7 @@ public final class RadiationSources {
     private static final double TBP = getFuelRadiation(THORIUM, 8.5D, PROTACTINIUM_233, 0.5D);
     private static final double STRONTIUM_90 = 0.0345D;
     private static final double RUTHENIUM_106 = 0.98D;
-    private static final double CAESIUM_137 = 0.033D;
+    static final double CAESIUM_137 = 0.033D;
     private static final double PROMETHIUM_147 = 0.38D;
     private static final double EUROPIUM_155 = 0.21D;
     private static final double URANIUM_233 = 0.0000063D;
@@ -62,7 +62,7 @@ public final class RadiationSources {
     private static final double CALIFORNIUM_249 = 0.00285D;
     private static final double CALIFORNIUM_250 = 0.0765D;
     private static final double CALIFORNIUM_251 = 0.00115D;
-    private static final double CALIFORNIUM_252 = 0.38D;
+    static final double CALIFORNIUM_252 = 0.38D;
     private static final double TBU = getFuelRadiation(THORIUM, 8.5D, URANIUM_233, 0.5D);
     private static final double LEU_233 = getFuelRadiation(URANIUM_238, 8, URANIUM_233, 1);
     private static final double HEU_233 = getFuelRadiation(URANIUM_238, 6, URANIUM_233, 3);

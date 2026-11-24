@@ -267,7 +267,7 @@ public final class WorldRadiation {
         }
     }
 
-    private static double configuredRate(List<? extends String> entries, String id, double fallback) {
+    static double configuredRate(List<? extends String> entries, String id, double fallback) {
         for (String entry : entries) {
             int delimiter = entry.lastIndexOf('_');
             if (delimiter == id.length() && entry.startsWith(id)) {

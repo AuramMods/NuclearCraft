@@ -430,9 +430,21 @@ The Wasteland uses dimension ID `nuclearcraft:wasteland`, replacing legacy dimen
 
 The solid `nuclearcraft:wasteland_portal` transports entities on contact and uses the original 0.125 coordinate scale. It looks for a dry surface near the scaled coordinates. Wasteland portals return travelers to the Overworld. Portals generate in lakes in the Nuclear Wasteland biome. With TerraBlender, new Overworld terrain can also generate that biome in the desert climate. Clean Forge places rare entrance lakes in deserts. Glowing mushrooms and dead bushes decorate the Wasteland biome. The Wasteland structure set tag allows villages and temples.
 
-Legacy `wasteland_biome` and `wasteland_biome_weight` go in `config/nuclearcraft-wasteland-worldgen.toml`. Set `wasteland_dimension_gen` in `world/serverconfig/nuclearcraft-wasteland.toml` to control portal travel. The dimension ID remains usable by saved worlds and datapacks when travel is disabled. The original vaults, feral ghouls, and post-generation block mapping are still pending.
+Legacy `wasteland_biome` and `wasteland_biome_weight` go in `config/nuclearcraft-wasteland-worldgen.toml`. Set `wasteland_dimension_gen` in `world/serverconfig/nuclearcraft-wasteland.toml` to control portal travel. The dimension ID remains usable by saved worlds and datapacks when travel is disabled. The original vaults and post-generation block mapping are still pending.
 
 All 116 local GameTests passed, including biome selection and collision-triggered travel for an entity. On packaged Forge 47.4.18, a muted multiplayer client entered and returned through placed portals. The Overworld portal survived a dedicated-server restart. The native observer counted zero visible or foreground samples and zero activation events. A separate Forge 47.4.18 server with Auram's TerraBlender 3.0.1.10 generated the Overworld biome and saved an exposed Wasteland Earth surface over sand. The registered portal lake feature placed portal blocks that survived the world save. [TerraBlender API documentation](https://github.com/Glitchfiend/TerraBlender/wiki/Getting-Started)
+
+### Feral and glowing ghouls
+
+The legacy entity IDs are `nuclearcraft:feral_ghoul` and `nuclearcraft:glowing_ghoul`. Their modern spawn eggs use the matching `_spawn_egg` IDs. The Nuclear Wasteland biome spawns feral ghouls in daylight and glowing ghouls underground where the chunk radiation exceeds the legacy background threshold. Both use the original model, adult proportions, wall climbing, husk loot, and charge and death sounds. Feral ghouls can leap at nearby targets. Glowing ghouls use the original emissive layer. The dimension plays its nine original ambient tracks on the music channel.
+
+Feral and glowing attacks add 0.33 and 3.8 Rad respectively at the base difficulty multiplier. Successful attacks on nonhostile living targets inflict poison and add radiation to the victim's buffered exposure. The amount increases with local difficulty and absorbs over `radiation_poison_time`. The two legacy attack settings retain their names in `world/serverconfig/nuclearcraft-radiation.toml`. Ghouls retain radiation buffs at a fatal dose. Villagers and other NPCs can convert to feral ghouls at a fatal dose or on entering the Wasteland. Conversion preserves their name, AI setting, and persistence and uses Forge's conversion and spawn events.
+
+Move the two `register_entity` booleans to `world/serverconfig/nuclearcraft-entities.toml`, in feral then glowing order. Registered entity IDs remain available to saves and datapacks. A disabled type cannot spawn naturally and discards any loaded instances. The legacy 64-block default tracking range maps to four Forge tracking chunks.
+
+All 120 local GameTests passed. On a packaged Forge 47.4.18 multiplayer server, a feral ghoul's AI landed a two-damage hit on a test player. Saved player data showed poison and the expected 0.33 Rad split between absorbed and buffered dose. A separate headless run disabled feral ghouls and retained the glowing type. Both legacy textures rendered in-game, and the glowing layer was visible in a dark chamber. The observing multiplayer client ran muted with zero activation, foreground, or visible-window samples.
+
+The same packaged JAR loaded with all 539 installed JARs in the isolated Auram instance on Forge 47.4.18. Player login and JEI startup completed, and TerraBlender registered the Wasteland region alongside the other Overworld regions. The server spawned and saved both ghoul types at their expected 16 and 32 health. The muted client exited with zero activation, foreground, or visible-window samples.
 
 ### Radiation Scrubber
 
@@ -462,4 +474,4 @@ A second trace moved the five fixtures to fresh chunks. All four working transfe
 
 At the original fixture coordinates, a 1,000-tick window without force-loading again returned the same chunk instances. A 7,200-tick window let the exact pack finish unloading all five chunks. Every unload save contained the expected block entities, including the two previously affected marker barrels. Reloading the chunks produced five new instances from disk and preserved the four working transfer results and all five markers. The energy-only comparator still never powered. The earlier failure remains intermittent and its trigger is unresolved.
 
-Radiation work still includes terrain mutation, remaining machine emissions, non-player food and poison effects, and feral ghoul conversion.
+Radiation work still includes terrain mutation, remaining machine emissions, and general non-player food effects.

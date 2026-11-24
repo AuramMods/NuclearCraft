@@ -28,8 +28,6 @@ public final class PlayerRadiation {
     private static final String RECENT_RESISTANCE = "recent_resistance";
     private static final String RAD_X_USED = "rad_x_used";
     private static final String RECENT_RADAWAY = "recent_radaway";
-    private static final String POISON = "poison";
-    private static final String RECENT_POISON = "recent_poison";
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String RAD_X_COOLDOWN = "rad_x_cooldown";
     private static final String IMMUNITY = "immunity_ticks";
@@ -111,12 +109,7 @@ public final class PlayerRadiation {
             // The legacy resistance curve runs separately for each stack, before rates are added.
             rate += RadiationShielding.attenuate(raw, resistance);
         }
-        double poison = data.getDouble(POISON);
-        if (poison > 0) {
-            double absorbed = Math.min(poison, data.getDouble(RECENT_POISON) * ticks / RadiationConfig.POISON_TIME.get());
-            rate += absorbed / ticks;
-            remainder(data, POISON, RECENT_POISON, poison - absorbed);
-        }
+        rate += RadiationPoison.absorb(data, ticks) / ticks;
         RadiationBadge.measure(player, rate * ticks);
         if (data.isEmpty() && rate == 0) {
             refreshEffects(player, vulnerable, 0, ticks);
@@ -285,12 +278,17 @@ public final class PlayerRadiation {
         save(player, data);
     }
 
+    static void addPoison(ServerPlayer player, double dose) {
+        CompoundTag data = read(player);
+        RadiationPoison.add(data, dose);
+        save(player, data);
+    }
+
     static void eat(ServerPlayer player, FoodRadiation.Effects effects) {
         CompoundTag data = read(player);
         double dose = effects.dose();
         if (dose > 0) {
-            data.putDouble(POISON, data.getDouble(POISON) + dose);
-            data.putDouble(RECENT_POISON, Math.max(dose, data.getDouble(RECENT_POISON)));
+            RadiationPoison.add(data, dose);
             foodSound(player, NCRadiation.RAD_POISONING.get(), Math.sqrt(dose) / 10);
         } else if (dose < 0) {
             addRadaway(data, -dose);

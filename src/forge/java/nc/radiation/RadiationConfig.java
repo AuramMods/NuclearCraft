@@ -55,6 +55,10 @@ public final class RadiationConfig {
             BUILDER.defineInRange("radiation_rad_x_cooldown", 0D, 0D, 100_000D);
     static final ForgeConfigSpec.DoubleValue POISON_TIME =
             BUILDER.defineInRange("radiation_poison_time", 60D, 1D, 1_000_000D);
+    static final ForgeConfigSpec.DoubleValue FERAL_GHOUL_ATTACK =
+            BUILDER.defineInRange("radiation_feral_ghoul_attack", 10D * RadiationSources.CAESIUM_137, 1E-6, 1E6);
+    static final ForgeConfigSpec.DoubleValue GLOWING_GHOUL_ATTACK =
+            BUILDER.defineInRange("radiation_glowing_ghoul_attack", 10D * RadiationSources.CALIFORNIUM_252, 1E-6, 1E6);
     static final ForgeConfigSpec.ConfigValue<List<? extends String>> FOODS =
             BUILDER.comment("Food entries use namespace:item_dose_resistance. Negative dose adds gradual treatment.")
                     .defineListAllowEmpty("radiation_foods", List.of("minecraft:golden_apple_-20_0.1",
@@ -101,7 +105,7 @@ public final class RadiationConfig {
     static final ForgeConfigSpec.DoubleValue BADGE_INFO_FRACTION =
             BUILDER.defineInRange("radiation_badge_info_rate", 0.1D, 1E-18, 1D);
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SOUND_VOLUMES =
-            BUILDER.comment("Legacy sound multipliers. Index 0 is the Geiger click, 3 is food, 5 is the badge, and 6 is the warning.")
+            BUILDER.comment("Legacy sound multipliers. Index 0 is the Geiger click, 3 is food, 5 is the badge, 6 is the warning, and 7 is a ghoul attack.")
                     .defineListAllowEmpty("radiation_sound_volumes", List.of(1D, 1D, 1D, 1D, 1D, 1D, 1D, 1D),
                             value -> value instanceof Number number
                                     && number.doubleValue() >= 0 && number.doubleValue() <= 15);
