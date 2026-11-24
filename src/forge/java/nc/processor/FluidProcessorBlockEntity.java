@@ -72,6 +72,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         boolean running = machine.process(level, MachineInterface.powered(level, pos, machine));
         ProcessorBlock.setRunning(level, pos, state, running);
         machine.fluids.push(level);
+        if (!running) {
+            machine.itemInput.ports.push(level);
+        }
     }
 
     private boolean acceptsFluid(FluidStack stack) {
@@ -150,6 +153,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                     fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random), outputModes[index]);
                 }
             }
+            itemInput.ports.push(level);
             progressHalfTicks -= batchHalfTicks;
             if (progressHalfTicks > 0) {
                 refreshInput();
@@ -180,12 +184,8 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         }
     }
 
-    void toggleItemSide(Direction side) {
-        itemInput.toggle(side);
-        setChanged();
-        if (level != null) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
+    ProcessorItemPorts itemPorts() {
+        return itemInput.ports;
     }
 
     void cycleOutputMode(int tank) {
@@ -204,7 +204,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 return fluids.capability(side).cast();
             }
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
-                return itemInput.capability(side).cast();
+                return itemInput.ports.capability(side).cast();
             }
             if (capability == ForgeCapabilities.ENERGY) {
                 return energy.cast();
@@ -217,7 +217,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public void invalidateCaps() {
         super.invalidateCaps();
         fluids.invalidate();
-        itemInput.invalidate();
+        itemInput.ports.invalidate();
         energy.invalidate();
     }
 
@@ -225,14 +225,14 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public void reviveCaps() {
         super.reviveCaps();
         fluids.revive();
-        itemInput.revive();
+        itemInput.ports.revive();
         energy = LazyOptional.of(() -> power);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        itemInput.save(tag);
+        itemInput.ports.save(tag);
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -248,7 +248,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public void load(CompoundTag tag) {
         super.load(tag);
         radiationEmission = 0D;
-        itemInput.load(tag);
+        itemInput.ports.load(tag);
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         for (int tank = 0; tank < machine.tanks(); tank++) {
             fluids.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank);
@@ -274,9 +274,6 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 }
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
-                }
-                if (index == FluidProcessorMenu.itemSidesIndex(machine)) {
-                    return itemInput.disabledSides();
                 }
                 int tank = (index - FluidProcessorMenu.FIRST_TANK) / FluidProcessorMenu.TANK_DATA_SIZE;
                 return switch ((index - FluidProcessorMenu.FIRST_TANK) % FluidProcessorMenu.TANK_DATA_SIZE) {

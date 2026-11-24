@@ -165,5 +165,12 @@
     "advancement.nuclearcraft.speed_upgrade.name": "工作超频",
     "advancement.nuclearcraft.speed_upgrade.desc": "制作一个速度升级",
     "advancement.nuclearcraft.energy_upgrade.name": "多项抑合",
-    "advancement.nuclearcraft.energy_upgrade.desc": "制作一个能量升级"
+    "advancement.nuclearcraft.energy_upgrade.desc": "制作一个能量升级",
+    "gui.nuclearcraft.item_side.auto_output": "自动输出",
+    "gui.nuclearcraft.processor_items.all": "全部",
+    "gui.nuclearcraft.processor_items.slots": "槽位",
+    "gui.nuclearcraft.processor_items.input": "物品输入 %s",
+    "gui.nuclearcraft.processor_items.output": "物品输出 %s",
+    "gui.nuclearcraft.processor_items.overflow": "模式",
+    "gui.nuclearcraft.processor_items.side": "%s · %s：%s"
 }

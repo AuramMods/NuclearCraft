@@ -19,10 +19,12 @@ import java.util.EnumMap;
 public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProcessorMenu> {
     private final ResourceLocation texture;
     private final EnumMap<Direction, Button> sideButtons = new EnumMap<>(Direction.class);
+    private final ProcessorItemControls items;
     private Button overflow;
 
     public ItemProcessorScreen(ItemProcessorMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        items = new ProcessorItemControls(menu, menu.items());
         imageHeight += menu.machine().menuExtension();
         texture = NuclearCraft.id("textures/gui/container/" + menu.machine().id() + ".png");
     }
@@ -36,16 +38,25 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             int index = face.ordinal();
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + face.getName() + ".short"),
                     ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
-                            menu.machine().tank() != null && hasShiftDown() ? ItemProcessorMenu.FLUID_SIDE_BUTTON + index : index))
+                            items.button(face, menu.machine().tank() != null && hasShiftDown()
+                                    ? ItemProcessorMenu.FLUID_SIDE_BUTTON + index : index)))
                     .bounds(leftPos + 27 + index * 17, topPos + sideY, 16, fluidOutput ? 14 : 17)
                     .build();
             sideButtons.put(face, addRenderableWidget(button));
         }
-        if (menu.machine().hasFluidOutput()) {
-            overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
-                            ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId, ItemProcessorMenu.FLUID_OUTPUT_BUTTON))
-                    .bounds(leftPos + 136, topPos + 8, 35, 14).build());
-        }
+        addRenderableWidget(Button.builder(items.label(), button -> {
+            items.toggle();
+            button.setMessage(items.label());
+        }).bounds(leftPos + 27, topPos + 17, 39, 14).build());
+        overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
+                        ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
+                                items.outputSelected() ? items.overflowButton() : ItemProcessorMenu.FLUID_OUTPUT_BUTTON))
+                .bounds(leftPos + 136, topPos + 8, 35, 14).build());
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        return items.select(x - leftPos, y - topPos, button) || super.mouseClicked(x, y, button);
     }
 
     @Override
@@ -53,13 +64,16 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         sideButtons.forEach((side, button) -> {
             Component face = Component.translatable("gui.nuclearcraft.face." + side.getName());
             Component itemMode = menu.sideMode(side).label();
-            button.setTooltip(Tooltip.create(menu.machine().tank() != null
+            button.setTooltip(Tooltip.create(!items.individual() && menu.machine().tank() != null
                     ? Component.translatable("gui.nuclearcraft.fluid_side.tooltip", face, itemMode, menu.fluidSideMode(side).label())
-                    : Component.translatable("gui.nuclearcraft.item_side.tooltip", face, itemMode)));
+                    : items.tooltip(side)));
         });
-        if (overflow != null) {
-            overflow.setTooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.electrolyzer.output_mode",
-                    menu.fluidOutputMode().label())));
+        overflow.visible = items.individual() ? items.outputSelected() : menu.machine().hasFluidOutput();
+        if (overflow.visible) {
+            overflow.setMessage(Component.translatable(items.individual() ? "gui.nuclearcraft.processor_items.overflow"
+                    : "gui.nuclearcraft.electrolyzer.overflow"));
+            overflow.setTooltip(Tooltip.create(items.individual() ? items.overflowTooltip()
+                    : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.fluidOutputMode().label())));
         }
         renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -115,6 +129,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
                     menu.fluid(), ProcessorFluidTanks.CAPACITY);
         }
         ProcessorUpgradeSlots.draw(graphics, menu, machine.slots(), leftPos, topPos);
+        items.draw(graphics, leftPos, topPos);
     }
 
     private static boolean usesCenteredTitle(Machine machine) {

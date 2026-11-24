@@ -33,6 +33,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final @Nullable FluidProcessorBlockEntity machine;
+    private final ProcessorItemSettings items;
 
     public FluidProcessorMenu(int id, Inventory player, Machine type) {
         this(id, player, type, new SimpleContainerData(dataCount(type)), ContainerLevelAccess.NULL, null);
@@ -45,6 +46,9 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
         this.data = data;
         this.access = access;
         this.machine = machine;
+        items = new ProcessorItemSettings(type.hasItemInput() ? 1 : 0, 0, ProcessorUpgrades.SLOTS,
+                outputModeButton(type.tanks()) + SIDES.length,
+                machine == null ? null : machine.itemPorts());
         if (type.hasItemInput()) {
             ItemStackHandler input = machine == null ? new ItemStackHandler(1) : machine.inventory();
             addSlot(new SlotItemHandler(input, 0, 46, 35));
@@ -60,18 +64,15 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             addSlot(new Slot(player, column, 8 + column * 18, 154));
         }
         addDataSlots(data);
+        addDataSlots(items.data());
     }
 
     static int dataCount(Machine type) {
-        return itemSidesIndex(type) + 1;
-    }
-
-    static int itemSidesIndex(Machine type) {
         return FIRST_TANK + type.tanks() * TANK_DATA_SIZE;
     }
 
-    public boolean itemSideEnabled(Direction side) {
-        return (data.get(itemSidesIndex(type)) & ProcessorItemInput.sideBit(side)) == 0;
+    public ProcessorItemSettings items() {
+        return items;
     }
 
     public int itemSideButton(Direction side) {
@@ -122,7 +123,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
         }
         int itemSide = button - outputModeButton(type.tanks());
         if (itemSide >= 0 && itemSide < SIDES.length) {
-            machine.toggleItemSide(SIDES[itemSide]);
+            machine.itemPorts().cycleGroup(SIDES[itemSide]);
             return true;
         }
         int tank = button - outputModeButton(0);
@@ -130,7 +131,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             machine.cycleOutputMode(tank);
             return true;
         }
-        return false;
+        return items.click(button);
     }
 
     @Override

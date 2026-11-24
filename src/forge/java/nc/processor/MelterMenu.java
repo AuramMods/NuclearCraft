@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.init.NCRegistries;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -13,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import org.jetbrains.annotations.Nullable;
 
 public final class MelterMenu extends AbstractContainerMenu {
     static final int PROGRESS = 0;
@@ -24,17 +26,22 @@ public final class MelterMenu extends AbstractContainerMenu {
 
     private final ContainerData data;
     private final ContainerLevelAccess access;
+    private final @Nullable ProcessorItemPorts ports;
+    private final ProcessorItemSettings items;
 
     public MelterMenu(int id, Inventory player) {
-        this(id, player, new ItemStackHandler(1), new ProcessorUpgrades(null), new SimpleContainerData(DATA_COUNT),
+        this(id, player, new ItemStackHandler(1), new ProcessorUpgrades(null), null, new SimpleContainerData(DATA_COUNT),
                 ContainerLevelAccess.NULL);
     }
 
-    MelterMenu(int id, Inventory player, ItemStackHandler input, ProcessorUpgrades upgrades, ContainerData data,
+    MelterMenu(int id, Inventory player, ItemStackHandler input, ProcessorUpgrades upgrades,
+               @Nullable ProcessorItemPorts ports, ContainerData data,
                ContainerLevelAccess access) {
         super(NCRegistries.MELTER_MENU.get(), id);
         this.data = data;
         this.access = access;
+        this.ports = ports;
+        items = new ProcessorItemSettings(1, 0, ProcessorUpgrades.SLOTS, ProcessorItemPorts.SIDES.length, ports);
         addSlot(new SlotItemHandler(input, 0, 56, 35));
         upgrades.addMenuSlots(this::addSlot, UPGRADE_Y);
         for (int row = 0; row < 3; row++) {
@@ -46,6 +53,23 @@ public final class MelterMenu extends AbstractContainerMenu {
             addSlot(new Slot(player, column, 8 + column * 18, 142));
         }
         addDataSlots(data);
+        addDataSlots(items.data());
+    }
+
+    public ProcessorItemSettings items() {
+        return items;
+    }
+
+    @Override
+    public boolean clickMenuButton(Player player, int button) {
+        if (ports == null || button < 0 || !stillValid(player)) {
+            return false;
+        }
+        if (button < ProcessorItemPorts.SIDES.length) {
+            ports.cycleGroup(Direction.from3DDataValue(button));
+            return true;
+        }
+        return items.click(button);
     }
 
     public float progress() {

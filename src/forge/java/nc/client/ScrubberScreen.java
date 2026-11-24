@@ -21,30 +21,40 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
     private static final int[] TANK_Y = {35, 31};
     private static final int[] TANK_SIZE = {16, 24};
     private final EnumMap<Direction, Button> sides = new EnumMap<>(Direction.class);
+    private final ProcessorItemControls items;
     private int selection = ScrubberMenu.ITEMS;
     private Button redstone;
     private Button outputMode;
+    private Button slotConfig;
 
     public ScrubberScreen(ScrubberMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        items = new ProcessorItemControls(menu, menu.items());
     }
 
     @Override
     protected void init() {
         super.init();
         redstone = addRenderableWidget(Button.builder(Component.literal("R"), button -> send(ScrubberMenu.REDSTONE_BUTTON))
-                .bounds(leftPos + 27, topPos + 63, 16, 14).build());
+                .bounds(leftPos + 27, topPos + 56, 16, 14).build());
         for (Direction side : Direction.values()) {
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + side.getName() + ".short"),
-                            ignored -> send(ScrubberMenu.sideButton(selection, side)))
-                    .bounds(leftPos + 46 + side.ordinal() * 19, topPos + 63, 18, 14).build();
+                            ignored -> send(items.button(side, ScrubberMenu.sideButton(selection, side))))
+                    .bounds(leftPos + 46 + side.ordinal() * 19, topPos + 56, 18, 14).build();
             sides.put(side, addRenderableWidget(button));
         }
         addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.scrubber.items"),
-                        button -> selection = ScrubberMenu.ITEMS)
+                        button -> {
+                            selection = ScrubberMenu.ITEMS;
+                            items.all();
+                        })
                 .bounds(leftPos + 113, topPos + 17, 48, 13).build());
+        slotConfig = addRenderableWidget(Button.builder(items.label(), ignored -> {
+            selection = ScrubberMenu.ITEMS;
+            items.toggle();
+        }).bounds(leftPos + 27, topPos + 17, 41, 13).build());
         outputMode = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
-                        button -> send(ScrubberMenu.OUTPUT_MODE_BUTTON))
+                        button -> send(items.outputSelected() ? items.overflowButton() : ScrubberMenu.OUTPUT_MODE_BUTTON))
                 .bounds(leftPos + 73, topPos + 17, 34, 13).build());
     }
 
@@ -54,9 +64,13 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (items.select(mouseX - leftPos, mouseY - topPos, button)) {
+            return true;
+        }
         for (int i = 0; i < TANK_X.length; i++) {
             if (button == 0 && isHovering(TANK_X[i], TANK_Y[i], TANK_SIZE[i], TANK_SIZE[i], mouseX, mouseY)) {
                 selection = i;
+                items.all();
                 return true;
             }
         }
@@ -65,23 +79,24 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
 
     @Override
     public void render(GuiGraphics graphics, int x, int y, float tick) {
+        slotConfig.setMessage(items.label());
         redstone.setMessage(Component.literal("R").withStyle(menu.redstoneEnabled() ? ChatFormatting.RED : ChatFormatting.WHITE));
         redstone.setTooltip(Tooltip.create(Component.translatable(menu.redstoneEnabled()
                 ? "gui.nuclearcraft.scrubber.redstone_enabled" : "gui.nuclearcraft.scrubber.redstone_disabled")));
         sides.forEach((side, button) -> {
-            Component mode = selection == ScrubberMenu.ITEMS
-                    ? menu.itemSide(side).label() : menu.fluidSide(selection, side).label();
-            Component target = Component.translatable(switch (selection) {
-                case 0 -> "gui.nuclearcraft.scrubber.fluid_input";
-                case 1 -> "gui.nuclearcraft.scrubber.fluid_output";
-                default -> "gui.nuclearcraft.scrubber.items";
-            });
-            button.setTooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.scrubber.side", target,
-                    Component.translatable("gui.nuclearcraft.face." + side.getName()), mode)));
+            Component target = Component.translatable(selection == 0 ? "gui.nuclearcraft.scrubber.fluid_input"
+                    : "gui.nuclearcraft.scrubber.fluid_output");
+            button.setTooltip(Tooltip.create(selection == ScrubberMenu.ITEMS ? items.tooltip(side)
+                    : Component.translatable("gui.nuclearcraft.scrubber.side", target,
+                    Component.translatable("gui.nuclearcraft.face." + side.getName()), menu.fluidSide(selection, side).label())));
         });
-        outputMode.visible = selection == 1;
-        outputMode.setTooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.electrolyzer.output_mode",
-                menu.outputMode().label())));
+        outputMode.visible = selection == 1 || items.outputSelected();
+        if (outputMode.visible) {
+            outputMode.setMessage(Component.translatable(items.outputSelected() ? "gui.nuclearcraft.processor_items.overflow"
+                    : "gui.nuclearcraft.electrolyzer.overflow"));
+            outputMode.setTooltip(Tooltip.create(items.outputSelected() ? items.overflowTooltip()
+                    : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.outputMode().label())));
+        }
         renderBackground(graphics);
         super.render(graphics, x, y, tick);
         renderTooltip(graphics, x, y);
@@ -117,5 +132,6 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
             FluidTankRenderer.draw(graphics, leftPos + TANK_X[i], topPos + TANK_Y[i], TANK_SIZE[i],
                     menu.fluid(i), ProcessorFluidTanks.CAPACITY);
         }
+        items.draw(graphics, leftPos, topPos);
     }
 }

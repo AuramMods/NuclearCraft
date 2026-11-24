@@ -33,18 +33,14 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
 public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
-    private static final Direction[] SIDES = Direction.values();
-
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ItemProcessorRecipe> recipes;
     private final @Nullable RecipeManager.CachedCheck<Container, SmeltingRecipe> smeltingRecipes;
@@ -52,9 +48,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private final ItemStackHandler inventory;
     private final @Nullable ProcessorFluidTanks fluid;
     private OutputMode fluidOutputMode = OutputMode.HOLD;
-    private final EnumMap<Direction, SideMode> sideModes = new EnumMap<>(Direction.class);
-    private final EnumMap<Direction, ItemAccess> ports = new EnumMap<>(Direction.class);
-    private ItemAccess unsided;
+    private final ProcessorItemPorts itemPorts;
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
@@ -93,11 +87,11 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 setChanged();
             }
         };
-        unsided = itemAccess(SideMode.BOTH);
-        for (Direction side : SIDES) {
-            sideModes.put(side, SideMode.BOTH);
-            ports.put(side, itemAccess(SideMode.BOTH));
-        }
+        itemPorts = new ProcessorItemPorts(this, inventory, machine.inputs(), upgrades, false);
+    }
+
+    ProcessorItemPorts itemPorts() {
+        return itemPorts;
     }
 
     public ItemStackHandler inventory() {
@@ -107,6 +101,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {
         boolean running = processor.process(level, MachineInterface.powered(level, pos, processor));
         ProcessorBlock.setRunning(level, pos, state, running);
+        if (!running) {
+            processor.itemPorts.push(level);
+        }
         if (processor.fluid != null) {
             processor.fluid.push(level);
         }
@@ -202,15 +199,14 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             }
             for (int index = 0; index < products.size(); index++) {
                 int slot = machine.inputs() + index;
-                ItemStack product = products.get(index).roll(level.random);
-                if (!product.isEmpty()) {
-                    product.grow(inventory.getStackInSlot(slot).getCount());
-                    inventory.setStackInSlot(slot, product);
+                if (itemPorts.overflow(slot) != OutputMode.VOID) {
+                    itemPorts.produce(slot, products.get(index).roll(level.random));
                 }
             }
             if (fluid != null && !fluidProduct.isEmpty()) {
                 fluid.produce(0, fluidProduct, fluidOutputMode);
             }
+            itemPorts.push(level);
             progressHalfTicks -= batch;
             if (progressHalfTicks > 0) {
                 refreshInput();
@@ -225,23 +221,15 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
 
     private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products, FluidStack fluidProduct) {
         for (int index = 0; index < products.size(); index++) {
-            ItemStack stored = inventory.getStackInSlot(machine.inputs() + index);
-            if (!stored.isEmpty()) {
-                ItemStack product = products.get(index).stack();
-                if (!product.isEmpty() && (!ItemStack.isSameItemSameTags(stored, product)
-                        || product.getCount() > stored.getMaxStackSize() - stored.getCount())) {
-                    return false;
-                }
+            if (!itemPorts.canProduce(machine.inputs() + index, products.get(index).stack())) {
+                return false;
             }
         }
         return fluid == null || fluidProduct.isEmpty() || fluid.canProduce(0, fluidProduct, fluidOutputMode);
     }
 
     public void cycleSide(Direction side) {
-        SideMode next = sideModes.get(side).next();
-        sideModes.put(side, next);
-        ports.put(side, itemAccess(next)).invalidate();
-        updateConnections();
+        itemPorts.cycleGroup(side);
     }
 
     public void cycleFluidSide(Direction side) {
@@ -276,7 +264,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction side) {
         if (!isRemoved()) {
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
-                return (side == null ? unsided : ports.get(side)).capability.cast();
+                return itemPorts.capability(side).cast();
             }
             if (capability == ForgeCapabilities.ENERGY) {
                 return energy.cast();
@@ -291,8 +279,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        unsided.invalidate();
-        ports.values().forEach(ItemAccess::invalidate);
+        itemPorts.invalidate();
         energy.invalidate();
         if (fluid != null) {
             fluid.invalidate();
@@ -302,8 +289,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     public void reviveCaps() {
         super.reviveCaps();
-        unsided = itemAccess(SideMode.BOTH);
-        sideModes.forEach((side, mode) -> ports.put(side, itemAccess(mode)));
+        itemPorts.revive();
         energy = LazyOptional.of(() -> power);
         if (fluid != null) {
             fluid.revive();
@@ -313,15 +299,10 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
-        int[] modes = new int[SIDES.length];
-        for (Direction side : SIDES) {
-            modes[side.ordinal()] = sideModes.get(side).ordinal();
-        }
-        tag.putIntArray("item_sides", modes);
+        itemPorts.save(tag);
         if (fluid != null) {
             fluid.saveTank(0, tag, fluidSaveKey(), "fluid_sides");
             if (machine.hasFluidOutput()) {
@@ -334,16 +315,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     public void load(CompoundTag tag) {
         super.load(tag);
         radiationEmission = 0D;
-        inventory.deserializeNBT(tag.getCompound("inventory"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
-        int[] modes = tag.getIntArray("item_sides");
-        if (modes.length == SIDES.length) {
-            for (Direction side : SIDES) {
-                SideMode mode = SideMode.byId(modes[side.ordinal()]);
-                sideModes.put(side, mode);
-                ports.put(side, itemAccess(mode)).invalidate();
-            }
-        }
+        itemPorts.load(tag);
         if (fluid != null) {
             fluid.loadTank(0, tag, fluidSaveKey(), "fluid_sides");
             fluidOutputMode = OutputMode.byId(tag.getInt("fluid_output_mode"));
@@ -369,7 +342,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                     case ItemProcessorMenu.FLUID_AMOUNT -> fluid == null ? 0 : fluid.stored(0).getAmount();
                     case ItemProcessorMenu.FLUID_SIDES -> fluid == null ? 0 : fluid.sideModes(0);
                     case ItemProcessorMenu.FLUID_OUTPUT_MODE -> fluidOutputMode.ordinal();
-                    default -> sideModes.get(SIDES[index - ItemProcessorMenu.FIRST_SIDE]).ordinal();
+                    default -> 0;
                 };
             }
 
@@ -383,113 +356,5 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         };
         return new ItemProcessorMenu(id, playerInventory, machine, inventory, upgrades, data,
                 ContainerLevelAccess.create(player.level(), worldPosition), this);
-    }
-
-    public enum SideMode {
-        BOTH(true, true, "both"), INPUT(true, false, "input"), OUTPUT(false, true, "output"), OFF(false, false, "off");
-
-        private static final SideMode[] MODES = values();
-        private final boolean input;
-        private final boolean output;
-        private final String id;
-
-        SideMode(boolean input, boolean output, String id) {
-            this.input = input;
-            this.output = output;
-            this.id = id;
-        }
-
-        public Component label() {
-            return Component.translatable("gui.nuclearcraft.item_side." + id);
-        }
-
-        SideMode next() {
-            return MODES[(ordinal() + 1) % MODES.length];
-        }
-
-        static SideMode byId(int id) {
-            return id >= 0 && id < MODES.length ? MODES[id] : BOTH;
-        }
-    }
-
-    private ItemAccess itemAccess(SideMode mode) {
-        return new ItemAccess(this, inventory, machine.inputs(), mode, upgrades);
-    }
-
-    static final class ItemAccess implements IItemHandler {
-        private final BlockEntity owner;
-        private final ItemStackHandler inventory;
-        private final int inputs;
-        private final SideMode mode;
-        private final @Nullable ProcessorUpgrades upgrades;
-        final LazyOptional<IItemHandler> capability;
-        private boolean valid = true;
-
-        ItemAccess(BlockEntity owner, ItemStackHandler inventory, int inputs, SideMode mode) {
-            this(owner, inventory, inputs, mode, null);
-        }
-
-        ItemAccess(BlockEntity owner, ItemStackHandler inventory, int inputs, SideMode mode,
-                   @Nullable ProcessorUpgrades upgrades) {
-            this.owner = owner;
-            this.inventory = inventory;
-            this.inputs = inputs;
-            this.mode = mode;
-            this.upgrades = upgrades;
-            capability = mode == SideMode.OFF ? LazyOptional.empty() : LazyOptional.of(() -> this);
-        }
-
-        void invalidate() {
-            valid = false;
-            capability.invalidate();
-        }
-
-        private boolean visible(int slot) {
-            return valid && !owner.isRemoved() && slot >= 0 && slot < getSlots()
-                    && (inputSlot(slot) ? mode.input : mode.output);
-        }
-
-        private boolean inputSlot(int slot) {
-            return slot < inputs || slot >= inventory.getSlots();
-        }
-
-        private ItemStackHandler handler(int slot) {
-            return slot < inventory.getSlots() ? inventory : Objects.requireNonNull(upgrades);
-        }
-
-        private int index(int slot) {
-            return slot < inventory.getSlots() ? slot : slot - inventory.getSlots();
-        }
-
-        @Override
-        public int getSlots() {
-            return inventory.getSlots() + (upgrades == null ? 0 : upgrades.getSlots());
-        }
-
-        @Override
-        public @NotNull ItemStack getStackInSlot(int slot) {
-            return visible(slot) ? handler(slot).getStackInSlot(index(slot)).copy() : ItemStack.EMPTY;
-        }
-
-        @Override
-        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return visible(slot) && inputSlot(slot) ? handler(slot).insertItem(index(slot), stack, simulate) : stack;
-        }
-
-        @Override
-        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return visible(slot) && !inputSlot(slot) && amount > 0
-                    ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
-        }
-
-        @Override
-        public int getSlotLimit(int slot) {
-            return visible(slot) ? handler(slot).getSlotLimit(index(slot)) : 0;
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return visible(slot) && handler(slot).isItemValid(index(slot), stack);
-        }
     }
 }

@@ -1,7 +1,7 @@
 package nc.processor;
 
 import nc.init.NCItemProcessors.Machine;
-import nc.processor.ItemProcessorBlockEntity.SideMode;
+import nc.processor.ProcessorItemPorts.GroupMode;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
@@ -20,8 +20,7 @@ import org.jetbrains.annotations.Nullable;
 public final class ItemProcessorMenu extends AbstractContainerMenu {
     static final int PROGRESS = 0;
     static final int ENERGY = 1;
-    static final int FIRST_SIDE = 2;
-    static final int DATA_COUNT = FIRST_SIDE + 6;
+    static final int DATA_COUNT = 2;
     static final int FLUID_ID = DATA_COUNT;
     static final int FLUID_AMOUNT = FLUID_ID + 1;
     static final int FLUID_SIDES = FLUID_AMOUNT + 1;
@@ -35,6 +34,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final @Nullable ItemProcessorBlockEntity processor;
+    private final ProcessorItemSettings items;
 
     public ItemProcessorMenu(int id, Inventory player, Machine machine) {
         this(id, player, machine, new ItemStackHandler(machine.slots()), new ProcessorUpgrades(null),
@@ -49,6 +49,8 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         this.data = data;
         this.access = access;
         this.processor = processor;
+        items = new ProcessorItemSettings(machine.inputs(), machine.outputs(), ProcessorUpgrades.SLOTS, FLUID_OUTPUT_BUTTON + 1,
+                processor == null ? null : processor.itemPorts());
         for (int index = 0; index < machine.inputs(); index++) {
             addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), machine.inputY(index)));
         }
@@ -71,6 +73,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             addSlot(new Slot(player, column, 8 + column * 18, 142 + extraHeight));
         }
         addDataSlots(data);
+        addDataSlots(items.data());
     }
 
     static int dataSize(Machine machine) {
@@ -96,8 +99,12 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         return data.get(ENERGY) / 1000F;
     }
 
-    public SideMode sideMode(Direction side) {
-        return SideMode.byId(data.get(FIRST_SIDE + side.ordinal()));
+    public GroupMode sideMode(Direction side) {
+        return items.group(side);
+    }
+
+    public ProcessorItemSettings items() {
+        return items;
     }
 
     public FluidStack fluid() {
@@ -134,7 +141,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             processor.cycleFluidOutputMode();
             return true;
         }
-        return false;
+        return items.click(button);
     }
 
     @Override

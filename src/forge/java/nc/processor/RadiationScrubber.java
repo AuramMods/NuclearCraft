@@ -4,8 +4,6 @@ import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
 import nc.init.NCRadiation;
-import nc.processor.ItemProcessorBlockEntity.ItemAccess;
-import nc.processor.ItemProcessorBlockEntity.SideMode;
 import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.radiation.ScrubberEnvironment;
 import nc.radiation.ScrubberSettings;
@@ -33,11 +31,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
 import java.util.List;
 
 public final class RadiationScrubber extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
-    private static final Direction[] SIDES = Direction.values();
     private static final int ENVIRONMENT_INTERVAL = 400;
     private static final int DEFAULT_CAPACITY = 19_200_000;
 
@@ -56,9 +52,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             setChanged();
         }
     };
-    private final EnumMap<Direction, SideMode> itemModes = new EnumMap<>(Direction.class);
-    private final EnumMap<Direction, ItemAccess> itemPorts = new EnumMap<>(Direction.class);
-    private ItemAccess unsided = new ItemAccess(this, inventory, 1, SideMode.BOTH);
+    private final ProcessorItemPorts itemPorts = new ProcessorItemPorts(this, inventory, 1, null, false);
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private OutputMode outputMode = OutputMode.HOLD;
     private boolean redstoneControl;
@@ -76,16 +70,19 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
 
     public RadiationScrubber(BlockPos pos, BlockState state) {
         super(NCRadiation.SCRUBBER_ENTITY.get(), pos, state);
-        for (Direction face : SIDES) {
-            itemModes.put(face, SideMode.BOTH);
-            itemPorts.put(face, new ItemAccess(this, inventory, 1, SideMode.BOTH));
-        }
+    }
+
+    ProcessorItemPorts itemPorts() {
+        return itemPorts;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RadiationScrubber machine) {
         boolean active = machine.process(level, machine.redstoneControl && MachineInterface.powered(level, pos, machine));
         ProcessorBlock.setRunning(level, pos, state, active);
         machine.tanks.push(level);
+        if (!active) {
+            machine.itemPorts.push(level);
+        }
         if (active && level instanceof ServerLevel server && level.getGameTime() >= machine.nextEnvironmentCheck) {
             machine.refreshEnvironment(server);
         }
@@ -102,16 +99,13 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         }
         activeEfficiency = recipe.efficiency();
         if (++progress >= duration) {
-            ItemStack item = recipe.itemOutput();
-            if (!item.isEmpty()) {
-                item.grow(inventory.getStackInSlot(1).getCount());
-                inventory.setStackInSlot(1, item);
-            }
+            itemPorts.produce(1, recipe.itemOutput());
             FluidStack fluid = recipe.fluidOutput();
             if (!fluid.isEmpty()) {
                 tanks.produce(1, fluid, outputMode);
             }
             clearBatch();
+            itemPorts.push(level);
         }
         setChanged();
         return true;
@@ -189,7 +183,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
 
     private boolean canProduce(ScrubberRecipe recipe) {
         FluidStack product = recipe.fluidOutput();
-        return hasItemRoom(inventory.getStackInSlot(1), recipe.itemOutput())
+        return itemPorts.canProduce(1, recipe.itemOutput())
                 && (product.isEmpty() || tanks.canProduce(1, product, outputMode));
     }
 
@@ -244,7 +238,6 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     ItemStack reservedItem() { return reservedItem; }
     FluidStack fluid(int tank) { return tanks.stored(tank); }
     int tankModes(int tank) { return tanks.sideModes(tank); }
-    int itemMode(Direction face) { return itemModes.get(face).ordinal(); }
     OutputMode outputMode() { return outputMode; }
     boolean redstoneControl() { return redstoneControl; }
 
@@ -254,13 +247,6 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
 
     int charge() {
         return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
-    }
-
-    void cycleItems(Direction side) {
-        var mode = itemModes.get(side).next();
-        itemModes.put(side, mode);
-        itemPorts.put(side, new ItemAccess(this, inventory, 1, mode)).invalidate();
-        updateConnections();
     }
 
     void cycleTank(int tank, Direction side) {
@@ -292,7 +278,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction side) {
         if (!isRemoved()) {
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
-                return (side == null ? unsided : itemPorts.get(side)).capability.cast();
+                return itemPorts.capability(side).cast();
             }
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return tanks.capability(side).cast();
@@ -307,8 +293,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        unsided.invalidate();
-        itemPorts.values().forEach(ItemAccess::invalidate);
+        itemPorts.invalidate();
         tanks.invalidate();
         energy.invalidate();
     }
@@ -316,8 +301,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     @Override
     public void reviveCaps() {
         super.reviveCaps();
-        unsided = new ItemAccess(this, inventory, 1, SideMode.BOTH);
-        itemModes.forEach((side, mode) -> itemPorts.put(side, new ItemAccess(this, inventory, 1, mode)));
+        itemPorts.revive();
         tanks.revive();
         energy = LazyOptional.of(() -> power);
     }
@@ -325,7 +309,6 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
         tag.putInt("energy", power.getEnergyStored());
         tag.putInt("progress", progress);
         if (reservedRecipe != null) {
@@ -333,11 +316,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             tag.put("reserved_item", reservedItem.save(new CompoundTag()));
             tag.put("reserved_fluid", reservedFluid.writeToNBT(new CompoundTag()));
         }
-        int[] modes = new int[SIDES.length];
-        for (Direction side : SIDES) {
-            modes[side.ordinal()] = itemMode(side);
-        }
-        tag.putIntArray("item_sides", modes);
+        itemPorts.save(tag);
         tanks.saveTank(0, tag, "input_fluid", "input_sides");
         tanks.saveTank(1, tag, "output_fluid", "output_sides");
         tag.putInt("fluid_output_mode", outputMode.ordinal());
@@ -347,20 +326,12 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
         power.load(tag.getInt("energy"));
         reservedRecipe = tag.contains("recipe", 8) ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         reservedItem = ItemStack.of(tag.getCompound("reserved_item"));
         reservedFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("reserved_fluid"));
         progress = reservedRecipe == null ? 0 : Math.min(Integer.MAX_VALUE - 1, Math.max(0, tag.getInt("progress")));
-        int[] modes = tag.getIntArray("item_sides");
-        if (modes.length == SIDES.length) {
-            for (Direction side : SIDES) {
-                var mode = SideMode.byId(modes[side.ordinal()]);
-                itemModes.put(side, mode);
-                itemPorts.put(side, new ItemAccess(this, inventory, 1, mode)).invalidate();
-            }
-        }
+        itemPorts.load(tag);
         tanks.loadTank(0, tag, "input_fluid", "input_sides");
         tanks.loadTank(1, tag, "output_fluid", "output_sides");
         tanks.refreshFaces();

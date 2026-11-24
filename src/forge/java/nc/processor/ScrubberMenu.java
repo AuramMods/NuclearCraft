@@ -1,7 +1,7 @@
 package nc.processor;
 
 import nc.init.NCRadiation;
-import nc.processor.ItemProcessorBlockEntity.SideMode;
+import nc.processor.ProcessorItemPorts.GroupMode;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.player.Inventory;
@@ -24,8 +24,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
     private static final int REDSTONE = 2;
     private static final int OUTPUT_MODE = 3;
     private static final int FIRST_TANK = 4;
-    private static final int FIRST_SIDE = 10;
-    private static final int DATA_COUNT = FIRST_SIDE + 6;
+    private static final int DATA_COUNT = 10;
     public static final int ITEMS = 2;
     public static final int OUTPUT_MODE_BUTTON = 18;
     public static final int REDSTONE_BUTTON = 19;
@@ -33,6 +32,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
     private final @Nullable RadiationScrubber scrubber;
     private final ContainerLevelAccess access;
     private final ContainerData data;
+    private final ProcessorItemSettings items;
 
     public ScrubberMenu(int id, Inventory player) {
         this(id, player, null, ContainerLevelAccess.NULL);
@@ -43,6 +43,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
         this.scrubber = scrubber;
         this.access = access;
         data = scrubber == null ? new SimpleContainerData(DATA_COUNT) : machineData(scrubber);
+        items = new ProcessorItemSettings(1, 1, 0, REDSTONE_BUTTON + 1, scrubber == null ? null : scrubber.itemPorts());
         ItemStackHandler inventory = scrubber == null ? new ItemStackHandler(2) : scrubber.inventory();
         addSlot(new SlotItemHandler(inventory, 0, 32, 35));
         addSlot(new SlotItemHandler(inventory, 1, 112, 35) {
@@ -58,6 +59,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
             addSlot(new Slot(player, column, 8 + column * 18, 142));
         }
         addDataSlots(data);
+        addDataSlots(items.data());
     }
 
     private static ContainerData machineData(RadiationScrubber machine) {
@@ -70,9 +72,6 @@ public final class ScrubberMenu extends AbstractContainerMenu {
                     case REDSTONE -> machine.redstoneControl() ? 1 : 0;
                     case OUTPUT_MODE -> machine.outputMode().ordinal();
                     default -> {
-                        if (index >= FIRST_SIDE) {
-                            yield machine.itemMode(SIDES[index - FIRST_SIDE]);
-                        }
                         int offset = index - FIRST_TANK;
                         var fluid = machine.fluid(offset / 3);
                         yield switch (offset % 3) {
@@ -102,8 +101,12 @@ public final class ScrubberMenu extends AbstractContainerMenu {
         return ProcessorFluidTanks.Mode.read(data.get(FIRST_TANK + 3 * tank + 2), side);
     }
 
-    public SideMode itemSide(Direction side) {
-        return SideMode.byId(data.get(FIRST_SIDE + side.ordinal()));
+    public GroupMode itemSide(Direction side) {
+        return items.group(side);
+    }
+
+    public ProcessorItemSettings items() {
+        return items;
     }
 
     public ProcessorFluidTanks.OutputMode outputMode() {
@@ -123,7 +126,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
             Direction side = SIDES[button % SIDES.length];
             int target = button / SIDES.length;
             if (target == ITEMS) {
-                scrubber.cycleItems(side);
+                scrubber.itemPorts().cycleGroup(side);
             } else {
                 scrubber.cycleTank(target, side);
             }
@@ -137,7 +140,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
             scrubber.toggleRedstone();
             return true;
         }
-        return false;
+        return items.click(button);
     }
 
     @Override

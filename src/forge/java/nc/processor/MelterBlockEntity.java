@@ -59,9 +59,16 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         return inventory;
     }
 
+    ProcessorItemPorts itemPorts() {
+        return inventory.ports;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
         boolean processing = melter.process(level, MachineInterface.powered(level, pos, melter));
         ProcessorBlock.setRunning(level, pos, state, processing);
+        if (!processing) {
+            melter.inventory.ports.push(level);
+        }
     }
 
     @Override
@@ -104,6 +111,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         while (progressHalfTicks >= batch) {
             tank.produce(product);
             inventory.extractItem(0, 1, false);
+            inventory.ports.push(level);
             progressHalfTicks -= batch;
             if (progressHalfTicks > 0) {
                 recipeInput.setItem(0, inventory.getStackInSlot(0));
@@ -119,7 +127,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+        inventory.ports.save(tag);
         tag.put("output", tank.writeToNBT(new CompoundTag()));
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
@@ -130,7 +138,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     public void load(CompoundTag tag) {
         super.load(tag);
         radiationEmission = 0D;
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+        inventory.ports.load(tag);
         tank.readFromNBT(tag.getCompound("output"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
     }
@@ -139,7 +147,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction side) {
         if (!isRemoved()) {
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
-                return inventory.capability(side).cast();
+                return inventory.ports.capability(side).cast();
             }
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return fluidCapability.cast();
@@ -154,7 +162,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        inventory.invalidate();
+        inventory.ports.invalidate();
         fluidCapability.invalidate();
         energyCapability.invalidate();
     }
@@ -162,7 +170,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     @Override
     public void reviveCaps() {
         super.reviveCaps();
-        inventory.revive();
+        inventory.ports.revive();
         fluidCapability = LazyOptional.of(() -> tank);
         energyCapability = LazyOptional.of(() -> power);
     }
@@ -174,7 +182,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
     @Override
     public MelterMenu createMenu(int menuId, Inventory playerInventory, Player player) {
-        return new MelterMenu(menuId, playerInventory, inventory, upgrades, new ContainerData() {
+        return new MelterMenu(menuId, playerInventory, inventory, upgrades, itemPorts(), new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
