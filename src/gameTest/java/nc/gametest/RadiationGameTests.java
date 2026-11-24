@@ -7,6 +7,7 @@ import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRadiation;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.PlayerRadiation;
+import nc.radiation.RadiationBadge;
 import nc.radiation.RadiationShielding;
 import nc.radiation.ShieldingItem.Tier;
 import nc.radiation.RadiationSources;
@@ -38,6 +39,7 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
@@ -147,6 +149,36 @@ public final class RadiationGameTests {
         vulnerable.getInventory().setItem(0, stack("californium_252_ingot", 1));
         PlayerRadiation.tick(vulnerable, 5);
         near(helper, PlayerRadiation.rate(vulnerable), 0.38, "Negative temporary resistance returns to zero");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void badgeMeasuresDosePersistsAndDisintegrates(GameTestHelper helper) {
+        var messages = new ArrayList<String>();
+        var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "TestBadge")) {
+            @Override
+            public void sendSystemMessage(Component text) {
+                messages.add(text.getString());
+            }
+        };
+        player.moveTo(5000000, 100, 5000000, 0, 0);
+        ItemStack badge = NCRadiation.BADGE.get().getDefaultInstance();
+        player.getInventory().setItem(0, badge);
+        player.getInventory().setItem(1, stack("californium_252_ingot", 16));
+        PlayerRadiation.tick(player, 5);
+        double dose = 16 * 0.38 * 5;
+        near(helper, RadiationBadge.exposure(badge), dose, "The badge measures the actual Rad absorbed");
+        helper.assertTrue(NCRadiation.BADGE.get().isBarVisible(badge) && messages.size() == 1,
+                "The badge displays wear and reports when crossing its first 25 Rad interval");
+
+        ItemStack restored = ItemStack.of(badge.save(new CompoundTag()));
+        near(helper, RadiationBadge.exposure(restored), dose, "The badge stores its accumulated exposure on the item");
+        player.getInventory().setItem(0, restored);
+        PlayerRadiation.tick(player, 40);
+        helper.assertTrue(player.getInventory().getItem(0).isEmpty() && messages.size() == 3,
+                "The badge reports total exposure and disintegrates at 250 Rad");
+        helper.assertTrue(helper.getLevel().getRecipeManager().byKey(NuclearCraft.id("crafting/radiation_badge")).isPresent(),
+                "The legacy badge crafting recipe is loaded");
         helper.succeed();
     }
 

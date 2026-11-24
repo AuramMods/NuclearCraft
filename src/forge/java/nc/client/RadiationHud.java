@@ -106,7 +106,7 @@ public final class RadiationHud {
                     break;
                 }
             }
-            if (!counterOnHotbar) {
+            if (!counterOnHotbar && !RadiationDisplay.equippedCounter(player)) {
                 return;
             }
         }

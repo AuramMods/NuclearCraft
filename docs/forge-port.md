@@ -382,11 +382,19 @@ All 106 local GameTests passed, including the crafting chain, armor upgrades, an
 
 The packaged shielding build installed one heavy layer on an Ender IO 8.2.21-rf-preview pressurized tank and one on a Mekanism 10.4.16.80 basic fluid tank in the isolated 539-JAR Auram pack. Both standard sneak-use interactions consumed their layer. The saved region had a resistance of 1 on each tank, and the Ender IO tank still held 500 mB of water. JEI loaded, the client exited cleanly, and the observer recorded zero visible or foreground samples and zero activation events.
 
+### Radiation Badge
+
+`nuclearcraft:radiation_badge` uses the legacy copper, string, redstone, and lead recipe. It records effective exposure, reports every 25 Rad, and disintegrates at 250 Rad by default. The durability and reporting fraction keep their names in `world/serverconfig/nuclearcraft-radiation.toml`. Move the legacy badge capability's `radiationLevel` double to `tag."nuclearcraft:badge_exposure"` when converting an existing badge.
+
+Badges work in the regular inventory on clean Forge. When Curios is installed, wear the badge in a charm slot. The handheld Geiger counter can also occupy that slot and provide readings and clicks. The Curios API is an optional integration.
+
 ### Environmental radiation
 
 Forge samples up to `radiation_world_chunks_per_tick` loaded chunks per dimension per tick. Each sampled chunk approaches its current sources at `radiation_spread_rate`. It approaches lower source levels at `radiation_decay_rate` and transfers radiation to a loaded cardinal neighbor when the gradient is large enough. Radiation is saved per dimension in `data/nuclearcraft_radiation.dat`. Moving contamination from a 1.12.2 world requires converting the old chunk capability data to the port's packed chunk positions and rates.
 
 The world and biome config lists retain their legacy field names and accept `namespace:path_rate` entries in `world/serverconfig/nuclearcraft-radiation.toml`. Use the target dimension and biome registry IDs when converting numeric IDs. The Wasteland defaults are `nuclearcraft:wasteland_1.75` and `nuclearcraft:nuclear_wasteland_0.25`. The limits use the same format, and the biome dimension blacklist lists dimension IDs. The switches for placed sources, carried inventory, dropped items, block sampling, and container radiation also retain their legacy names. Container radiation reads Forge item and fluid capabilities on a rotating face and defaults to zero.
+
+`radiation_items`, `radiation_blocks`, `radiation_ores`, `radiation_fluids`, and `radiation_structures` use `namespace:path_rate`. Use an item tag ID such as `forge:ingots/copper` for former ore dictionary entries. Convert legacy metadata, unnamespaced fluid IDs, and structure names to registered Forge 1.20.1 IDs. The four source blacklists accept IDs in the corresponding registries. A block override also applies to its block item, and explicit item or block overrides take precedence over tag rates. When multiple configured tags apply, the highest rate wins. A zero-valued override suppresses a stock source. Fluid rates are per 1,000 mB, and a sampled placed liquid uses the corresponding per-block rate. A structure source applies to its start chunk. The sampler checks the loaded chunk's structure data without requesting more chunks.
 
 Solid-fuel, pebble, and salt fuel recipes use `radiation` for the original process rate. The actual emission scales with burn speed. The `fission_meltdown_radiation_multiplier` setting in `nuclearcraft-fission.toml` scales the immediate leak. A custom decay generator recipe can specify `radiation` alongside `lifetime` and `power`. The fixed `nuclearcraft:geiger_block` reports the chunk rate in chat and drives a comparator. Its logarithmic scale uses `radiation_geiger_block_redstone`.
 
@@ -395,6 +403,14 @@ The local suite passed all 101 required GameTests. The environmental cases cover
 A packaged dedicated run with container radiation enabled measured separate chunk signals from a filled barrel, a molten californium tank, and a dropped stack. Scanning left the unopened loot chest uninitialized.
 
 The final packaged JAR loaded in the isolated 539-JAR Auram snapshot on Forge 47.4.18. A KubeJS probe found the RTG in the saved world, read a comparator signal of 9 in its chunk, and measured radiation in all four cardinal neighbors. JEI loaded and the muted client exited cleanly. The native observer recorded zero visible window samples and zero focus activations.
+
+### Radiation effects and mob exposure
+
+The player, passive, and hostile effect lists keep their original config keys. Entries select the highest attained threshold and use `percent_namespace:effect@amplifier,namespace:attribute@amount@operation`. Use modern effect and attribute registry IDs. Operations 0, 1, and 2 add, multiply the base, and multiply the total respectively. Radiation attributes last while their tier applies. The player warning follows the first configured effect threshold.
+
+Mobs absorb ambient exposure periodically in sampled chunks. Armor applies resistance, and their maximum dose defaults to fifty times maximum health. Entries in `max_entity_rads` override the cap by entity type. Their dose, cap, and last measured rate save under `ForgeData."nuclearcraft:radiation"`. Passive mobs get sickness and hostile mobs get buffs at the configured thresholds. The handheld Geiger counter can measure the accumulated dose and effective rate of another player or mob.
+
+All 109 local GameTests passed, including mob dose persistence, Geiger interaction, and badge wear and disintegration. On packaged Forge, a muted client received exactly 5 Rad/t from the combined item, block, and tag overrides. Its maximum health moved from 30 to 25 to 20 as the configured tiers changed and expired. Saved rates measured 2 Rad/t from a 500 mB water tank and 1.5 Rad/t from a barrel containing a gold block. The excluded lava and diamond-block fixtures registered zero. A generated village start reached 5 Rad/t, and live cows and husks used their configured 50 Rad caps. The native observer recorded zero visible or foreground samples and zero activation events.
 
 ### Radiation Scrubber
 
@@ -424,4 +440,4 @@ A second trace moved the five fixtures to fresh chunks. All four working transfe
 
 At the original fixture coordinates, a 1,000-tick window without force-loading again returned the same chunk instances. A 7,200-tick window let the exact pack finish unloading all five chunks. Every unload save contained the expected block entities, including the two previously affected marker barrels. Reloading the chunks produced five new instances from disk and preserved the four working transfer results and all five markers. The energy-only comparator still never powered. The earlier failure remains intermittent and its trigger is unresolved.
 
-Radiation work still includes structure sources, terrain mutation, remaining machine emissions, non-player effects, custom source and effect configuration, chemical hazards and Hazmat contact protection, and optional accessory-slot support for the Geiger counter.
+Radiation work still includes terrain mutation, remaining machine emissions, non-player food and poison effects, feral ghoul conversion, and chemical hazards and Hazmat contact protection.

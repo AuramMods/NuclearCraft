@@ -12,6 +12,7 @@ import nc.radiation.GeigerBlock;
 import nc.radiation.GeigerBlockEntity;
 import nc.radiation.HazmatMaterial;
 import nc.radiation.MedicineItem;
+import nc.radiation.RadiationBadge;
 import nc.radiation.RadiationConfig;
 import nc.radiation.RadiationHudConfig;
 import nc.radiation.RadiationSync;
@@ -47,6 +48,8 @@ public final class NCRadiation {
 
     public static final RegistryObject<Item> GEIGER_COUNTER = NCRegistries.ITEMS.register("geiger_counter",
             () -> new GeigerCounterItem(new Item.Properties().stacksTo(1)));
+    public static final RegistryObject<RadiationBadge> BADGE = NCRegistries.ITEMS.register("radiation_badge",
+            () -> new RadiationBadge(new Item.Properties().stacksTo(1)));
     public static final RegistryObject<GeigerBlock> GEIGER_BLOCK = NCRegistries.BLOCKS.register("geiger_block",
             () -> new GeigerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
     private static final RegistryObject<Item> GEIGER_BLOCK_ITEM = NCRegistries.ITEMS.register("geiger_block",
@@ -91,6 +94,7 @@ public final class NCRadiation {
                     .icon(() -> GEIGER_COUNTER.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(GEIGER_COUNTER.get());
+                        output.accept(BADGE.get());
                         output.accept(GEIGER_BLOCK_ITEM.get());
                         output.accept(SCRUBBER_ITEM.get());
                         output.accept(RADAWAY.get());

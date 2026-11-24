@@ -2,7 +2,12 @@ package nc.radiation;
 
 import nc.NuclearCraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FlowingFluid;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -214,25 +219,83 @@ public final class RadiationSources {
         if (stack.isEmpty()) {
             return 0;
         }
-        Double direct = ITEMS.get(ForgeRegistries.ITEMS.getKey(stack.getItem()));
+        var settings = RadiationSourceSettings.active();
+        var item = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        if (item == null || settings.excludedItems().contains(item)) {
+            return 0;
+        }
+        if (stack.getItem() instanceof BlockItem blockItem) {
+            var block = ForgeRegistries.BLOCKS.getKey(blockItem.getBlock());
+            if (block != null) {
+                if (settings.excludedBlocks().contains(block)) {
+                    return 0;
+                }
+                Double configured = settings.blocks().get(block);
+                if (configured != null) {
+                    return configured;
+                }
+            }
+        }
+        Double configured = settings.items().get(item);
+        if (configured != null) {
+            return configured;
+        }
+        if (!settings.itemTags().isEmpty()) {
+            double override = stack.getTags().filter(tag -> !settings.excludedTags().contains(tag.location()))
+                    .mapToDouble(tag -> settings.itemTags().getOrDefault(tag.location(), -1D)).max().orElse(-1);
+            if (override >= 0) {
+                return override;
+            }
+        }
+        Double direct = ITEMS.get(item);
         if (direct != null) {
             return direct;
         }
         return stack.getTags()
+                .filter(tag -> !settings.excludedTags().contains(tag.location()))
                 .mapToDouble(tag -> ITEM_TAGS.getOrDefault(tag.location(), 0D))
                 .max().orElse(0);
     }
 
-    public static double fluidRate(FluidStack stack) {
-        if (stack.isEmpty()) {
+    static double blockRate(BlockState state) {
+        var settings = RadiationSourceSettings.active();
+        var block = ForgeRegistries.BLOCKS.getKey(state.getBlock());
+        var item = ForgeRegistries.ITEMS.getKey(state.getBlock().asItem());
+        if (block == null || settings.excludedBlocks().contains(block)
+                || item != null && settings.excludedItems().contains(item)) {
             return 0;
         }
-        var fluid = stack.getFluid();
-        Double direct = FLUIDS.get(ForgeRegistries.FLUIDS.getKey(fluid));
-        double rate = direct != null ? direct : fluid.builtInRegistryHolder().tags()
+        Double configured = settings.blocks().get(block);
+        if (configured != null) {
+            return configured;
+        }
+        return state.getBlock() instanceof LiquidBlock ? fluidUnitRate(state.getFluidState().getType())
+                : stackSourceRate(new ItemStack(state.getBlock()));
+    }
+
+    public static double fluidRate(FluidStack stack) {
+        return stack.isEmpty() ? 0 : fluidUnitRate(stack.getFluid()) * (stack.getAmount() / 1000D);
+    }
+
+    private static double fluidUnitRate(Fluid fluid) {
+        var settings = RadiationSourceSettings.active();
+        var id = ForgeRegistries.FLUIDS.getKey(fluid);
+        var source = fluid instanceof FlowingFluid flowing ? ForgeRegistries.FLUIDS.getKey(flowing.getSource()) : id;
+        if (id == null || source == null || settings.excludedFluids().contains(id)
+                || settings.excludedFluids().contains(source)) {
+            return 0;
+        }
+        Double configured = settings.fluids().get(id);
+        if (configured == null) {
+            configured = settings.fluids().get(source);
+        }
+        if (configured != null) {
+            return configured;
+        }
+        Double direct = FLUIDS.get(id);
+        return direct != null ? direct : fluid.builtInRegistryHolder().tags()
                 .mapToDouble(tag -> FLUID_TAGS.getOrDefault(tag.location(), 0D))
                 .max().orElse(0);
-        return rate * stack.getAmount() / 1000D;
     }
 
     public static double stockItemRate(String id) {

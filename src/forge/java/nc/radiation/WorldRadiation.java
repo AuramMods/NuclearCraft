@@ -7,18 +7,21 @@ import nc.processor.RadiationScrubber;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.QuartPos;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.event.TickEvent;
@@ -79,13 +82,15 @@ public final class WorldRadiation {
         int size = Math.min(count, RadiationConfig.CHUNKS_PER_TICK.get());
         int start = loaded.random.nextInt(count);
         Levels readings = store(level);
+        StructureSource structure = structureSource(level, loaded.random);
+        double tickMultiplier = (double) count / size;
         Direction side = SIDES[(int) Math.floorMod(level.getGameTime(), SIDES.length)];
         var selected = new LevelChunk[size];
         for (int i = 0; i < size; i++) {
             selected[i] = loaded.chunks.get((start + i) % count);
         }
         for (int i = 0; i < size; i++) {
-            sample(level, selected[i], readings, side, i == 0, loaded);
+            sample(level, selected[i], readings, side, i == 0, loaded, structure, tickMultiplier);
         }
         for (LevelChunk chunk : selected) {
             spread(loaded, chunk, readings);
@@ -105,7 +110,7 @@ public final class WorldRadiation {
     }
 
     private static void sample(ServerLevel level, LevelChunk chunk, Levels readings, Direction side,
-                               boolean checkBlock, LoadedChunks loaded) {
+                               boolean checkBlock, LoadedChunks loaded, StructureSource structure, double tickMultiplier) {
         RandomSource random = loaded.random;
         var pos = chunk.getPos();
         BlockPos sample = pos.getBlockAt(random.nextInt(16),
@@ -125,13 +130,24 @@ public final class WorldRadiation {
             limit = Math.min(limit, configuredRate(RadiationConfig.BIOME_LIMITS.get(), id, Double.MAX_VALUE));
         }
         if (checkBlock && RadiationConfig.CHECK_BLOCKS.get()) {
-            sources += RadiationSources.itemRate(new ItemStack(chunk.getBlockState(sample).getBlock()));
+            sources += RadiationSources.blockRate(chunk.getBlockState(sample));
         }
-        if (RadiationConfig.DROPPED_SOURCES.get()) {
-            AABB bounds = new AABB(pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
-                    pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1);
-            for (ItemEntity item : level.getEntitiesOfClass(ItemEntity.class, bounds,
-                    entity -> !entity.isRemoved() && entity.chunkPosition().equals(pos))) {
+        if (structure != null) {
+            var start = chunk.getStartForStructure(structure.value());
+            if (start != null && start.isValid()) {
+                sources += structure.rate();
+            }
+        }
+        long key = pos.toLong();
+        double current = readings.rates.get(key);
+        boolean droppedSources = RadiationConfig.DROPPED_SOURCES.get();
+        AABB bounds = new AABB(pos.getMinBlockX(), level.getMinBuildHeight(), pos.getMinBlockZ(),
+                pos.getMaxBlockX() + 1, level.getMaxBuildHeight(), pos.getMaxBlockZ() + 1);
+        for (var entity : level.getEntities((Entity) null, bounds, e -> e.isAlive() && e.chunkPosition().equals(pos)
+                && (e instanceof Mob || droppedSources && e instanceof ItemEntity))) {
+            if (entity instanceof Mob mob) {
+                MobRadiation.tick(mob, current, tickMultiplier);
+            } else if (entity instanceof ItemEntity item) {
                 sources += RadiationSources.itemRate(item.getItem());
             }
         }
@@ -166,8 +182,6 @@ public final class WorldRadiation {
             }
         }
 
-        long key = pos.toLong();
-        double current = readings.rates.get(key);
         double spread = RadiationConfig.SPREAD.get();
         double fraction = 0;
         if (!scrubbers.isEmpty()) {
@@ -215,6 +229,18 @@ public final class WorldRadiation {
         }
         return rate;
     }
+
+    private static StructureSource structureSource(ServerLevel level, RandomSource random) {
+        var configured = RadiationSourceSettings.active().structures();
+        if (configured.isEmpty()) {
+            return null;
+        }
+        var entry = configured.get(random.nextInt(configured.size()));
+        var structure = level.registryAccess().registryOrThrow(Registries.STRUCTURE).get(entry.getKey());
+        return structure == null ? null : new StructureSource(structure, entry.getValue());
+    }
+
+    private record StructureSource(Structure value, double rate) {}
 
     private static void spread(LoadedChunks loaded, LevelChunk chunk, Levels readings) {
         ChunkPos pos = chunk.getPos();

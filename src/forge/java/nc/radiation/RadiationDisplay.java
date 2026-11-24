@@ -1,7 +1,10 @@
 package nc.radiation;
 
+import nc.compat.curios.RadiationCurios;
 import nc.init.NCRadiation;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 
@@ -26,6 +29,19 @@ public final class RadiationDisplay {
                 return true;
             }
         }
+        return equippedCounter(player);
+    }
+
+    public static boolean equippedCounter(Player player) {
+        var equipped = RadiationCurios.equipped(player);
+        if (equipped == null) {
+            return false;
+        }
+        for (int slot = 0; slot < equipped.getSlots(); slot++) {
+            if (equipped.getStackInSlot(slot).is(NCRadiation.GEIGER_COUNTER.get())) {
+                return true;
+            }
+        }
         return false;
     }
 
@@ -37,6 +53,15 @@ public final class RadiationDisplay {
     static ChatFormatting doseColor(double percentage) {
         return percentage < 30 ? ChatFormatting.WHITE : percentage < 50 ? ChatFormatting.YELLOW
                 : percentage < 70 ? ChatFormatting.GOLD : percentage < 90 ? ChatFormatting.RED : ChatFormatting.DARK_RED;
+    }
+
+    static void report(ServerPlayer player, double dose, double maximum, double rate) {
+        double percent = Math.min(100, 100 * dose / maximum);
+        double minimum = RadiationConfig.MINIMUM_RATE.get();
+        int digits = RadiationConfig.UNIT_DIGITS.get();
+        Component reading = Component.literal(format(rate, minimum, digits, "Rad/t")).withStyle(rateColor(rate));
+        player.sendSystemMessage(Component.translatable("message.nuclearcraft.geiger_reading",
+                format(dose, minimum, digits, "Rad"), Math.round(percent), reading).withStyle(doseColor(percent)));
     }
 
     static String format(double value, double minimumRate, int digits, String unit) {

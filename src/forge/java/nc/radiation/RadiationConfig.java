@@ -3,6 +3,7 @@ package nc.radiation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
 import java.util.List;
@@ -18,6 +19,12 @@ public final class RadiationConfig {
             BUILDER.defineInRange("max_player_rads", 1000D, 1D, 1E9);
     static final ForgeConfigSpec.DoubleValue DECAY =
             BUILDER.defineInRange("radiation_player_decay_rate", 5E-7, 0D, 1D);
+    static final ForgeConfigSpec.DoubleValue ENTITY_DECAY =
+            BUILDER.defineInRange("radiation_entity_decay_rate", 0.001D, 0D, 1D);
+    static final ForgeConfigSpec.ConfigValue<List<? extends String>> ENTITY_MAX_DOSES =
+            rates("max_entity_rads", List.of());
+    static final ForgeConfigSpec.BooleanValue PASSIVE_FATAL = BUILDER.define("radiation_passive_rads_fatal", true);
+    static final ForgeConfigSpec.BooleanValue HOSTILE_FATAL = BUILDER.define("radiation_mob_rads_fatal", true);
     static final ForgeConfigSpec.DoubleValue WATER_MULTIPLIER =
             BUILDER.defineInRange("radiation_swim_mult", 2D, 1E-6, 1E6);
     static final ForgeConfigSpec.DoubleValue RAIN_MULTIPLIER =
@@ -89,8 +96,12 @@ public final class RadiationConfig {
     static final ForgeConfigSpec.BooleanValue REQUIRE_COUNTER = BUILDER.define("radiation_require_counter", true);
     static final ForgeConfigSpec.IntValue UNIT_DIGITS =
             BUILDER.defineInRange("radiation_unit_prefixes", 0, 0, 15);
+    static final ForgeConfigSpec.DoubleValue BADGE_CAPACITY =
+            BUILDER.defineInRange("radiation_badge_durability", 250D, 1E-18, 1000D);
+    static final ForgeConfigSpec.DoubleValue BADGE_INFO_FRACTION =
+            BUILDER.defineInRange("radiation_badge_info_rate", 0.1D, 1E-18, 1D);
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SOUND_VOLUMES =
-            BUILDER.comment("Legacy radiation sound multipliers. Index 0 is the Geiger click, 3 is food, and 6 is the warning.")
+            BUILDER.comment("Legacy sound multipliers. Index 0 is the Geiger click, 3 is food, 5 is the badge, and 6 is the warning.")
                     .defineListAllowEmpty("radiation_sound_volumes", List.of(1D, 1D, 1D, 1D, 1D, 1D, 1D, 1D),
                             value -> value instanceof Number number
                                     && number.doubleValue() >= 0 && number.doubleValue() <= 15);
@@ -99,6 +110,8 @@ public final class RadiationConfig {
     static {
         ScrubberSettings.define(BUILDER);
         ShieldingSettings.define(BUILDER);
+        RadiationSourceSettings.define(BUILDER);
+        RadiationEffects.define(BUILDER);
         SPEC = BUILDER.build();
     }
 
@@ -109,7 +122,22 @@ public final class RadiationConfig {
     private RadiationConfig() {}
 
     public static void register(FMLJavaModLoadingContext context) {
+        context.getModEventBus().addListener((ModConfigEvent.Loading event) -> refresh(event));
+        context.getModEventBus().addListener((ModConfigEvent.Reloading event) -> refresh(event));
+        context.getModEventBus().addListener((ModConfigEvent.Unloading event) -> {
+            if (event.getConfig().getSpec() == SPEC) {
+                RadiationSourceSettings.clear();
+                RadiationEffects.unload();
+            }
+        });
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-radiation.toml");
+    }
+
+    private static void refresh(ModConfigEvent event) {
+        if (event.getConfig().getSpec() == SPEC) {
+            RadiationSourceSettings.refresh();
+            RadiationEffects.refresh();
+        }
     }
 
     static float soundVolume(int index) {
@@ -122,12 +150,12 @@ public final class RadiationConfig {
                 .defineListAllowEmpty(name, defaults, entry -> entry instanceof String line && validRate(line));
     }
 
-    private static boolean validId(String id) {
+    static boolean validId(String id) {
         var name = ResourceLocation.tryParse(id);
         return name != null && name.toString().equals(id);
     }
 
-    private static boolean validRate(String entry) {
+    static boolean validRate(String entry) {
         int delimiter = entry.lastIndexOf('_');
         if (delimiter < 1 || !validId(entry.substring(0, delimiter))) {
             return false;

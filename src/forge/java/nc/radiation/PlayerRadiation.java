@@ -3,19 +3,12 @@ package nc.radiation;
 import nc.NuclearCraft;
 import nc.init.NCRadiation;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageType;
-import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
@@ -40,8 +33,6 @@ public final class PlayerRadiation {
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String RAD_X_COOLDOWN = "rad_x_cooldown";
     private static final String IMMUNITY = "immunity_ticks";
-    private static final ResourceKey<DamageType> FATAL_RADS =
-            ResourceKey.create(Registries.DAMAGE_TYPE, NuclearCraft.id("fatal_rads"));
 
     private PlayerRadiation() {}
 
@@ -101,7 +92,7 @@ public final class PlayerRadiation {
         boolean immune = immunity > 0 || permanentlyImmune(player);
         boolean vulnerable = !immune && !player.isCreative() && !player.isSpectator();
         boolean fatal = vulnerable && RadiationConfig.FATAL.get();
-        if (fatal && dose >= max && kill(player)) {
+        if (fatal && dose >= max && RadiationEffects.kill(player)) {
             return;
         }
 
@@ -126,7 +117,9 @@ public final class PlayerRadiation {
             rate += absorbed / ticks;
             remainder(data, POISON, RECENT_POISON, poison - absorbed);
         }
+        RadiationBadge.measure(player, rate * ticks);
         if (data.isEmpty() && rate == 0) {
+            refreshEffects(player, vulnerable, 0, ticks);
             return;
         }
 
@@ -140,7 +133,7 @@ public final class PlayerRadiation {
         if (fatal && dose >= max) {
             data.putDouble(DOSE, dose);
             save(player, data);
-            if (kill(player)) {
+            if (RadiationEffects.kill(player)) {
                 return;
             }
         }
@@ -157,15 +150,24 @@ public final class PlayerRadiation {
         data.putDouble(DOSE, Math.max(0, dose));
         save(player, data);
 
+        refreshEffects(player, vulnerable, 100 * dose / max, ticks);
         if (vulnerable) {
-            applyEffects(player, dose / max, Math.max(ticks, 19));
-            if (previousDose < 0.4 * max && dose >= 0.4 * max && RadiationConfig.REQUIRE_COUNTER.get()
+            double threshold = RadiationEffects.warningThreshold() / 100 * max;
+            if (previousDose < threshold && dose >= threshold && RadiationConfig.REQUIRE_COUNTER.get()
                     && !RadiationDisplay.hasCounter(player)) {
                 player.sendSystemMessage(Component.translatable("message.nuclearcraft.rad_warning")
                         .withStyle(ChatFormatting.GOLD));
                 player.playNotifySound(NCRadiation.CHEMS_WEAR_OFF.get(), SoundSource.PLAYERS,
                         0.8F * RadiationConfig.soundVolume(6), 0.7F);
             }
+        }
+    }
+
+    private static void refreshEffects(ServerPlayer player, boolean vulnerable, double percent, int ticks) {
+        if (vulnerable) {
+            RadiationEffects.apply(player, RadiationEffects.Profile.PLAYER, percent, Math.max(ticks, 19), 1);
+        } else {
+            RadiationEffects.clear(player);
         }
     }
 
@@ -247,12 +249,7 @@ public final class PlayerRadiation {
 
     static void report(ServerPlayer player) {
         var reading = reading(player);
-        double percent = reading.dosePercent();
-        Component raw = Component.literal(reading.format(reading.rawRate(), "Rad/t"))
-                .withStyle(RadiationDisplay.rateColor(reading.rawRate()));
-        player.sendSystemMessage(Component.translatable("message.nuclearcraft.geiger_reading",
-                reading.format(reading.dose(), "Rad"), Math.round(percent), raw)
-                .withStyle(RadiationDisplay.doseColor(percent)));
+        RadiationDisplay.report(player, reading.dose(), reading.maximum(), reading.rawRate());
     }
 
     static String format(double value) {
@@ -331,36 +328,6 @@ public final class PlayerRadiation {
     private static void foodSound(ServerPlayer player, SoundEvent sound, double strength) {
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS,
                 (float) ((1 - Math.pow(10, -strength)) * RadiationConfig.soundVolume(3)), 1F);
-    }
-
-    private static boolean kill(ServerPlayer player) {
-        var type = player.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(FATAL_RADS);
-        return player.hurt(new DamageSource(type), Float.MAX_VALUE);
-    }
-
-    private static void applyEffects(ServerPlayer player, double fraction, int duration) {
-        if (fraction >= 0.4) {
-            effect(player, MobEffects.WEAKNESS, fraction >= 0.9 ? 2 : fraction >= 0.7 ? 1 : 0, duration);
-        }
-        if (fraction >= 0.55) {
-            effect(player, MobEffects.DIG_SLOWDOWN, fraction >= 0.9 ? 2 : fraction >= 0.8 ? 1 : 0, duration);
-        }
-        if (fraction >= 0.7) {
-            effect(player, MobEffects.HUNGER, fraction >= 0.9 ? 1 : 0, duration);
-        }
-        if (fraction >= 0.8) {
-            effect(player, MobEffects.POISON, 0, duration);
-        }
-        if (fraction >= 0.9) {
-            effect(player, MobEffects.WITHER, 0, duration);
-        }
-    }
-
-    private static void effect(ServerPlayer player, MobEffect effect, int amplifier, int duration) {
-        // 2o.9.7 used the configured levels directly as vanilla effect amplifiers.
-        int minimumDuration = effect == MobEffects.POISON ? 25 >> amplifier
-                : effect == MobEffects.WITHER ? 40 >> amplifier : 0;
-        player.addEffect(new MobEffectInstance(effect, Math.max(duration, minimumDuration), amplifier + 1, false, false));
     }
 
     private static CompoundTag read(Player player) {
