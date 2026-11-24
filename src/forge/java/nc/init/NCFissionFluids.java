@@ -90,7 +90,7 @@ final class NCFissionFluids {
         fuel("depleted_hecf_251", 0x4B1B23);
     }
 
-    private static void fuel(String name, int color) {
+    static void fuel(String name, int color) {
         NCFluids.fission(name, color);
         NCFluids.fission(name + "_fluoride", blendWithSalt(color, 0xD3C85D, 7, 8));
         NCFluids.fission(name + "_fluoride_flibe", blendWithSalt(color, 0xC1C8B0, 3, 5));

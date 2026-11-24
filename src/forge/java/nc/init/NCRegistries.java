@@ -235,6 +235,7 @@ public final class NCRegistries {
         NCFission.register();
         NCTurbine.register();
         NCHeatExchangers.register();
+        NCFissionMaterials.register(bus);
         BLOCKS.register(bus);
         ITEMS.register(bus);
         BLOCK_ENTITIES.register(bus);

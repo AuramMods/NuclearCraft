@@ -939,6 +939,57 @@ Packaged Forge 47.4.18 tests powered both managers with vanilla redstone and wit
 
 A muted multiplayer client used the multitool on the source manager. It received the saved link and drew the linked source's outline through the opaque reactor wall. The native observer recorded zero foreground, activation, and visible window samples. [Forge render stages](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/src/main/java/net/minecraftforge/client/event/RenderLevelStageEvent.java)
 
+### Scripted fission isotopes and fuels
+
+Convert the legacy `Registration.registerFissionIsotope` and `Registration.registerFissionFuel` calls to `config/nuclearcraft-fission-materials.json`. Install the same file on the server and clients, then restart to register the materials. The legacy sample add-on's XYZ-789 and HEXYZ-789 entries convert as follows.
+
+```json
+{
+  "isotopes": {
+    "xyz_789": {
+      "tag": "xyz789",
+      "display_name": "XYZ-789",
+      "forms": ["raw", "carbide", "oxide", "nitride", "za"],
+      "radiation": 0.000358,
+      "fluid_color": "#6EFF51"
+    }
+  },
+  "fuels": {
+    "hexyz_789": {
+      "tag": "hexyz789",
+      "display_name": "HEXYZ-789",
+      "forms": ["raw", "carbide", "triso", "oxide", "nitride", "za"],
+      "radiation": 0.00079,
+      "depleted_radiation": 0.028,
+      "fluid_color": "#59FF7A",
+      "depleted_fluid_color": "#446FC4",
+      "fission": {
+        "ticks": 1000,
+        "heat": 250,
+        "efficiency": 1.5,
+        "criticality": 80,
+        "intrinsic_flux": 10,
+        "decay_factor": 0.075,
+        "self_priming": false,
+        "radiation": 0.00045
+      }
+    }
+  }
+}
+```
+
+Use the legacy variant name as the definition key and a lowercase Forge material key for `tag`. The tag defaults to the definition key. Each chosen form joins `forge:ingots/<tag>` with the corresponding form suffix. The isotope forms use `<key>_ingot`, `<key>_carbide_ingot`, `<key>_oxide_ingot`, `<key>_nitride_ingot`, and `<key>_za_ingot`. The fuel forms use `<key>_pellet`, `<key>_pellet_carbide`, `<key>_triso`, `<key>_oxide`, `<key>_nitride`, and `<key>_za`. The four reactor-ready forms also register `depleted_` items and tags. When converting a legacy save, map the item group and metadata variant together to the corresponding flattened `nuclearcraft` item ID.
+
+Supplying an isotope color registers the molten isotope. Supplying either fuel color registers the fresh and depleted molten fuel, fluoride, and FLiBe fuel salts. The other color defaults to black when omitted. Fluid IDs retain the original names, and buckets use the `_bucket` suffix. Every fluid exposes regular Forge FluidStack behavior and contributes its configured radiation through the port's existing radiation system. The fission radiation in the `fission` object applies while the fuel burns.
+
+The built-in pack supplies processing recipes for the chosen forms, including the solid, pebble-bed, and molten-salt fuel recipes and the fuel-salt chemistry. The recipes use the legacy form multipliers and accept items from the Forge material tags. For example, replace `nuclearcraft:solid_fission/hexyz_789_nitride` or `nuclearcraft:chemical_reactor/hexyz_789_fluoride` in a datapack or KubeJS server script. The salt burn uses `nuclearcraft:salt_fission/hexyz_789`. Move custom fuel blend and waste-separation recipes from the legacy add-on to the pack's corresponding processor recipes. The built-in pack also supplies stock-derived models and English names, which a resource pack can override. Set `model` to a Forge 1.20.1 item model ID to use it as the parent for all forms in an entry.
+
+All 208 local GameTests passed. On clean Forge 47.4.18, a Melter turned XYZ-789 into 144 mB of molten isotope and an adjacent Ingot Former cast it back into one ingot. The three reactor variants produced all five HEXYZ-789 depletion products with the expected heat and decay values. The products persisted through server restart and confirmed chunk unload and reload.
+
+The packaged JAR also ran on dedicated Forge with Ender IO 8.2.22-beta, Mekanism 10.4.16.80, and KubeJS 2001.6.5-build.16. Each network fed a custom fuel and fluorine through a Chemical Reactor. A KubeJS override produced 144 mB of custom fluoride for 80 FE in each machine. While the output tanks contained water, Ender IO left its 144 mB in the reactor and Mekanism buffered the same amount in the pipe. Both delivered the full amount after restart and clearing the tanks. Both tank amounts survived confirmed chunk unload and reload, and the reactors and pipe held no leftover fluid.
+
+The isolated 539-mod Auram client verified the generated item and bucket models, English names, isotope fluid tint, and configured radiation rates. JEI listed the generated solid, pebble-bed, and molten-salt recipes. The client received the eight-tick KubeJS override for the Chemical Reactor and saved both 144 mB deliveries through the installed Ender IO and Mekanism networks. The client exited normally with master volume zero, OpenAL No Output, and zero recorded focus activations, foreground samples, or on-screen window samples.
+
 ### Scripted solid heat sinks, neutron sources, and shields
 
 Migrate `Registration.registerFissionSink`, `registerFissionSource`, and `registerFissionShield` calls to a KubeJS startup script. Keep the original block and item IDs on both sides. Pass the old cooling rate and placement rule for the sink, the priming efficiency for the source, and the heat per flux and efficiency for the shield.

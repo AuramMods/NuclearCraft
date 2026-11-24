@@ -46,7 +46,7 @@ final class NCFissionFuels {
         ITEMS.forEach(item -> output.accept(item.get()));
     }
 
-    private static void registerItem(String id) {
+    static void registerItem(String id) {
         ITEMS.add(NCRegistries.ITEMS.register(id, () -> new Item(new Item.Properties())));
     }
 }

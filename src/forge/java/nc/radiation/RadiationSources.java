@@ -306,12 +306,30 @@ public final class RadiationSources {
         return ITEMS.getOrDefault(NuclearCraft.id(id), 0D);
     }
 
+    public static void registerIsotopeForm(String itemId, String materialTag, double rate) {
+        item(itemId, rate);
+        materialTags(materialTag, rate);
+    }
+
+    public static void registerFuelForm(String itemId, String materialTag, double rate) {
+        item(itemId, rate);
+        tag("ingots/" + materialTag, rate);
+    }
+
+    public static void registerFissionFluid(String id, double rate) {
+        fluid(id, rate);
+    }
+
     private static void material(String id, double rate) {
         fluid(id, rate);
         item(id + "_ingot", rate);
         item(id + "_dust", rate);
         item(id + "_ore", rate / 4);
         item(id + "_block", rate * 9);
+        materialTags(id, rate);
+    }
+
+    private static void materialTags(String id, double rate) {
         for (String form : List.of("ingots", "dusts", "clumps", "shards", "crystals", "crushed", "plates", "raw_materials", "sheetmetals")) {
             tag(form + "/" + id, rate);
         }
