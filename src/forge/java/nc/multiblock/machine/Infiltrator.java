@@ -30,8 +30,8 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
-import static nc.recipe.InfiltratorRecipe.FLUID_INPUTS;
-import static nc.recipe.InfiltratorRecipe.ITEM_INPUTS;
+import static nc.recipe.MachineInputs.FLUID_INPUTS;
+import static nc.recipe.MachineInputs.ITEM_INPUTS;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 
 public final class Infiltrator extends MachineController {

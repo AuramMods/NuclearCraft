@@ -1,0 +1,9 @@
+{
+    "type": "nuclearcraft:electrolyzer_electrolyte",
+    "fluid_input": {
+        "fluid": "nuclearcraft:potassium_fluoride_solution",
+        "amount": 1
+    },
+    "efficiency": 1,
+    "group": "fluoride_solution"
+}

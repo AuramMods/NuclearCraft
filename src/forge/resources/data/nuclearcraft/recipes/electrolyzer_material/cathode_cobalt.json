@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:electrolyzer_cathode",
+    "block": {
+        "tag": "forge:storage_blocks/cobalt"
+    },
+    "efficiency": 0.9
+}

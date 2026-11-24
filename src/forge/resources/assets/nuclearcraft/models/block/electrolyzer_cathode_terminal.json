@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_out",
+        "south": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_in",
+        "east": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_side",
+        "west": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_side",
+        "down": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_top",
+        "up": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_top",
+        "particle": "nuclearcraft:block/machine/electrolyzer/cathode_terminal_out"
+    }
+}

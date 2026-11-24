@@ -42,6 +42,10 @@ import nc.recipe.DecayPoolRecipe;
 import nc.recipe.DistillerRecipe;
 import nc.recipe.InfiltratorPressureRecipe;
 import nc.recipe.InfiltratorRecipe;
+import nc.recipe.LargeElectrolyzerRecipe;
+import nc.recipe.ElectrolyzerElectrolyteRecipe;
+import nc.recipe.ElectrolyzerMaterialRecipe;
+import nc.recipe.ElectrolyzerMaterialRecipe.Kind;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -118,6 +122,10 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "multiblock_infiltrator", InfiltratorRecipe.class);
     private static final RecipeType<InfiltratorPressureRecipe> PRESSURE =
             RecipeType.create(NuclearCraft.MOD_ID, "infiltrator_pressure_fluid", InfiltratorPressureRecipe.class);
+    private static final RecipeType<LargeElectrolyzerRecipe> LARGE_ELECTROLYZER =
+            RecipeType.create(NuclearCraft.MOD_ID, "multiblock_electrolyzer", LargeElectrolyzerRecipe.class);
+    private static final RecipeType<ElectrolyzerElectrolyteRecipe> ELECTROLYTE =
+            RecipeType.create(NuclearCraft.MOD_ID, "electrolyzer_electrolyte", ElectrolyzerElectrolyteRecipe.class);
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -133,6 +141,14 @@ public final class NuclearCraftJei implements IModPlugin {
         for (Machine machine : Machine.values()) {
             registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
                     NuclearCraftJei::itemRecipe, recipe -> energy(recipe.ticks(), recipe.energyPerTick())));
+        }
+        for (Kind kind : Kind.values()) {
+            registration.addRecipeCategories(new Category<>(materialType(kind), materialBlock(kind), gui,
+                    (layout, material) -> layout.addSlot(INPUT, 24, 12).setStandardSlotBackground()
+                            .addItemStacks(Arrays.stream(material.block().getItems()).filter(material::accepts).toList()),
+                    material -> kind == Kind.DIAPHRAGM
+                            ? Component.translatable("gui.nuclearcraft.jei.diaphragm", decimal(100 * material.efficiency()), decimal(material.contact()))
+                            : Component.translatable("gui.nuclearcraft.jei.electrode", decimal(100 * material.efficiency()))));
         }
         registration.addRecipeCategories(
                 new Category<>(DECAY, NCGenerators.DECAY_GENERATOR.get(), gui, (layout, recipe) -> {
@@ -155,6 +171,15 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(PRESSURE, NCMachines.block(Part.PRESSURE_CHAMBER), gui,
                         (layout, recipe) -> fluidSlot(layout, INPUT, 42, recipe.fluid().alternatives()),
                         recipe -> Component.translatable("gui.nuclearcraft.jei.infiltrator_pressure", decimal(100 * recipe.efficiency()))),
+                new Category<>(LARGE_ELECTROLYZER, NCMachines.block(Part.ELECTROLYZER), gui, NuclearCraftJei::largeElectrolyzerRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.large_electrolyzer",
+                                decimal(NCMachines.electrolyzerTime() * recipe.time()),
+                                decimal(NCMachines.electrolyzerPower() * recipe.power()))),
+                new Category<>(ELECTROLYTE, NCMachines.block(Part.RESERVOIR), gui,
+                        (layout, recipe) -> fluidSlot(layout, INPUT, 42, recipe.fluid().alternatives()),
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.electrolyte",
+                                decimal(100 * recipe.efficiency()), recipe.group().replace('_', ' ')),
+                        Component.translatable("gui.nuclearcraft.jei.electrolytes")),
                 new Category<>(DECAY_POOL_SOURCE, NCMachines.block(Part.CONTAINER), gui, NuclearCraftJei::poolRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool_source",
                                 decimal(recipe.heat()), decimal(recipe.lifetime()))),
@@ -257,6 +282,13 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(INFILTRATOR, recipes.getAllRecipesFor(NCMachines.INFILTRATOR_RECIPES.get()));
         registration.addRecipes(PRESSURE, recipes.getAllRecipesFor(NCMachines.PRESSURE_RECIPES.get()).stream()
                 .filter(recipe -> !recipe.fluid().alternatives().isEmpty()).toList());
+        registration.addRecipes(LARGE_ELECTROLYZER, recipes.getAllRecipesFor(NCMachines.ELECTROLYZER_RECIPES.get()));
+        registration.addRecipes(ELECTROLYTE, recipes.getAllRecipesFor(NCMachines.ELECTROLYTES.get()).stream()
+                .filter(recipe -> !recipe.fluid().alternatives().isEmpty()).toList());
+        for (Kind kind : Kind.values()) {
+            registration.addRecipes(materialType(kind), recipes.getAllRecipesFor(NCMachines.materialRecipes(kind)).stream()
+                    .filter(recipe -> Arrays.stream(recipe.block().getItems()).anyMatch(recipe::accepts)).toList());
+        }
         registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
@@ -288,6 +320,9 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCMachines.block(Part.DISTILLER), DISTILLER);
         registration.addRecipeCatalyst(NCMachines.block(Part.INFILTRATOR), INFILTRATOR, PRESSURE);
         registration.addRecipeCatalyst(NCMachines.block(Part.PRESSURE_CHAMBER), PRESSURE);
+        registration.addRecipeCatalyst(NCMachines.block(Part.ELECTROLYZER), LARGE_ELECTROLYZER, ELECTROLYTE,
+                materialType(Kind.CATHODE), materialType(Kind.ANODE), materialType(Kind.DIAPHRAGM));
+        for (Kind kind : Kind.values()) registration.addRecipeCatalyst(materialBlock(kind), materialType(kind));
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
@@ -471,9 +506,40 @@ public final class NuclearCraftJei implements IModPlugin {
         layout.addSlot(OUTPUT, 112, 22).setOutputSlotBackground().addItemStack(recipe.product());
     }
 
+    private static RecipeType<ElectrolyzerMaterialRecipe> materialType(Kind kind) {
+        return RecipeType.create(NuclearCraft.MOD_ID, kind.id(), ElectrolyzerMaterialRecipe.class);
+    }
+
+    private static Block materialBlock(Kind kind) {
+        return NCMachines.block(switch (kind) {
+            case CATHODE -> Part.CATHODE_TERMINAL;
+            case ANODE -> Part.ANODE_TERMINAL;
+            case DIAPHRAGM -> Part.STEEL_DIAPHRAGM;
+        });
+    }
+
+    private static void largeElectrolyzerRecipe(IRecipeLayoutBuilder layout, LargeElectrolyzerRecipe recipe) {
+        for (int slot = 0; slot < recipe.items().size(); slot++) {
+            var item = recipe.items().get(slot);
+            layout.addSlot(INPUT, 15 + slot * 20, 12).setStandardSlotBackground().addItemStacks(
+                    Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+        }
+        for (int slot = 0; slot < recipe.fluids().size(); slot++) {
+            fluidSlot(layout, INPUT, 15 + slot * 20, 33, recipe.fluids().get(slot).alternatives());
+        }
+        for (int slot = 0; slot < LargeElectrolyzerRecipe.ITEM_OUTPUTS; slot++) {
+            var item = recipe.itemOutput(slot);
+            if (!item.isEmpty()) layout.addSlot(OUTPUT, 99 + slot * 18, 12).setOutputSlotBackground().addItemStack(item);
+        }
+        for (int slot = 0; slot < LargeElectrolyzerRecipe.FLUID_OUTPUTS; slot++) {
+            var fluid = recipe.fluidOutput(slot);
+            if (!fluid.isEmpty()) fluidSlot(layout, OUTPUT, 99 + slot * 18, 33, List.of(fluid));
+        }
+    }
+
     private static final class Category<R> implements IRecipeCategory<R> {
         private final RecipeType<R> type;
-        private final Block block;
+        private final Component title;
         private final IDrawable icon;
         private final IDrawable arrow;
         private final BiConsumer<IRecipeLayoutBuilder, R> layout;
@@ -481,8 +547,13 @@ public final class NuclearCraftJei implements IModPlugin {
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
                  Function<R, Component> stats) {
+            this(type, block, gui, layout, stats, block.getName());
+        }
+
+        Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
+                 Function<R, Component> stats, Component title) {
             this.type = type;
-            this.block = block;
+            this.title = title;
             this.layout = layout;
             this.stats = stats;
             icon = gui.createDrawableItemLike(block);
@@ -490,12 +561,12 @@ public final class NuclearCraftJei implements IModPlugin {
         }
 
         @Override public RecipeType<R> getRecipeType() { return type; }
-        @Override public Component getTitle() { return block.getName(); }
+        @Override public Component getTitle() { return title; }
         @Override public IDrawable getIcon() { return icon; }
         @Override
         public int getWidth() {
             return switch (type.getUid().getPath()) {
-                case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator" -> 178;
+                case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator", "multiblock_electrolyzer", "electrolyzer_electrolyte" -> 178;
                 case "rock_crusher", "extractor", "centrifuge" -> 166;
                 default -> 140;
             };
@@ -504,6 +575,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public int getHeight() {
             return switch (type.getUid().getPath()) {
+                case "multiblock_electrolyzer" -> 82;
                 case "fuel_reprocessor", "assembler", "multiblock_distiller", "multiblock_infiltrator" -> 70;
                 case "electrolyzer", "centrifuge" -> 58;
                 default -> 48;
@@ -521,8 +593,13 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void draw(R recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
-            arrow.draw(graphics, 69, getHeight() == 70 ? 22 : 12);
+            arrow.draw(graphics, 69, getHeight() >= 70 ? 22 : 12);
             graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, getHeight() - 13, 0x404040, false);
+            if (recipe instanceof LargeElectrolyzerRecipe electrolyzer) {
+                graphics.drawString(Minecraft.getInstance().font,
+                        Component.translatable("gui.nuclearcraft.jei.electrolyte_group", electrolyzer.electrolyte().replace('_', ' ')),
+                        4, getHeight() - 24, 0x404040, false);
+            }
         }
     }
 }

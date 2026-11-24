@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:machine_diaphragm",
+    "block": {
+        "item": "nuclearcraft:zirfon_diaphragm"
+    },
+    "efficiency": 1,
+    "contact": 2
+}

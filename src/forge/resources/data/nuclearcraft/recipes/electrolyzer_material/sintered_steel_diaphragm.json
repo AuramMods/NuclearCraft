@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:machine_diaphragm",
+    "block": {
+        "item": "nuclearcraft:sintered_steel_diaphragm"
+    },
+    "efficiency": 0.8,
+    "contact": 1
+}

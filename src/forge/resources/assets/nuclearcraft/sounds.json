@@ -6,5 +6,9 @@
     "block.infiltrator.run": {
         "subtitle": "subtitles.nuclearcraft.infiltrator",
         "sounds": ["nuclearcraft:block/infiltrator_run"]
+    },
+    "block.electrolyzer.run": {
+        "subtitle": "subtitles.nuclearcraft.large_electrolyzer",
+        "sounds": ["nuclearcraft:block/electrolyzer_run"]
     }
 }

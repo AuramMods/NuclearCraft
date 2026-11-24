@@ -14,6 +14,12 @@
         "nuclearcraft:hastelloy_sieve_assembly",
         "nuclearcraft:infiltrator_controller",
         "nuclearcraft:infiltrator_pressure_chamber",
-        "nuclearcraft:infiltrator_heating_unit"
+        "nuclearcraft:infiltrator_heating_unit",
+        "nuclearcraft:electrolyzer_controller",
+        "nuclearcraft:electrolyzer_cathode_terminal",
+        "nuclearcraft:electrolyzer_anode_terminal",
+        "nuclearcraft:sintered_steel_diaphragm",
+        "nuclearcraft:polyethersulfone_diaphragm",
+        "nuclearcraft:zirfon_diaphragm"
     ]
 }

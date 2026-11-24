@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:electrolyzer_cathode",
+    "block": {
+        "tag": "forge:storage_blocks/nickel"
+    },
+    "efficiency": 0.7
+}

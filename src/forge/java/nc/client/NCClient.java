@@ -46,9 +46,11 @@ public final class NCClient {
             MenuScreens.register(NCMachines.MENU.get(), DecayPoolScreen::new);
             MenuScreens.register(NCMachines.DISTILLER_MENU.get(), DistillerScreen::new);
             MenuScreens.register(NCMachines.INFILTRATOR_MENU.get(), InfiltratorScreen::new);
+            MenuScreens.register(NCMachines.ELECTROLYZER_MENU.get(), LargeElectrolyzerScreen::new);
             BlockEntityRenderers.register(NCMachines.POOL.get(), context -> new DecayPoolRenderer());
             BlockEntityRenderers.register(NCMachines.DISTILLER.get(), context -> new DistillerRenderer());
             BlockEntityRenderers.register(NCMachines.INFILTRATOR.get(), context -> new InfiltratorRenderer());
+            BlockEntityRenderers.register(NCMachines.ELECTROLYZER.get(), context -> new LargeElectrolyzerRenderer());
         });
     }
 }

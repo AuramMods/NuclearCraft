@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:multiblock_electrolyzer",
+    "item_inputs": [],
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 250
+        }
+    ],
+    "item_outputs": [],
+    "fluid_outputs": [
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:fluorine",
+            "amount": 250
+        }
+    ],
+    "electrolyte_group": "fluoride_solution"
+}

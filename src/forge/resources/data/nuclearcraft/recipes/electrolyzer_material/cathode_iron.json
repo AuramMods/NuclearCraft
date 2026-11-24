@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:electrolyzer_cathode",
+    "block": [
+        {
+            "tag": "forge:storage_blocks/iron"
+        },
+        {
+            "item": "minecraft:iron_block"
+        }
+    ],
+    "efficiency": 0.6
+}

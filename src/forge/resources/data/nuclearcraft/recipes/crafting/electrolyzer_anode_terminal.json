@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BSB",
+        "LCL",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "L": {
+            "tag": "forge:gems/lapis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:electrolyzer_anode_terminal",
+        "count": 2
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/electrolyzer/controller_front_on",
+        "south": "nuclearcraft:block/machine/electrolyzer/controller_back",
+        "east": "nuclearcraft:block/machine/electrolyzer/controller_side",
+        "west": "nuclearcraft:block/machine/electrolyzer/controller_side",
+        "up": "nuclearcraft:block/machine/electrolyzer/controller_top",
+        "down": "nuclearcraft:block/machine/electrolyzer/controller_bottom",
+        "particle": "nuclearcraft:block/machine/electrolyzer/controller_front_on"
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BSB",
+        "HCH",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:sintered_steel"
+        },
+        "H": {
+            "tag": "forge:ingots/hard_carbon"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:electrolyzer_controller"
+    }
+}

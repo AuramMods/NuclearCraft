@@ -157,7 +157,7 @@ abstract class MachineController extends BlockEntity {
         assemblyChanged();
     }
 
-    @Nullable String wallError(Part part, Direction outward) { return part.distillerWall() ? "wall" : null; }
+    @Nullable String wallError(Part part, Direction outward) { return part.distillerWall() || part.electrodeTerminal() ? "wall" : null; }
     abstract @Nullable String validateLayout(ServerLevel server, Cuboid found);
     void assemblyChanged() {}
 

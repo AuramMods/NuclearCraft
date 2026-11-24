@@ -7,13 +7,19 @@ import nc.multiblock.machine.Distiller;
 import nc.multiblock.machine.DistillerMenu;
 import nc.multiblock.machine.Infiltrator;
 import nc.multiblock.machine.InfiltratorMenu;
+import nc.multiblock.machine.LargeElectrolyzer;
+import nc.multiblock.machine.LargeElectrolyzerMenu;
 import nc.multiblock.machine.MachinePartBlock;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.multiblock.machine.MachinePort;
 import nc.recipe.DecayPoolRecipe;
 import nc.recipe.DistillerRecipe;
+import nc.recipe.ElectrolyzerElectrolyteRecipe;
+import nc.recipe.ElectrolyzerMaterialRecipe;
+import nc.recipe.ElectrolyzerMaterialRecipe.Kind;
 import nc.recipe.InfiltratorPressureRecipe;
 import nc.recipe.InfiltratorRecipe;
+import nc.recipe.LargeElectrolyzerRecipe;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -46,7 +52,14 @@ public final class NCMachines {
     private static final ForgeConfigSpec.IntValue INFILTRATOR_POWER;
     private static final ForgeConfigSpec.DoubleValue INFILTRATOR_SOUND_VOLUME;
     private static final ForgeConfigSpec.BooleanValue INFILTRATOR_SMART_INPUT;
+    private static final ForgeConfigSpec.IntValue ELECTROLYZER_TIME;
+    private static final ForgeConfigSpec.IntValue ELECTROLYZER_POWER;
+    private static final ForgeConfigSpec.DoubleValue ELECTROLYZER_SOUND_VOLUME;
+    private static final ForgeConfigSpec.BooleanValue ELECTROLYZER_SMART_INPUT;
     private static final EnumMap<Part, ForgeConfigSpec.DoubleValue> SIEVE_EFFICIENCIES = new EnumMap<>(Part.class);
+    private static final EnumMap<Kind, RegistryObject<RecipeType<ElectrolyzerMaterialRecipe>>> MATERIAL_RECIPES = new EnumMap<>(Kind.class);
+    private static final EnumMap<Kind, RegistryObject<RecipeSerializer<ElectrolyzerMaterialRecipe>>> MATERIAL_SERIALIZERS =
+            new EnumMap<>(Kind.class);
 
     static {
         var config = new ForgeConfigSpec.Builder();
@@ -71,6 +84,12 @@ public final class NCMachines {
         INFILTRATOR_SOUND_VOLUME = config.defineInRange("sound_volume", 1D, 0D, 15D);
         INFILTRATOR_SMART_INPUT = config.define("smart_input", true);
         config.pop();
+        config.push("electrolyzer");
+        ELECTROLYZER_TIME = config.defineInRange("time", 20, 1, 128000);
+        ELECTROLYZER_POWER = config.defineInRange("power", 320, 1, 128000);
+        ELECTROLYZER_SOUND_VOLUME = config.defineInRange("sound_volume", 1D, 0D, 15D);
+        ELECTROLYZER_SMART_INPUT = config.define("smart_input", true);
+        config.pop();
         SPEC = config.build();
 
         for (Part part : Part.values()) {
@@ -82,11 +101,16 @@ public final class NCMachines {
                     case FRAME -> new MachinePartBlock.Frame(properties);
                     case REDSTONE -> new MachinePartBlock.Redstone(properties);
                     case REBOILER, INFILTRATOR_HEATER -> new MachinePartBlock.Active(properties, part);
+                    case ANODE_TERMINAL, CATHODE_TERMINAL -> new MachinePartBlock.Terminal(properties, part);
                     default -> part.wallEntity() ? new MachinePartBlock.Wall(properties, part) : new MachinePartBlock(properties, part);
                 };
             });
             BLOCKS.put(part, block);
             NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+        }
+        for (Kind kind : Kind.values()) {
+            MATERIAL_RECIPES.put(kind, NCRegistries.RECIPE_TYPES.register(kind.id(), () -> RecipeType.simple(NuclearCraft.id(kind.id()))));
+            MATERIAL_SERIALIZERS.put(kind, NCRegistries.RECIPE_SERIALIZERS.register(kind.id(), () -> new ElectrolyzerMaterialRecipe.Serializer(kind)));
         }
     }
 
@@ -116,6 +140,21 @@ public final class NCMachines {
             NCRegistries.RECIPE_SERIALIZERS.register("infiltrator_pressure_fluid", InfiltratorPressureRecipe.Serializer::new);
     public static final RegistryObject<SoundEvent> INFILTRATOR_RUN = NCRegistries.SOUNDS.register("block.infiltrator.run",
             () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id("block.infiltrator.run")));
+    public static final RegistryObject<BlockEntityType<LargeElectrolyzer>> ELECTROLYZER =
+            NCRegistries.BLOCK_ENTITIES.register("electrolyzer_controller",
+                    () -> BlockEntityType.Builder.of(LargeElectrolyzer::new, block(Part.ELECTROLYZER)).build(null));
+    public static final RegistryObject<MenuType<LargeElectrolyzerMenu>> ELECTROLYZER_MENU =
+            NCRegistries.MENUS.register("electrolyzer_controller", () -> new MenuType<>(LargeElectrolyzerMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<LargeElectrolyzerRecipe>> ELECTROLYZER_RECIPES =
+            NCRegistries.RECIPE_TYPES.register("multiblock_electrolyzer", () -> RecipeType.simple(NuclearCraft.id("multiblock_electrolyzer")));
+    public static final RegistryObject<RecipeSerializer<LargeElectrolyzerRecipe>> ELECTROLYZER_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("multiblock_electrolyzer", LargeElectrolyzerRecipe.Serializer::new);
+    public static final RegistryObject<RecipeType<ElectrolyzerElectrolyteRecipe>> ELECTROLYTES =
+            NCRegistries.RECIPE_TYPES.register("electrolyzer_electrolyte", () -> RecipeType.simple(NuclearCraft.id("electrolyzer_electrolyte")));
+    public static final RegistryObject<RecipeSerializer<ElectrolyzerElectrolyteRecipe>> ELECTROLYTE_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("electrolyzer_electrolyte", ElectrolyzerElectrolyteRecipe.Serializer::new);
+    public static final RegistryObject<SoundEvent> ELECTROLYZER_RUN = NCRegistries.SOUNDS.register("block.electrolyzer.run",
+            () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id("block.electrolyzer.run")));
     public static final RegistryObject<BlockEntityType<MachinePort>> PORT = NCRegistries.BLOCK_ENTITIES.register("machine_port",
             () -> BlockEntityType.Builder.of(MachinePort::new, block(Part.PROCESS), block(Part.RESERVOIR), block(Part.POWER)).build(null));
     public static final RegistryObject<MenuType<DecayPoolMenu>> MENU = NCRegistries.MENUS.register("decay_pool_controller",
@@ -157,6 +196,16 @@ public final class NCMachines {
     public static boolean infiltratorSmartInput() {
         return SPEC.isLoaded() ? INFILTRATOR_SMART_INPUT.get() : INFILTRATOR_SMART_INPUT.getDefault();
     }
+    public static int electrolyzerTime() { return SPEC.isLoaded() ? ELECTROLYZER_TIME.get() : ELECTROLYZER_TIME.getDefault(); }
+    public static int electrolyzerPower() { return SPEC.isLoaded() ? ELECTROLYZER_POWER.get() : ELECTROLYZER_POWER.getDefault(); }
+    public static double electrolyzerSoundVolume() {
+        return SPEC.isLoaded() ? ELECTROLYZER_SOUND_VOLUME.get() : ELECTROLYZER_SOUND_VOLUME.getDefault();
+    }
+    public static boolean electrolyzerSmartInput() {
+        return SPEC.isLoaded() ? ELECTROLYZER_SMART_INPUT.get() : ELECTROLYZER_SMART_INPUT.getDefault();
+    }
+    public static RecipeType<ElectrolyzerMaterialRecipe> materialRecipes(Kind kind) { return MATERIAL_RECIPES.get(kind).get(); }
+    public static RecipeSerializer<ElectrolyzerMaterialRecipe> materialSerializer(Kind kind) { return MATERIAL_SERIALIZERS.get(kind).get(); }
     public static double sieveEfficiency(Part part) {
         var efficiency = SIEVE_EFFICIENCIES.get(part);
         return SPEC.isLoaded() ? efficiency.get() : efficiency.getDefault();

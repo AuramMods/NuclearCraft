@@ -46,19 +46,25 @@ public class MachinePartBlock extends Block {
         HASTELLOY_SIEVE("hastelloy_sieve_assembly"), REFLUX("distiller_reflux_unit"),
         REBOILER("distiller_reboiling_unit"), LIQUID_DISTRIBUTOR("distiller_liquid_distributor"),
         INFILTRATOR("infiltrator_controller"), PRESSURE_CHAMBER("infiltrator_pressure_chamber"),
-        INFILTRATOR_HEATER("infiltrator_heating_unit");
+        INFILTRATOR_HEATER("infiltrator_heating_unit"),
+        ELECTROLYZER("electrolyzer_controller"), CATHODE_TERMINAL("electrolyzer_cathode_terminal"),
+        ANODE_TERMINAL("electrolyzer_anode_terminal"),
+        STEEL_DIAPHRAGM("sintered_steel_diaphragm"), PES_DIAPHRAGM("polyethersulfone_diaphragm"),
+        ZIRFON_DIAPHRAGM("zirfon_diaphragm");
 
         private final String id;
 
         Part(String id) { this.id = id; }
         public String id() { return id; }
         boolean port() { return this == PROCESS || this == RESERVOIR || this == POWER; }
-        boolean controller() { return this == DECAY_POOL || this == DISTILLER || this == INFILTRATOR; }
+        boolean controller() { return this == DECAY_POOL || this == DISTILLER || this == INFILTRATOR || this == ELECTROLYZER; }
         boolean internal() {
-            return this == CONTAINER || this == SIEVE_TRAY || sieve() || this == PRESSURE_CHAMBER || this == INFILTRATOR_HEATER;
+            return this == CONTAINER || this == SIEVE_TRAY || sieve() || this == PRESSURE_CHAMBER || this == INFILTRATOR_HEATER
+                    || this == STEEL_DIAPHRAGM || this == PES_DIAPHRAGM || this == ZIRFON_DIAPHRAGM;
         }
         boolean sieve() { return this == STEEL_SIEVE || this == PTFE_SIEVE || this == HASTELLOY_SIEVE; }
         boolean distillerWall() { return this == REFLUX || this == REBOILER || this == LIQUID_DISTRIBUTOR; }
+        boolean electrodeTerminal() { return this == CATHODE_TERMINAL || this == ANODE_TERMINAL; }
         public boolean wallEntity() { return port() || controller(); }
     }
 
@@ -156,6 +162,21 @@ public class MachinePartBlock extends Block {
         }
     }
 
+    public static final class Terminal extends MachinePartBlock {
+        public Terminal(Properties properties, Part part) {
+            super(properties, part);
+            registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.FACING, Direction.UP));
+        }
+
+        @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(BlockStateProperties.FACING);
+        }
+
+        @Override public BlockState getStateForPlacement(BlockPlaceContext context) {
+            return defaultBlockState().setValue(BlockStateProperties.FACING, context.getClickedFace());
+        }
+    }
+
     public static final class Wall extends MachinePartBlock implements EntityBlock {
         public Wall(Properties properties, Part part) {
             super(properties, part);
@@ -176,6 +197,7 @@ public class MachinePartBlock extends Block {
                 case DECAY_POOL -> new DecayPool(pos, state);
                 case DISTILLER -> new Distiller(pos, state);
                 case INFILTRATOR -> new Infiltrator(pos, state);
+                case ELECTROLYZER -> new LargeElectrolyzer(pos, state);
                 default -> new MachinePort(pos, state);
             };
         }

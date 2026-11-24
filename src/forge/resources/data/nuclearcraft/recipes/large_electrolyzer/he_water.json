@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:multiblock_electrolyzer",
+    "item_inputs": [],
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:he_water",
+            "amount": 500
+        }
+    ],
+    "item_outputs": [],
+    "fluid_outputs": [
+        {
+            "fluid": "nuclearcraft:hydrogen",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:deuterium",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:oxygen",
+            "amount": 250
+        }
+    ],
+    "electrolyte_group": "hydroxide_solution"
+}

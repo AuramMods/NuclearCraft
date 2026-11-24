@@ -1,0 +1,27 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal"
+        },
+        "facing=south": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal",
+            "y": 180
+        },
+        "facing=east": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal",
+            "y": 90
+        },
+        "facing=west": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal",
+            "y": 270
+        },
+        "facing=down": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal",
+            "x": 90
+        },
+        "facing=up": {
+            "model": "nuclearcraft:block/electrolyzer_cathode_terminal",
+            "x": 270
+        }
+    }
+}

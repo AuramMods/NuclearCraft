@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MQM",
+        "QMQ",
+        "MQM"
+    ],
+    "key": {
+        "M": {
+            "item": "nuclearcraft:sintered_steel"
+        },
+        "Q": [
+            {
+                "tag": "forge:dusts/quartz"
+            },
+            {
+                "tag": "forge:dusts/nether_quartz"
+            }
+        ]
+    },
+    "result": {
+        "item": "nuclearcraft:sintered_steel_diaphragm",
+        "count": 4
+    }
+}

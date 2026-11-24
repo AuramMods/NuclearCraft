@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BSB",
+        "RCR",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "R": {
+            "tag": "forge:dusts/redstone"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:electrolyzer_cathode_terminal",
+        "count": 2
+    }
+}

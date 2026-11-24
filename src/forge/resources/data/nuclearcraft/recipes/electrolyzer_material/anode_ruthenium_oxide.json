@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:electrolyzer_anode",
+    "block": {
+        "tag": "forge:storage_blocks/ruthenium_oxide"
+    },
+    "efficiency": 0.9
+}

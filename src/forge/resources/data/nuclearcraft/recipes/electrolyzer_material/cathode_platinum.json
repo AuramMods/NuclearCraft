@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:electrolyzer_cathode",
+    "block": {
+        "tag": "forge:storage_blocks/platinum"
+    },
+    "efficiency": 1
+}

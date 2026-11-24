@@ -99,7 +99,7 @@ public final class Distiller extends MachineController {
             case REBOILER -> outward == Direction.DOWN ? null : "reboiler";
             case REFLUX -> outward == Direction.UP ? null : "reflux";
             case LIQUID_DISTRIBUTOR -> outward == Direction.UP ? null : "distributor";
-            default -> null;
+            default -> super.wallError(part, outward);
         };
     }
 

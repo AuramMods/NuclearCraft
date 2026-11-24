@@ -1,0 +1,9 @@
+{
+    "type": "nuclearcraft:electrolyzer_electrolyte",
+    "fluid_input": {
+        "fluid": "nuclearcraft:sodium_fluoride_solution",
+        "amount": 1
+    },
+    "efficiency": 0.9,
+    "group": "fluoride_solution"
+}

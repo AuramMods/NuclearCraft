@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MQM",
+        "QMQ",
+        "MQM"
+    ],
+    "key": {
+        "M": {
+            "item": "nuclearcraft:polyethersulfone"
+        },
+        "Q": [
+            {
+                "tag": "forge:dusts/quartz"
+            },
+            {
+                "tag": "forge:dusts/nether_quartz"
+            }
+        ]
+    },
+    "result": {
+        "item": "nuclearcraft:polyethersulfone_diaphragm",
+        "count": 4
+    }
+}

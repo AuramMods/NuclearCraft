@@ -14,6 +14,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
@@ -28,24 +29,37 @@ final class MachineVolumeSounds<T extends BlockEntity> {
     }
 
     void play(T machine, BlockPos min, int width, int height, int depth) {
+        play(machine, () -> corners(min, width, height, depth));
+    }
+
+    void play(T machine, Collection<BlockPos> positions) {
+        play(machine, () -> positions);
+    }
+
+    private void play(T machine, Supplier<? extends Collection<BlockPos>> locations) {
         var minecraft = Minecraft.getInstance();
         float currentVolume = (float) volume.applyAsDouble(machine);
         if (currentVolume <= 0 || minecraft.options.getSoundSourceVolume(SoundSource.MASTER) == 0
                 || minecraft.options.getSoundSourceVolume(SoundSource.BLOCKS) == 0) return;
         var running = active.get(machine);
         if (running != null && running.stream().anyMatch(loop -> !loop.isStopped())) return;
-        var corners = new HashSet<BlockPos>();
-        for (int i = 0; i < 8; i++) {
-            corners.add(min.offset((i & 1) == 0 ? 0 : width - 1,
-                    (i & 2) == 0 ? 0 : height - 1, (i & 4) == 0 ? 0 : depth - 1));
-        }
-        var loops = new ArrayList<CornerSound<T>>(corners.size());
-        for (var corner : corners) {
-            var loop = new CornerSound<>(sound.get(), machine, corner, currentVolume, volume);
+        var positions = locations.get();
+        var loops = new ArrayList<CornerSound<T>>(positions.size());
+        for (var position : positions) {
+            var loop = new CornerSound<>(sound.get(), machine, position, currentVolume, volume);
             minecraft.getSoundManager().play(loop);
             loops.add(loop);
         }
         active.put(machine, loops);
+    }
+
+    private static Collection<BlockPos> corners(BlockPos min, int width, int height, int depth) {
+        var positions = new HashSet<BlockPos>();
+        for (int i = 0; i < 8; i++) {
+            positions.add(min.offset((i & 1) == 0 ? 0 : width - 1,
+                    (i & 2) == 0 ? 0 : height - 1, (i & 4) == 0 ? 0 : depth - 1));
+        }
+        return positions;
     }
 
     private static final class CornerSound<T extends BlockEntity> extends AbstractTickableSoundInstance {

@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:machine_diaphragm",
+    "block": {
+        "item": "nuclearcraft:polyethersulfone_diaphragm"
+    },
+    "efficiency": 0.9,
+    "contact": 1.5
+}
