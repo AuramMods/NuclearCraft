@@ -2,6 +2,8 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -27,10 +29,10 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount) {
         if (!tag) {
             return List.of(new FluidStack(ForgeRegistries.FLUIDS.getValue(id), amount));
         }
-        return ForgeRegistries.FLUIDS.getValues().stream()
+        return BuiltInRegistries.FLUID.getTag(TagKey.create(Registries.FLUID, id)).stream()
+                .flatMap(holders -> holders.stream().map(Holder::value))
                 .filter(fluid -> fluid.isSource(fluid.defaultFluidState()))
-                .map(fluid -> new FluidStack(fluid, amount))
-                .filter(this::accepts).toList();
+                .map(fluid -> new FluidStack(fluid, amount)).toList();
     }
 
     public static FluidIngredient fromJson(JsonObject json, ResourceLocation recipeId) {

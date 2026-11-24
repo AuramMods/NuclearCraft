@@ -1,14 +1,13 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:fluid_container_crafting",
     "category": "misc",
-    "ingredients": [
-        {
-            "item": "nuclearcraft:empty_cooler"
-        },
-        {
-            "item": "nuclearcraft:fluorine_bucket"
-        }
-    ],
+    "ingredient": {
+        "item": "nuclearcraft:empty_cooler"
+    },
+    "fluid_input": {
+        "tag": "forge:fluorine",
+        "amount": 1000
+    },
     "result": {
         "item": "nuclearcraft:pebble_fission_cooler_fluorine"
     }

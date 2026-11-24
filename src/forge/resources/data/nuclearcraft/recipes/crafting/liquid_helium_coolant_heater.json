@@ -1,14 +1,13 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:fluid_container_crafting",
     "category": "misc",
-    "ingredients": [
-        {
-            "item": "nuclearcraft:standard_coolant_heater"
-        },
-        {
-            "item": "nuclearcraft:liquid_helium_bucket"
-        }
-    ],
+    "ingredient": {
+        "item": "nuclearcraft:standard_coolant_heater"
+    },
+    "fluid_input": {
+        "fluid": "nuclearcraft:liquid_helium",
+        "amount": 1000
+    },
     "result": {
         "item": "nuclearcraft:liquid_helium_coolant_heater",
         "count": 1

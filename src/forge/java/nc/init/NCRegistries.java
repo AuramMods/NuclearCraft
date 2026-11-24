@@ -11,6 +11,7 @@ import nc.processor.ProcessorBlock;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
+import nc.recipe.FluidContainerRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
 import nc.recipe.SupercoolerRecipe;
@@ -45,6 +46,9 @@ public final class NCRegistries {
             DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, NuclearCraft.MOD_ID);
     static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
             DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, NuclearCraft.MOD_ID);
+
+    public static final RegistryObject<RecipeSerializer<FluidContainerRecipe>> FLUID_CONTAINER_CRAFTING =
+            RECIPE_SERIALIZERS.register("fluid_container_crafting", FluidContainerRecipe.Serializer::new);
 
     public static final RegistryObject<MelterBlock> MELTER = BLOCKS.register("melter", () -> new MelterBlock(
             BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)

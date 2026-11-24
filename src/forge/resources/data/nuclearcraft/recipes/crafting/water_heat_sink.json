@@ -1,14 +1,13 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:fluid_container_crafting",
     "category": "misc",
-    "ingredients": [
-        {
-            "item": "nuclearcraft:empty_sink"
-        },
-        {
-            "item": "minecraft:water_bucket"
-        }
-    ],
+    "ingredient": {
+        "item": "nuclearcraft:empty_sink"
+    },
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 1000
+    },
     "result": {
         "item": "nuclearcraft:water_heat_sink",
         "count": 1
