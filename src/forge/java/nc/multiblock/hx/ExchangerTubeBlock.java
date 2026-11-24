@@ -1,11 +1,15 @@
 package nc.multiblock.hx;
 
+import nc.init.HeatExchangerConfig;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -19,8 +23,11 @@ import net.minecraft.util.StringRepresentable;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.Locale;
+import java.util.function.DoubleSupplier;
 
 public final class ExchangerTubeBlock extends ExchangerPartBlock {
     public enum Setting implements StringRepresentable {
@@ -56,14 +63,57 @@ public final class ExchangerTubeBlock extends ExchangerPartBlock {
     private static final EnumProperty<Setting> WEST = EnumProperty.create("west", Setting.class);
     private static final EnumProperty<Setting> EAST = EnumProperty.create("east", Setting.class);
     private static final VoxelShape CENTER = Block.box(5, 5, 5, 11, 11, 11);
+    private final DoubleSupplier conductivity;
+    private final DoubleSupplier retention;
 
     public ExchangerTubeBlock(Properties properties, Part part) {
+        this(properties, part, () -> HeatExchangerConfig.conductivity(stockMaterial(part)),
+                () -> HeatExchangerConfig.retention(stockMaterial(part)));
+    }
+
+    public ExchangerTubeBlock(Properties properties, double conductivity, double retention) {
+        this(properties, Part.SCRIPTED_TUBE, () -> conductivity, () -> retention);
+        if (conductivity < 0D || retention < 0D || !Double.isFinite(conductivity * retention)) {
+            throw new IllegalArgumentException("Tube conductivity, retention and their product must be finite and nonnegative");
+        }
+    }
+
+    private ExchangerTubeBlock(Properties properties, Part part, DoubleSupplier conductivity, DoubleSupplier retention) {
         super(properties, part);
+        this.conductivity = conductivity;
+        this.retention = retention;
         BlockState defaults = stateDefinition.any();
         for (Direction side : Direction.values()) {
             defaults = withSetting(defaults, side, Setting.CLOSED);
         }
         registerDefaultState(defaults);
+    }
+
+    private static int stockMaterial(Part part) {
+        return switch (part) {
+            case COPPER -> 0;
+            case HARD_CARBON -> 1;
+            case THERMOCONDUCTING -> 2;
+            default -> throw new IllegalArgumentException("Unknown stock heat exchanger tube " + part);
+        };
+    }
+
+    double conductivity() {
+        return conductivity.getAsDouble();
+    }
+
+    double retention() {
+        return retention.getAsDouble();
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(Component.translatable("tooltip.nuclearcraft.exchanger.tube_conductivity", conductivity())
+                .withStyle(ChatFormatting.YELLOW));
+        String percent = String.format(Locale.ROOT, "%.2f%%", retention() * 100D);
+        tooltip.add(Component.translatable("tooltip.nuclearcraft.exchanger.tube_retention", percent)
+                .withStyle(ChatFormatting.BLUE));
     }
 
     @Override

@@ -569,6 +569,33 @@ Glass shell walls show the exchanger's two shell fluids and the condenser's cool
 
 All 167 local GameTests passed, including the condenser's explicit display-clearing packet. The exact packaged JAR loaded on clean Forge 47.4.18 and in the isolated Auram instance. The muted Auram client showed 360,000 mB of exchanger input and 900,000 mB of shell output, cleared both immediately when the frame broke, and recovered both when repaired. It also rendered the condenser's 340,000 mB of coolant. The focus monitor recorded zero activation, foreground, or visible-window samples.
 
+### Scripted heat-exchanger tubes
+
+Migrate `Registration.registerHeatExchangerTube` to a KubeJS startup script. Keep the legacy `nuclearcraft:heat_exchanger_tube_<id>` block and item IDs on the server and client.
+
+```js
+const NuclearCraftExchangers = Java.loadClass('nc.init.NCHeatExchangers')
+const tube = 'nuclearcraft:heat_exchanger_tube_demo'
+
+StartupEvents.registry('block', event => {
+    event.createCustom(tube, () => NuclearCraftExchangers.createScriptedTube(64, 0.5))
+})
+
+StartupEvents.registry('item', event => {
+    event.createCustom(tube, () => NuclearCraftExchangers.createScriptedTubeItem(tube))
+})
+```
+
+The first value is the heat transfer coefficient in H/t/K. The second is the heat retention multiplier, with `0.5` corresponding to 50 percent. Use finite, nonnegative values whose product is also finite. Both values appear on the item tooltip and in the exchanger's computer readings. Connected stock and scripted tubes contribute their own coefficients along the active paths. Condensers use the same registered blocks and flow settings.
+
+Supply the blockstate, models, mining tags, loot table, and crafting recipe through the pack. The stock tube's multipart blockstate has entries for open faces and baffles on all six sides and can reference your own models. The stock multitool cycles the scripted tube's faces and updates the matching face of a connected tube. The Forge block state stores these settings. Convert the six bytes in the legacy `settings` array in down, up, north, south, west, east order. Values 0 through 3 map to `closed`, `open`, `closed_baffle`, and `open_baffle`. Use the old `tubeType` name to select the scripted block. The exchanger reconstructs flow directions from the converted layout and preserves circuit buffers under the same controller fields as stock tubes.
+
+All 205 local GameTests passed. The mixed network used one scripted tube at 64 H/t/K and 50 percent retention alongside two thermoconducting tubes. The three tubes retained 75 percent of the heat along the shell paths. The multitool cycled all four settings on the scripted face, mirrored them to its stock neighbor, and invalidated the previous port capability. Reassembly restored both products.
+
+The packaged JAR booted on clean Forge 47.4.18. With Auram's KubeJS 2001.6.5-build.16, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each fed a mixed exchanger. Each exchanger converted 1,024 mB of oxygen exhaust and 48 mB of water into 256 mB of oxygen and 192 mB of high-pressure steam. A condenser with scripted tubes also converted 16,000 mB of exhaust steam into 1,000 mB of condensate. Incompatible adjacent tanks held all three machines' products in their buffers. The networks delivered the exact outputs after restart and retained the amounts through confirmed chunk unload and reload.
+
+The isolated 539-mod Auram client ran the mixed exchanger through Ender IO and the scripted condenser through Mekanism. Both reported the configured tube coefficients and retained conductivity through their computer readings. The outputs remained in their destination tanks when the world reopened. The client synchronized the crafting recipe, displayed the 64 H/t/K and 50 percent tooltip, and loaded distinct baked geometry for closed, open, and baffled faces. It used master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible window samples.
+
 
 Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
 

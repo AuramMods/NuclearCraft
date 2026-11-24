@@ -1682,6 +1682,8 @@
     "message.nuclearcraft.exchanger.tube_closed": "Tube face closed",
     "message.nuclearcraft.exchanger.tube_open_baffle": "Tube face open baffle",
     "message.nuclearcraft.exchanger.tube_closed_baffle": "Tube face closed baffle",
+    "tooltip.nuclearcraft.exchanger.tube_conductivity": "Heat transfer coefficient %s H/t/K",
+    "tooltip.nuclearcraft.exchanger.tube_retention": "Heat retention %s",
     "block.nuclearcraft.heat_exchanger_controller": "Heat Exchanger Controller",
     "block.nuclearcraft.heat_exchanger_baffle": "Heat Exchanger Baffle",
     "gui.nuclearcraft.exchanger.shell_input": "Shell input %s%%",

@@ -216,23 +216,14 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                 totalShellFlow = totalShellFlow.add(shellFlow);
                 flowCosine += tubeFlow.dot(shellFlow);
             }
-            int material = tubeMaterial(tubeStates.get(entry.getKey()));
-            double coefficient = HeatExchangerConfig.conductivity(material);
+            var block = (ExchangerTubeBlock) tubeStates.get(entry.getKey()).getBlock();
+            double coefficient = block.conductivity();
             conductivity += coefficient;
-            retainedConductivity += coefficient * HeatExchangerConfig.retention(material);
+            retainedConductivity += coefficient * block.retention();
         }
         double inverse = usefulTubes == 0 ? 0D : 1D / usefulTubes;
         return new Network(tube.inlet(), tube.tubes(), usefulTubes, conductivity, retainedConductivity,
                 totalTubeFlow.scale(inverse), totalShellFlow.scale(inverse), flowCosine * inverse);
-    }
-
-    static int tubeMaterial(BlockState state) {
-        return switch (ExchangerPartBlock.part(state)) {
-            case COPPER -> 0;
-            case HARD_CARBON -> 1;
-            case THERMOCONDUCTING -> 2;
-            default -> throw new IllegalStateException("Non-tube in heat exchanger");
-        };
     }
 
     private static boolean tubeOpen(Map<BlockPos, BlockState> tubes, BlockPos pos, Direction side) {

@@ -21,7 +21,8 @@ import nc.multiblock.Cuboid;
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class ExchangerPartBlock extends Block {
     public enum Part {
-        CASING, GLASS, COMPUTER, REDSTONE, BAFFLE, CONDENSER, CONTROLLER, INLET, OUTLET, COPPER, HARD_CARBON, THERMOCONDUCTING;
+        CASING, GLASS, COMPUTER, REDSTONE, BAFFLE, CONDENSER, CONTROLLER, INLET, OUTLET,
+        COPPER, HARD_CARBON, THERMOCONDUCTING, SCRIPTED_TUBE;
 
         boolean controller() {
             return this == CONTROLLER || this == CONDENSER;

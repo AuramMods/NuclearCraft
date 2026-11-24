@@ -22,6 +22,7 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -37,6 +38,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
@@ -137,6 +139,19 @@ public final class NCHeatExchangers {
     private static RegistryObject<ExchangerTubeBlock> tube(Part part) {
         return block("heat_exchanger_tube_" + part.name().toLowerCase(Locale.ROOT),
                 () -> new ExchangerTubeBlock(metal().noOcclusion().dynamicShape(), part));
+    }
+
+    public static ExchangerTubeBlock createScriptedTube(double conductivity, double retention) {
+        return new ExchangerTubeBlock(metal().noOcclusion().dynamicShape(), conductivity, retention);
+    }
+
+    public static BlockItem createScriptedTubeItem(String blockId) {
+        var id = ResourceLocation.tryParse(blockId);
+        var block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
+        if (!(block instanceof ExchangerTubeBlock)) {
+            throw new IllegalArgumentException("No NuclearCraft heat exchanger tube with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
     }
 
     private static <T extends Block> RegistryObject<T> block(String id, Supplier<T> factory) {

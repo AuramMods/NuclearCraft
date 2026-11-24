@@ -437,11 +437,10 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     List<List<Object>> computerTubes() {
         return layout.tubes().stream().map(tube -> {
             BlockState state = level.getBlockState(tube.pos());
-            int material = ExchangerLayout.tubeMaterial(state);
+            var block = (ExchangerTubeBlock) state.getBlock();
             List<String> settings = Arrays.stream(Direction.values())
                     .map(side -> ExchangerTubeBlock.setting(state, side).getSerializedName()).toList();
-            return List.<Object>of(ComputerValues.position(tube.pos()), HeatExchangerConfig.conductivity(material),
-                    HeatExchangerConfig.retention(material), settings,
+            return List.<Object>of(ComputerValues.position(tube.pos()), block.conductivity(), block.retention(), settings,
                     ComputerValues.vector(tube.tubeFlow()), ComputerValues.vector(tube.shellFlow()));
         }).toList();
     }
