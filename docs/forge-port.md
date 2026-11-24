@@ -235,8 +235,8 @@ The isolated Auram client loaded all 539 installed mod JARs and ran the same Che
 | Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and Pressurized Tubes |
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
 | Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
-| Applied Energistics 2 | 15.4.10 | Item and fluid import/export and shared material tags |
-| Refined Storage | 1.12.4 | Item and fluid import/export |
+| Applied Energistics 2 | 15.4.10 | Item and fluid transfers through Import and Storage Buses, plus shared material tags |
+| Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags and fluid transfer |
@@ -385,6 +385,18 @@ On a packaged Forge 47.4.10 dedicated server, Ender IO supplied water, potassium
 After restarting the dedicated server, both routes processed a second feed and doubled the saved output amounts without refilling the electrolyte. In another fixture, the server unloaded the controller's chunk after processing had started. After reloading, the Mekanism route saved 750 mB of hydrogen, 250 mB of deuterium, and 500 mB of oxygen, with the original electrolyte charge intact.
 
 The same JAR ran in the isolated 539-mod Auram snapshot on Forge 47.4.18, with AuramCore 1.0.37 build `a064b87` and Thaumaturge 1.1.6. A KubeJS override raised the low-enriched water recipe's oxygen output per batch from 250 mB to 300 mB. The Mekanism route saved 750 mB of hydrogen, 250 mB of deuterium, and 600 mB of oxygen. The Ender IO route saved 1,000 mB of hydrogen and 500 mB of oxygen. Both machines retained 64,000 mB of electrolyte. JEI initialized, OpenAL used No Output, and the native observer recorded zero visible windows and zero focus activations through a clean exit.
+
+### Applied Energistics 2 and Refined Storage
+
+The packaged jar ran on Forge 47.4.18 with Auram's Applied Energistics 2 15.4.10, GuideME 20.1.14, Refined Storage 1.12.4, and Ender IO 8.2.22-beta. The AE2 paths used an Import Bus at the source, a Storage Bus facing the destination, and an Energy Acceptor. The Refined Storage paths used an Importer, External Storage, and a Controller. Both Refined Storage endpoints used fluid mode on each fluid path. NuclearCraft Californium RTGs powered the networks and the processors. [AE2 subnet guide](https://guide.appliedenergistics.org/1.20.1/example-setups/pipe-subnet/) [Refined Storage Importer](https://refinedmods.com/refined-storage/input-and-output/importer.html)
+
+Both Supercooler routes respected a disabled west inlet and retained all 8,000 mB of nitrogen at the source. Opening the inlet let each Supercooler make 25 mB of liquid nitrogen. Each item route made one coal dust. Full item destinations and fluid tanks containing water held the products in the processors across a dedicated restart. Clearing the destinations let all four routes deliver their products, leaving the sources and processors empty.
+
+An AE2 network and a Refined Storage network each supplied a solid-fuel reactor with 1,000 mB of water through an outward vent and one LECf-251 oxide through the filtered fuel port. The unmatched LEU-235 oxide stayed in its source barrel. Each network recovered one depleted LECf-251 oxide. The two reactors held 4,000 mB of steam apiece while their destination tanks contained water. After a dedicated restart, clearing those tanks let both routes collect exactly 4,000 mB of high-pressure steam.
+
+Active Refined Storage 1.12.4 External Storage kept its target chunk resident after the administrative force-load was removed. The server-thread trace identified `ItemExternalStorageProvider` refreshing the target block entity and renewing Forge's transient chunk ticket. A server with Refined Storage alone reproduced this with an ordinary barrel. Disconnecting the test controllers released the chunk. A read-only observer then confirmed unloading and a new chunk instance. AE2 stayed connected throughout. After restoring the Refined Storage controllers, all four processor routes kept the earlier products and completed another batch. Natural eviction with that Refined Storage network active requires its external-storage refresh to look up already loaded chunks without creating chunk tickets.
+
+A fresh isolated copy with all 539 installed Auram mod JARs loaded the same processor routes and completed a second batch on each. The two fluid tanks reached 50 mB of liquid nitrogen apiece. Each item destination kept one coal dust from the dedicated test and received one Mekanism coal dust under Auram's unification rules. All sources and processor buffers saved empty. The client used master volume zero and OpenAL No Output, and the observer recorded zero desktop activations, foreground samples, and visible windows. Reopening the earlier test copy reproduced Psychedelicraft 1.20.1-port.4's missing player drug capability during login.
 
 ### Tools and Armor
 
