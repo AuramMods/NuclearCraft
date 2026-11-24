@@ -171,6 +171,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/wasteland_earth.png'
         include 'assets/nuclearcraft/textures/blocks/wasteland_portal.png*'
         include 'assets/nuclearcraft/textures/blocks/fission/casing/wall.png'
+        include 'assets/nuclearcraft/textures/blocks/fission/conductor.png'
         include 'assets/nuclearcraft/textures/blocks/fission/solid/controller_*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/pebble/**/*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/salt/**/*.png'

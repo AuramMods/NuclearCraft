@@ -19,7 +19,7 @@ import java.util.Objects;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
-                          FissionVariant variant) {
+                          List<BlockPos> conductors, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
                 @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
         boolean fluid() {
@@ -60,6 +60,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         List<BlockPos> shields = new ArrayList<>();
         List<BlockPos> managers = new ArrayList<>();
         List<BlockPos> irradiators = new ArrayList<>();
+        List<BlockPos> conductors = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(pos);
             FissionPartBlock.Role role = FissionPartBlock.role(state);
@@ -83,6 +84,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                         }
                         case SHIELD -> shields.add(pos.immutable());
                         case IRRADIATOR -> irradiators.add(pos.immutable());
+                        case CONDUCTOR -> conductors.add(pos.immutable());
                         case MODERATOR, REFLECTOR -> {}
                         default -> {
                             return invalid("interior", pos);
@@ -155,7 +157,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             }
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
-                List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators), variant),
+                List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
+                List.copyOf(conductors), variant),
                 Component.translatable("message.nuclearcraft.fission.assembled"));
     }
 

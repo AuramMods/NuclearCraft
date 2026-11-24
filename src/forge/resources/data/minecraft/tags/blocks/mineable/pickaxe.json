@@ -12,6 +12,7 @@
         "nuclearcraft:decay_pool_container",
         "nuclearcraft:melter",
         "nuclearcraft:fission_casing",
+        "nuclearcraft:fission_conductor",
         "nuclearcraft:solid_fission_cell",
         "nuclearcraft:water_heat_sink",
         "nuclearcraft:heavy_water_moderator",

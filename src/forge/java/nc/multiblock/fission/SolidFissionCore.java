@@ -69,12 +69,21 @@ final class SolidFissionCore {
         }
     }
 
-    private record Cluster(List<BlockPos> cells, List<BlockPos> sinks, List<BlockPos> heatingParts, boolean connectedToWall) {
-        long capacity() {
-            return BASE_HEAT_CAPACITY * (cells.size() + sinks.size() + heatingParts.size());
+    private record Cluster(List<BlockPos> cells, List<BlockPos> sinks, List<BlockPos> heatingParts,
+                           List<BlockPos> conductors, boolean connectedToWall) {
+        private int size() {
+            return cells.size() + sinks.size() + heatingParts.size() + conductors.size();
         }
 
-        long previousHeat(Map<BlockPos, Long> stored) {
+        long capacity() {
+            return BASE_HEAT_CAPACITY * size();
+        }
+
+        boolean contains(BlockPos pos) {
+            return cells.contains(pos) || sinks.contains(pos) || heatingParts.contains(pos) || conductors.contains(pos);
+        }
+
+        long previousHeat(ServerLevel level, Map<BlockPos, Long> stored) {
             long result = 0;
             for (BlockPos cell : cells) {
                 result += stored.getOrDefault(cell, 0L);
@@ -85,13 +94,17 @@ final class SolidFissionCore {
             for (BlockPos part : heatingParts) {
                 result += stored.getOrDefault(part, 0L);
             }
+            for (BlockPos pos : conductors) {
+                if (level.getBlockEntity(pos) instanceof FissionConductor conductor) {
+                    result += conductor.heat();
+                }
+            }
             return result;
         }
 
-        void retainHeat(Map<BlockPos, Long> stored, long heat) {
-            int count = cells.size() + sinks.size() + heatingParts.size();
-            long share = heat / count;
-            long remainder = heat % count;
+        void retainHeat(ServerLevel level, Map<BlockPos, Long> stored, long heat) {
+            long share = heat / size();
+            long remainder = heat % size();
             for (BlockPos cell : cells) {
                 keepHeat(stored, cell, share + (remainder-- > 0 ? 1 : 0));
             }
@@ -100,6 +113,11 @@ final class SolidFissionCore {
             }
             for (BlockPos part : heatingParts) {
                 keepHeat(stored, part, share + (remainder-- > 0 ? 1 : 0));
+            }
+            for (BlockPos pos : conductors) {
+                if (level.getBlockEntity(pos) instanceof FissionConductor conductor) {
+                    conductor.setHeat(share + (remainder-- > 0 ? 1 : 0));
+                }
             }
         }
 
@@ -199,21 +217,23 @@ final class SolidFissionCore {
     }
 
     private final SolidFissionLayout layout;
-    private List<Cluster> clusters;
+    private final Set<BlockPos> conductors;
+    private List<Cluster> clusters = List.of();
     private Set<BlockPos> activeCoolingParts = Set.of();
     private Set<BlockPos> activeHeatingParts = Set.of();
+    private Set<BlockPos> clusterRoots = Set.of();
     private Set<BlockPos> heatingSalts = Set.of();
-    private final Set<BlockPos> runningCells = new HashSet<>();
+    private Set<BlockPos> runningCells = Set.of();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
-        clusters = findClusters(layout, activeCoolingParts, activeHeatingParts);
+        conductors = Set.copyOf(layout.conductors());
     }
 
-    PartHeat partHeat(BlockPos pos, Map<BlockPos, Long> storedHeat, boolean running) {
+    PartHeat partHeat(ServerLevel level, BlockPos pos, Map<BlockPos, Long> storedHeat, boolean running) {
         for (Cluster cluster : clusters) {
-            if (cluster.cells().contains(pos) || cluster.sinks().contains(pos) || cluster.heatingParts().contains(pos)) {
-                return new PartHeat(cluster.previousHeat(storedHeat), cluster.capacity(),
+            if (cluster.contains(pos)) {
+                return new PartHeat(cluster.previousHeat(level, storedHeat), cluster.capacity(),
                         running && (runningCells.contains(pos) || heatingSalts.contains(pos) || activeHeatingParts.contains(pos)));
             }
         }
@@ -287,10 +307,26 @@ final class SolidFissionCore {
             case PEBBLE -> coolers.keySet();
             case SALT -> heaters.keySet();
         };
-        if (!cooledParts.equals(activeCoolingParts) || !heatedParts.equals(activeHeatingParts)) {
+        Set<BlockPos> roots = new LinkedHashSet<>(burning);
+        roots.addAll(heatedParts);
+        for (BlockPos neutronPart : moderatorPositions) {
+            if (!irradiation.containsKey(neutronPart)) {
+                for (Direction side : Direction.values()) {
+                    BlockPos neighbor = neutronPart.relative(side);
+                    if (cooledParts.contains(neighbor) || conductors.contains(neighbor)) {
+                        roots.add(neighbor);
+                    }
+                }
+            }
+        }
+        boolean rebuildClusters = !cooledParts.equals(activeCoolingParts) || !heatedParts.equals(activeHeatingParts)
+                || !burning.equals(runningCells) || !roots.equals(clusterRoots);
+        if (rebuildClusters) {
             activeCoolingParts = Set.copyOf(cooledParts);
             activeHeatingParts = Set.copyOf(heatedParts);
-            clusters = findClusters(layout, activeCoolingParts, activeHeatingParts);
+            runningCells = Set.copyOf(burning);
+            clusterRoots = Set.copyOf(roots);
+            clusters = findClusters(roots, burning, cooledParts, heatedParts);
         }
         var gasLoads = new ArrayList<GasLoad>();
         var saltLoads = new ArrayList<SaltLoad>();
@@ -298,7 +334,6 @@ final class SolidFissionCore {
         long casing = 0;
         double effective = 0;
         int usefulParts = moderatorPositions.size();
-        runningCells.clear();
         boolean storedHeatChanged = false;
         for (Cluster cluster : clusters) {
             long rawCluster = 0;
@@ -312,7 +347,6 @@ final class SolidFissionCore {
                     effectiveCluster += reaction.effectiveHeat();
                     baseCluster += (double) reaction.baseHeat() * reaction.bunch.packing;
                     activeCells++;
-                    runningCells.add(pos);
                 }
             }
 
@@ -372,16 +406,16 @@ final class SolidFissionCore {
                 }
             }
 
-            long previous = cluster.previousHeat(storedHeat);
+            long previous = cluster.previousHeat(level, storedHeat);
             long netHeat = rawCluster - cooling;
             boolean heatToWall = fluidCooling && netHeat > 0 && cluster.connectedToWall();
             long next = Math.max(0, Math.min(cluster.capacity(), previous + (heatToWall ? 0 : netHeat)));
-            if (next != previous) {
-                cluster.retainHeat(storedHeat, next);
+            if (next != previous || rebuildClusters && previous > 0) {
+                cluster.retainHeat(level, storedHeat, next);
                 storedHeatChanged = true;
             }
-            if (next >= cluster.capacity() && rawCluster > 0 && !cluster.cells().isEmpty()) {
-                cluster.retainHeat(storedHeat, 0);
+            if (NCFission.overheats() && next >= cluster.capacity() && rawCluster > 0 && !cluster.cells().isEmpty()) {
+                cluster.retainHeat(level, storedHeat, 0);
                 return new Heat(raw, casing, effective, true, cluster.cells());
             }
             if (cluster.connectedToWall()) {
@@ -635,15 +669,16 @@ final class SolidFissionCore {
         }
     }
 
-    private static List<Cluster> findClusters(SolidFissionLayout layout, Set<BlockPos> sinks, Set<BlockPos> heatingParts) {
-        Set<BlockPos> anchors = new LinkedHashSet<>(layout.cells());
-        anchors.addAll(heatingParts.stream().sorted().toList());
-        Set<BlockPos> remaining = new LinkedHashSet<>(anchors);
+    private List<Cluster> findClusters(Set<BlockPos> anchors, Set<BlockPos> cells, Set<BlockPos> sinks,
+                                       Set<BlockPos> heatingParts) {
+        Set<BlockPos> remaining = new HashSet<>(cells);
         remaining.addAll(sinks);
+        remaining.addAll(heatingParts);
+        remaining.addAll(conductors);
 
         List<Cluster> clusters = new ArrayList<>();
         Cuboid bounds = layout.bounds();
-        for (BlockPos anchor : anchors) {
+        for (BlockPos anchor : anchors.stream().sorted().toList()) {
             if (!remaining.remove(anchor)) {
                 continue;
             }
@@ -651,6 +686,7 @@ final class SolidFissionCore {
             List<BlockPos> groupCells = new ArrayList<>();
             List<BlockPos> groupSinks = new ArrayList<>();
             List<BlockPos> groupHeatingParts = new ArrayList<>();
+            List<BlockPos> groupConductors = new ArrayList<>();
             boolean wall = false;
             pending.add(anchor);
             while (!pending.isEmpty()) {
@@ -659,6 +695,8 @@ final class SolidFissionCore {
                     groupSinks.add(pos);
                 } else if (heatingParts.contains(pos)) {
                     groupHeatingParts.add(pos);
+                } else if (conductors.contains(pos)) {
+                    groupConductors.add(pos);
                 } else {
                     groupCells.add(pos);
                 }
@@ -672,7 +710,8 @@ final class SolidFissionCore {
                     }
                 }
             }
-            clusters.add(new Cluster(List.copyOf(groupCells), List.copyOf(groupSinks), List.copyOf(groupHeatingParts), wall));
+            clusters.add(new Cluster(List.copyOf(groupCells), List.copyOf(groupSinks), List.copyOf(groupHeatingParts),
+                    List.copyOf(groupConductors), wall));
         }
         return List.copyOf(clusters);
     }

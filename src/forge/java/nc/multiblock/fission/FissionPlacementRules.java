@@ -123,6 +123,8 @@ public final class FissionPlacementRules<C extends Enum<C>> {
                                                     Set<BlockPos> burning, Set<BlockPos> moderators) {
         return (part, pos) -> switch (part) {
             case CASING -> bounds.boundaryAxes(pos) == 1;
+            case CONDUCTOR -> bounds.contains(pos) && bounds.boundaryAxes(pos) == 0
+                    && level.getBlockState(pos).is(NCFission.CONDUCTOR.get());
             case CELL, CHAMBER, VESSEL -> part == fuelPart && burning.contains(pos);
             case MODERATOR -> moderators.contains(pos) && NCFission.moderator(level.getBlockState(pos)) != null;
             case IRRADIATOR -> moderators.contains(pos) && level.getBlockState(pos).getBlock() instanceof FissionIrradiatorBlock;

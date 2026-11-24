@@ -1,6 +1,8 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionConductor;
+import nc.multiblock.fission.FissionConductorBlock;
 import nc.multiblock.fission.FissionControlBlockEntity;
 import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionIrradiator;
@@ -64,6 +66,8 @@ public final class NCFission {
     private static final ForgeConfigSpec.IntValue NEUTRON_REACH;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_FLUX_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue MELTDOWN_RADIATION;
+    private static final ForgeConfigSpec.BooleanValue OVERHEAT;
+    private static final ForgeConfigSpec.BooleanValue HEAT_DAMAGE;
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_HEAT = new EnumMap<>(Material.class);
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_EFFICIENCY = new EnumMap<>(Material.class);
 
@@ -77,6 +81,8 @@ public final class NCFission {
 
     static {
         var builder = new ForgeConfigSpec.Builder();
+        OVERHEAT = builder.define("fission_overheat", true);
+        HEAT_DAMAGE = builder.define("fission_heat_damage", false);
         MELTDOWN_RADIATION = builder.defineInRange("fission_meltdown_radiation_multiplier", 1D, 0D, 255D);
         builder.push("neutron_sources");
         RADIUM_EFFICIENCY = builder.defineInRange("radium_beryllium_efficiency", 0.9D, 0D, 255D);
@@ -135,6 +141,11 @@ public final class NCFission {
     }
 
     public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing", Role.CASING);
+    public static final RegistryObject<FissionConductorBlock> CONDUCTOR = part("fission_conductor",
+            () -> new FissionConductorBlock(properties()));
+    public static final RegistryObject<BlockEntityType<FissionConductor>> CONDUCTOR_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_conductor", () ->
+                    BlockEntityType.Builder.of(FissionConductor::new, CONDUCTOR.get()).build(null));
     public static final RegistryObject<FissionWallBlock> CONTROLLER = wall("solid_fission_controller", Role.CONTROLLER);
     public static final RegistryObject<FissionWallBlock> VENT = wall("fission_vent", Role.VENT);
     public static final RegistryObject<FissionWallBlock> CELL_PORT = wall("fission_cell_port", Role.FUEL_PORT);
@@ -235,6 +246,7 @@ public final class NCFission {
                     .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(CASING.get());
+                        output.accept(CONDUCTOR.get());
                         output.accept(CONTROLLER.get());
                         output.accept(CELL.get());
                         output.accept(CELL_PORT.get());
@@ -363,6 +375,14 @@ public final class NCFission {
 
     public static long maxModeratorLineFlux() {
         return Math.max(1L, (long) neutronReach() * Math.max(GRAPHITE.flux(), Math.max(BERYLLIUM.flux(), HEAVY_WATER.flux())));
+    }
+
+    public static boolean overheats() {
+        return configured(OVERHEAT);
+    }
+
+    public static boolean heatDamage() {
+        return configured(HEAT_DAMAGE);
     }
 
     private NCFission() {}

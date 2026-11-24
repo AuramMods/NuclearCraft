@@ -135,7 +135,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
             long capacity = heatCapacity();
             casingHeat = Math.min(capacity, casingHeat + generated.casingHeat());
-            if (casingHeat >= capacity) {
+            if (NCFission.overheats() && casingHeat >= capacity) {
                 casingHeat = 0;
                 melt(server, List.of(worldPosition));
                 return;
@@ -397,9 +397,28 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return saltCooling == null ? 0 : saltCooling.progress(pos, coolant);
     }
 
+    boolean containsPart(BlockPos pos) {
+        return assembled() && layout.bounds().contains(pos);
+    }
+
+    float contactDamage(ServerLevel server, BlockPos pos) {
+        if (!containsPart(pos)) {
+            return 0;
+        }
+        var bounds = layout.bounds();
+        BlockPos center = bounds.min().offset((bounds.xLength() - 1) / 2, (bounds.yLength() - 1) / 2,
+                (bounds.zLength() - 1) / 2);
+        double ambient = 273.15D + 20D * server.getBiome(center).value().getBaseTemperature();
+        var cluster = partHeat(pos);
+        double fill = cluster.capacity() == 0 ? (double) casingHeat / heatCapacity()
+                : (double) cluster.amount() / cluster.capacity();
+        double temperature = ambient + (2400D - ambient) * fill;
+        return temperature < 353D ? 0F : (float) (1D + (temperature - 353D) / 200D);
+    }
+
     SolidFissionCore.PartHeat partHeat(BlockPos pos) {
-        return core == null ? SolidFissionCore.PartHeat.NONE
-                : core.partHeat(pos, clusterHeat, getBlockState().getValue(FissionWallBlock.ACTIVE));
+        return core == null || !(level instanceof ServerLevel server) ? SolidFissionCore.PartHeat.NONE
+                : core.partHeat(server, pos, clusterHeat, getBlockState().getValue(FissionWallBlock.ACTIVE));
     }
 
     FissionVariant variant() {
