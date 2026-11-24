@@ -105,7 +105,7 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
         if (!level.isClientSide && !state.is(replacement.getBlock())) {
             E entity = entityType.get().getBlockEntity(level, pos);
             if (entity instanceof UpgradableProcessorBlockEntity processor) {
-                processor.dropUpgrades(level, pos);
+                processor.dropAuxiliaryInventory(level, pos);
             }
             if (entity != null && inventory != null) {
                 ItemStackHandler slots = inventory.apply(entity);

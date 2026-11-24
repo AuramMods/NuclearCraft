@@ -37,6 +37,7 @@ import nc.init.NCSaltFission;
 import nc.multiblock.fission.SaltHeaterBlock;
 import nc.init.NCGenerators;
 import nc.init.NCMachines;
+import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
 import nc.init.NCPebbleFission;
@@ -45,6 +46,7 @@ import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.processor.NuclearFurnaceMenu;
+import nc.processor.ProcessorProfile;
 import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
@@ -169,9 +171,13 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCategories(new CollectorCategory(gui), new GasCoolerCategory(gui),
                 new FissionMaterialCategory(FissionMaterialCategory.MODERATORS, NCFission.HEAVY_WATER_MODERATOR.get(), gui),
                 new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
-        for (Machine machine : Machine.values()) {
-            registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
-                    NuclearCraftJei::itemRecipe, recipe -> energy(recipe.configuredTime(), recipe.configuredPower())));
+        for (ProcessorProfile machine : NCItemProcessors.profiles()) {
+            if (machine.jeiEnabled()) {
+                registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
+                        NuclearCraftJei::itemRecipe, recipe -> energy(recipe.configuredTime(), recipe.configuredPower()),
+                        machine.block().getName(), machine.scripted() ? 176 : 0,
+                        machine.scripted() ? 48 + machine.menuExtension() : 0));
+            }
         }
         for (Kind kind : Kind.values()) {
             Block catalyst = materialBlock(kind);
@@ -318,10 +324,13 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(CollectorCategory.TYPE, NCCollectors.enabledCollectors());
         registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
         registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
-        for (Machine machine : Machine.values()) {
+        for (ProcessorProfile machine : NCItemProcessors.profiles()) {
+            if (!machine.jeiEnabled()) {
+                continue;
+            }
             var machineRecipes = new ArrayList<ItemProcessorRecipe>();
             recipes.getAllRecipesFor(machine.recipes()).stream()
-                    .filter(recipe -> recipe.fluidInput() == null || !recipe.fluidInput().alternatives().isEmpty())
+                    .filter(recipe -> recipe.fluidInputs().stream().allMatch(fluid -> !fluid.alternatives().isEmpty()))
                     .forEach(machineRecipes::add);
             if (machine == Machine.ELECTRIC_FURNACE) {
                 recipes.getAllRecipesFor(SMELTING).stream()
@@ -379,8 +388,10 @@ public final class NuclearCraftJei implements IModPlugin {
         for (var collector : NCCollectors.enabledCollectors()) {
             registration.addRecipeCatalyst(collector.block(), CollectorCategory.TYPE);
         }
-        for (Machine machine : Machine.values()) {
-            registration.addRecipeCatalyst(machine.block(), itemType(machine));
+        for (ProcessorProfile machine : NCItemProcessors.profiles()) {
+            if (machine.jeiEnabled()) {
+                registration.addRecipeCatalyst(machine.block(), itemType(machine));
+            }
         }
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCMachines.block(Part.DECAY_POOL), DECAY_POOL, DECAY_POOL_SOURCE);
@@ -468,14 +479,14 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addGuiContainerHandler(ItemProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(ItemProcessorScreen screen, double x, double y) {
-                Machine machine = screen.getMenu().machine();
-                return List.of(IGuiClickableArea.createBasic(machine.progressX(), machine.progressY(),
-                        37, machine.progressHeight(), itemType(machine)));
+                ProcessorProfile machine = screen.getMenu().machine();
+                return machine.jeiEnabled() ? List.of(IGuiClickableArea.createBasic(machine.progressX(), machine.progressY(),
+                        37, machine.progressHeight(), itemType(machine))) : List.of();
             }
         });
     }
 
-    private static RecipeType<ItemProcessorRecipe> itemType(Machine machine) {
+    private static RecipeType<ItemProcessorRecipe> itemType(ProcessorProfile machine) {
         return RecipeType.create(NuclearCraft.MOD_ID, machine.id(), ItemProcessorRecipe.class);
     }
 
@@ -546,28 +557,43 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {
-        Machine machine = recipe.machine();
+        ProcessorProfile machine = recipe.machine();
         boolean extended = machine.menuExtension() > 0 && !machine.hasFluidOutput();
         for (int index = 0; index < recipe.inputs().size(); index++) {
             ItemProcessorRecipe.Input input = recipe.inputs().get(index);
-            int x = extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
-            int y = extended ? machine.inputY(index) - 19 : 12;
+            int x = machine.scripted() ? machine.inputX(index)
+                    : extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
+            int y = machine.scripted() ? machine.inputY(index) - 23 : extended ? machine.inputY(index) - 19 : 12;
             layout.addSlot(INPUT, x, y).setStandardSlotBackground().addItemStacks(
                     Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
         }
-        var fluid = recipe.fluidInput();
-        if (fluid != null) {
-            fluidSlot(layout, INPUT, recipe.inputs().isEmpty() ? 20 : 43, fluid.alternatives());
-        }
-        if (machine.hasFluidOutput()) {
-            fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));
+        if (machine.scripted()) {
+            var tanks = machine.tanks();
+            for (int index = 0; index < machine.fluidInputs(); index++) {
+                var tank = tanks.get(index);
+                fluidSlot(layout, INPUT, tank.x(), tank.y() - 23, recipe.fluidInputs().get(index).alternatives());
+            }
+            var outputs = recipe.fluidOutputs();
+            for (int index = 0; index < outputs.size(); index++) {
+                var tank = tanks.get(machine.fluidInputs() + index);
+                fluidSlot(layout, OUTPUT, tank.x(), tank.y() - 23, List.of(outputs.get(index)));
+            }
+        } else {
+            var fluid = recipe.fluidInput();
+            if (fluid != null) {
+                fluidSlot(layout, INPUT, recipe.inputs().isEmpty() ? 20 : 43, fluid.alternatives());
+            }
+            if (machine.hasFluidOutput()) {
+                fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));
+            }
         }
         var products = recipe.products();
         for (int index = 0; index < machine.outputs(); index++) {
             var product = products.get(index);
             var stack = product.stack();
-            int x = machine == Machine.FUEL_REPROCESSOR ? machine.outputX(index) + 12 : 99 + index * 23;
-            int y = extended ? machine.outputY(index) - 19 : 12;
+            int x = machine.scripted() ? machine.outputX(index)
+                    : machine == Machine.FUEL_REPROCESSOR ? machine.outputX(index) + 12 : 99 + index * 23;
+            int y = machine.scripted() ? machine.outputY(index) - 23 : extended ? machine.outputY(index) - 19 : 12;
             var slot = layout.addSlot(OUTPUT, x, y).setOutputSlotBackground();
             if (!stack.isEmpty()) {
                 slot.addItemStack(stack);
@@ -667,6 +693,8 @@ public final class NuclearCraftJei implements IModPlugin {
         private final IDrawable arrow;
         private final BiConsumer<IRecipeLayoutBuilder, R> layout;
         private final Function<R, Component> stats;
+        private final int width;
+        private final int height;
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
                  Function<R, Component> stats) {
@@ -675,10 +703,17 @@ public final class NuclearCraftJei implements IModPlugin {
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
                  Function<R, Component> stats, Component title) {
+            this(type, block, gui, layout, stats, title, 0, 0);
+        }
+
+        Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
+                 Function<R, Component> stats, Component title, int width, int height) {
             this.type = type;
             this.title = title;
             this.layout = layout;
             this.stats = stats;
+            this.width = width;
+            this.height = height;
             icon = gui.createDrawableItemLike(block);
             arrow = gui.getRecipeArrow();
         }
@@ -688,6 +723,9 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override public IDrawable getIcon() { return icon; }
         @Override
         public int getWidth() {
+            if (width > 0) {
+                return width;
+            }
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator", "multiblock_electrolyzer", "electrolyzer_electrolyte" -> 178;
                 case "rock_crusher", "extractor", "centrifuge", "radiation_scrubber" -> 166;
@@ -697,6 +735,9 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public int getHeight() {
+            if (height > 0) {
+                return height;
+            }
             return switch (type.getUid().getPath()) {
                 case "multiblock_electrolyzer" -> 82;
                 case "fuel_reprocessor", "assembler", "multiblock_distiller", "multiblock_infiltrator" -> 70;

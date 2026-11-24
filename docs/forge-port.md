@@ -193,6 +193,47 @@ A packaged clean Forge 47.4.18 server loaded stock, charge, and partial progress
 
 In the isolated 539-mod Auram client, two use actions installed two Speed Upgrades in the Pressurizer and left three in hand. Shift-clicking installed the Energy Upgrades and recovered the Speed Upgrades. The Electrolyzer menu disabled its north item face, and one off-hand sneak-use installed six Speed Upgrades in the Melter. The client rendered all three menus with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible window samples.
 
+### Scripted processors
+
+Convert legacy `EnergyProcessorBuilder` and `UpgradableEnergyProcessorBuilder` registrations to `config/nuclearcraft-processors.json`. Use the old block ID as the definition key. Share the file between server and clients and restart to register the blocks, menus, and recipe types. This is the Glowstone Aggregator from the legacy example add-on.
+
+```json
+{
+  "glowstone_aggregator": {
+    "item_inputs": 1,
+    "item_outputs": 1,
+    "process_time": 600,
+    "process_power": 100,
+    "upgradable": true
+  }
+}
+```
+
+The recipe type is `nuclearcraft:glowstone_aggregator`. Add this recipe in a datapack under `data/nuclearcraft/recipes/glowstone_aggregator.json` or pass the same object to KubeJS `event.custom(...)` with the desired recipe ID.
+
+```json
+{
+  "type": "nuclearcraft:glowstone_aggregator",
+  "ingredients": [{"ingredient": {"item": "minecraft:glowstone_dust"}}],
+  "result": {"item": "minecraft:glowstone"},
+  "radiation": 0.001
+}
+```
+
+Each definition accepts up to eight of each item or fluid input and output. Set `fluid_inputs`, `fluid_outputs`, `input_tank_capacity`, and `output_tank_capacity` for fluids. Each listed input has a distinct slot or tank, and the recipe matches ingredients in any order. Outputs follow the recipe's `results` and `fluid_results` order. Fluid ingredients accept an exact fluid or a fluid tag and an amount in mB. An item ingredient accepts `count` and the usual Forge item or tag matcher. A recipe may override the machine rates with `ticks` and `energy_per_tick`, or scale the defaults with `time_multiplier` and `power_multiplier`. The global processor time and power multipliers also apply.
+
+Set `generator` for Forge Energy output. Set `consumes_inputs` to reserve the matched ingredients when processing starts. This defaults to true for generators. Reserved inputs persist while processing is paused or saved. If a reload removes or invalidates the recipe, the machine returns the reserved ingredients when its input buffers can accept them. `loses_progress` restores the legacy progress decay behavior. The machine uses the ordinary redstone halt and item and fluid side controls.
+
+Supply the blockstates, models, translations, mining tags, loot tables, and crafting recipes through the pack. Use the Forge blockstate properties `facing` and `lit` for directional and running models. The menu arranges slots and tanks from the definition. It supports an optional `gui_texture` for that layout. JEI uses the block name and the processor recipe type by default. Set `jei_enabled` to false to hide the category. Convert old tile data into the new block entity's inventory, energy, and per-tank save fields when migrating a world.
+
+Migration support for legacy particle lists, arbitrary GUI coordinates, and custom JEI presentation remains pending.
+
+All 208 local GameTests passed. On clean Forge 47.4.18, the Glowstone Aggregator spent exactly 60,000 FE and the custom generator made 1,200 FE. A mixed processor waited behind an incompatible output fluid, then reserved two item stacks and two fluid inputs, resumed after restart, and produced all four outputs. The products and generated charge persisted through chunk unload and reload. Reloading smaller ingredient quantities under the same recipe ID returned the complete reservation. The revised batch left one iron ingot, 250 mB of oxygen, and 72 mB of water.
+
+On dedicated Forge with the installed Ender IO 8.2.22-beta, Mekanism 10.4.16.80, and KubeJS 2001.6.5-build.16, each network transferred exactly 1,200 FE into a mixed processor, supplied both input fluids, and collected two item products and 144 mB of fluorine and 125 mB of nitrogen. The KubeJS recipe used 400 FE. The products and remaining 800 FE survived restart and confirmed chunk unload and reload.
+
+The isolated 539-mod Auram client ran both circuits and verified the custom block model, three JEI categories, and synchronized KubeJS recipe rates. The mixed processor's menu showed 70,000 mB and 66,000 mB while editing one tank's face independently. The client ran at master volume zero and used OpenAL No Output. It exited normally with zero recorded focus activations, foreground samples, or on-screen window samples.
+
 ### Pressurizer plate discovery
 
 The Pressurizer discovers plate families from `forge:plates/<material>` when server data loads. It uses one `forge:ingots/<material>` item, falling back to `forge:gems/<material>` when the ingot tag is empty. The first item in the plate tag is the product. A regular plate takes 600 ticks at 40 FE/t. Graphite ingots still produce pyrolytic carbon. A dense plate consumes nine regular plates and takes 1,200 ticks at 80 FE/t. Dense outputs use `forge:plates/dense/<material>`, with `forge:dense_plates/<material>` as a fallback.

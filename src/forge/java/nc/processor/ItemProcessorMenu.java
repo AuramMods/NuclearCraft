@@ -1,6 +1,5 @@
 package nc.processor;
 
-import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorItemPorts.GroupMode;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -28,28 +27,35 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     static final int FLUID_OUTPUT_MODE = FLUID_DATA_COUNT;
     public static final int FLUID_SIDE_BUTTON = 6;
     public static final int FLUID_OUTPUT_BUTTON = 12;
+    public static final int TANK_RESET = 6;
+    public static final int TANK_DISABLE = 7;
+    public static final int TANK_CLEAR = 8;
+    public static final int TANK_POLICY = 9;
+    private static final int SCRIPTED_TANK_BUTTON = 200;
+    private static final int TANK_ACTIONS = 10;
+    private static final int TANK_DATA = 6;
 
     private static final Direction[] SIDES = Direction.values();
-    private final Machine machine;
+    private final ProcessorProfile machine;
     private final ContainerData data;
     private final ContainerLevelAccess access;
     private final @Nullable ItemProcessorBlockEntity processor;
     private final ProcessorItemSettings items;
 
-    public ItemProcessorMenu(int id, Inventory player, Machine machine) {
+    public ItemProcessorMenu(int id, Inventory player, ProcessorProfile machine) {
         this(id, player, machine, new ItemStackHandler(machine.slots()), new ProcessorUpgrades(null),
                 new SimpleContainerData(dataSize(machine)),
                 ContainerLevelAccess.NULL, null);
     }
 
-    ItemProcessorMenu(int id, Inventory player, Machine machine, ItemStackHandler inventory, ProcessorUpgrades upgrades,
+    ItemProcessorMenu(int id, Inventory player, ProcessorProfile machine, ItemStackHandler inventory, ProcessorUpgrades upgrades,
                       ContainerData data, ContainerLevelAccess access, @Nullable ItemProcessorBlockEntity processor) {
         super(machine.menu(), id);
         this.machine = machine;
         this.data = data;
         this.access = access;
         this.processor = processor;
-        items = new ProcessorItemSettings(machine.inputs(), machine.outputs(), ProcessorUpgrades.SLOTS, FLUID_OUTPUT_BUTTON + 1,
+        items = new ProcessorItemSettings(machine.inputs(), machine.outputs(), upgradeSlots(), FLUID_OUTPUT_BUTTON + 1,
                 processor == null ? null : processor.itemPorts());
         for (int index = 0; index < machine.inputs(); index++) {
             addSlot(new SlotItemHandler(inventory, index, machine.inputX(index), machine.inputY(index)));
@@ -63,7 +69,9 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             });
         }
         int extraHeight = machine.menuExtension();
-        upgrades.addMenuSlots(this::addSlot, upgradeY());
+        if (machine.hasUpgrades()) {
+            upgrades.addMenuSlots(this::addSlot, upgradeY());
+        }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + extraHeight + row * 18));
@@ -76,16 +84,21 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         addDataSlots(items.data());
     }
 
-    static int dataSize(Machine machine) {
-        return machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
+    static int dataSize(ProcessorProfile machine) {
+        return machine.scripted() ? DATA_COUNT + machine.tanks().size() * TANK_DATA
+                : machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
     }
 
-    public Machine machine() {
+    public ProcessorProfile machine() {
         return machine;
     }
 
     public int upgradeY() {
-        return 64 + (machine.hasFluidOutput() ? 0 : machine.menuExtension());
+        return machine.scripted() ? 33 + machine.menuExtension() : 64 + (machine.hasFluidOutput() ? 0 : machine.menuExtension());
+    }
+
+    private int upgradeSlots() {
+        return machine.hasUpgrades() ? ProcessorUpgrades.SLOTS : 0;
     }
 
     public float progress() {
@@ -105,23 +118,70 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     }
 
     public FluidStack fluid() {
-        if (machine.tank() == null) {
+        return fluid(0);
+    }
+
+    public FluidStack fluid(int tank) {
+        if (tank >= machine.tanks().size()) {
             return FluidStack.EMPTY;
+        }
+        if (machine.scripted()) {
+            int start = DATA_COUNT + tank * TANK_DATA;
+            return new FluidStack(BuiltInRegistries.FLUID.byId(readInt(start)), readInt(start + 2));
         }
         return new FluidStack(BuiltInRegistries.FLUID.byId(data.get(FLUID_ID)), data.get(FLUID_AMOUNT));
     }
 
+    private int readInt(int start) {
+        return (data.get(start) & 0xFFFF) | (data.get(start + 1) << 16);
+    }
+
     public ProcessorFluidTanks.Mode fluidSideMode(Direction side) {
-        return ProcessorFluidTanks.Mode.read(data.get(FLUID_SIDES), side);
+        return fluidSideMode(0, side);
+    }
+
+    public ProcessorFluidTanks.Mode fluidSideMode(int tank, Direction side) {
+        return ProcessorFluidTanks.Mode.read(data.get(machine.scripted() ? DATA_COUNT + tank * TANK_DATA + 4 : FLUID_SIDES), side);
     }
 
     public ProcessorFluidTanks.OutputMode fluidOutputMode() {
-        return machine.hasFluidOutput()
-                ? ProcessorFluidTanks.OutputMode.byId(data.get(FLUID_OUTPUT_MODE)) : ProcessorFluidTanks.OutputMode.HOLD;
+        return fluidOutputMode(0);
+    }
+
+    public ProcessorFluidTanks.OutputMode fluidOutputMode(int tank) {
+        return tank >= machine.fluidInputs() && tank < machine.tanks().size()
+                ? ProcessorFluidTanks.OutputMode.byId(fluidPolicy(tank)) : ProcessorFluidTanks.OutputMode.HOLD;
     }
 
     public boolean discardsFluidInput() {
-        return machine.hasFluidInput() && data.get(FLUID_OUTPUT_MODE) != 0;
+        return discardsFluidInput(0);
+    }
+
+    public boolean discardsFluidInput(int tank) {
+        return tank < machine.fluidInputs() && fluidPolicy(tank) != 0;
+    }
+
+    private int fluidPolicy(int tank) {
+        return data.get(machine.scripted() ? DATA_COUNT + tank * TANK_DATA + 5 : FLUID_OUTPUT_MODE);
+    }
+
+    static int scriptedTankData(ProcessorFluidTanks tanks, int index) {
+        int part = index - DATA_COUNT;
+        int tank = part / TANK_DATA;
+        var stack = tanks.stored(tank);
+        return switch (part % TANK_DATA) {
+            case 0 -> BuiltInRegistries.FLUID.getId(stack.getFluid()) & 0xFFFF;
+            case 1 -> BuiltInRegistries.FLUID.getId(stack.getFluid()) >>> 16;
+            case 2 -> stack.getAmount() & 0xFFFF;
+            case 3 -> stack.getAmount() >>> 16;
+            case 4 -> tanks.sideModes(tank);
+            case 5 -> tanks.setting(tank);
+            default -> 0;
+        };
+    }
+
+    public static int scriptedTankButton(int tank, int action) {
+        return SCRIPTED_TANK_BUTTON + tank * TANK_ACTIONS + action;
     }
 
     @Override
@@ -133,12 +193,30 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             processor.cycleSide(SIDES[button]);
             return true;
         }
+        ProcessorFluidTanks tanks = processor.fluidTanks();
+        if (machine.scripted()) {
+            if (button < SCRIPTED_TANK_BUTTON) {
+                return items.click(button);
+            }
+            int tank = (button - SCRIPTED_TANK_BUTTON) / TANK_ACTIONS;
+            int action = (button - SCRIPTED_TANK_BUTTON) % TANK_ACTIONS;
+            if (tanks == null || tank >= tanks.size()) {
+                return false;
+            }
+            switch (action) {
+                case TANK_RESET -> tanks.reset(tank, true);
+                case TANK_DISABLE -> tanks.reset(tank, false);
+                case TANK_CLEAR -> tanks.clear(tank);
+                case TANK_POLICY -> tanks.cycleSetting(tank);
+                default -> tanks.cycle(tank, SIDES[action]);
+            }
+            return true;
+        }
         int fluidSide = button - FLUID_SIDE_BUTTON;
         if (machine.tank() != null && fluidSide >= 0 && fluidSide < SIDES.length) {
             processor.cycleFluidSide(SIDES[fluidSide]);
             return true;
         }
-        ProcessorFluidTanks tanks = processor.fluidTanks();
         if (tanks != null && button == FLUID_OUTPUT_BUTTON) {
             tanks.cycleSetting(0);
             return true;
@@ -159,8 +237,8 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        int upgrade = ProcessorUpgrades.slotFor(stack);
-        int machineSlots = machine.slots() + ProcessorUpgrades.SLOTS;
+        int upgrade = machine.hasUpgrades() ? ProcessorUpgrades.slotFor(stack) : -1;
+        int machineSlots = machine.slots() + upgradeSlots();
         boolean moved = index < machineSlots ? moveItemStackTo(stack, machineSlots, slots.size(), true)
                 : upgrade >= 0
                 ? moveItemStackTo(stack, machine.slots() + upgrade, machine.slots() + upgrade + 1, false)

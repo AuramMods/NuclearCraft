@@ -15,6 +15,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.Containers;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -42,7 +43,7 @@ import java.util.List;
 import java.util.Objects;
 
 public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
-    private final Machine machine;
+    private final ProcessorProfile machine;
     private final RecipeManager.CachedCheck<Container, ItemProcessorRecipe> recipes;
     private final @Nullable RecipeManager.CachedCheck<Container, SmeltingRecipe> smeltingRecipes;
     private final ProcessorInputs input;
@@ -52,17 +53,18 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
+    private @Nullable ProcessorInputs reserved;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
 
-    public ItemProcessorBlockEntity(BlockPos pos, BlockState state, Machine machine) {
-        super(machine.entityType(), pos, state, machine.rate(), 512_000);
+    public ItemProcessorBlockEntity(BlockPos pos, BlockState state, ProcessorProfile machine) {
+        super(machine.entityType(), pos, state, machine.rate(), 512_000, machine.generator());
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
-        input = new ProcessorInputs(machine.inputs());
-        fluid = machine.tank() == null ? null : new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill,
-                machine.hasFluidInput() ? 1 : 0, machine.hasFluidOutput() ? 1 : 0);
+        input = new ProcessorInputs(machine.inputs(), machine.fluidInputs());
+        fluid = machine.tanks().isEmpty() ? null : new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill,
+                machine.fluidInputs(), machine.fluidOutputs(), machine::tankCapacity, false);
         inventory = new ItemStackHandler(machine.slots()) {
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -80,7 +82,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 setChanged();
             }
         };
-        itemPorts = new ProcessorItemPorts(this, inventory, this::isIngredient, machine.inputs(), upgrades, false);
+        itemPorts = new ProcessorItemPorts(this, inventory, this::isIngredient, machine.inputs(),
+                hasUpgrades() ? upgrades : null, false);
     }
 
     ProcessorItemPorts itemPorts() {
@@ -100,14 +103,31 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         if (processor.fluid != null) {
             processor.fluid.push(level);
         }
+        if (processor.machine.generator()) {
+            for (Direction side : ProcessorItemPorts.SIDES) {
+                if (processor.power.getEnergyStored() == 0) {
+                    break;
+                }
+                BlockPos neighbor = pos.relative(side);
+                BlockEntity target = level.hasChunkAt(neighbor) ? level.getBlockEntity(neighbor) : null;
+                if (target != null) {
+                    target.getCapability(ForgeCapabilities.ENERGY, side.getOpposite()).ifPresent(processor.power::pushTo);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void pushInterfaceEnergy(Direction side, IEnergyStorage recipient) {
+        power.pushTo(recipient);
     }
 
     private void refreshInput() {
         for (int slot = 0; slot < machine.inputs(); slot++) {
             input.setItem(slot, inventory.getStackInSlot(slot));
         }
-        if (fluid != null && machine.hasFluidInput()) {
-            input.setFluid(fluid.stored(0));
+        for (int tank = 0; tank < machine.fluidInputs(); tank++) {
+            input.setFluid(tank, fluid.stored(tank));
         }
     }
 
@@ -118,8 +138,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         RecipeManager manager = level.getRecipeManager();
         refreshInput();
         return manager.getAllRecipesFor(machine.recipes()).stream()
-                .anyMatch(recipe -> (input.fluid().isEmpty() || recipe.acceptsFluid(input.fluid()))
-                        && recipe.canInsert(input, slot, stack)) || acceptsSupplementalItem(manager, stack);
+                .anyMatch(recipe -> recipe.canInsert(input, slot, stack)) || acceptsSupplementalItem(manager, stack);
     }
 
     private boolean isIngredient(ItemStack stack) {
@@ -151,7 +170,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         refreshInput();
         return level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
-                .anyMatch(recipe -> recipe.canFill(input, stack));
+                .anyMatch(recipe -> recipe.canFill(input, tank, stack));
     }
 
     private @Nullable ItemProcessorRecipe findRecipe(Level level) {
@@ -190,7 +209,14 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
         refreshInput();
-        ItemProcessorRecipe recipe = findRecipe(level);
+        ItemProcessorRecipe recipe = reserved == null ? findRecipe(level) : reservedRecipe(level);
+        if (recipe == null && reserved != null) {
+            if (!restoreReservation()) {
+                return false;
+            }
+            refreshInput();
+            recipe = findRecipe(level);
+        }
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
             progressHalfTicks = 0;
@@ -203,8 +229,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         updateRates(recipe.ticks(), recipe.configuredTime(), recipe.configuredPower());
         List<ItemProcessorRecipe.Product> products = recipe.products();
-        FluidStack fluidProduct = machine.hasFluidOutput() ? recipe.fluidOutput() : FluidStack.EMPTY;
-        boolean room = hasOutputSpace(products, fluidProduct);
+        List<FluidStack> fluidProducts = recipe.fluidOutputs();
+        boolean room = hasOutputSpace(products, fluidProducts);
         double speed = speed();
         if (!room || halted || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
@@ -217,16 +243,17 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             }
             return false;
         }
+        if (machine.consumesInputs() && reserved == null) {
+            reserve(recipe);
+        }
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
         double batch = 2D * batchTicks;
         while (progressHalfTicks >= batch) {
-            int[] amounts = recipe.match(input);
-            for (int slot = 0; slot < amounts.length; slot++) {
-                inventory.extractItem(slot, amounts[slot], false);
-            }
-            if (fluid != null && recipe.fluidInput() != null) {
-                fluid.consume(recipe.fluidInput().amount());
+            if (reserved == null) {
+                consume(recipe, null);
+            } else {
+                reserved = null;
             }
             for (int index = 0; index < products.size(); index++) {
                 int slot = machine.inputs() + index;
@@ -234,15 +261,15 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                     itemPorts.produce(slot, products.get(index).roll(level.random));
                 }
             }
-            if (fluid != null && !fluidProduct.isEmpty()) {
-                fluid.produce(0, fluidProduct);
+            for (int index = 0; index < fluidProducts.size(); index++) {
+                fluid.produce(machine.fluidInputs() + index, fluidProducts.get(index));
             }
             itemPorts.push(level);
             if (fluid != null && fluid.discardsUnusableInputs()) {
                 fluid.push(level);
                 refreshInput();
                 ItemProcessorRecipe nextBatch = findRecipe(level);
-                if (nextBatch == null || !hasOutputSpace(nextBatch.products(), nextBatch.fluidOutput())) {
+                if (nextBatch == null || !hasOutputSpace(nextBatch.products(), nextBatch.fluidOutputs())) {
                     fluid.discardUnusableInputs();
                     progressHalfTicks = 0;
                     break;
@@ -251,8 +278,10 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             progressHalfTicks -= batch;
             if (progressHalfTicks > 0) {
                 refreshInput();
-                if (!recipe.matches(input, level) || !hasOutputSpace(products, fluidProduct)) {
+                if (!recipe.matches(input, level) || !hasOutputSpace(products, fluidProducts)) {
                     progressHalfTicks = 0;
+                } else if (machine.consumesInputs()) {
+                    reserve(recipe);
                 }
             }
         }
@@ -260,13 +289,109 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         return true;
     }
 
-    private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products, FluidStack fluidProduct) {
+    private @Nullable ItemProcessorRecipe reservedRecipe(Level level) {
+        var current = activeRecipe == null ? null : level.getRecipeManager().byKey(activeRecipe).orElse(null);
+        if (!(current instanceof ItemProcessorRecipe recipe) || recipe.machine() != machine) {
+            return null;
+        }
+        int[] items = recipe.match(reserved);
+        int[] fluids = recipe.matchFluids(reserved);
+        if (items == null || fluids == null) {
+            return null;
+        }
+        for (int slot = 0; slot < items.length; slot++) {
+            if (items[slot] != reserved.getItem(slot).getCount()) {
+                return null;
+            }
+        }
+        for (int tank = 0; tank < fluids.length; tank++) {
+            if (fluids[tank] != reserved.fluid(tank).getAmount()) {
+                return null;
+            }
+        }
+        return recipe;
+    }
+
+    private void reserve(ItemProcessorRecipe recipe) {
+        reserved = new ProcessorInputs(machine.inputs(), machine.fluidInputs());
+        consume(recipe, reserved);
+    }
+
+    private void consume(ItemProcessorRecipe recipe, @Nullable ProcessorInputs batch) {
+        int[] items = recipe.match(input);
+        int[] fluids = recipe.matchFluids(input);
+        for (int slot = 0; slot < items.length; slot++) {
+            var extracted = inventory.extractItem(slot, items[slot], false);
+            if (batch != null) {
+                batch.setItem(slot, extracted);
+            }
+        }
+        for (int tank = 0; tank < fluids.length; tank++) {
+            if (batch != null) {
+                var stack = fluid.stored(tank).copy();
+                stack.setAmount(fluids[tank]);
+                batch.setFluid(tank, stack);
+            }
+            fluid.consume(tank, fluids[tank]);
+        }
+    }
+
+    private boolean restoreReservation() {
+        for (int slot = 0; slot < machine.inputs(); slot++) {
+            ItemStack held = reserved.getItem(slot);
+            ItemStack stored = inventory.getStackInSlot(slot);
+            if (!held.isEmpty() && ((!stored.isEmpty() && !ItemStack.isSameItemSameTags(held, stored))
+                    || held.getCount() > held.getMaxStackSize() - stored.getCount())) {
+                return false;
+            }
+        }
+        for (int tank = 0; tank < machine.fluidInputs(); tank++) {
+            FluidStack held = reserved.fluid(tank);
+            if (!held.isEmpty() && !fluid.canRestoreInput(tank, held)) {
+                return false;
+            }
+        }
+        for (int slot = 0; slot < machine.inputs(); slot++) {
+            ItemStack held = reserved.getItem(slot);
+            if (!held.isEmpty()) {
+                inventory.setStackInSlot(slot, held.copyWithCount(held.getCount() + inventory.getStackInSlot(slot).getCount()));
+            }
+        }
+        for (int tank = 0; tank < machine.fluidInputs(); tank++) {
+            FluidStack held = reserved.fluid(tank);
+            if (!held.isEmpty()) {
+                fluid.restoreInput(tank, held);
+            }
+        }
+        reserved = null;
+        activeRecipe = null;
+        progressHalfTicks = 0;
+        setChanged();
+        return true;
+    }
+
+    @Override
+    void dropAuxiliaryInventory(Level level, BlockPos pos) {
+        super.dropAuxiliaryInventory(level, pos);
+        if (reserved != null) {
+            for (int slot = 0; slot < machine.inputs(); slot++) {
+                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), reserved.getItem(slot));
+            }
+        }
+    }
+
+    private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products, List<FluidStack> fluidProducts) {
         for (int index = 0; index < products.size(); index++) {
             if (!itemPorts.canProduce(machine.inputs() + index, products.get(index).stack())) {
                 return false;
             }
         }
-        return fluid == null || fluidProduct.isEmpty() || fluid.canProduce(0, fluidProduct);
+        for (int index = 0; index < fluidProducts.size(); index++) {
+            if (!fluid.canProduce(machine.fluidInputs() + index, fluidProducts.get(index))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void cycleSide(Direction side) {
@@ -281,6 +406,11 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
 
     @Nullable ProcessorFluidTanks fluidTanks() {
         return fluid;
+    }
+
+    @Override
+    boolean hasUpgrades() {
+        return machine.hasUpgrades();
     }
 
     private String fluidSaveKey() {
@@ -334,8 +464,25 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             tag.putString("recipe", activeRecipe.toString());
         }
         itemPorts.save(tag);
+        if (reserved != null) {
+            CompoundTag batch = new CompoundTag();
+            for (int slot = 0; slot < machine.inputs(); slot++) {
+                batch.put("item_" + slot, reserved.getItem(slot).save(new CompoundTag()));
+            }
+            for (int tank = 0; tank < machine.fluidInputs(); tank++) {
+                batch.put("fluid_" + tank, reserved.fluid(tank).writeToNBT(new CompoundTag()));
+            }
+            tag.put("reserved_inputs", batch);
+        }
         if (fluid != null) {
-            fluid.saveTank(0, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
+            for (int tank = 0; tank < fluid.size(); tank++) {
+                if (machine.scripted()) {
+                    fluid.saveTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank, customFluidSettingKey(tank));
+                } else {
+                    fluid.saveTank(tank, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
+                }
+            }
+            fluid.saveSeparation(tag);
         }
     }
 
@@ -344,11 +491,33 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         super.load(tag);
         radiationEmission = 0D;
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
+        reserved = null;
+        if (tag.contains("reserved_inputs")) {
+            CompoundTag batch = tag.getCompound("reserved_inputs");
+            reserved = new ProcessorInputs(machine.inputs(), machine.fluidInputs());
+            for (int slot = 0; slot < machine.inputs(); slot++) {
+                reserved.setItem(slot, ItemStack.of(batch.getCompound("item_" + slot)));
+            }
+            for (int tank = 0; tank < machine.fluidInputs(); tank++) {
+                reserved.setFluid(tank, FluidStack.loadFluidStackFromNBT(batch.getCompound("fluid_" + tank)));
+            }
+        }
         itemPorts.load(tag);
         if (fluid != null) {
-            fluid.loadTank(0, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
+            for (int tank = 0; tank < fluid.size(); tank++) {
+                if (machine.scripted()) {
+                    fluid.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank, customFluidSettingKey(tank));
+                } else {
+                    fluid.loadTank(tank, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
+                }
+            }
+            fluid.loadSeparation(tag);
             fluid.refreshFaces();
         }
+    }
+
+    private String customFluidSettingKey(int tank) {
+        return (tank < machine.fluidInputs() ? "fluid_input_mode_" : "fluid_output_mode_") + tank;
     }
 
     @Override
@@ -361,6 +530,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         ContainerData data = new ContainerData() {
             @Override
             public int get(int index) {
+                if (machine.scripted() && fluid != null && index >= ItemProcessorMenu.DATA_COUNT) {
+                    return ItemProcessorMenu.scriptedTankData(fluid, index);
+                }
                 return switch (index) {
                     case ItemProcessorMenu.PROGRESS -> progress();
                     case ItemProcessorMenu.ENERGY -> (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());

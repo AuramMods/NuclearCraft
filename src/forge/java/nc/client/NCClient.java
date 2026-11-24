@@ -5,7 +5,7 @@ import nc.init.NCQuantum;
 import nc.init.NCHeatExchangers;
 import nc.init.NCMachines;
 import nc.init.NCFission;
-import nc.init.NCItemProcessors.Machine;
+import nc.init.NCItemProcessors;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
 import nc.init.NCRegistries;
@@ -43,7 +43,7 @@ public final class NCClient {
             MenuScreens.register(NCRegistries.ENRICHER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.SUPERCOOLER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.CENTRIFUGE_MENU.get(), FluidProcessorScreen::new);
-            for (Machine machine : Machine.values()) {
+            for (var machine : NCItemProcessors.profiles()) {
                 MenuScreens.register(machine.menu(), ItemProcessorScreen::new);
             }
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);

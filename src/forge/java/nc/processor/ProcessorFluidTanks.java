@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.function.Predicate;
+import java.util.function.IntUnaryOperator;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
@@ -27,6 +28,7 @@ public final class ProcessorFluidTanks {
     private final BlockEntity owner;
     private final FluidTank[] tanks;
     private final int inputs;
+    private final boolean defaultSeparation;
     private final InputValidator canFill;
     private final int[] sideModes;
     private final OutputMode[] outputModes;
@@ -41,16 +43,22 @@ public final class ProcessorFluidTanks {
     }
 
     ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> ingredient, InputValidator canFill, int inputs, int outputs) {
+        this(owner, ingredient, canFill, inputs, outputs, index -> CAPACITY, inputs > 1);
+    }
+
+    ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> ingredient, InputValidator canFill, int inputs, int outputs,
+                        IntUnaryOperator tankCapacity, boolean defaultSeparation) {
         this.owner = owner;
         this.inputs = inputs;
         this.canFill = canFill;
-        separateInputs = inputs > 1;
+        this.defaultSeparation = defaultSeparation;
+        separateInputs = defaultSeparation;
         tanks = new FluidTank[inputs + outputs];
         sideModes = new int[tanks.length];
         outputModes = new OutputMode[outputs];
         Arrays.fill(outputModes, OutputMode.HOLD);
         for (int index = 0; index < tanks.length; index++) {
-            tanks[index] = new FluidTank(CAPACITY, index < inputs ? ingredient : stack -> true) {
+            tanks[index] = new FluidTank(tankCapacity.applyAsInt(index), index < inputs ? ingredient : stack -> true) {
                 @Override
                 protected void onContentsChanged() {
                     owner.setChanged();
@@ -83,15 +91,23 @@ public final class ProcessorFluidTanks {
     }
 
     boolean canRestoreInput(FluidStack stack) {
-        FluidStack stored = tanks[0].getFluid();
+        return canRestoreInput(0, stack);
+    }
+
+    boolean canRestoreInput(int index, FluidStack stack) {
+        FluidStack stored = tanks[index].getFluid();
         return (stored.isEmpty() || stack.isFluidEqual(stored))
-                && stack.getAmount() <= tanks[0].getCapacity() - stored.getAmount();
+                && stack.getAmount() <= tanks[index].getCapacity() - stored.getAmount();
     }
 
     void restoreInput(FluidStack stack) {
+        restoreInput(0, stack);
+    }
+
+    void restoreInput(int index, FluidStack stack) {
         FluidStack restored = stack.copy();
-        restored.grow(tanks[0].getFluidAmount());
-        tanks[0].setFluid(restored);
+        restored.grow(tanks[index].getFluidAmount());
+        tanks[index].setFluid(restored);
         owner.setChanged();
     }
 
@@ -239,7 +255,7 @@ public final class ProcessorFluidTanks {
     void loadSeparation(CompoundTag tag) {
         if (inputs > 1) {
             separateInputs = tag.contains("input_tanks_separated") ? tag.getBoolean("input_tanks_separated")
-                    : !tag.contains("inputTanksSeparated") || tag.getBoolean("inputTanksSeparated");
+                    : tag.contains("inputTanksSeparated") ? tag.getBoolean("inputTanksSeparated") : defaultSeparation;
         }
     }
 

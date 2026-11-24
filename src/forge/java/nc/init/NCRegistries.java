@@ -11,6 +11,7 @@ import nc.processor.NuclearFurnaceBlock;
 import nc.processor.NuclearFurnaceBlockEntity;
 import nc.processor.NuclearFurnaceMenu;
 import nc.processor.ProcessorBlock;
+import nc.processor.ProcessorMenuNetwork;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
@@ -230,6 +231,8 @@ public final class NCRegistries {
     public static void register(IEventBus bus) {
         NCMaterials.register();
         NCItemProcessors.register();
+        NCScriptedProcessors.register();
+        ProcessorMenuNetwork.register();
         NCDistributors.register();
         NCAutomation.register();
         NCFission.register();

@@ -5,6 +5,7 @@ import nc.item.ProcessorUpgradeItem;
 import nc.processor.ItemProcessorBlockEntity;
 import nc.processor.ItemProcessorMenu;
 import nc.processor.ProcessorBlock;
+import nc.processor.ProcessorProfile;
 import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Stream;
 
 public final class NCItemProcessors {
     public static final RegistryObject<Item> SPEED_UPGRADE = NCRegistries.ITEMS.register("speed_upgrade",
@@ -96,6 +98,18 @@ public final class NCItemProcessors {
         Machine.values();
     }
 
+    public static List<ProcessorProfile> profiles() {
+        return Stream.<ProcessorProfile>concat(Arrays.stream(Machine.values()), NCScriptedProcessors.profiles().stream()).toList();
+    }
+
+    static double timeMultiplier() {
+        return value(TIME_MULTIPLIER);
+    }
+
+    static double powerMultiplier() {
+        return value(POWER_MULTIPLIER);
+    }
+
     public static void registerConfig(ModLoadingContext context) {
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-processors.toml");
     }
@@ -127,6 +141,15 @@ public final class NCItemProcessors {
     public static double powerUpgrade(int speedCount, int energyCount) {
         return upgradeFactor(speedCount, SPEED_POWERS, SPEED_FACTORS, 1)
                 / upgradeFactor(Math.min(speedCount, energyCount), ENERGY_POWERS, ENERGY_FACTORS, 0);
+    }
+
+    public static double generatorSpeedUpgrade(int speedCount, int energyCount) {
+        return upgradeFactor(speedCount, SPEED_POWERS, SPEED_FACTORS, 2)
+                / upgradeFactor(energyCount, ENERGY_POWERS, ENERGY_FACTORS, 1);
+    }
+
+    public static double generatorPowerUpgrade(int speedCount) {
+        return upgradeFactor(speedCount, SPEED_POWERS, SPEED_FACTORS, 3);
     }
 
     public static int upgradeLimit(int slot) {
@@ -165,6 +188,7 @@ public final class NCItemProcessors {
         for (Machine machine : Machine.values()) {
             output.accept(machine.item.get());
         }
+        NCScriptedProcessors.displayItems(output);
         output.accept(SPEED_UPGRADE.get());
         output.accept(ENERGY_UPGRADE.get());
     }
@@ -172,7 +196,7 @@ public final class NCItemProcessors {
     public record TankSlot(int x, int y, int size, boolean output) {}
 
     // The order matches the two 1.12.2 processor config arrays.
-    public enum Rate {
+    public enum Rate implements ProcessorProfile.Rates {
         MANUFACTORY(400, 20), SEPARATOR(800, 10), DECAY_HASTENER(800, 10), FUEL_REPROCESSOR(400, 20),
         ALLOY_FURNACE(400, 10), INFUSER(600, 10), MELTER(800, 40), SUPERCOOLER(600, 20),
         ELECTROLYZER(3200, 40), ASSEMBLER(600, 10), INGOT_FORMER(400, 0), PRESSURIZER(600, 40),
@@ -185,6 +209,11 @@ public final class NCItemProcessors {
         Rate(int stockTime, int stockPower) {
             this.stockTime = stockTime;
             this.stockPower = stockPower;
+        }
+
+        @Override
+        public double defaultTime() {
+            return stockTime;
         }
 
         public double baseTime() {
@@ -208,7 +237,7 @@ public final class NCItemProcessors {
         }
     }
 
-    public enum Machine {
+    public enum Machine implements ProcessorProfile {
         MANUFACTORY("manufactory", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
         DECAY_HASTENER("decay_hastener", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
         SEPARATOR("separator", 1, 2, false, 42, null, 102, 28, 60, 34, 18),

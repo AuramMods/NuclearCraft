@@ -1,7 +1,7 @@
 package nc.processor;
 
 import nc.init.NCItemProcessors;
-import nc.init.NCItemProcessors.Rate;
+import nc.processor.ProcessorProfile.Rates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -18,17 +18,24 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     final ProcessorUpgrades upgrades = new ProcessorUpgrades(this);
     final ProcessorEnergy power;
-    final Rate rate;
+    final Rates rate;
     private final int baseCapacity;
+    private final boolean generator;
     private double basePower;
     double batchTicks;
     double progressHalfTicks;
 
-    UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rate rate, int baseCapacity) {
+    UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rates rate, int baseCapacity) {
+        this(type, pos, state, rate, baseCapacity, false);
+    }
+
+    UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rates rate,
+                                   int baseCapacity, boolean generator) {
         super(type, pos, state);
         this.rate = rate;
         this.baseCapacity = baseCapacity;
-        power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity);
+        this.generator = generator;
+        power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity, generator);
     }
 
     void updateRates(double rawTicks, double configuredTicks, double configuredPower) {
@@ -46,12 +53,21 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     }
 
     double speed() {
-        return NCItemProcessors.speedUpgrade(upgrades.getStackInSlot(ProcessorUpgrades.SPEED).getCount());
+        if (!hasUpgrades()) {
+            return 1D;
+        }
+        int speed = upgrades.getStackInSlot(ProcessorUpgrades.SPEED).getCount();
+        return generator ? NCItemProcessors.generatorSpeedUpgrade(speed, upgrades.getStackInSlot(ProcessorUpgrades.ENERGY).getCount())
+                : NCItemProcessors.speedUpgrade(speed);
     }
 
     private double powerMultiplier() {
-        return NCItemProcessors.powerUpgrade(upgrades.getStackInSlot(ProcessorUpgrades.SPEED).getCount(),
-                upgrades.getStackInSlot(ProcessorUpgrades.ENERGY).getCount());
+        if (!hasUpgrades()) {
+            return 1D;
+        }
+        int speed = upgrades.getStackInSlot(ProcessorUpgrades.SPEED).getCount();
+        return generator ? NCItemProcessors.generatorPowerUpgrade(speed)
+                : NCItemProcessors.powerUpgrade(speed, upgrades.getStackInSlot(ProcessorUpgrades.ENERGY).getCount());
     }
 
     int energyPerTick() {
@@ -64,6 +80,9 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     }
 
     boolean installUpgrade(Player player, InteractionHand hand, Direction face) {
+        if (!hasUpgrades()) {
+            return false;
+        }
         ItemStack held = player.getItemInHand(hand);
         int slot = ProcessorUpgrades.slotFor(held);
         if (slot < 0) {
@@ -80,7 +99,11 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         }).orElse(false);
     }
 
-    void dropUpgrades(Level level, BlockPos pos) {
+    boolean hasUpgrades() {
+        return true;
+    }
+
+    void dropAuxiliaryInventory(Level level, BlockPos pos) {
         for (int slot = 0; slot < upgrades.getSlots(); slot++) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), upgrades.getStackInSlot(slot));
         }
