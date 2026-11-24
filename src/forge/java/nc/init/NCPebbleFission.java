@@ -8,7 +8,6 @@ import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.PebbleCooler;
 import nc.multiblock.fission.PebbleCoolerBlock;
-import nc.multiblock.fission.PebblePartMenu;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.SolidFissionRecipe;
@@ -81,18 +80,6 @@ public final class NCPebbleFission {
             () -> RecipeType.simple(NuclearCraft.id("pebble_fission")));
     public static final RegistryObject<RecipeSerializer<SolidFissionRecipe>> FUEL_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("pebble_fission", () -> new SolidFissionRecipe.Serializer(true));
-
-    private static final Map<PebblePartMenu.Kind, RegistryObject<MenuType<PebblePartMenu>>> PART_MENUS =
-            new EnumMap<>(PebblePartMenu.Kind.class);
-
-    static {
-        for (var kind : PebblePartMenu.Kind.values()) {
-            PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
-                    () -> new MenuType<>((id, inventory) -> new PebblePartMenu(id, inventory, kind), FeatureFlags.DEFAULT_FLAGS)));
-        }
-    }
-
-    public static MenuType<PebblePartMenu> partMenu(PebblePartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
 
     private NCPebbleFission() {}
 

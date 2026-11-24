@@ -155,10 +155,9 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         SolidFissionCore core = controller.computerCore();
         var entity = level.getBlockEntity(pos);
         if (entity instanceof FissionFuelCell cell) {
-            var items = controller.inventory();
-            var fuel = cell.reservedFuel().isEmpty() ? cell.itemForInspection(items, false) : cell.reservedFuel();
+            var fuel = cell.reservedFuel().isEmpty() ? cell.items(false).bulkStack(0) : cell.reservedFuel();
             return fuelStats(core.fuelStats(pos), ComputerValues.item(fuel),
-                    ComputerValues.item(cell.itemForInspection(items, true)), cell.computerProgress());
+                    ComputerValues.item(cell.items(true).bulkStack(1)), cell.computerProgress());
         }
         if (entity instanceof SaltVessel vessel) {
             var fuel = vessel.reservedForInspection();

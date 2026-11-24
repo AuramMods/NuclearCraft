@@ -22,7 +22,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
@@ -30,6 +29,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.Containers;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
@@ -53,7 +53,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private static final int STEAM_PER_WATER = 4;
     private final ItemStackHandler inventory;
     private final FissionVariant variant;
-    private final @Nullable PebbleFuelBank pebbleFuel;
+    private final @Nullable FissionItemFuelBank itemFuel;
     private final FluidTank coolant;
     private final FluidTank steam;
     private final @Nullable PebbleCooling gasCooling;
@@ -78,8 +78,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private SolidFissionController(BlockPos pos, BlockState state, FissionVariant variant) {
         super(variant.entity(), pos, state);
         this.variant = variant;
-        pebbleFuel = variant == FissionVariant.PEBBLE ? new PebbleFuelBank(this) : null;
-        inventory = pebbleFuel != null ? pebbleFuel.items(null) : new ItemStackHandler(2) {
+        itemFuel = variant == FissionVariant.SALT ? null : new FissionItemFuelBank(this, variant);
+        inventory = itemFuel != null ? itemFuel.items(null) : new ItemStackHandler(2) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
@@ -159,7 +159,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         boolean requested = layout != null && (enabled || server.hasNeighborSignal(worldPosition));
         var decaySettings = layout == null ? null : NCFission.decaySettings();
         if (layout != null && (requested || decaySettings != null)) {
-            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling, saltFuel, saltCooling,
+            SolidFissionCore.Heat generated = core.tick(server, clusterHeat, gasCooling, saltFuel, saltCooling,
                     requested, decaySettings, computerPorts.hasPorts());
             if (!generated.overheatedCells().isEmpty()) {
                 melt(server, generated.overheatedCells());
@@ -223,8 +223,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         // A smaller re-formed reactor retains previously stored fluids until they can be drained.
         coolant.setCapacity(Math.max(capacity, coolant.getFluidAmount()));
         steam.setCapacity(Math.max(capacity, steam.getFluidAmount()));
-        if (pebbleFuel != null && gasCooling != null) {
-            pebbleFuel.bind(layout);
+        if (itemFuel != null) {
+            itemFuel.bind(server, layout);
+        }
+        if (gasCooling != null) {
             gasCooling.resize(server, layout);
         }
         if (saltCooling != null && saltFuel != null) {
@@ -247,8 +249,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         for (BlockPos pos : layout.cells()) {
             var entity = server.getBlockEntity(pos);
-            if (pebbleFuel != null && entity instanceof FissionFuelCell cell) {
-                cell.bindPebble(this);
+            if (entity instanceof FissionFuelCell cell) {
+                cell.bind(this);
             }
             var decay = FissionFuelDecay.of(entity);
             if (decay != null) {
@@ -292,8 +294,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         for (BlockPos pos : previous.cells()) {
             var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             var entity = chunk == null ? null : chunk.getBlockEntity(pos);
-            if (pebbleFuel != null && entity instanceof FissionFuelCell cell) {
-                cell.bindPebble(null);
+            if (entity instanceof FissionFuelCell cell) {
+                cell.bind(null);
             }
             var decay = FissionFuelDecay.of(entity);
             if (decay != null) {
@@ -483,12 +485,15 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     void computerClear() {
-        for (int slot = 0; slot < inventory.getSlots(); slot++) {
-            inventory.setStackInSlot(slot, ItemStack.EMPTY);
+        if (itemFuel != null) {
+            itemFuel.clear();
+        } else {
+            for (int slot = 0; slot < inventory.getSlots(); slot++) {
+                inventory.setStackInSlot(slot, ItemStack.EMPTY);
+            }
         }
         coolant.setFluid(FluidStack.EMPTY);
         steam.setFluid(FluidStack.EMPTY);
-        if (pebbleFuel != null) pebbleFuel.clear();
         if (gasCooling != null) {
             gasCooling.clearMaterial();
             for (BlockPos pos : layout.sinks()) {
@@ -516,8 +521,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             if (port.role() == Role.IRRADIATOR_PORT
                     && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.localIrradiatorItems().clearMaterial();
-            } else if (port.role() == Role.CHAMBER_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
-                entity.localPebbleFuel().clear();
+            } else if (port.itemFuel() && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
+                entity.localFuelItems().clear();
             } else if (port.role() == Role.COOLER_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.localPebbleGas().clear();
             }
@@ -599,23 +604,23 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return inventory;
     }
 
-    boolean hasPebbleCircuit(@Nullable ResourceLocation filter) {
-        return pebbleFuel != null && pebbleFuel.connected(filter);
+    boolean hasItemFuelCircuit(@Nullable ResourceLocation filter) {
+        return itemFuel != null && itemFuel.connected(filter);
     }
 
-    PebbleFuelItems pebbleItems(@Nullable ResourceLocation filter) {
-        return pebbleFuel.items(filter);
+    FissionFuelItems fuelItems(@Nullable ResourceLocation filter) {
+        return itemFuel.items(filter);
     }
 
-    void dropFilteredPebbleFuel() {
-        if (pebbleFuel != null) {
-            pebbleFuel.dropFiltered();
+    void dropFuelItems() {
+        if (itemFuel != null) {
+            itemFuel.dropContents();
+        } else {
+            for (int slot = 0; slot < inventory.getSlots(); slot++) {
+                Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                        inventory.getStackInSlot(slot));
+            }
         }
-    }
-
-    boolean acceptsFuel(ItemStack stack) {
-        return level != null && !stack.isEmpty() && level.getRecipeManager()
-                .getRecipeFor(variant == FissionVariant.PEBBLE ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get(), new SimpleContainer(stack), level).isPresent();
     }
 
     void toggle() {
@@ -640,8 +645,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("inventory", inventory.serializeNBT());
-        if (pebbleFuel != null) {
-            tag.put("pebble_fuel", pebbleFuel.save());
+        if (itemFuel != null) {
+            tag.put(variant.itemCircuitsKey(), itemFuel.save());
         }
         tag.put("coolant", coolant.writeToNBT(new CompoundTag()));
         tag.put("steam", steam.writeToNBT(new CompoundTag()));
@@ -670,8 +675,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     public void load(CompoundTag tag) {
         super.load(tag);
         inventory.deserializeNBT(tag.getCompound("inventory"));
-        if (pebbleFuel != null) {
-            pebbleFuel.load(tag.getList("pebble_fuel", Tag.TAG_COMPOUND));
+        if (itemFuel != null) {
+            itemFuel.load(tag.getList(variant.itemCircuitsKey(), Tag.TAG_COMPOUND));
         }
         coolant.readFromNBT(tag.getCompound("coolant"));
         steam.readFromNBT(tag.getCompound("steam"));

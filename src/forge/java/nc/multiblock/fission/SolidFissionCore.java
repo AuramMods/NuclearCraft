@@ -18,7 +18,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -191,23 +190,21 @@ final class SolidFissionCore {
 
     private static final class ItemReaction extends Reaction<SolidFissionRecipe> {
         private final FissionFuelCell cell;
-        private final ItemStackHandler inventory;
 
-        private ItemReaction(FissionFuelCell cell, SolidFissionRecipe recipe, ItemStackHandler inventory,
+        private ItemReaction(FissionFuelCell cell, SolidFissionRecipe recipe,
                              boolean decayEnabled) {
             super(recipe, cell.decay(), decayEnabled);
             this.cell = cell;
-            this.inventory = inventory;
         }
 
         @Override void primeWith(double efficiency) { cell.primeWith(efficiency); }
         @Override double sourceEfficiency() { return cell.sourceEfficiency(); }
-        @Override void burn(double speed) { cell.burn(recipe, inventory, speed); }
+        @Override void burn(double speed) { cell.burn(recipe, speed); }
 
         @Override
         boolean sameFuel(Reaction<?> other) {
             return other instanceof ItemReaction item
-                    && Objects.equals(cell.pebbleFilter(), item.cell.pebbleFilter())
+                    && Objects.equals(cell.filter(), item.cell.filter())
                     && ItemStack.isSameItemSameTags(cell.reservedFuel(), item.cell.reservedFuel());
         }
     }
@@ -293,7 +290,7 @@ final class SolidFissionCore {
         coolerStats = Map.of();
     }
 
-    Heat tick(ServerLevel level, ItemStackHandler inventory, Map<BlockPos, Long> storedHeat,
+    Heat tick(ServerLevel level, Map<BlockPos, Long> storedHeat,
               @Nullable PebbleCooling gasCooling, @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling,
               boolean requested, @Nullable FissionDecaySettings decaySettings, boolean telemetry) {
         boolean fluidCooling = layout.variant() != FissionVariant.SOLID;
@@ -312,9 +309,9 @@ final class SolidFissionCore {
                 continue;
             }
             if (entity instanceof FissionFuelCell cell) {
-                SolidFissionRecipe recipe = cell.prepare(level, inventory);
+                SolidFissionRecipe recipe = cell.prepare(level);
                 if (recipe != null) {
-                    reactions.put(pos, new ItemReaction(cell, recipe, inventory, decayEnabled));
+                    reactions.put(pos, new ItemReaction(cell, recipe, decayEnabled));
                 }
             } else if (saltFuel != null && entity instanceof SaltVessel vessel) {
                 SaltFissionRecipe recipe = vessel.prepare(level, saltFuel);

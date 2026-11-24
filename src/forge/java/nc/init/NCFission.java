@@ -17,6 +17,7 @@ import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionPartBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
+import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.FissionPortBlockEntity;
 import nc.multiblock.fission.FissionSourceBlock;
 import nc.multiblock.fission.FissionWallBlock;
@@ -262,6 +263,18 @@ public final class NCFission {
     public static final RegistryObject<MenuType<SolidFissionMenu>> MENU =
             NCRegistries.MENUS.register("solid_fission_controller", () ->
                     new MenuType<>(SolidFissionMenu::new, FeatureFlags.DEFAULT_FLAGS));
+    private static final Map<FissionPartMenu.Kind, RegistryObject<MenuType<FissionPartMenu>>> PART_MENUS =
+            new EnumMap<>(FissionPartMenu.Kind.class);
+
+    static {
+        for (var kind : FissionPartMenu.Kind.values()) {
+            PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
+                    () -> new MenuType<>((id, inventory) -> new FissionPartMenu(id, inventory, kind), FeatureFlags.DEFAULT_FLAGS)));
+        }
+    }
+
+    public static MenuType<FissionPartMenu> partMenu(FissionPartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
+
     public static final RegistryObject<RecipeType<SolidFissionRecipe>> FUEL_TYPE =
             NCRegistries.RECIPE_TYPES.register("solid_fission", () -> RecipeType.simple(NuclearCraft.id("solid_fission")));
     public static final RegistryObject<RecipeSerializer<SolidFissionRecipe>> FUEL_SERIALIZER =

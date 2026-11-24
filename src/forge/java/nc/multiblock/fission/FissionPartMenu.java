@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.init.NCFission;
 import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,25 +25,26 @@ import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.Nullable;
 
-public final class PebblePartMenu extends AbstractContainerMenu {
+public final class FissionPartMenu extends AbstractContainerMenu {
     public static final int CLEAR_INPUT = 0;
     public static final int CLEAR_OUTPUT = 1;
     public static final int SWITCH_BUFFER = 2;
     private static final int FILTER = 0, RESERVED = 1, INPUT = 2, OUTPUT = 5, PROGRESS = 8;
     private static final int HEAT = 9, HEAT_CAPACITY = 10, COOLING = 11, STATUS = 12;
+    private static final int FUEL_IN = 13, FUEL_OUT = 14, IN_LIMIT = 15, OUT_LIMIT = 16;
     private static final int CONNECTED = 1, LINKED = 2, LOCAL_VIEW = 4, PROCESSING = 8, OUTPUT_PORT = 16, GAS_FILTER = 32;
 
-    private final SimpleContainerData data = new SimpleContainerData(26);
+    private final SimpleContainerData data = new SimpleContainerData(34);
     private final Kind kind;
     private final @Nullable BlockEntity entity;
     private boolean local;
 
-    public PebblePartMenu(int id, Inventory inventory, Kind kind) {
+    public FissionPartMenu(int id, Inventory inventory, Kind kind) {
         this(id, inventory, kind, null);
     }
 
-    private PebblePartMenu(int id, Inventory inventory, Kind kind, @Nullable BlockEntity entity) {
-        super(NCPebbleFission.partMenu(kind), id);
+    private FissionPartMenu(int id, Inventory inventory, Kind kind, @Nullable BlockEntity entity) {
+        super(NCFission.partMenu(kind), id);
         this.kind = kind;
         this.entity = entity;
         if (kind.fuel()) {
@@ -64,13 +66,13 @@ public final class PebblePartMenu extends AbstractContainerMenu {
 
     static void open(Player player, BlockEntity entity, Kind kind) {
         player.openMenu(new SimpleMenuProvider((id, inventory, ignored) ->
-                new PebblePartMenu(id, inventory, kind, entity), entity.getBlockState().getBlock().getName()));
+                new FissionPartMenu(id, inventory, kind, entity), entity.getBlockState().getBlock().getName()));
     }
 
     static void interactFuel(Player player, InteractionHand hand, BlockEntity entity, Kind kind) {
         ItemStack held = player.getItemInHand(hand);
-        if (controller(entity) == null && PebbleFuelItems.accepts(entity.getLevel(), held)
-                && localItems(entity).select(PebbleFuelItems.id(held))) {
+        FissionFuelItems storage = localItems(entity);
+        if (controller(entity) == null && storage.acceptsRecipe(held) && storage.select(FissionFuelItems.id(held))) {
             if (entity.getLevel() instanceof ServerLevel level) {
                 FissionPartBlock.geometryChanged(level, entity.getBlockPos());
             }
@@ -83,24 +85,26 @@ public final class PebblePartMenu extends AbstractContainerMenu {
 
     private static @Nullable SolidFissionController controller(BlockEntity entity) {
         if (entity instanceof FissionFuelCell cell) {
-            return cell.pebbleController();
+            return cell.controller();
         }
         if (entity instanceof PebbleCooler cooler) {
             return cooler.controller();
         }
-        return ((FissionPortBlockEntity) entity).pebbleController();
+        var port = (FissionPortBlockEntity) entity;
+        return FissionPartBlock.role(port.getBlockState()) == FissionPartBlock.Role.COOLER_PORT
+                ? port.pebbleController() : port.itemFuelController();
     }
 
-    private static PebbleFuelItems localItems(BlockEntity entity) {
-        return entity instanceof FissionFuelCell cell ? cell.localPebbleItems()
-                : ((FissionPortBlockEntity) entity).localPebbleFuel();
+    private static FissionFuelItems localItems(BlockEntity entity) {
+        return entity instanceof FissionFuelCell cell ? cell.localItems()
+                : ((FissionPortBlockEntity) entity).localFuelItems();
     }
 
-    private PebbleFuelItems sharedItems(boolean output) {
-        return entity instanceof FissionFuelCell cell ? cell.pebbleItems(output) : ((FissionPortBlockEntity) entity).pebbleFuel();
+    private FissionFuelItems sharedItems(boolean output) {
+        return entity instanceof FissionFuelCell cell ? cell.items(output) : ((FissionPortBlockEntity) entity).fuelItems();
     }
 
-    private PebbleFuelItems selectedItems(int slot) {
+    private FissionFuelItems selectedItems(int slot) {
         return local ? localItems(entity) : sharedItems(slot == 1);
     }
 
@@ -207,7 +211,13 @@ public final class PebblePartMenu extends AbstractContainerMenu {
         double progress = 0D;
         boolean gasFilter = false;
         if (kind.fuel()) {
-            var filter = selectedItems(0).filter();
+            var input = selectedItems(0);
+            var output = selectedItems(1);
+            set(FUEL_IN, input.total(0));
+            set(FUEL_OUT, output.total(1));
+            set(IN_LIMIT, input.capacity());
+            set(OUT_LIMIT, output.capacity());
+            var filter = input.filter();
             set(FILTER, filter == null ? 0 : BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(filter)));
             if (entity instanceof FissionFuelCell cell && !local) {
                 var reserved = cell.reservedFuel();
@@ -266,6 +276,8 @@ public final class PebblePartMenu extends AbstractContainerMenu {
     public int heat() { return get(HEAT); }
     public int heatCapacity() { return get(HEAT_CAPACITY); }
     public int cooling() { return get(COOLING); }
+    public int fuelAmount(boolean output) { return get(output ? FUEL_OUT : FUEL_IN); }
+    public int fuelCapacity(boolean output) { return get(output ? OUT_LIMIT : IN_LIMIT); }
     public ItemStack fuelFilter() { return new ItemStack(BuiltInRegistries.ITEM.byId(get(FILTER))); }
     public ItemStack reserved() { return new ItemStack(BuiltInRegistries.ITEM.byId(get(RESERVED))); }
     public FluidStack gasFilter() { return new FluidStack(BuiltInRegistries.FLUID.byId(get(FILTER)), 1); }
@@ -287,6 +299,11 @@ public final class PebblePartMenu extends AbstractContainerMenu {
         }
 
         @Override
+        public int getMaxStackSize(ItemStack stack) {
+            return Math.min(getMaxStackSize(), stack.getMaxStackSize());
+        }
+
+        @Override
         public void setChanged() {
             if (entity != null) {
                 selectedItems(getSlotIndex()).onContentsChanged(getSlotIndex());
@@ -299,7 +316,11 @@ public final class PebblePartMenu extends AbstractContainerMenu {
         @Override public int getSlots() { return 2; }
         @Override public void setStackInSlot(int slot, ItemStack stack) { selectedItems(slot).setStackInSlot(slot, stack); }
         @Override public ItemStack getStackInSlot(int slot) { return selectedItems(slot).getStackInSlot(slot); }
-        @Override public boolean isItemValid(int slot, ItemStack stack) { return selectedItems(slot).isItemValid(slot, stack); }
+        @Override public boolean isItemValid(int slot, ItemStack stack) {
+            FissionFuelItems items = selectedItems(slot);
+            return items.isItemValid(slot, stack) && (items.total(slot) <= items.getStackInSlot(slot).getCount()
+                    || ItemStack.isSameItemSameTags(stack, items.getStackInSlot(slot)));
+        }
         @Override public int getSlotLimit(int slot) { return selectedItems(slot).getSlotLimit(slot); }
         @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
             return selectedItems(slot).insertItem(slot, stack, simulate);
@@ -310,6 +331,7 @@ public final class PebblePartMenu extends AbstractContainerMenu {
     }
 
     public enum Kind {
+        CELL("solid_fission_cell", true, false), CELL_PORT("fission_cell_port", true, true),
         CHAMBER("pebble_fission_chamber", true, false), COOLER("pebble_fission_cooler", false, false),
         CHAMBER_PORT("fission_chamber_port", true, true), COOLER_PORT("fission_cooler_port", false, true);
 

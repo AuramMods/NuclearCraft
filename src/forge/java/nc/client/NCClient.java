@@ -11,7 +11,7 @@ import nc.init.NCSaltFission;
 import nc.init.NCRegistries;
 import nc.init.NCRadiation;
 import nc.init.NCTurbine;
-import nc.multiblock.fission.PebblePartMenu;
+import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.SaltFissionPartMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
@@ -50,8 +50,8 @@ public final class NCClient {
             MenuScreens.register(NCFission.IRRADIATOR_MENU.get(), FissionIrradiatorScreen::new);
             MenuScreens.register(NCFission.IRRADIATOR_PORT_MENU.get(), FissionIrradiatorScreen::new);
             MenuScreens.register(NCPebbleFission.MENU.get(), SolidFissionScreen::new);
-            for (var kind : PebblePartMenu.Kind.values()) {
-                MenuScreens.register(NCPebbleFission.partMenu(kind), PebblePartScreen::new);
+            for (var kind : FissionPartMenu.Kind.values()) {
+                MenuScreens.register(NCFission.partMenu(kind), FissionPartScreen::new);
             }
             MenuScreens.register(NCSaltFission.MENU.get(), SolidFissionScreen::new);
             for (var kind : SaltFissionPartMenu.Kind.values()) {

@@ -28,7 +28,7 @@ import java.util.Objects;
 
 public final class FissionPortBlockEntity extends BlockEntity {
     private final @Nullable IrradiatorItems irradiationItems;
-    private final @Nullable PebbleFuelItems localPebbleFuel;
+    private final @Nullable FissionFuelItems localFuelItems;
     private final @Nullable PebbleCooling.Tanks localPebbleGas;
     private Binding binding;
     private @Nullable ResourceLocation fuelFilter;
@@ -44,7 +44,11 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }, pos, state);
         localPebbleGas = FissionPartBlock.role(state) == Role.COOLER_PORT
                 ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, stack -> true) : null;
-        localPebbleFuel = FissionPartBlock.role(state) == Role.CHAMBER_PORT ? new PebbleFuelItems(this, null) : null;
+        localFuelItems = switch (FissionPartBlock.role(state)) {
+            case FUEL_PORT -> new FissionFuelItems(this, FissionVariant.SOLID, null);
+            case CHAMBER_PORT -> new FissionFuelItems(this, FissionVariant.PEBBLE, null);
+            default -> null;
+        };
         irradiationItems = FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? new IrradiatorItems(this) : null;
     }
 
@@ -111,13 +115,18 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 ? current.controller : null;
     }
 
-    PebbleFuelItems localPebbleFuel() {
-        return Objects.requireNonNull(localPebbleFuel);
+    FissionFuelItems localFuelItems() {
+        return Objects.requireNonNull(localFuelItems);
     }
 
-    PebbleFuelItems pebbleFuel() {
-        var controller = pebbleController();
-        return controller == null ? localPebbleFuel() : controller.pebbleItems(localPebbleFuel().filter());
+    @Nullable SolidFissionController itemFuelController() {
+        Binding current = binding;
+        return localFuelItems != null && current != null && connected(current) ? current.controller : null;
+    }
+
+    FissionFuelItems fuelItems() {
+        var controller = itemFuelController();
+        return controller == null ? localFuelItems() : controller.fuelItems(localFuelItems().filter());
     }
 
     PebbleCooling.Tanks localPebbleGas() {
@@ -177,14 +186,14 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
     }
 
-    void exportPebble(ServerLevel level) {
+    void exportFuelOrGas(ServerLevel level) {
         Binding current = binding;
         if (current == null || !current.port.output() || !connected(current)) {
             return;
         }
 
         Role role = current.port.role();
-        var fuel = role == Role.CHAMBER_PORT ? current.controller.pebbleItems(current.port.fuelFilter()) : null;
+        var fuel = current.port.itemFuel() ? current.controller.fuelItems(current.port.fuelFilter()) : null;
         var gas = role == Role.COOLER_PORT ? current.controller.fluidTank(current.port) : null;
         if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (gas == null || gas.isEmpty())) {
             return;
@@ -204,7 +213,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
     }
 
-    private static void pushFuel(PebbleFuelItems source, IItemHandler target) {
+    private static void pushFuel(FissionFuelItems source, IItemHandler target) {
         var offer = source.getStackInSlot(1).copy();
         int accepted = offer.getCount() - ItemHandlerHelper.insertItem(target, offer.copy(), true).getCount();
         if (accepted <= 0) {
@@ -216,7 +225,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
             remaining = ItemHandlerHelper.insertItem(target, reserved.copy(), false);
         } finally {
             if (!remaining.isEmpty()) {
-                source.insertItem(1, remaining, false);
+                source.restoreOutput(remaining);
             }
         }
     }
@@ -239,7 +248,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     @Nullable ResourceLocation fuelFilter() {
-        return localPebbleFuel == null ? fuelFilter : localPebbleFuel.filter();
+        return localFuelItems == null ? fuelFilter : localFuelItems.filter();
     }
 
     void fuelFilter(@Nullable ResourceLocation next) {
@@ -250,8 +259,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        if (localPebbleFuel != null) {
-            localPebbleFuel.save(tag);
+        if (localFuelItems != null) {
+            localFuelItems.save(tag);
         }
         if (localPebbleGas != null) {
             tag.put("pebble_gas", localPebbleGas.save());
@@ -270,10 +279,10 @@ public final class FissionPortBlockEntity extends BlockEntity {
         if (localPebbleGas != null) {
             localPebbleGas.load(tag.getCompound("pebble_gas"));
         }
-        if (localPebbleFuel != null) {
-            var previous = localPebbleFuel.filter();
-            localPebbleFuel.load(tag);
-            if (level instanceof ServerLevel server && !Objects.equals(previous, localPebbleFuel.filter())) {
+        if (localFuelItems != null) {
+            var previous = localFuelItems.filter();
+            localFuelItems.load(tag);
+            if (level instanceof ServerLevel server && !Objects.equals(previous, localFuelItems.filter())) {
                 FissionPartBlock.geometryChanged(server, worldPosition);
             }
             return;
@@ -362,12 +371,12 @@ public final class FissionPortBlockEntity extends BlockEntity {
     private final class FuelHandler implements IItemHandler {
         private final Binding connection;
         private final ItemStackHandler inventory;
+        private final @Nullable FissionFuelItems fuel;
 
         private FuelHandler(Binding connection) {
             this.connection = connection;
-            inventory = irradiationItems != null ? connection.controller.irradiatorItems(irradiationItems)
-                    : localPebbleFuel != null ? connection.controller.pebbleItems(connection.port.fuelFilter())
-                    : connection.controller.inventory();
+            fuel = connection.port.itemFuel() ? connection.controller.fuelItems(connection.port.fuelFilter()) : null;
+            inventory = fuel != null ? fuel : connection.controller.irradiatorItems(localIrradiatorItems());
         }
 
         @Override
@@ -377,30 +386,38 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public @NotNull ItemStack getStackInSlot(int slot) {
-            return slot == 0 && connected(connection) ? inventory.getStackInSlot(connection.port.output() ? 1 : 0).copy() : ItemStack.EMPTY;
+            if (slot != 0 || !connected(connection)) {
+                return ItemStack.EMPTY;
+            }
+            int index = connection.port.output() ? 1 : 0;
+            return fuel == null ? inventory.getStackInSlot(index).copy() : fuel.bulkStack(index);
         }
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return isItemValid(slot, stack) ? inventory.insertItem(0, stack, simulate) : stack;
+            if (!isItemValid(slot, stack)) {
+                return stack;
+            }
+            return fuel == null ? inventory.insertItem(0, stack, simulate) : fuel.insertBulk(0, stack, simulate);
         }
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot == 0 && connection.port.output() && connected(connection)
+            return slot == 0 && amount > 0 && connection.port.output() && connected(connection)
                     ? inventory.extractItem(1, amount, simulate) : ItemStack.EMPTY;
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return slot == 0 && connected(connection) ? inventory.getSlotLimit(connection.port.output() ? 1 : 0) : 0;
+            if (slot != 0 || !connected(connection)) {
+                return 0;
+            }
+            return fuel == null ? inventory.getSlotLimit(connection.port.output() ? 1 : 0) : fuel.capacity();
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot == 0 && !connection.port.output() && connected(connection)
-                    && (irradiationItems != null || localPebbleFuel != null
-                    ? inventory.isItemValid(0, stack) : connection.controller.acceptsFuel(stack));
+            return slot == 0 && !connection.port.output() && connected(connection) && inventory.isItemValid(0, stack);
         }
     }
 }

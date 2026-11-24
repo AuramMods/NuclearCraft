@@ -14,14 +14,13 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.Nullable;
 
 public final class FissionFuelCell extends BlockEntity implements ChunkRadiationSource {
     private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
-    private final @Nullable PebbleFuelItems pebbleItems;
-    private @Nullable SolidFissionController pebbleController;
+    private final FissionFuelItems localItems;
+    private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation reservedFilter;
     private boolean reservedLocal;
     private ItemStack reservedFuel = ItemStack.EMPTY;
@@ -34,52 +33,50 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     public FissionFuelCell(BlockPos pos, BlockState state) {
         super(FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER
                 ? NCPebbleFission.CHAMBER_ENTITY.get() : NCFission.CELL_ENTITY.get(), pos, state);
-        boolean pebble = FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER;
-        recipes = RecipeManager.createCheck(pebble ? NCPebbleFission.FUEL_TYPE.get() : NCFission.FUEL_TYPE.get());
-        pebbleItems = pebble ? new PebbleFuelItems(this, null) : null;
+        FissionVariant variant = FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER
+                ? FissionVariant.PEBBLE : FissionVariant.SOLID;
+        recipes = RecipeManager.createCheck(variant.itemFuelType());
+        localItems = new FissionFuelItems(this, variant, null);
     }
 
     ItemStack unspentFuel() {
         return progress == 0 ? reservedFuel : ItemStack.EMPTY;
     }
 
-    @Nullable PebbleFuelItems localPebbleItems() {
-        return pebbleItems;
+    FissionFuelItems localItems() {
+        return localItems;
     }
 
-    void bindPebble(@Nullable SolidFissionController controller) {
-        pebbleController = controller;
+    void bind(@Nullable SolidFissionController next) {
+        controller = next;
     }
 
-    @Nullable SolidFissionController pebbleController() {
-        return pebbleController != null && pebbleController.assembled() ? pebbleController : null;
+    @Nullable SolidFissionController controller() {
+        return controller != null && controller.assembled() ? controller : null;
     }
 
-    @Nullable ResourceLocation pebbleFilter() {
-        return pebbleItems == null ? null : pebbleItems.filter();
+    @Nullable ResourceLocation filter() {
+        return localItems.filter();
     }
 
-    PebbleFuelItems pebbleItems(boolean output) {
-        var controller = pebbleController();
-        if (controller == null) {
-            return pebbleItems;
+    FissionFuelItems items(boolean output) {
+        var current = controller();
+        if (current == null) {
+            return localItems;
         }
         if (output && !reservedFuel.isEmpty()) {
-            return reservedLocal ? pebbleItems : controller.pebbleItems(reservedFilter);
+            return reservedLocal ? localItems : current.fuelItems(reservedFilter);
         }
-        return controller.hasPebbleCircuit(pebbleFilter()) ? controller.pebbleItems(pebbleFilter()) : pebbleItems;
+        return current.hasItemFuelCircuit(filter()) ? current.fuelItems(filter()) : localItems;
     }
 
-    ItemStack itemForInspection(ItemStackHandler fallback, boolean output) {
-        return (pebbleItems == null ? fallback : pebbleItems(output)).getStackInSlot(output ? 1 : 0);
-    }
-
-    SolidFissionRecipe prepare(Level level, ItemStackHandler inventory) {
+    SolidFissionRecipe prepare(Level level) {
         boolean needsFuel = reservedFuel.isEmpty();
-        ItemStackHandler feed = pebbleItems == null ? inventory : pebbleItems(false);
-        // Existing Forge worlds may have fuel in the controller even after all chamber ports were removed.
-        if (feed == pebbleItems && pebbleFilter() == null && feed.getStackInSlot(0).isEmpty()) {
-            feed = inventory;
+        FissionFuelItems feed = items(false);
+        // Existing Forge worlds may have unfiltered fuel buffered in a controller without input ports.
+        var current = controller();
+        if (feed == localItems && filter() == null && feed.getStackInSlot(0).isEmpty() && current != null) {
+            feed = current.fuelItems(null);
         }
         ItemStack input = needsFuel ? feed.getStackInSlot(0) : reservedFuel;
         if (input.isEmpty()) {
@@ -97,17 +94,15 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         decay.remember(recipe, recipe.heat());
         if (needsFuel) {
             reservedFuel = feed.extractItem(0, 1, false);
-            if (pebbleItems != null) {
-                reservedLocal = feed == pebbleItems;
-                reservedFilter = pebbleFilter();
-            }
+            reservedLocal = feed == localItems;
+            reservedFilter = filter();
             setChanged();
         }
         if (progress >= recipe.ticks()) {
-            discharge(recipe, inventory);
+            discharge(recipe);
             return null;
         }
-        return recipe;
+        return items(true).insertBulk(1, recipe.depleted(), true).isEmpty() ? recipe : null;
     }
 
     ItemStack reservedFuel() {
@@ -129,9 +124,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     void clearMaterial() {
         reservedFuel = ItemStack.EMPTY;
         progress = 0D;
-        if (pebbleItems != null) {
-            pebbleItems.clear();
-        }
+        localItems.clear();
         setChanged();
     }
 
@@ -150,13 +143,13 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         return sourceEfficiency < 0 ? 1 : sourceEfficiency;
     }
 
-    void burn(SolidFissionRecipe recipe, ItemStackHandler inventory, double speed) {
+    void burn(SolidFissionRecipe recipe, double speed) {
         emission = recipe.radiation() * speed;
         emissionTick = level.getGameTime();
         progress += speed;
         if (progress >= recipe.ticks()) {
             progress = recipe.ticks();
-            discharge(recipe, inventory);
+            discharge(recipe);
         }
         setChanged();
     }
@@ -166,13 +159,11 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         return level != null && level.getGameTime() == emissionTick ? emission : 0;
     }
 
-    private void discharge(SolidFissionRecipe recipe, ItemStackHandler inventory) {
-        if (pebbleItems != null) {
-            inventory = pebbleItems(true);
-        }
+    private void discharge(SolidFissionRecipe recipe) {
+        var output = items(true);
         ItemStack depleted = recipe.depleted();
-        if (inventory.insertItem(1, depleted, true).isEmpty()) {
-            inventory.insertItem(1, depleted, false);
+        if (output.insertBulk(1, depleted, true).isEmpty()) {
+            output.insertBulk(1, depleted, false);
             reservedFuel = ItemStack.EMPTY;
             progress = 0;
             setChanged();
@@ -185,13 +176,11 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         decay.save(tag);
         tag.put("fuel", reservedFuel.save(new CompoundTag()));
         tag.putDouble("progress", progress);
-        if (pebbleItems != null) {
-            pebbleItems.save(tag);
-            if (!reservedFuel.isEmpty()) {
-                tag.putBoolean("reserved_local", reservedLocal);
-                if (reservedFilter != null) {
-                    tag.putString("reserved_filter", reservedFilter.toString());
-                }
+        localItems.save(tag);
+        if (!reservedFuel.isEmpty()) {
+            tag.putBoolean("reserved_local", reservedLocal);
+            if (reservedFilter != null) {
+                tag.putString("reserved_filter", reservedFilter.toString());
             }
         }
         if (sourceEfficiency >= 0) {
@@ -204,11 +193,9 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         super.load(tag);
         decay.load(tag);
         reservedFuel = ItemStack.of(tag.getCompound("fuel"));
-        if (pebbleItems != null) {
-            pebbleItems.load(tag);
-            reservedLocal = tag.getBoolean("reserved_local");
-            reservedFilter = tag.contains("reserved_filter") ? ResourceLocation.tryParse(tag.getString("reserved_filter")) : null;
-        }
+        localItems.load(tag);
+        reservedLocal = tag.getBoolean("reserved_local");
+        reservedFilter = tag.contains("reserved_filter") ? ResourceLocation.tryParse(tag.getString("reserved_filter")) : null;
         double stored = tag.getDouble("progress");
         progress = Double.isFinite(stored) ? Math.max(0, stored) : 0;
         double efficiency = tag.getDouble("source_efficiency");

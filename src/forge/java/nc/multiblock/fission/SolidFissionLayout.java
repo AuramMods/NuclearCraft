@@ -22,8 +22,12 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                           List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
                 @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
+        boolean itemFuel() {
+            return role == Role.FUEL_PORT || role == Role.CHAMBER_PORT;
+        }
+
         boolean fluid() {
-            return role != Role.FUEL_PORT && role != Role.CHAMBER_PORT && role != Role.IRRADIATOR_PORT && role != Role.POWER_PORT;
+            return !itemFuel() && role != Role.IRRADIATOR_PORT && role != Role.POWER_PORT;
         }
     }
 
@@ -114,7 +118,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                             var wall = (FissionWallBlock) state.getBlock();
                             ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),
-                                    wall.coolant(), wall.saltCoolant(), role == Role.VESSEL_PORT || role == Role.CHAMBER_PORT ? entity.fuelFilter() : null));
+                                    wall.coolant(), wall.saltCoolant(), role == Role.FUEL_PORT || role == Role.CHAMBER_PORT
+                                            || role == Role.VESSEL_PORT ? entity.fuelFilter() : null));
                         }
                         default -> {
                             return invalid("wall", pos);
@@ -132,9 +137,18 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         if (bounds.boundaryAxes(origin) != 1) {
             return invalid("wall", origin);
         }
-        if (hasUnpairedPorts(ports, Role.VENT, null)
-                || (!cells.isEmpty() && hasUnpairedPorts(ports, Role.FUEL_PORT, null))) {
+        if (hasUnpairedPorts(ports, Role.VENT, null)) {
             return invalid("port_pair", origin);
+        }
+        if (!cells.isEmpty() && variant != FissionVariant.SALT) {
+            Role fuelPort = variant == FissionVariant.SOLID ? Role.FUEL_PORT : Role.CHAMBER_PORT;
+            var checked = new HashSet<ResourceLocation>();
+            for (Port port : ports) {
+                if (port.role() == fuelPort && checked.add(port.fuelFilter())
+                        && hasUnpairedPorts(ports, fuelPort, port.fuelFilter())) {
+                    return invalid("port_pair", port.pos());
+                }
+            }
         }
         if (variant == FissionVariant.SALT) {
             var filters = new HashSet<ResourceLocation>();
@@ -176,7 +190,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         boolean output = false;
         for (Port port : ports) {
             Object current = switch (role) {
-                case VESSEL_PORT -> port.fuelFilter();
+                case FUEL_PORT, CHAMBER_PORT, VESSEL_PORT -> port.fuelFilter();
                 case HEATER_PORT -> port.salt();
                 default -> null;
             };

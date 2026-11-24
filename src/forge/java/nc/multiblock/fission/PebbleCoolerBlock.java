@@ -53,7 +53,7 @@ public final class PebbleCoolerBlock extends FissionPartBlock implements EntityB
             if (!sample.isEmpty() && cooler.selectFilter(sample)) {
                 player.displayClientMessage(Component.translatable("gui.nuclearcraft.salt_part.filter", sample.getDisplayName()), true);
             } else if (!FluidUtil.interactWithFluidHandler(player, hand, cooler.tanks().tank(sample.isEmpty()))) {
-                PebblePartMenu.open(player, cooler, PebblePartMenu.Kind.COOLER);
+                FissionPartMenu.open(player, cooler, FissionPartMenu.Kind.COOLER);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

@@ -1,18 +1,19 @@
 package nc.client;
 
 import nc.NuclearCraft;
-import nc.multiblock.fission.PebblePartMenu;
+import nc.multiblock.fission.FissionPartMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMenu> {
+public final class FissionPartScreen extends AbstractContainerScreen<FissionPartMenu> {
     private static final int HEAT_HEIGHT = 74;
     private static final Tank PORT_INPUT = new Tank(40, 31, 24);
     private static final Tank COOLER_INPUT = new Tank(56, 35, 16);
@@ -20,7 +21,7 @@ public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMe
     private final ResourceLocation texture;
     private Button storage;
 
-    public PebblePartScreen(PebblePartMenu menu, Inventory inventory, Component title) {
+    public FissionPartScreen(FissionPartMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         texture = NuclearCraft.id("textures/gui/container/" + menu.kind().id() + ".png");
     }
@@ -28,7 +29,7 @@ public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMe
     @Override
     protected void init() {
         super.init();
-        storage = addRenderableWidget(Button.builder(Component.empty(), button -> send(PebblePartMenu.SWITCH_BUFFER))
+        storage = addRenderableWidget(Button.builder(Component.empty(), button -> send(FissionPartMenu.SWITCH_BUFFER))
                 .bounds(leftPos + 45, topPos + 55, 86, 14).build());
         refreshButton();
     }
@@ -78,7 +79,7 @@ public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMe
                 }
                 var reserved = menu.reserved();
                 if (!reserved.isEmpty()) {
-                    lines.add(Component.translatable("gui.nuclearcraft.pebble_part.reserved", reserved.getHoverName()));
+                    lines.add(Component.translatable("gui.nuclearcraft.fission_part.reserved", reserved.getHoverName()));
                 }
                 if (!lines.isEmpty()) {
                     graphics.renderComponentTooltip(font, lines, mouseX, mouseY);
@@ -89,6 +90,19 @@ public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMe
         } else if (hovered(OUTPUT, mouseX, mouseY)) {
             graphics.renderComponentTooltip(font, tankTooltip(true), mouseX, mouseY);
         }
+    }
+
+    @Override
+    protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
+        var tooltip = super.getTooltipFromContainerItem(stack);
+        if (!menu.kind().fuel() || hoveredSlot == null || hoveredSlot.index >= 2) {
+            return tooltip;
+        }
+        boolean output = hoveredSlot.index == 1;
+        var lines = new ArrayList<>(tooltip);
+        lines.add(Component.translatable("gui.nuclearcraft.fission_part.fuel_buffer", menu.fuelAmount(output),
+                menu.fuelCapacity(output)));
+        return lines;
     }
 
     private List<Component> tankTooltip(boolean output) {
@@ -165,11 +179,11 @@ public final class PebblePartScreen extends AbstractContainerScreen<PebblePartMe
                 var slot = menu.getSlot(0);
                 if (!menu.connected() && !slot.hasItem() && !menu.fuelFilter().isEmpty()
                         && isHovering(slot.x, slot.y, 16, 16, x, y)) {
-                    send(PebblePartMenu.CLEAR_INPUT);
+                    send(FissionPartMenu.CLEAR_INPUT);
                     return true;
                 }
             } else if (hovered(input(), x, y) || hovered(OUTPUT, x, y)) {
-                send(hovered(OUTPUT, x, y) ? PebblePartMenu.CLEAR_OUTPUT : PebblePartMenu.CLEAR_INPUT);
+                send(hovered(OUTPUT, x, y) ? FissionPartMenu.CLEAR_OUTPUT : FissionPartMenu.CLEAR_INPUT);
                 return true;
             }
         }

@@ -1,9 +1,11 @@
 package nc.gametest;
 
+import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
 import nc.radiation.ChunkRadiationSource;
 import nc.init.NCFission;
 import nc.init.NCFluids;
+import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
 import net.minecraft.core.BlockPos;
@@ -11,11 +13,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -23,6 +29,10 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.ArrayList;
+import java.util.OptionalInt;
+import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -233,6 +243,144 @@ public final class SolidFissionGameTests {
                             "The two lines supply 108 flux and produce steam using ordinary graphite and beryllium");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 220)
+    public static void solidFuelFiltersPairByItemAndKeepReservedOutput(GameTestHelper helper) {
+        buildReactor(helper);
+        ItemStack fuel = new ItemStack(NCFission.LECF_251_OXIDE.get());
+        ItemStack other = new ItemStack(ForgeRegistries.ITEMS.getValue(NuclearCraft.id("leu_235_oxide")));
+        FakePlayer player = inspector(helper);
+        helper.setBlock(FRAME, Blocks.AIR);
+        select(helper, player, CELL, fuel);
+        select(helper, player, FUEL_IN, fuel);
+        select(helper, player, FUEL_OUT, other);
+        helper.setBlock(FRAME, NCFission.CASING.get());
+
+        helper.startSequence().thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertTrue(!controller(helper).assembled(), "Fuel filters must form separate input and output pairs");
+                    select(helper, player, FUEL_OUT, fuel);
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    IItemHandler inlet = items(helper, FUEL_IN, Direction.DOWN);
+                    helper.assertTrue(inlet.insertItem(0, other, true).is(other.getItem())
+                                    && inlet.insertItem(0, fuel.copyWithCount(2), false).isEmpty(),
+                            "The filtered solid-fuel input accepts only its selected recipe item");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    var circuit = saved.getList("item_fuel", Tag.TAG_COMPOUND).getCompound(0).getCompound("fuel_inventory");
+                    var output = new ItemStack(NCFission.DEPLETED_LECF_251_OXIDE.get(), 64).save(new CompoundTag());
+                    output.putInt("Slot", 1);
+                    circuit.getList("Items", Tag.TAG_COMPOUND).add(output);
+                    controller(helper).load(saved);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(10, () -> {
+                    var data = helper.getBlockEntity(CELL).saveWithoutMetadata();
+                    helper.assertTrue(data.getDouble("progress") == 0 && ItemStack.of(data.getCompound("fuel")).is(fuel.getItem()),
+                            "A blocked output pauses fission while preserving its reservation");
+                    IItemHandler outlet = items(helper, FUEL_OUT, Direction.UP);
+                    helper.assertTrue(outlet.extractItem(0, 100, true).getCount() == 64 && outlet.getStackInSlot(0).getCount() == 64,
+                            "Simulated extraction neither changes stored fuel nor exceeds one item stack");
+                    outlet.extractItem(0, 64, false);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(helper.getBlockEntity(CELL).saveWithoutMetadata().getDouble("progress") >= 2D,
+                        "The reserved fuel resumes after making space"))
+                .thenExecute(() -> {
+                    player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    helper.useBlock(CELL, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.kind() == FissionPartMenu.Kind.CELL && menu.linked() && menu.progress() > 0F
+                                    && menu.fuelFilter().is(fuel.getItem()) && menu.reserved().is(fuel.getItem()),
+                            "The cell menu reads the reserved item, filter, and live progress");
+                    var old = helper.getBlockEntity(FUEL_OUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP);
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    helper.assertTrue(!old.isPresent(), "Breaking the shell invalidates the old port handler");
+                    select(helper, player, CELL, other);
+                    var cell = helper.getBlockEntity(CELL);
+                    var saved = cell.saveWithoutMetadata();
+                    saved.putDouble("progress", 2000D);
+                    cell.load(saved);
+                    helper.setBlock(FRAME, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> {
+                    requireAssembled(helper);
+                    helper.assertTrue(items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0).is(NCFission.DEPLETED_LECF_251_OXIDE.get()),
+                            "A completed reservation must return to its original circuit after changing the filter");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 140)
+    public static void largeFuelCircuitKeepsBulkCountsThroughMenuAndResize(GameTestHelper helper) {
+        var min = new BlockPos(1, 1, 1);
+        var max = new BlockPos(7, 5, 7);
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (pos.getX() == 1 || pos.getX() == 7 || pos.getY() == 1 || pos.getY() == 5
+                    || pos.getZ() == 1 || pos.getZ() == 7) {
+                helper.setBlock(pos, NCFission.CASING.get());
+            }
+        }
+        helper.setBlock(CONTROLLER, NCFission.CONTROLLER.get());
+        helper.setBlock(FUEL_IN, NCFission.CELL_PORT.get());
+        helper.setBlock(FUEL_OUT, NCFission.CELL_PORT.get().defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        var cells = new ArrayList<BlockPos>();
+        for (BlockPos pos : BlockPos.betweenClosed(min.offset(1, 1, 1), max.offset(-1, -1, -1))) {
+            if (cells.size() == 70) {
+                break;
+            }
+            cells.add(pos.immutable());
+            helper.setBlock(pos, NCFission.CELL.get());
+        }
+        var player = inspector(helper);
+        var worldPos = helper.absolutePos(FUEL_IN);
+        player.moveTo(worldPos.getX() + 0.5D, worldPos.getY() + 1D, worldPos.getZ() + 0.5D);
+        ItemStack fuel = new ItemStack(NCFission.LECF_251_OXIDE.get(), 150);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    IItemHandler port = items(helper, FUEL_IN, Direction.DOWN);
+                    helper.assertTrue(port.getSlotLimit(0) == 140
+                                    && port.insertItem(0, fuel, true).getCount() == 10 && port.getStackInSlot(0).isEmpty()
+                                    && port.insertItem(0, fuel, false).getCount() == 10 && fuel.getCount() == 150,
+                            "Seventy attached cells provide 140 items of logical capacity per slot");
+                    controller(helper).load(controller(helper).saveWithoutMetadata());
+                    helper.assertTrue(port.getStackInSlot(0).getCount() == 140, "Bulk counts must survive NBT above the signed-byte range");
+                    helper.useBlock(FUEL_IN, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.fuelAmount(false) == 140 && menu.fuelCapacity(false) == 140
+                                    && menu.getSlot(0).getItem().getCount() == 64,
+                            "The menu shows a legal vanilla stack with the full buffer count");
+                    helper.assertTrue(menu.quickMoveStack(player, 0).getCount() == 64 && port.getStackInSlot(0).getCount() == 76,
+                            "Manual extraction takes one stack and refills the menu slot from the exact remainder");
+                    for (BlockPos pos : cells.subList(30, cells.size())) {
+                        helper.setBlock(pos, Blocks.AIR);
+                    }
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    IItemHandler port = items(helper, FUEL_IN, Direction.DOWN);
+                    helper.assertTrue(port.getSlotLimit(0) == 64 && port.getStackInSlot(0).getCount() == 76
+                                    && port.insertItem(0, fuel.copyWithCount(1), false).getCount() == 1,
+                            "Reducing the number of cells preserves overage and blocks new input until drained");
+                })
+                .thenSucceed();
+    }
+
+    private static void select(GameTestHelper helper, FakePlayer player, BlockPos pos, ItemStack fuel) {
+        player.setItemInHand(InteractionHand.MAIN_HAND, fuel.copy());
+        helper.useBlock(pos, player);
+        helper.assertTrue(player.getMainHandItem().getCount() == fuel.getCount(), "Setting a filter does not consume the sample");
+    }
+
+    private static FakePlayer inspector(GameTestHelper helper) {
+        return new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "FuelInspector")) {
+            @Override
+            public OptionalInt openMenu(MenuProvider provider) {
+                containerMenu = provider.createMenu(1, getInventory(), this);
+                return OptionalInt.of(1);
+            }
+        };
     }
 
     static void buildReactor(GameTestHelper helper) {

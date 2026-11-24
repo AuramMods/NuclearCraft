@@ -9,7 +9,7 @@ import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import nc.init.NCFluids;
 import nc.multiblock.fission.FissionWallBlock;
-import nc.multiblock.fission.PebblePartMenu;
+import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.turbine.TurbineController;
 import net.minecraft.core.BlockPos;
@@ -236,8 +236,10 @@ public final class PebbleFissionGameTests {
         helper.setBlock(MIN, Blocks.AIR);
         BlockPos second = CHAMBER.north().above();
         BlockPos secondInput = FUEL_IN.east();
+        BlockPos secondOutput = FUEL_OUT.east();
         helper.setBlock(second, NCPebbleFission.CHAMBER.get());
         helper.setBlock(secondInput, NCPebbleFission.CHAMBER_PORT.get());
+        helper.setBlock(secondOutput, output(NCPebbleFission.CHAMBER_PORT.get()));
         FakePlayer player = inspector(helper);
         var leu235 = new ItemStack(item("leu_235_triso"));
         var leu233 = new ItemStack(item("leu_233_triso"));
@@ -249,6 +251,7 @@ public final class PebbleFissionGameTests {
         player.setItemInHand(InteractionHand.MAIN_HAND, leu233);
         helper.useBlock(second, player);
         helper.useBlock(secondInput, player);
+        helper.useBlock(secondOutput, player);
         player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         helper.setBlock(MIN, NCFission.CASING.get());
 
@@ -264,7 +267,7 @@ public final class PebbleFissionGameTests {
                                     && next.insertItem(0, leu233.copyWithCount(3), false).isEmpty(),
                             "Matching pellets reach both circuits");
                     helper.useBlock(second, player);
-                    var menu = (PebblePartMenu) player.containerMenu;
+                    var menu = (FissionPartMenu) player.containerMenu;
                     helper.assertTrue(menu.linked() && menu.fuelFilter().is(leu233.getItem())
                                     && menu.getSlot(0).getItem().getCount() == 3,
                             "The chamber menu reads only its matching port circuit");
@@ -323,30 +326,30 @@ public final class PebbleFissionGameTests {
                     helper.useBlock(cooler, player);
                     player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                     helper.useBlock(cooler, player);
-                    var menu = (PebblePartMenu) player.containerMenu;
+                    var menu = (FissionPartMenu) player.containerMenu;
                     helper.assertTrue(menu.connected() && !menu.linked() && menu.gas(false).getAmount() == 1000
                                     && menu.capacity(false) == 1296, "Fill and inspect the cooler without a gas port");
                     items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
                     runReactor(helper);
                 })
                 .thenWaitUntil(() -> {
-                    var menu = (PebblePartMenu) player.containerMenu;
+                    var menu = (FissionPartMenu) player.containerMenu;
                     menu.broadcastChanges();
                     helper.assertTrue(menu.gas(true).getAmount() > 0, "Local cold oxygen is heated inside the reactor");
                 })
                 .thenExecute(() -> {
                     helper.setBlock(CONTROLLER.west(), Blocks.AIR);
-                    var menu = (PebblePartMenu) player.containerMenu;
+                    var menu = (FissionPartMenu) player.containerMenu;
                     menu.broadcastChanges();
                     int output = menu.gas(true).getAmount();
                     player.moveTo(pos.getX() + 20, pos.getY(), pos.getZ());
-                    helper.assertTrue(!menu.clickMenuButton(player, PebblePartMenu.CLEAR_OUTPUT),
+                    helper.assertTrue(!menu.clickMenuButton(player, FissionPartMenu.CLEAR_OUTPUT),
                             "A player out of range cannot void cooler contents");
                     player.moveTo(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D);
                     helper.setBlock(MIN, Blocks.AIR);
                     menu.broadcastChanges();
                     helper.assertTrue(!menu.connected() && menu.gas(true).getAmount() == output
-                                    && menu.clickMenuButton(player, PebblePartMenu.CLEAR_OUTPUT),
+                                    && menu.clickMenuButton(player, FissionPartMenu.CLEAR_OUTPUT),
                             "Disassembly retains local output and a valid menu can clear it");
                     menu.broadcastChanges();
                     helper.assertTrue(menu.gas(true).isEmpty(), "The clear command affects only the selected output tank");

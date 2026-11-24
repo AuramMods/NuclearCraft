@@ -43,11 +43,12 @@ public final class FissionFuelCellBlock extends FissionPartBlock implements Enti
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                  BlockHitResult hit) {
-        if (role(state) != Role.PEBBLE_CHAMBER || hand != InteractionHand.MAIN_HAND || player.isShiftKeyDown()) {
+        if (hand != InteractionHand.MAIN_HAND || player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof FissionFuelCell cell) {
-            PebblePartMenu.interactFuel(player, hand, cell, PebblePartMenu.Kind.CHAMBER);
+            FissionPartMenu.interactFuel(player, hand, cell, role(state) == Role.CELL
+                    ? FissionPartMenu.Kind.CELL : FissionPartMenu.Kind.CHAMBER);
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
@@ -57,12 +58,7 @@ public final class FissionFuelCellBlock extends FissionPartBlock implements Enti
         if (!level.isClientSide && !state.is(replacement.getBlock())
                 && level.getBlockEntity(pos) instanceof FissionFuelCell cell) {
             Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), cell.unspentFuel());
-            var local = cell.localPebbleItems();
-            if (local != null) {
-                for (int slot = 0; slot < local.getSlots(); slot++) {
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), local.getStackInSlot(slot));
-                }
-            }
+            cell.localItems().dropContents();
         }
         super.onRemove(state, level, pos, replacement, moved);
     }
