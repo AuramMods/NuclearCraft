@@ -363,4 +363,8 @@ Solid-fuel, pebble, and salt fuel recipes use `radiation` for the original proce
 
 The local suite passed all 101 required GameTests. The environmental cases covered empty-handed player exposure, RTG and Decay Generator rates, emissions from all three fission variants, pebble-bed meltdown contamination, and a working redstone comparator. On a packaged Forge 47.4.10 server, an RTG raised the rate in two neighboring chunks. Removing the RTG let the rates decay. Both chunks unloaded, and their saved radiation survived a full restart and continued decaying after the chunks were reloaded. A muted background client loaded the original Geiger block textures and received a real chunk reading in multiplayer chat. The native observer recorded zero visible window samples and zero focus activations.
 
+A packaged dedicated run with container radiation enabled measured separate chunk signals from a filled barrel, a molten californium tank, and a dropped stack. Scanning left the unopened loot chest uninitialized.
+
+The final packaged JAR loaded in the isolated 539-JAR Auram snapshot on Forge 47.4.18. A KubeJS probe found the RTG in the saved world, read a comparator signal of 9 in its chunk, and measured radiation in all four cardinal neighbors. JEI loaded and the muted client exited cleanly. The native observer recorded zero visible window samples and zero focus activations.
+
 Radiation work still includes structure sources, terrain mutation, remaining machine emissions, non-player effects, custom source and effect configuration, food radiation, shielding recipes, hazards and protection equipment, the persistent radiation HUD and clicks, and scrubbing.
