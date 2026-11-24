@@ -72,6 +72,18 @@ public final class ProcessorFluidTanks {
         tanks[index].fill(stack, EXECUTE);
     }
 
+    boolean canProduce(int index, FluidStack product, OutputMode mode) {
+        FluidStack stored = stored(index);
+        return mode == OutputMode.VOID || ((stored.isEmpty() || stored.isFluidEqual(product))
+                && (mode == OutputMode.VOID_EXCESS || canProduce(index, product)));
+    }
+
+    void produce(int index, FluidStack stack, OutputMode mode) {
+        if (mode != OutputMode.VOID) {
+            produce(index, stack);
+        }
+    }
+
     void clear(int index) {
         if (!tanks[index].isEmpty()) {
             tanks[index].setFluid(FluidStack.EMPTY);
@@ -168,6 +180,29 @@ public final class ProcessorFluidTanks {
             }
         } finally {
             transferring = false;
+        }
+    }
+
+    public enum OutputMode {
+        HOLD("hold"), VOID_EXCESS("void_excess"), VOID("void");
+
+        private static final OutputMode[] MODES = values();
+        private final String key;
+
+        OutputMode(String key) {
+            this.key = key;
+        }
+
+        OutputMode next() {
+            return MODES[(ordinal() + 1) % MODES.length];
+        }
+
+        static OutputMode byId(int index) {
+            return index >= 0 && index < MODES.length ? MODES[index] : HOLD;
+        }
+
+        public Component label() {
+            return Component.translatable("gui.nuclearcraft.fluid_output." + key);
         }
     }
 

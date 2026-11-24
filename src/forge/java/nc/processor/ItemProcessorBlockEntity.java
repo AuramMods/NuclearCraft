@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.init.NCItemProcessors.Machine;
+import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -42,6 +43,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     private final ProcessorInputs input;
     private final ItemStackHandler inventory;
     private final @Nullable ProcessorFluidTanks fluid;
+    private OutputMode fluidOutputMode = OutputMode.HOLD;
     private final EnumMap<Direction, SideMode> sideModes = new EnumMap<>(Direction.class);
     private final EnumMap<Direction, ItemAccess> ports = new EnumMap<>(Direction.class);
     private ItemAccess unsided = new ItemAccess(SideMode.BOTH);
@@ -55,7 +57,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         input = new ProcessorInputs(machine.inputs());
-        fluid = machine.hasFluidInput() ? new ProcessorFluidTanks(this, this::acceptsFluid, 0) : null;
+        fluid = machine.tank() == null ? null : new ProcessorFluidTanks(this, this::acceptsFluid,
+                machine.hasFluidInput() ? 1 : 0, machine.hasFluidOutput() ? 1 : 0);
         inventory = new ItemStackHandler(machine.slots()) {
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -97,7 +100,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         for (int slot = 0; slot < machine.inputs(); slot++) {
             input.setItem(slot, inventory.getStackInSlot(slot));
         }
-        if (fluid != null) {
+        if (fluid != null && machine.hasFluidInput()) {
             input.setFluid(fluid.stored(0));
         }
     }
@@ -121,7 +124,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             return false;
         }
         List<ItemProcessorRecipe.Product> products = recipe.products();
-        boolean room = hasOutputSpace(products);
+        FluidStack fluidProduct = machine.hasFluidOutput() ? recipe.fluidOutput() : FluidStack.EMPTY;
+        boolean room = hasOutputSpace(products) && (fluid == null || fluidProduct.isEmpty()
+                || fluid.canProduce(0, fluidProduct, fluidOutputMode));
         if (!room || halted || !power.spend(recipe.energyPerTick())) {
             if (progressHalfTicks > 0) {
                 long nextProgress = machine.losesProgress() && !halted ? Math.max(0, progressHalfTicks - 3)
@@ -149,6 +154,9 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                     product.grow(inventory.getStackInSlot(slot).getCount());
                     inventory.setStackInSlot(slot, product);
                 }
+            }
+            if (fluid != null && !fluidProduct.isEmpty()) {
+                fluid.produce(0, fluidProduct, fluidOutputMode);
             }
             progressHalfTicks = 0;
         }
@@ -182,6 +190,20 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             fluid.cycle(0, side);
             updateConnections();
         }
+    }
+
+    void cycleFluidOutputMode() {
+        if (fluid != null && machine.hasFluidOutput()) {
+            fluidOutputMode = fluidOutputMode.next();
+            if (fluidOutputMode == OutputMode.VOID) {
+                fluid.clear(0);
+            }
+            setChanged();
+        }
+    }
+
+    private String fluidSaveKey() {
+        return machine.hasFluidOutput() ? "output_fluid" : "input_fluid";
     }
 
     private void updateConnections() {
@@ -244,7 +266,10 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         }
         tag.putIntArray("item_sides", modes);
         if (fluid != null) {
-            fluid.saveTank(0, tag, "input_fluid", "fluid_sides");
+            fluid.saveTank(0, tag, fluidSaveKey(), "fluid_sides");
+            if (machine.hasFluidOutput()) {
+                tag.putInt("fluid_output_mode", fluidOutputMode.ordinal());
+            }
         }
     }
 
@@ -264,7 +289,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             }
         }
         if (fluid != null) {
-            fluid.loadTank(0, tag, "input_fluid", "fluid_sides");
+            fluid.loadTank(0, tag, fluidSaveKey(), "fluid_sides");
+            fluidOutputMode = OutputMode.byId(tag.getInt("fluid_output_mode"));
             fluid.refreshFaces();
         }
     }
@@ -287,6 +313,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                             : BuiltInRegistries.FLUID.getId(fluid.stored(0).getFluid());
                     case ItemProcessorMenu.FLUID_AMOUNT -> fluid == null ? 0 : fluid.stored(0).getAmount();
                     case ItemProcessorMenu.FLUID_SIDES -> fluid == null ? 0 : fluid.sideModes(0);
+                    case ItemProcessorMenu.FLUID_OUTPUT_MODE -> fluidOutputMode.ordinal();
                     default -> sideModes.get(SIDES[index - ItemProcessorMenu.FIRST_SIDE]).ordinal();
                 };
             }
@@ -296,7 +323,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
 
             @Override
             public int getCount() {
-                return machine.hasFluidInput() ? ItemProcessorMenu.FLUID_DATA_COUNT : ItemProcessorMenu.DATA_COUNT;
+                return ItemProcessorMenu.dataSize(machine);
             }
         };
         return new ItemProcessorMenu(id, playerInventory, machine, inventory, data,

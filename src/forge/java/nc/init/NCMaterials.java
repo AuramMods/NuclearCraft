@@ -46,6 +46,9 @@ final class NCMaterials {
         block("molybdenum_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
         block("copper_oxide_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
         item("flour");
+        item("roasted_cocoa_beans");
+        item("ground_cocoa_nibs", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
+        item("cocoa_solids");
         item("graham_cracker", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);

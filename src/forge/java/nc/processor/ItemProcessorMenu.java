@@ -26,7 +26,9 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     static final int FLUID_AMOUNT = FLUID_ID + 1;
     static final int FLUID_SIDES = FLUID_AMOUNT + 1;
     static final int FLUID_DATA_COUNT = FLUID_SIDES + 1;
+    static final int FLUID_OUTPUT_MODE = FLUID_DATA_COUNT;
     public static final int FLUID_SIDE_BUTTON = 6;
+    public static final int FLUID_OUTPUT_BUTTON = 12;
 
     private static final Direction[] SIDES = Direction.values();
     private final Machine machine;
@@ -36,7 +38,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
 
     public ItemProcessorMenu(int id, Inventory player, Machine machine) {
         this(id, player, machine, new ItemStackHandler(machine.slots()),
-                new SimpleContainerData(machine.hasFluidInput() ? FLUID_DATA_COUNT : DATA_COUNT),
+                new SimpleContainerData(dataSize(machine)),
                 ContainerLevelAccess.NULL, null);
     }
 
@@ -70,6 +72,13 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
+    static int dataSize(Machine machine) {
+        if (machine.hasFluidOutput()) {
+            return FLUID_OUTPUT_MODE + 1;
+        }
+        return machine.tank() == null ? DATA_COUNT : FLUID_DATA_COUNT;
+    }
+
     public Machine machine() {
         return machine;
     }
@@ -87,7 +96,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     }
 
     public FluidStack fluid() {
-        if (!machine.hasFluidInput()) {
+        if (machine.tank() == null) {
             return FluidStack.EMPTY;
         }
         return new FluidStack(BuiltInRegistries.FLUID.byId(data.get(FLUID_ID)), data.get(FLUID_AMOUNT));
@@ -95,6 +104,11 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
 
     public ProcessorFluidTanks.Mode fluidSideMode(Direction side) {
         return ProcessorFluidTanks.Mode.read(data.get(FLUID_SIDES), side);
+    }
+
+    public ProcessorFluidTanks.OutputMode fluidOutputMode() {
+        return machine.hasFluidOutput()
+                ? ProcessorFluidTanks.OutputMode.byId(data.get(FLUID_OUTPUT_MODE)) : ProcessorFluidTanks.OutputMode.HOLD;
     }
 
     @Override
@@ -107,8 +121,12 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             return true;
         }
         int fluidSide = button - FLUID_SIDE_BUTTON;
-        if (machine.hasFluidInput() && fluidSide >= 0 && fluidSide < SIDES.length) {
+        if (machine.tank() != null && fluidSide >= 0 && fluidSide < SIDES.length) {
             processor.cycleFluidSide(SIDES[fluidSide]);
+            return true;
+        }
+        if (machine.hasFluidOutput() && button == FLUID_OUTPUT_BUTTON) {
+            processor.cycleFluidOutputMode();
             return true;
         }
         return false;

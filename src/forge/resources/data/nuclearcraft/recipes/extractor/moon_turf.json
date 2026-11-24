@@ -1,0 +1,30 @@
+{
+    "type": "nuclearcraft:extractor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:moon_turf"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:gravel",
+        "count": 1
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:helium_3",
+        "amount": 250
+    },
+    "ticks": 2400,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:moon_turf"
+            }
+        }
+    ]
+}

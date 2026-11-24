@@ -5,6 +5,7 @@ import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.FluidIngredient;
 import nc.recipe.FluidProcessorRecipe;
+import nc.processor.ProcessorFluidTanks.OutputMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -124,9 +125,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 fluids.consume(index, ingredients.get(ingredient).amount());
             }
             for (int index = 0; index < outputs.size(); index++) {
-                if (outputModes[index] != OutputMode.VOID) {
-                    fluids.produce(index + machine.inputs, outputs.get(index));
-                }
+                fluids.produce(index + machine.inputs, outputs.get(index), outputModes[index]);
             }
             progressHalfTicks = 0;
         }
@@ -136,13 +135,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
 
     private boolean hasOutputSpace(List<FluidStack> outputs) {
         for (int index = 0; index < outputs.size(); index++) {
-            FluidStack product = outputs.get(index);
-            FluidStack stored = fluids.stored(index + machine.inputs);
-            if (outputModes[index] == OutputMode.VOID) {
-                continue;
-            }
-            if ((!stored.isEmpty() && !stored.isFluidEqual(product))
-                    || (outputModes[index] == OutputMode.HOLD && !fluids.canProduce(index + machine.inputs, product))) {
+            if (!fluids.canProduce(index + machine.inputs, outputs.get(index), outputModes[index])) {
                 return false;
             }
         }
@@ -362,26 +355,4 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         }
     }
 
-    public enum OutputMode {
-        HOLD("hold"), VOID_EXCESS("void_excess"), VOID("void");
-
-        private static final OutputMode[] MODES = values();
-        private final String key;
-
-        OutputMode(String key) {
-            this.key = key;
-        }
-
-        private OutputMode next() {
-            return MODES[(ordinal() + 1) % MODES.length];
-        }
-
-        static OutputMode byId(int index) {
-            return index >= 0 && index < MODES.length ? MODES[index] : HOLD;
-        }
-
-        public Component label() {
-            return Component.translatable("gui.nuclearcraft.fluid_output." + key);
-        }
-    }
 }

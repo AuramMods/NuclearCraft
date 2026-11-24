@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:extractor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:soul_sand"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:soulless_sand",
+        "count": 1
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:soul",
+        "amount": 100
+    },
+    "ticks": 2400,
+    "energy_per_tick": 20
+}

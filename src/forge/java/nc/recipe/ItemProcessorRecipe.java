@@ -27,14 +27,21 @@ import java.util.Arrays;
 import java.util.List;
 
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
-                                  @Nullable FluidIngredient fluidInput, List<Product> results, List<Product> alternateResults,
+                                  @Nullable FluidIngredient fluidInput, FluidStack fluidOutput,
+                                  List<Product> results, List<Product> alternateResults,
                                   int ticks, int energyPerTick) implements Recipe<Container> {
     private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
 
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
+        fluidOutput = fluidOutput.copy();
         results = List.copyOf(results);
         alternateResults = List.copyOf(alternateResults);
+    }
+
+    @Override
+    public FluidStack fluidOutput() {
+        return fluidOutput.copy();
     }
 
     /** Counts are indexed by inventory slot after assigning each ingredient to a distinct slot. */
@@ -184,6 +191,12 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
             }
             FluidIngredient fluid = readFluidInput(id, json);
+            FluidStack fluidOutput = FluidStack.EMPTY;
+            if (machine.hasFluidOutput()) {
+                fluidOutput = FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "fluid_result"), id);
+            } else if (json.has("fluid_result")) {
+                throw new JsonSyntaxException("Unexpected fluid result for " + id);
+            }
             List<Product> results = json.has("results") ? readResults(id, json, "results")
                     : validateResults(id, List.of(readProduct(GsonHelper.getAsJsonObject(json, "result"))));
             List<Product> alternate = List.of();
@@ -198,7 +211,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             if (ticks <= 0 || energy < 0) {
                 throw new JsonSyntaxException("Invalid item processor recipe " + id);
             }
-            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, alternate, ticks, energy);
+            return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate, ticks, energy);
         }
 
         private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
@@ -246,9 +259,10 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             }
             FluidIngredient fluid = machine.hasFluidInput()
                     ? FluidIngredient.fromNetwork(buffer) : null;
+            FluidStack fluidOutput = machine.hasFluidOutput() ? buffer.readFluidStack() : FluidStack.EMPTY;
             List<Product> results = readProducts(buffer);
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
-            return new ItemProcessorRecipe(id, machine, inputs, fluid, results, alternate,
+            return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
                     buffer.readVarInt(), buffer.readVarInt());
         }
 
@@ -260,6 +274,9 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             }
             if (recipe.fluidInput != null) {
                 recipe.fluidInput.toNetwork(buffer);
+            }
+            if (machine.hasFluidOutput()) {
+                buffer.writeFluidStack(recipe.fluidOutput);
             }
             writeProducts(buffer, recipe.results);
             buffer.writeBoolean(!recipe.alternateResults.isEmpty());

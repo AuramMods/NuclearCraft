@@ -19,6 +19,7 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 public final class NCItemProcessors {
     private static final ForgeConfigSpec SPEC;
@@ -53,16 +54,19 @@ public final class NCItemProcessors {
         }
     }
 
+    public record TankSlot(int x, int y, int size, boolean output) {}
+
     public enum Machine {
-        MANUFACTORY("manufactory", 1, 1, false, 56, -1, 116, 0, 74, 35, 16),
-        DECAY_HASTENER("decay_hastener", 1, 1, false, 56, -1, 116, 0, 74, 35, 16),
-        SEPARATOR("separator", 1, 2, false, 42, -1, 102, 28, 60, 34, 18),
-        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, -1, 126, 0, 84, 35, 16),
-        INFUSER("infuser", 1, 1, true, 46, 66, 126, 0, 84, 35, 16),
-        ROCK_CRUSHER("rock_crusher", 1, 3, false, 38, -1, 94, 20, 56, 35, 16),
-        FUEL_REPROCESSOR("fuel_reprocessor", 1, 8, false, 30, -1, 86, 20, 48, 30, 38, 1, 4, 12),
-        PRESSURIZER("pressurizer", 1, 1, true, 56, -1, 116, 0, 74, 35, 16),
-        ASSEMBLER("assembler", 4, 1, false, 46, -1, 126, 0, 84, 31, 36, 2, 1, 12);
+        MANUFACTORY("manufactory", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
+        DECAY_HASTENER("decay_hastener", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
+        SEPARATOR("separator", 1, 2, false, 42, null, 102, 28, 60, 34, 18),
+        ALLOY_FURNACE("alloy_furnace", 2, 1, true, 46, null, 126, 0, 84, 35, 16),
+        INFUSER("infuser", 1, 1, true, 46, new TankSlot(66, 35, 16, false), 126, 0, 84, 35, 16),
+        ROCK_CRUSHER("rock_crusher", 1, 3, false, 38, null, 94, 20, 56, 35, 16),
+        FUEL_REPROCESSOR("fuel_reprocessor", 1, 8, false, 30, null, 86, 20, 48, 30, 38, 1, 4, 12),
+        PRESSURIZER("pressurizer", 1, 1, true, 56, null, 116, 0, 74, 35, 16),
+        ASSEMBLER("assembler", 4, 1, false, 46, null, 126, 0, 84, 31, 36, 2, 1, 12),
+        EXTRACTOR("extractor", 1, 1, true, 42, new TankSlot(126, 31, 24, true), 102, 0, 60, 34, 18, 1, 1, 12);
 
         private final String id;
         private final int inputs;
@@ -70,7 +74,7 @@ public final class NCItemProcessors {
         private final boolean losesProgress;
         private final int inputX;
         private final int inputColumns;
-        private final int fluidInputX;
+        private final @Nullable TankSlot tank;
         private final int outputX;
         private final int outputSpacing;
         private final int outputColumns;
@@ -85,13 +89,13 @@ public final class NCItemProcessors {
         private final RegistryObject<RecipeType<ItemProcessorRecipe>> recipes;
         private final RegistryObject<RecipeSerializer<ItemProcessorRecipe>> serializer;
 
-        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
+        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, @Nullable TankSlot tank, int outputX,
                 int outputSpacing, int progressX, int progressY, int progressHeight) {
-            this(id, inputs, outputs, losesProgress, inputX, fluidInputX, outputX, outputSpacing, progressX, progressY,
+            this(id, inputs, outputs, losesProgress, inputX, tank, outputX, outputSpacing, progressX, progressY,
                     progressHeight, inputs, outputs, 0);
         }
 
-        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, int fluidInputX, int outputX,
+        Machine(String id, int inputs, int outputs, boolean losesProgress, int inputX, @Nullable TankSlot tank, int outputX,
                 int outputSpacing, int progressX, int progressY, int progressHeight, int inputColumns,
                 int outputColumns, int menuExtension) {
             this.id = id;
@@ -100,7 +104,7 @@ public final class NCItemProcessors {
             this.losesProgress = losesProgress;
             this.inputX = inputX;
             this.inputColumns = inputColumns;
-            this.fluidInputX = fluidInputX;
+            this.tank = tank;
             this.outputX = outputX;
             this.outputSpacing = outputSpacing;
             this.outputColumns = outputColumns;
@@ -147,11 +151,15 @@ public final class NCItemProcessors {
         }
 
         public boolean hasFluidInput() {
-            return fluidInputX >= 0;
+            return tank != null && !tank.output();
         }
 
-        public int fluidInputX() {
-            return fluidInputX;
+        public boolean hasFluidOutput() {
+            return tank != null && tank.output();
+        }
+
+        public @Nullable TankSlot tank() {
+            return tank;
         }
 
         public int outputX(int slot) {
@@ -163,7 +171,7 @@ public final class NCItemProcessors {
         }
 
         private int slotY(int slot, int columns, int count) {
-            return 35 + menuExtension / 2 + 20 * (slot / columns) - 10 * ((count - 1) / columns);
+            return 35 + (hasFluidOutput() ? 0 : menuExtension / 2) + 20 * (slot / columns) - 10 * ((count - 1) / columns);
         }
 
         public int menuExtension() {

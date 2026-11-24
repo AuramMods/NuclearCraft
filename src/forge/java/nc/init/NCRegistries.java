@@ -173,6 +173,7 @@ public final class NCRegistries {
                         output.accept(NCFluids.HEAVY_WATER.bucket().get());
                         output.accept(NCFluids.HYDROGEN.bucket().get());
                         output.accept(NCFluids.DEUTERIUM.bucket().get());
+                        output.accept(NCFluids.HELIUM_3.bucket().get());
                         output.accept(NCFluids.FLUORINE.bucket().get());
                         output.accept(NCFluids.LOW_ENRICHED_WATER.bucket().get());
                         output.accept(NCFluids.HIGH_ENRICHED_WATER.bucket().get());

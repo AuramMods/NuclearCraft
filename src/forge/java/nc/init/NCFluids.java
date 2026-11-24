@@ -48,6 +48,7 @@ public final class NCFluids {
     public static final RegisteredFluid OXYGEN = gas("oxygen", 0xFF7E8CC8);
     public static final RegisteredFluid NITROGEN = gas("nitrogen", 0xFF7CC37B);
     public static final RegisteredFluid HYDROGEN = gas("hydrogen", 0xFFB37AC4);
+    public static final RegisteredFluid HELIUM_3 = gas("helium_3", 0xFFCBBB67);
     public static final RegisteredFluid DEUTERIUM = gas("deuterium", 0xFF9E6FEF);
     public static final RegisteredFluid FLUORINE = gas("fluorine", 0xFFD3C75D);
     public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7);

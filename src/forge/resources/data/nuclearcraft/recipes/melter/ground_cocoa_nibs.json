@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:ground_cocoa_nibs"
+    },
+    "result": {
+        "fluid": "nuclearcraft:chocolate_liquor",
+        "amount": 144
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

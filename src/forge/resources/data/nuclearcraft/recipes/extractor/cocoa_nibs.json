@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:extractor",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:ground_cocoa_nibs"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:cocoa_solids",
+        "count": 1
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:cocoa_butter",
+        "amount": 144
+    },
+    "ticks": 1200,
+    "energy_per_tick": 5
+}

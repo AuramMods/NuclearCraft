@@ -87,6 +87,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/chemical_reactor_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/enricher_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/supercooler_front_*.png'
+        include 'assets/nuclearcraft/textures/blocks/extractor_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/glowing_mushroom.png'
         include 'assets/nuclearcraft/textures/blocks/decay_hastener_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/rock_crusher_front_*.png'
@@ -150,6 +151,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/gui/container/salt_fission_vessel.png'
         include 'assets/nuclearcraft/textures/gui/container/salt_fission_heater.png'
         include 'assets/nuclearcraft/textures/gui/container/supercooler.png'
+        include 'assets/nuclearcraft/textures/gui/container/extractor.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_vessel_port.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_heater_port.png'
         include 'assets/nuclearcraft/textures/blocks/heat_exchanger/**/*.png'
@@ -185,6 +187,9 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/items/part/*.png'
         include 'assets/nuclearcraft/textures/items/flour.png'
         include 'assets/nuclearcraft/textures/items/graham_cracker.png'
+        include 'assets/nuclearcraft/textures/items/roasted_cocoa_beans.png'
+        include 'assets/nuclearcraft/textures/items/ground_cocoa_nibs.png'
+        include 'assets/nuclearcraft/textures/items/cocoa_solids.png'
         eachFile {
             path = path.replace('/textures/blocks/', '/textures/block/').replace('/textures/items/', '/textures/item/')
         }

@@ -1,0 +1,17 @@
+{
+    "replace": false,
+    "values": [
+        {
+            "id": "advancedrocketry:moonturf",
+            "required": false
+        },
+        {
+            "id": "advancedrocketry:moonturf_dark",
+            "required": false
+        },
+        {
+            "id": "#forge:sands/moon",
+            "required": false
+        }
+    ]
+}

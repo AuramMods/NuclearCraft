@@ -212,6 +212,8 @@
         "nuclearcraft:fission_heater_port_liquid_nitrogen",
         "nuclearcraft:fission_heater_port_liquid_helium",
         "nuclearcraft:fission_heater_port_enderium",
-        "nuclearcraft:fission_heater_port_cryotheum"
+        "nuclearcraft:fission_heater_port_cryotheum",
+        "nuclearcraft:supercooler",
+        "nuclearcraft:extractor"
     ]
 }

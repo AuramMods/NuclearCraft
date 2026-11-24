@@ -100,8 +100,8 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
         return ProcessorFluidTanks.Mode.read(data.get(FIRST_TANK + tank * TANK_DATA_SIZE + SIDE_MODE), side);
     }
 
-    public FluidProcessorBlockEntity.OutputMode outputMode(int tank) {
-        return FluidProcessorBlockEntity.OutputMode.byId(data.get(FIRST_TANK + tank * TANK_DATA_SIZE + OUTPUT_MODE));
+    public ProcessorFluidTanks.OutputMode outputMode(int tank) {
+        return ProcessorFluidTanks.OutputMode.byId(data.get(FIRST_TANK + tank * TANK_DATA_SIZE + OUTPUT_MODE));
     }
 
     public static int sideButton(int tank, Direction side) {

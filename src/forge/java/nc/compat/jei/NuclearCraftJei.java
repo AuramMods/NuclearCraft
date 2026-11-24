@@ -308,7 +308,7 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {
         Machine machine = recipe.machine();
-        boolean extended = machine.menuExtension() > 0;
+        boolean extended = machine.menuExtension() > 0 && !machine.hasFluidOutput();
         for (int index = 0; index < recipe.inputs().size(); index++) {
             ItemProcessorRecipe.Input input = recipe.inputs().get(index);
             int x = extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
@@ -319,6 +319,9 @@ public final class NuclearCraftJei implements IModPlugin {
         var fluid = recipe.fluidInput();
         if (fluid != null) {
             fluidSlot(layout, INPUT, 43, fluid.alternatives());
+        }
+        if (machine.hasFluidOutput()) {
+            fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));
         }
         var products = recipe.products();
         for (int index = 0; index < machine.outputs(); index++) {
@@ -372,7 +375,7 @@ public final class NuclearCraftJei implements IModPlugin {
         public int getWidth() {
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor" -> 178;
-                case "rock_crusher" -> 166;
+                case "rock_crusher", "extractor" -> 166;
                 default -> 140;
             };
         }

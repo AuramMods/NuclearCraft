@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -72,7 +73,7 @@ public final class TrisoProcessingGameTests {
         var coal = new ItemProcessorRecipe.Input(Ingredient.of(Items.COAL), 1);
         var quartz = new ItemProcessorRecipe.Input(Ingredient.of(Items.QUARTZ), 1);
         var recipe = new ItemProcessorRecipe(NuclearCraft.id("qa_shapeless"), Machine.ASSEMBLER,
-                List.of(alternative, iron, coal, quartz), null,
+                List.of(alternative, iron, coal, quartz), null, FluidStack.EMPTY,
                 List.of(new ItemProcessorRecipe.Product(stack("leu_235_triso", 1), 100, 0)), List.of(), 1, 1);
         var input = new SimpleContainer(new ItemStack(Items.IRON_INGOT, 2), new ItemStack(Items.COPPER_INGOT),
                 new ItemStack(Items.QUARTZ), new ItemStack(Items.COAL));
