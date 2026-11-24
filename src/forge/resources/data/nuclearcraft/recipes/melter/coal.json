@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/coal"
+        },
+        {
+            "tag": "forge:ingots/graphite"
+        },
+        {
+            "tag": "forge:dusts/graphite"
         }
     ],
     "result": {

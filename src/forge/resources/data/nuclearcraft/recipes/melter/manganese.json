@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/manganese"
+        },
+        {
+            "tag": "c:ingots/manganese"
+        },
+        {
+            "tag": "c:dusts/manganese"
         }
     ],
     "result": {

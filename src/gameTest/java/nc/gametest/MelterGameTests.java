@@ -3,11 +3,14 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCRegistries;
 import nc.processor.MelterBlockEntity;
+import nc.recipe.MelterMaterialRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -22,6 +25,47 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class MelterGameTests {
     private static final BlockPos MACHINE = new BlockPos(2, 1, 2);
+
+    @GameTest(template = "empty")
+    public static void melterDiscoversOreAndRejectsMissingTagPlaceholders(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var recipes = level.getRecipeManager();
+        var copperOre = new ItemStack(BuiltInRegistries.ITEM.get(NuclearCraft.id("copper_ore")));
+        var ore = MelterMaterialRecipes.find(recipes, copperOre);
+        helper.assertTrue(ore != null && ore.id().equals(NuclearCraft.id("melter/materials/copper/ore"))
+                        && ore.product().getAmount() == 288 && ore.ticks() == 1000 && ore.energyPerTick() == 60,
+                "The copper ore should use the legacy two-ingot yield and rate");
+        var gem = MelterMaterialRecipes.find(recipes, new ItemStack(Items.AMETHYST_SHARD));
+        helper.assertTrue(gem != null && gem.id().equals(NuclearCraft.id("melter/materials/test_gem/unit"))
+                        && gem.product().getFluid() == Fluids.WATER && gem.product().getAmount() == 666,
+                "The shared tags should provide a gem recipe with the source fluid");
+        var type = NCRegistries.MELTING.get();
+        helper.assertTrue(recipes.getRecipeFor(type, new SimpleContainer(new ItemStack(Items.BARRIER)), level).isEmpty(),
+                "Empty Forge tags must not make the barrier meltable");
+        var sulfur = recipes.getAllRecipesFor(type).stream()
+                .filter(recipe -> recipe.id().equals(NuclearCraft.id("melter/sulfur"))).findFirst().orElseThrow();
+        helper.assertTrue(sulfur.product().getAmount() == 666, "Sulfur should use the legacy gem volume");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 830)
+    public static void melterCarriesFractionalNuggetProgress(GameTestHelper helper) {
+        helper.setBlock(MACHINE, NCRegistries.MELTER.get());
+        var melter = helper.getBlockEntity(MACHINE);
+        var items = melter.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var energy = melter.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        var fluids = melter.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.EAST).orElseThrow(AssertionError::new);
+        helper.assertTrue(items.insertItem(0, new ItemStack(Items.NAUTILUS_SHELL, 9), false).isEmpty()
+                        && energy.receiveEnergy(32_000, false) == 32_000,
+                "The tagged nugget stack and its exact energy budget should fit");
+        helper.succeedWhen(() -> {
+            var result = fluids.getFluidInTank(0);
+            helper.assertTrue(result.getAmount() == 144
+                            && result.getFluid() == BuiltInRegistries.FLUID.get(NuclearCraft.id("copper"))
+                            && items.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                    "Nine nuggets should melt to one ingot of copper in exactly 800 powered ticks");
+        });
+    }
 
     @GameTest(template = "empty", timeoutTicks = 250)
     public static void melterProcessesIceWithSidedAutomation(GameTestHelper helper) {

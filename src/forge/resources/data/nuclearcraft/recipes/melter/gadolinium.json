@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/gadolinium"
+        },
+        {
+            "tag": "c:ingots/gadolinium"
+        },
+        {
+            "tag": "c:dusts/gadolinium"
         }
     ],
     "result": {

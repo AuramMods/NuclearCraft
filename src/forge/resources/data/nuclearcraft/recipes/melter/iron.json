@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/iron"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/iron"
+        },
+        {
+            "tag": "forge:dusts/iron"
+        },
+        {
+            "tag": "c:ingots/iron"
+        },
+        {
+            "tag": "c:dusts/iron"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:iron",
         "amount": 144

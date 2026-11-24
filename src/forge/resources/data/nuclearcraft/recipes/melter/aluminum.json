@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/aluminum"
+        },
+        {
+            "tag": "c:ingots/aluminum"
+        },
+        {
+            "tag": "c:dusts/aluminum"
         }
     ],
     "result": {

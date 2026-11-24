@@ -6,6 +6,15 @@
         },
         {
             "item": "nuclearcraft:sic_fiber"
+        },
+        {
+            "tag": "forge:dusts/silicon_carbide"
+        },
+        {
+            "tag": "c:ingots/silicon_carbide"
+        },
+        {
+            "tag": "c:dusts/silicon_carbide"
         }
     ],
     "result": {

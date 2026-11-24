@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/gold"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/gold"
+        },
+        {
+            "tag": "forge:dusts/gold"
+        },
+        {
+            "tag": "c:ingots/gold"
+        },
+        {
+            "tag": "c:dusts/gold"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:gold",
         "amount": 144

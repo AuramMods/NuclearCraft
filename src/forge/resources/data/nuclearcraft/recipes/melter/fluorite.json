@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:fluorite"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:fluorite"
+        },
+        {
+            "tag": "forge:gems/fluorite"
+        },
+        {
+            "tag": "forge:dusts/fluorite"
+        },
+        {
+            "tag": "c:gems/fluorite"
+        },
+        {
+            "tag": "c:dusts/fluorite"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:fluorite",
         "amount": 666

@@ -33,6 +33,7 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
+    private static final ForgeConfigSpec.BooleanValue ORE_PROCESSING;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
     private static final ForgeConfigSpec.DoubleValue POWER_MULTIPLIER;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_TIMES;
@@ -47,6 +48,8 @@ public final class NCItemProcessors {
         var builder = new ForgeConfigSpec.Builder();
         MEKANISM_GAS = builder.comment("Allow the Universal Bin to accept Mekanism gases.")
                 .define("enable_mek_gas", true);
+        ORE_PROCESSING = builder.comment("Enable default Melter recipes for ore blocks.")
+                .define("ore_processing", true);
         builder.push("rates");
         TIME_MULTIPLIER = builder.defineInRange("processor_time_multiplier", 1D, 0.001D, 255D);
         POWER_MULTIPLIER = builder.defineInRange("processor_power_multiplier", 1D, 0D, 255D);
@@ -91,6 +94,10 @@ public final class NCItemProcessors {
 
     public static boolean mekanismGasEnabled() {
         return SPEC.isLoaded() ? MEKANISM_GAS.get() : MEKANISM_GAS.getDefault();
+    }
+
+    public static boolean oreProcessing() {
+        return value(ORE_PROCESSING);
     }
 
     public static double speedUpgrade(int count) {

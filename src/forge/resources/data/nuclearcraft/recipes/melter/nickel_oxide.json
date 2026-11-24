@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/nickel_oxide"
+        },
+        {
+            "tag": "c:ingots/nickel_oxide"
+        },
+        {
+            "tag": "c:dusts/nickel_oxide"
         }
     ],
     "result": {

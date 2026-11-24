@@ -63,6 +63,7 @@ import nc.recipe.EnricherRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
+import nc.recipe.MelterMaterialRecipes;
 import nc.recipe.SaltMixerRecipe;
 import nc.recipe.ScrubberRecipe;
 import nc.recipe.SaltFissionRecipe;
@@ -337,7 +338,11 @@ public final class NuclearCraftJei implements IModPlugin {
                     .filter(recipe -> Arrays.stream(recipe.block().getItems()).anyMatch(recipe::accepts)).toList());
         }
         registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
-        registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
+        var melterRecipes = new ArrayList<MelterRecipe>();
+        recipes.getAllRecipesFor(NCRegistries.MELTING.get()).stream().filter(recipe -> !recipe.input().isEmpty())
+                .forEach(melterRecipes::add);
+        melterRecipes.addAll(MelterMaterialRecipes.fromSyncedTags(recipes));
+        registration.addRecipes(MELTER, melterRecipes);
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
         registration.addRecipes(SCRUBBER, recipes.getAllRecipesFor(NCRadiation.SCRUBBER_RECIPES.get()));

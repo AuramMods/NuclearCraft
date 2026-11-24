@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/beryllium"
+        },
+        {
+            "tag": "c:ingots/beryllium"
+        },
+        {
+            "tag": "c:dusts/beryllium"
         }
     ],
     "result": {

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:slime_block"
+    },
+    "result": {
+        "fluid": "nuclearcraft:slime",
+        "amount": 1296
+    },
+    "ticks": 7200,
+    "energy_per_tick": 20
+}

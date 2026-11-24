@@ -1,8 +1,13 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:sodium_hydroxide"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:sodium_hydroxide"
+        },
+        {
+            "tag": "forge:dusts/sodium_hydroxide"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:naoh",
         "amount": 666

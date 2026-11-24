@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/hard_carbon"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/hard_carbon"
+        },
+        {
+            "tag": "forge:dusts/hard_carbon"
+        },
+        {
+            "tag": "c:ingots/hard_carbon"
+        },
+        {
+            "tag": "c:dusts/hard_carbon"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:hard_carbon",
         "amount": 144

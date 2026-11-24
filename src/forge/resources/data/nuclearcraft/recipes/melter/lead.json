@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/lead"
+        },
+        {
+            "tag": "c:ingots/lead"
+        },
+        {
+            "tag": "c:dusts/lead"
         }
     ],
     "result": {

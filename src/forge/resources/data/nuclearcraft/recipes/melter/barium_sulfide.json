@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "nuclearcraft:barium_sulfide"
+        },
+        {
+            "tag": "forge:dusts/barium_sulfide"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:barium_sulfide",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

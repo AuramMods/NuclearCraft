@@ -1,0 +1,20 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "nuclearcraft:alugentum"
+        },
+        {
+            "tag": "forge:ingots/alugentum"
+        },
+        {
+            "tag": "forge:dusts/alugentum"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:alugentum",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

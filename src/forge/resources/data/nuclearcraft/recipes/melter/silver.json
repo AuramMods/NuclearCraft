@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/silver"
+        },
+        {
+            "tag": "c:ingots/silver"
+        },
+        {
+            "tag": "c:dusts/silver"
         }
     ],
     "result": {

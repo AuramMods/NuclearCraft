@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:redstone_block"
+        },
+        {
+            "tag": "forge:storage_blocks/redstone"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:redstone",
+        "amount": 900
+    },
+    "ticks": 1600,
+    "energy_per_tick": 40
+}

@@ -1,8 +1,13 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:glowstone_dust"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:glowstone_dust"
+        },
+        {
+            "tag": "forge:dusts/glowstone"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:glowstone",
         "amount": 250

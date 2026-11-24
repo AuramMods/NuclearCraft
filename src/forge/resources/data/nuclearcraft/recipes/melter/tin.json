@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/tin"
+        },
+        {
+            "tag": "c:ingots/tin"
+        },
+        {
+            "tag": "c:dusts/tin"
         }
     ],
     "result": {

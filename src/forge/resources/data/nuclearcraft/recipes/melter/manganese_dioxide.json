@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/manganese_dioxide"
+        },
+        {
+            "tag": "c:ingots/manganese_dioxide"
+        },
+        {
+            "tag": "c:dusts/manganese_dioxide"
         }
     ],
     "result": {

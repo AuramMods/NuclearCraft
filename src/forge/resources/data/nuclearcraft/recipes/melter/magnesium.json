@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/magnesium"
+        },
+        {
+            "tag": "c:ingots/magnesium"
+        },
+        {
+            "tag": "c:dusts/magnesium"
         }
     ],
     "result": {

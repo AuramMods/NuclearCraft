@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "minecraft:nether_bricks"
+    },
+    "result": {
+        "fluid": "nuclearcraft:nether_brick",
+        "amount": 288
+    },
+    "ticks": 1600,
+    "energy_per_tick": 60
+}

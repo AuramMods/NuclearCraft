@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/ferroboron"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/ferroboron"
+        },
+        {
+            "tag": "forge:dusts/ferroboron"
+        },
+        {
+            "tag": "c:ingots/ferroboron"
+        },
+        {
+            "tag": "c:dusts/ferroboron"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:ferroboron",
         "amount": 144

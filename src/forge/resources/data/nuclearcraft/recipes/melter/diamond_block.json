@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:diamond_block"
+        },
+        {
+            "tag": "forge:storage_blocks/diamond"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:diamond",
+        "amount": 5994
+    },
+    "ticks": 7200,
+    "energy_per_tick": 40
+}

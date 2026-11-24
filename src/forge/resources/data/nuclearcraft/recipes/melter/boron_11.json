@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/boron_11"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/boron_11"
+        },
+        {
+            "tag": "forge:dusts/boron_11"
+        },
+        {
+            "tag": "c:ingots/boron_11"
+        },
+        {
+            "tag": "c:dusts/boron_11"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:boron_11",
         "amount": 144

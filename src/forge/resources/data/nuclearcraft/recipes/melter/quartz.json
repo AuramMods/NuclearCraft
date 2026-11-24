@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:quartz"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:quartz"
+        },
+        {
+            "tag": "forge:gems/quartz"
+        },
+        {
+            "tag": "forge:dusts/quartz"
+        },
+        {
+            "tag": "c:gems/quartz"
+        },
+        {
+            "tag": "c:dusts/quartz"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:quartz",
         "amount": 666

@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:diamond"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:diamond"
+        },
+        {
+            "tag": "forge:gems/diamond"
+        },
+        {
+            "tag": "forge:dusts/diamond"
+        },
+        {
+            "tag": "c:gems/diamond"
+        },
+        {
+            "tag": "c:dusts/diamond"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:diamond",
         "amount": 666

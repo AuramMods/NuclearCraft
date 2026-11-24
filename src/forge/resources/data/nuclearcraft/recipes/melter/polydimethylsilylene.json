@@ -1,0 +1,20 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "nuclearcraft:polydimethylsilylene"
+        },
+        {
+            "tag": "forge:ingots/polydimethylsilylene"
+        },
+        {
+            "tag": "forge:dusts/polydimethylsilylene"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:polydimethylsilylene",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

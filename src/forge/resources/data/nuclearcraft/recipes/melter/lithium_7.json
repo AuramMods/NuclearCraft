@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/lithium_7"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/lithium_7"
+        },
+        {
+            "tag": "forge:dusts/lithium_7"
+        },
+        {
+            "tag": "c:ingots/lithium_7"
+        },
+        {
+            "tag": "c:dusts/lithium_7"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:lithium_7",
         "amount": 144

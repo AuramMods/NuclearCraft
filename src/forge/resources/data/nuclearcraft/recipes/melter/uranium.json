@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/uranium"
+        },
+        {
+            "tag": "c:ingots/uranium"
+        },
+        {
+            "tag": "c:dusts/uranium"
         }
     ],
     "result": {

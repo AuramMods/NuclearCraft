@@ -7,6 +7,7 @@ import nc.init.NCItemProcessors.Rate;
 
 import nc.init.NCRegistries;
 import nc.recipe.MelterRecipe;
+import nc.recipe.MelterMaterialRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -80,7 +81,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
         recipeInput.setItem(0, inventory.getStackInSlot(0));
-        MelterRecipe recipe = recipeInput.isEmpty() ? null : recipes.getRecipeFor(recipeInput, level).orElse(null);
+        MelterRecipe recipe = recipeInput.isEmpty() ? null : recipes.getRecipeFor(recipeInput, level)
+                .orElseGet(() -> MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0)));
         if (recipe == null || !recipe.id().equals(activeRecipe)) {
             activeRecipe = recipe == null ? null : recipe.id();
             if (progressHalfTicks != 0) {
@@ -109,11 +111,11 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
         double batch = 2D * batchTicks;
-        while (progressHalfTicks >= batch) {
+        while (progressHalfTicks + 1E-9 >= batch && progressHalfTicks > 0) {
             fluids.produce(0, product);
             inventory.extractItem(0, 1, false);
             inventory.ports.push(level);
-            progressHalfTicks -= batch;
+            progressHalfTicks = Math.max(0, progressHalfTicks - batch);
             if (progressHalfTicks > 0) {
                 recipeInput.setItem(0, inventory.getStackInSlot(0));
                 if (!recipe.matches(recipeInput, level) || !fluids.canProduce(0, product)) {

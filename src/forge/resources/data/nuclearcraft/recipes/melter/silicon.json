@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:silicon"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:silicon"
+        },
+        {
+            "tag": "forge:silicon"
+        },
+        {
+            "tag": "forge:ingots/silicon"
+        },
+        {
+            "tag": "c:silicon"
+        },
+        {
+            "tag": "c:ingots/silicon"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:silicon",
         "amount": 144

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:quartz_block"
+        },
+        {
+            "tag": "forge:storage_blocks/quartz"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:quartz",
+        "amount": 2664
+    },
+    "ticks": 3200,
+    "energy_per_tick": 40
+}

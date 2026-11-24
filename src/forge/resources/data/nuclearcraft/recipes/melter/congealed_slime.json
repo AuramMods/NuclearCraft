@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "tag": "nuclearcraft:earth_congealed_slime"
+    },
+    "result": {
+        "fluid": "nuclearcraft:slime",
+        "amount": 576
+    },
+    "ticks": 3200,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "nuclearcraft:earth_congealed_slime"
+            }
+        }
+    ]
+}

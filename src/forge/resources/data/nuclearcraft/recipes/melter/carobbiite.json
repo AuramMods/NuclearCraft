@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:carobbiite"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:carobbiite"
+        },
+        {
+            "tag": "forge:gems/carobbiite"
+        },
+        {
+            "tag": "forge:dusts/carobbiite"
+        },
+        {
+            "tag": "c:gems/carobbiite"
+        },
+        {
+            "tag": "c:dusts/carobbiite"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:carobbiite",
         "amount": 666

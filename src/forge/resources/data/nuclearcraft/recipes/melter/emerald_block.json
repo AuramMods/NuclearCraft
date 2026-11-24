@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:emerald_block"
+        },
+        {
+            "tag": "forge:storage_blocks/emerald"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:emerald",
+        "amount": 5994
+    },
+    "ticks": 7200,
+    "energy_per_tick": 40
+}

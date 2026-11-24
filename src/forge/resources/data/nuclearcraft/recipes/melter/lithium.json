@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/lithium"
+        },
+        {
+            "tag": "c:ingots/lithium"
+        },
+        {
+            "tag": "c:dusts/lithium"
         }
     ],
     "result": {

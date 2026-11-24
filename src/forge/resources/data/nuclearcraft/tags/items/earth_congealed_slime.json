@@ -1,0 +1,9 @@
+{
+    "replace": false,
+    "values": [
+        {
+            "id": "tconstruct:earth_congealed_slime",
+            "required": false
+        }
+    ]
+}

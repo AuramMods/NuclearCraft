@@ -85,7 +85,25 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes helium sourcing for the Supercooler, the remaining Melter and reactor catalogs, legacy processor config switches and port filters, and verification against the complete legacy and Auram scope.
+- The remaining audit covers the reactor catalogs, legacy processor config switches and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
+
+### Melter material recipes
+
+The Melter now melts ore, tiny dust, nuggets, and storage blocks where the material is available. An ingot or dust gives 144 mB, a metal ore gives 288 mB, a nugget gives 16 mB, and a metal storage block gives 1,296 mB. Gems and their dusts give 666 mB, gem ores give 1,332 mB, and gem nuggets give 74 mB. The recipe duration of a nugget is 800/9 ticks. Progress carries forward between batches, so nine metal nuggets use exactly the time and power of an ingot. Sulfur dust restores the legacy 666 mB yield. Existing tank contents retain their saved amounts.
+
+Discovery uses shared `forge` and `c` item tags and a source fluid from `molten_<material>` in either namespace. Existing NuclearCraft materials use their registered fluid. A new metal family needs populated ingot and dust tags. A new gem family needs populated gem and dust tags. The explicitly supported legacy families also load whichever forms are available. The default ore recipes can be disabled with `ore_processing` in the world's `nuclearcraft-processors.toml`.
+
+Generated recipes use `nuclearcraft:melter/materials/<material>/unit`, `/ore`, `/nugget`, or `/block`. Existing datapack recipe IDs retain priority. Datapacks and KubeJS can replace a generated recipe by supplying its ID. A `nuclearcraft:melter` recipe takes one Forge `ingredient`, a `result` with a source `fluid` ID and an `amount` in mB, a positive `ticks` duration that can be fractional, and a nonnegative `energy_per_tick`.
+
+When the relevant fluids and inputs are installed, the Melter processes salt into brine, sand and glass into molten glass, and the original clay and stone forms into their fluids. The glass, clay, and stone routes prefer the Tinkers’ fluid tags when present so they feed the corresponding casting recipes. Tinkers’ Earth Congealed Slime produces 576 mB of green slime. The original green slime blocks, gem blocks, nether bricks, obsidian forms, and graphite also have their legacy yields.
+
+All 190 local GameTests passed. Ender IO 8.2.22-beta and Mekanism 10.4.16.80 supplied copper and uranium ore respectively. Each Melter retained its ore and 600 FE behind a matching 15,800 mB buffer. After restart, the east outlets opened and each pipe delivered exactly 16,088 mB to its tank. The closed outlets stayed empty, and the balances survived a confirmed chunk unload and reload.
+
+A clean Forge 47.4.18 multiplayer server defined a new ore with its own datapack. The client displayed the server's 288 mB output in JEI, and both the machine and JEI picked up a change from water to lava after a datapack reload. On dedicated restart with ore processing disabled, the machine kept its input and 60 FE. The muted client recorded zero foreground samples, focus activations, or visible windows.
+
+On packaged Forge 47.4.18 with Tinkers’ Construct 3.11.2.166, a complete sand batch used 720 FE with the configured duration. The Melter auto-ejected its 1,000 mB of molten glass into a Seared Casting Basin, which produced one Clear Glass block.
+
+The isolated 539-mod Auram client listed 337 Melter recipes in JEI. It finished saved batches for Mekanism brine, sand, and Earth Congealed Slime, then cast the sand batch’s 1,000 mB into one Clear Glass block. KubeJS replaced the generated copper block recipe with a 7.5-tick recipe and the Melter yielded the configured 701 mB. The client ran muted with zero focus activations, foreground samples, or visible windows.
 
 ### Processor fluid controls
 

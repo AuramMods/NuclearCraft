@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/nickel"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/nickel"
+        },
+        {
+            "tag": "forge:dusts/nickel"
+        },
+        {
+            "tag": "c:ingots/nickel"
+        },
+        {
+            "tag": "c:dusts/nickel"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:nickel",
         "amount": 144

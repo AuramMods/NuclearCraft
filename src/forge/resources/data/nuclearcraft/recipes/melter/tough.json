@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/tough"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/tough"
+        },
+        {
+            "tag": "forge:dusts/tough"
+        },
+        {
+            "tag": "c:ingots/tough"
+        },
+        {
+            "tag": "c:dusts/tough"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:tough",
         "amount": 144

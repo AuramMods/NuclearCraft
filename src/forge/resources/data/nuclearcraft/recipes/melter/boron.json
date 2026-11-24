@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/boron"
+        },
+        {
+            "tag": "c:ingots/boron"
+        },
+        {
+            "tag": "c:dusts/boron"
         }
     ],
     "result": {

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/obsidian"
+        },
+        {
+            "tag": "forge:dusts/obsidian"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:obsidian",
+        "amount": 72
+    },
+    "ticks": 400,
+    "energy_per_tick": 80
+}

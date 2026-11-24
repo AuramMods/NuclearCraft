@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:lapis_block"
+        },
+        {
+            "tag": "forge:storage_blocks/lapis"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:lapis",
+        "amount": 5994
+    },
+    "ticks": 7200,
+    "energy_per_tick": 40
+}

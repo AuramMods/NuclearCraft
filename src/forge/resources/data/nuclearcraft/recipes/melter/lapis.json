@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:lapis_lazuli"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:lapis_lazuli"
+        },
+        {
+            "tag": "forge:gems/lapis"
+        },
+        {
+            "tag": "forge:dusts/lapis"
+        },
+        {
+            "tag": "c:gems/lapis"
+        },
+        {
+            "tag": "c:dusts/lapis"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:lapis",
         "amount": 666

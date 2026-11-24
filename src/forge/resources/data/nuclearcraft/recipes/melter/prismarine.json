@@ -1,8 +1,16 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:prismarine_shard"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:prismarine_shard"
+        },
+        {
+            "tag": "forge:gems/prismarine"
+        },
+        {
+            "tag": "forge:dusts/prismarine"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:prismarine",
         "amount": 144

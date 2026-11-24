@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/hastelloy"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/hastelloy"
+        },
+        {
+            "tag": "forge:dusts/hastelloy"
+        },
+        {
+            "tag": "c:ingots/hastelloy"
+        },
+        {
+            "tag": "c:dusts/hastelloy"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:hastelloy",
         "amount": 144

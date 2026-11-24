@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:nether_brick"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:nether_brick"
+        },
+        {
+            "tag": "forge:ingots/nether_brick"
+        },
+        {
+            "tag": "forge:dusts/nether_brick"
+        },
+        {
+            "item": "minecraft:netherrack"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:nether_brick",
         "amount": 72

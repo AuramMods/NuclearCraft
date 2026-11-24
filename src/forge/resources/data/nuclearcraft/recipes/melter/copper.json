@@ -1,8 +1,19 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "tag": "forge:ingots/copper"
-    },
+    "ingredient": [
+        {
+            "tag": "forge:ingots/copper"
+        },
+        {
+            "tag": "forge:dusts/copper"
+        },
+        {
+            "tag": "c:ingots/copper"
+        },
+        {
+            "tag": "c:dusts/copper"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:copper",
         "amount": 144

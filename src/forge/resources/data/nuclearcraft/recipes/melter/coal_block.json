@@ -1,0 +1,20 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "item": "minecraft:coal_block"
+        },
+        {
+            "tag": "forge:storage_blocks/coal"
+        },
+        {
+            "tag": "forge:storage_blocks/graphite"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:coal",
+        "amount": 900
+    },
+    "ticks": 3600,
+    "energy_per_tick": 40
+}

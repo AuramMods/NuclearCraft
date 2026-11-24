@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/end_stone"
+        },
+        {
+            "tag": "forge:dusts/end_stone"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:end_stone",
+        "amount": 72
+    },
+    "ticks": 400,
+    "energy_per_tick": 80
+}

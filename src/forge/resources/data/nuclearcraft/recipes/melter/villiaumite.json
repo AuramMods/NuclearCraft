@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:villiaumite"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:villiaumite"
+        },
+        {
+            "tag": "forge:gems/villiaumite"
+        },
+        {
+            "tag": "forge:dusts/villiaumite"
+        },
+        {
+            "tag": "c:gems/villiaumite"
+        },
+        {
+            "tag": "c:dusts/villiaumite"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:villiaumite",
         "amount": 666

@@ -1,8 +1,22 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "minecraft:emerald"
-    },
+    "ingredient": [
+        {
+            "item": "minecraft:emerald"
+        },
+        {
+            "tag": "forge:gems/emerald"
+        },
+        {
+            "tag": "forge:dusts/emerald"
+        },
+        {
+            "tag": "c:gems/emerald"
+        },
+        {
+            "tag": "c:dusts/emerald"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:emerald",
         "amount": 666

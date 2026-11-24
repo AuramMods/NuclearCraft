@@ -6,6 +6,12 @@
         },
         {
             "tag": "forge:dusts/palladium"
+        },
+        {
+            "tag": "c:ingots/palladium"
+        },
+        {
+            "tag": "c:dusts/palladium"
         }
     ],
     "result": {
