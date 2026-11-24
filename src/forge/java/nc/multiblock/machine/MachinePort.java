@@ -60,10 +60,22 @@ public final class MachinePort extends BlockEntity {
         }
         if (part == Part.POWER) energy = LazyOptional.of(() -> new EnergyPort(next));
         if (level != null && state != getBlockState()) level.setBlock(worldPosition, state, Block.UPDATE_CLIENTS);
+        notifyNeighbor(side);
     }
 
     void unbind(MachineController controller) {
-        if (binding != null && binding.controller == controller) clearBinding();
+        var attached = binding;
+        if (attached == null || attached.controller != controller) return;
+        clearBinding();
+        notifyNeighbor(attached.side);
+    }
+
+    private void notifyNeighbor(Direction outward) {
+        if (!(level instanceof ServerLevel server) || isRemoved()) return;
+        BlockPos neighbor = worldPosition.relative(outward);
+        if (server.getChunkSource().getChunkNow(neighbor.getX() >> 4, neighbor.getZ() >> 4) != null) {
+            server.neighborChanged(neighbor, getBlockState().getBlock(), worldPosition);
+        }
     }
 
     private void clearBinding() {
