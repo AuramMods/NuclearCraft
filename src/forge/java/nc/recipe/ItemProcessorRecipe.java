@@ -91,6 +91,18 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 && matchInputs(container, 0, 0, null, slot, stack);
     }
 
+    public boolean acceptsItem(ItemStack stack) {
+        return inputs.stream().anyMatch(input -> input.accepts(stack));
+    }
+
+    public boolean acceptsFluid(FluidStack stack) {
+        return fluidInput != null && fluidInput.accepts(stack);
+    }
+
+    public boolean canFill(ProcessorInputs container, FluidStack stack) {
+        return acceptsFluid(stack) && matchInputs(container, 0, 0, null, -1, ItemStack.EMPTY);
+    }
+
     private boolean matchInputs(Container container, int slot, int used, @Nullable int[] amounts,
                                 int insertSlot, ItemStack inserted) {
         if (slot == inputs.size()) {

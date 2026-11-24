@@ -41,8 +41,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     private final RecipeManager.CachedCheck<Container, MelterRecipe> recipes =
             RecipeManager.createCheck(NCRegistries.MELTING.get());
     private final SimpleContainer recipeInput = new SimpleContainer(1);
-    private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, stack -> true);
-    private final ProcessorFluidTanks fluids = new ProcessorFluidTanks(this, stack -> false, 0, 1);
+    private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, this::acceptsItem);
+    private final ProcessorFluidTanks fluids = new ProcessorFluidTanks(this, 1);
 
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> power);
     private double radiationEmission;
@@ -54,6 +54,15 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
     ItemStackHandler inventory() {
         return inventory;
+    }
+
+    private boolean acceptsItem(ItemStack stack) {
+        if (level == null || level.isClientSide) {
+            return true;
+        }
+        var manager = level.getRecipeManager();
+        return manager.getRecipeFor(NCRegistries.MELTING.get(), new SimpleContainer(stack), level).isPresent()
+                || MelterMaterialRecipes.find(manager, stack) != null;
     }
 
     ProcessorItemPorts itemPorts() {

@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.NuclearCraft;
+import nc.init.NCItemProcessors;
 import nc.init.NCRegistries;
 import nc.processor.ProcessorFluidTanks.Mode;
 import net.minecraft.core.BlockPos;
@@ -8,6 +9,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -91,6 +93,49 @@ public final class ProcessorFluidControlsGameTests {
                         && restored.fill(water(250), EXECUTE) == 250 && restored.getFluidInTank(1).getAmount() == 100,
                 "After reload, bidirectional access and the shared input policy are both preserved");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void smartInputPairsFluidsAndMixedIngredientsWithoutRequiringAFinishedBatch(GameTestHelper helper) {
+        helper.setBlock(MACHINE, NCRegistries.ENRICHER.get());
+        helper.setBlock(MACHINE.east(), NCItemProcessors.Machine.INFUSER.block());
+        helper.setBlock(MACHINE.west(), NCRegistries.SALT_MIXER.get());
+        var enricher = helper.getBlockEntity(MACHINE);
+        var infuser = helper.getBlockEntity(MACHINE.east());
+        var mixer = helper.getBlockEntity(MACHINE.west());
+
+        var enricherItems = enricher.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var enricherFluids = fluids(enricher, Direction.WEST);
+        ItemStack mushroom = item("glowing_mushroom");
+        ItemStack fluorite = item("fluorite_dust");
+        helper.assertTrue(enricherFluids.fill(water(1), EXECUTE) == 1
+                        && enricherItems.isItemValid(0, mushroom)
+                        && enricherItems.insertItem(0, mushroom, true).getCount() == 1
+                        && enricherItems.insertItem(0, fluorite, true).isEmpty() && enricherItems.getStackInSlot(0).isEmpty()
+                        && enricherItems.insertItem(0, fluorite, false).isEmpty(),
+                "The items are valid ingredients, but water accepts only fluorite during the transfer");
+
+        var infuserItems = infuser.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var infuserFluids = fluids(infuser, Direction.SOUTH);
+        helper.assertTrue(infuserItems.insertItem(0, item("leu_235_pellet"), false).isEmpty()
+                        && infuserFluids.isFluidValid(0, fluid("heavy_water", 10))
+                        && infuserFluids.fill(fluid("heavy_water", 10), SIMULATE) == 0
+                        && infuserFluids.fill(fluid("oxygen", 1), SIMULATE) == 1
+                        && infuserFluids.getFluidInTank(0).isEmpty()
+                        && infuserFluids.fill(fluid("oxygen", 1), EXECUTE) == 1,
+                "The Infuser selects compatible fluid by type and accepts less than a full batch");
+
+        var mixerFluids = fluids(mixer, Direction.NORTH);
+        helper.assertTrue(mixerFluids.fill(fluid("potassium", 20), EXECUTE) == 20
+                        && mixerFluids.fill(fluid("lif", 5), EXECUTE) == 0
+                        && mixerFluids.fill(fluid("sodium", 1), EXECUTE) == 1
+                        && mixerFluids.getFluidInTank(1).isFluidStackIdentical(fluid("sodium", 1)),
+                "Two fluid tanks reject an incompatible pair and accept the reversed compatible pair");
+        helper.succeed();
+    }
+
+    private static ItemStack item(String id) {
+        return new ItemStack(ForgeRegistries.ITEMS.getValue(NuclearCraft.id(id)));
     }
 
     @GameTest(template = "empty")

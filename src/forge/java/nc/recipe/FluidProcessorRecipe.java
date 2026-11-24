@@ -36,6 +36,35 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
         return item != null && item.accepts(stack);
     }
 
+    default boolean acceptsFluid(FluidStack stack) {
+        return inputs().stream().anyMatch(ingredient -> ingredient.accepts(stack));
+    }
+
+    default boolean canInsertItem(ProcessorInputs processor, ItemStack stack) {
+        return acceptsItem(stack) && canPair(processor.fluid(), processor.secondFluid());
+    }
+
+    default boolean canFill(ProcessorInputs processor, int tank, FluidStack stack) {
+        ItemStack item = processor.getItem(0);
+        return (item.isEmpty() || acceptsItem(item))
+                && (tank == 0 ? canPair(stack, processor.secondFluid()) : canPair(processor.fluid(), stack));
+    }
+
+    private boolean canPair(FluidStack first, FluidStack second) {
+        var ingredients = inputs();
+        FluidIngredient left = ingredients.get(0);
+        if (ingredients.size() == 1) {
+            return acceptsPartial(left, first);
+        }
+        FluidIngredient right = ingredients.get(1);
+        return (acceptsPartial(left, first) && acceptsPartial(right, second))
+                || (acceptsPartial(right, first) && acceptsPartial(left, second));
+    }
+
+    private static boolean acceptsPartial(FluidIngredient ingredient, FluidStack stack) {
+        return stack.isEmpty() || ingredient.accepts(stack);
+    }
+
     default boolean inOrder(ProcessorInputs processor) {
         var inputs = inputs();
         return inputs.get(0).matches(processor.fluid())

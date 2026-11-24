@@ -3,6 +3,7 @@ package nc.processor;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
+import nc.init.NCItemProcessors;
 import nc.init.NCRadiation;
 import nc.radiation.ScrubberEnvironment;
 import nc.radiation.ScrubberSettings;
@@ -36,14 +37,15 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     private static final int ENVIRONMENT_INTERVAL = 400;
     private static final int DEFAULT_CAPACITY = 19_200_000;
 
-    private final ProcessorFluidTanks tanks = new ProcessorFluidTanks(this, this::acceptsFluid, 1);
+    private final ProcessorFluidTanks tanks = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, 1, 1);
     private final ProcessorEnergy power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::capacity);
     private final ProcessorInputs input = new ProcessorInputs(1);
     private final ItemStackHandler inventory = new ItemStackHandler(2) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return slot == 0 && recipes().stream().anyMatch(recipe -> recipe.acceptsItem(stack)
-                    && (tanks.stored(0).isEmpty() || recipe.acceptsFluid(tanks.stored(0))));
+                    && (!NCItemProcessors.smartProcessorInput() || ItemStack.isSameItemSameTags(stack, getStackInSlot(0))
+                    || tanks.stored(0).isEmpty() || recipe.acceptsFluid(tanks.stored(0))));
         }
 
         @Override
@@ -51,7 +53,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             setChanged();
         }
     };
-    private final ProcessorItemPorts itemPorts = new ProcessorItemPorts(this, inventory, 1, null, false);
+    private final ProcessorItemPorts itemPorts = new ProcessorItemPorts(this, inventory, this::isIngredient, 1, null, false);
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private boolean redstoneControl;
 
@@ -206,10 +208,19 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         return level == null ? List.of() : level.getRecipeManager().getAllRecipesFor(NCRadiation.SCRUBBER_RECIPES.get());
     }
 
+    private boolean isIngredient(ItemStack stack) {
+        return recipes().stream().anyMatch(recipe -> recipe.acceptsItem(stack));
+    }
+
     private boolean acceptsFluid(FluidStack stack) {
+        return recipes().stream().anyMatch(recipe -> recipe.acceptsFluid(stack));
+    }
+
+    private boolean canFill(int tank, FluidStack stack) {
         ItemStack items = inventory.getStackInSlot(0);
         return recipes().stream().anyMatch(recipe -> recipe.acceptsFluid(stack)
-                && (items.isEmpty() || recipe.acceptsItem(items)));
+                && (!NCItemProcessors.smartProcessorInput() || tanks.stored(tank).isFluidEqual(stack)
+                || items.isEmpty() || recipe.acceptsItem(items)));
     }
 
     private int capacity() {

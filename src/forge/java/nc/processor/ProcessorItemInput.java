@@ -11,10 +11,15 @@ final class ProcessorItemInput extends ItemStackHandler {
     final ProcessorItemPorts ports;
 
     ProcessorItemInput(UpgradableProcessorBlockEntity owner, int inputs, Predicate<ItemStack> accepted) {
+        this(owner, inputs, accepted, accepted);
+    }
+
+    ProcessorItemInput(UpgradableProcessorBlockEntity owner, int inputs, Predicate<ItemStack> ingredient,
+                       Predicate<ItemStack> accepted) {
         super(inputs);
         this.owner = owner;
         this.accepted = accepted;
-        ports = new ProcessorItemPorts(owner, this, inputs, owner.upgrades, true);
+        ports = new ProcessorItemPorts(owner, this, ingredient, inputs, owner.upgrades, true);
     }
 
     @Override

@@ -26,6 +26,7 @@ public final class ProcessorFluidTanks {
     private final BlockEntity owner;
     private final FluidTank[] tanks;
     private final int inputs;
+    private final InputValidator canFill;
     private final int[] sideModes;
     private final OutputMode[] outputModes;
     private int voidUnusable;
@@ -34,20 +35,21 @@ public final class ProcessorFluidTanks {
     private Face unsided;
     private boolean transferring;
 
-    ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> accepted, int outputs) {
-        this(owner, accepted, 1, outputs);
+    ProcessorFluidTanks(BlockEntity owner, int outputs) {
+        this(owner, stack -> false, (tank, stack) -> false, 0, outputs);
     }
 
-    ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> accepted, int inputs, int outputs) {
+    ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> ingredient, InputValidator canFill, int inputs, int outputs) {
         this.owner = owner;
         this.inputs = inputs;
+        this.canFill = canFill;
         separateInputs = inputs > 1;
         tanks = new FluidTank[inputs + outputs];
         sideModes = new int[tanks.length];
         outputModes = new OutputMode[outputs];
         Arrays.fill(outputModes, OutputMode.HOLD);
         for (int index = 0; index < tanks.length; index++) {
-            tanks[index] = new FluidTank(CAPACITY, index < inputs ? accepted : stack -> true) {
+            tanks[index] = new FluidTank(CAPACITY, index < inputs ? ingredient : stack -> true) {
                 @Override
                 protected void onContentsChanged() {
                     owner.setChanged();
@@ -56,6 +58,11 @@ public final class ProcessorFluidTanks {
             sideModes[index] = defaultModes(index);
         }
         revive();
+    }
+
+    @FunctionalInterface
+    interface InputValidator {
+        boolean test(int tank, FluidStack stack);
     }
 
     FluidStack stored(int index) {
@@ -445,7 +452,7 @@ public final class ProcessorFluidTanks {
             }
             int empty = -1;
             for (int index = 0; index < inputs; index++) {
-                if (!modes[index].canFill() || !tanks[index].isFluidValid(stack)) {
+                if (!modes[index].canFill() || !canFill.test(index, stack)) {
                     continue;
                 }
                 FluidStack contents = tanks[index].getFluid();

@@ -4,6 +4,7 @@ import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
+import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.recipe.ItemProcessorRecipe;
@@ -60,7 +61,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         recipes = RecipeManager.createCheck(machine.recipes());
         smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
         input = new ProcessorInputs(machine.inputs());
-        fluid = machine.tank() == null ? null : new ProcessorFluidTanks(this, this::acceptsFluid,
+        fluid = machine.tank() == null ? null : new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill,
                 machine.hasFluidInput() ? 1 : 0, machine.hasFluidOutput() ? 1 : 0);
         inventory = new ItemStackHandler(machine.slots()) {
             @Override
@@ -71,14 +72,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 if (level == null || level.isClientSide) {
                     return true;
                 }
-                refreshInput();
-                RecipeManager manager = level.getRecipeManager();
-                return manager.getAllRecipesFor(machine.recipes()).stream().anyMatch(recipe -> recipe.canInsert(input, slot, stack))
-                        || machine == Machine.PRESSURIZER && PressurizerPlateRecipes.forServer(manager).stream()
-                        .anyMatch(recipe -> recipe.canInsert(input, slot, stack))
-                        || (smeltingRecipes != null && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level)
-                        .map(recipe -> electricSmelting(recipe, level).canInsert(input, slot, stack))
-                        .orElse(false));
+                return acceptsItem(slot, stack);
             }
 
             @Override
@@ -86,7 +80,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 setChanged();
             }
         };
-        itemPorts = new ProcessorItemPorts(this, inventory, machine.inputs(), upgrades, false);
+        itemPorts = new ProcessorItemPorts(this, inventory, this::isIngredient, machine.inputs(), upgrades, false);
     }
 
     ProcessorItemPorts itemPorts() {
@@ -117,9 +111,47 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
     }
 
+    private boolean acceptsItem(int slot, ItemStack stack) {
+        if (!NCItemProcessors.smartProcessorInput() || ItemStack.isSameItemSameTags(stack, inventory.getStackInSlot(slot))) {
+            return isIngredient(stack);
+        }
+        RecipeManager manager = level.getRecipeManager();
+        refreshInput();
+        return manager.getAllRecipesFor(machine.recipes()).stream()
+                .anyMatch(recipe -> (input.fluid().isEmpty() || recipe.acceptsFluid(input.fluid()))
+                        && recipe.canInsert(input, slot, stack)) || acceptsSupplementalItem(manager, stack);
+    }
+
+    private boolean isIngredient(ItemStack stack) {
+        if (level == null || level.isClientSide) {
+            return true;
+        }
+        RecipeManager manager = level.getRecipeManager();
+        return manager.getAllRecipesFor(machine.recipes()).stream().anyMatch(recipe -> recipe.acceptsItem(stack))
+                || acceptsSupplementalItem(manager, stack);
+    }
+
+    private boolean acceptsSupplementalItem(RecipeManager manager, ItemStack stack) {
+        return (machine == Machine.PRESSURIZER
+                && PressurizerPlateRecipes.forServer(manager).stream().anyMatch(recipe -> recipe.acceptsItem(stack)))
+                || (smeltingRecipes != null && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level).isPresent());
+    }
+
     private boolean acceptsFluid(FluidStack stack) {
         return level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
-                .map(ItemProcessorRecipe::fluidInput).filter(Objects::nonNull).anyMatch(ingredient -> ingredient.accepts(stack));
+                .anyMatch(recipe -> recipe.acceptsFluid(stack));
+    }
+
+    private boolean canFill(int tank, FluidStack stack) {
+        if (level == null) {
+            return false;
+        }
+        if (!NCItemProcessors.smartProcessorInput() || fluid.stored(tank).isFluidEqual(stack)) {
+            return acceptsFluid(stack);
+        }
+        refreshInput();
+        return level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+                .anyMatch(recipe -> recipe.canFill(input, stack));
     }
 
     private @Nullable ItemProcessorRecipe findRecipe(Level level) {

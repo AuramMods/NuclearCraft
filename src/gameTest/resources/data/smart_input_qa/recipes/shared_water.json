@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:chemical_reactor",
+    "fluid_inputs": [
+        { "tag": "minecraft:water", "amount": 500 },
+        { "fluid": "minecraft:water", "amount": 100 }
+    ],
+    "results": [
+        { "fluid": "nuclearcraft:heavy_water", "amount": 1 }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10
+}

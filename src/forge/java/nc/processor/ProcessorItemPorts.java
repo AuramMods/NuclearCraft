@@ -18,6 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 public final class ProcessorItemPorts {
     static final Direction[] SIDES = Direction.values();
@@ -25,6 +26,7 @@ public final class ProcessorItemPorts {
 
     private final BlockEntity owner;
     private final ItemStackHandler inventory;
+    private final Predicate<ItemStack> ingredient;
     private final @Nullable ProcessorUpgrades upgrades;
     private final int inputs;
     private final int slots;
@@ -37,10 +39,11 @@ public final class ProcessorItemPorts {
     private boolean autoOutput;
     private boolean pushing;
 
-    ProcessorItemPorts(BlockEntity owner, ItemStackHandler inventory, int inputs, @Nullable ProcessorUpgrades upgrades,
-                       boolean inputOnly) {
+    ProcessorItemPorts(BlockEntity owner, ItemStackHandler inventory, Predicate<ItemStack> ingredient, int inputs,
+                       @Nullable ProcessorUpgrades upgrades, boolean inputOnly) {
         this.owner = owner;
         this.inventory = inventory;
+        this.ingredient = ingredient;
         this.inputs = inputs;
         this.upgrades = upgrades;
         this.inputOnly = inputOnly;
@@ -393,7 +396,8 @@ public final class ProcessorItemPorts {
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return !pushing && available(slot).input && !isOutput(slot) && handler(slot).isItemValid(index(slot), stack);
+            return available(slot).input && !stack.isEmpty()
+                    && (slot < inputs ? ingredient.test(stack) : !isOutput(slot) && handler(slot).isItemValid(index(slot), stack));
         }
     }
 }

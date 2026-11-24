@@ -33,7 +33,8 @@ public final class ChemicalReactorGameTests {
     public static void chemicalReactorLoadsTheLegacyCatalog(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var recipes = manager.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get());
-        helper.assertTrue(recipes.size() == 120, "All 120 Chemical Reactor recipes must load in clean Forge");
+        helper.assertTrue(recipes.stream().filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).count() == 120,
+                "All 120 Chemical Reactor recipes must load in clean Forge");
         helper.assertTrue(recipes.stream().filter(recipe -> recipe.id().getPath().endsWith("_fluoride")).count() == 49,
                 "All 49 isotope and fuel fluorination recipes must be present");
         helper.assertTrue(manager.byKey(NuclearCraft.id("crafting/chemical_reactor")).isPresent(),

@@ -3,6 +3,7 @@ package nc.processor;
 import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
+import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Rate;
 
 import nc.init.NCRegistries;
@@ -59,8 +60,8 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
-        itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::acceptsItem);
-        fluids = new ProcessorFluidTanks(this, this::acceptsFluid, machine.inputs, machine.outputs);
+        itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::isIngredient, this::acceptsItem);
+        fluids = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, machine.inputs, machine.outputs);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
@@ -74,12 +75,36 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
 
     private boolean acceptsFluid(FluidStack stack) {
         return level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
-                .anyMatch(recipe -> recipe.inputs().stream().anyMatch(ingredient -> ingredient.accepts(stack)));
+                .anyMatch(recipe -> recipe.acceptsFluid(stack));
+    }
+
+    private boolean canFill(int tank, FluidStack stack) {
+        if (level == null) {
+            return false;
+        }
+        if (!NCItemProcessors.smartProcessorInput() || fluids.stored(tank).isFluidEqual(stack)) {
+            return acceptsFluid(stack);
+        }
+        refreshInput();
+        return level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+                .anyMatch(recipe -> recipe.canFill(input, tank, stack));
+    }
+
+    private boolean isIngredient(ItemStack stack) {
+        return level == null || level.isClientSide || level.getRecipeManager().getAllRecipesFor(machine.recipes())
+                .stream().anyMatch(recipe -> recipe.acceptsItem(stack));
     }
 
     private boolean acceptsItem(ItemStack stack) {
-        return level == null || level.isClientSide || level.getRecipeManager().getAllRecipesFor(machine.recipes())
-                .stream().anyMatch(recipe -> recipe.acceptsItem(stack));
+        if (level == null || level.isClientSide) {
+            return true;
+        }
+        if (!NCItemProcessors.smartProcessorInput() || ItemStack.isSameItemSameTags(stack, itemInput.getStackInSlot(0))) {
+            return isIngredient(stack);
+        }
+        refreshInput();
+        return level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+                .anyMatch(recipe -> recipe.canInsertItem(input, stack));
     }
 
     public ItemStackHandler inventory() {
