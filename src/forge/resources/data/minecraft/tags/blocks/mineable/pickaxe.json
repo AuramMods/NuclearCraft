@@ -252,6 +252,9 @@
         "nuclearcraft:distiller_liquid_distributor",
         "nuclearcraft:steel_sieve_assembly",
         "nuclearcraft:polytetrafluoroethene_sieve_assembly",
-        "nuclearcraft:hastelloy_sieve_assembly"
+        "nuclearcraft:hastelloy_sieve_assembly",
+        "nuclearcraft:infiltrator_controller",
+        "nuclearcraft:infiltrator_pressure_chamber",
+        "nuclearcraft:infiltrator_heating_unit"
     ]
 }

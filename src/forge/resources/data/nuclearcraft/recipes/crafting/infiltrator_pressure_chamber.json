@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BAB",
+        "ECE",
+        "BAB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "A": {
+            "item": "nuclearcraft:actuator"
+        },
+        "E": {
+            "tag": "forge:ingots/extreme"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:infiltrator_pressure_chamber"
+    }
+}

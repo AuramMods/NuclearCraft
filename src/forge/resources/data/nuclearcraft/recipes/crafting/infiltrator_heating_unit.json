@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BSB",
+        "TCT",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "T": {
+            "tag": "forge:ingots/thermoconducting"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:infiltrator_heating_unit"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "lit=true": {
+            "model": "nuclearcraft:block/infiltrator_heating_unit_on"
+        },
+        "lit=false": {
+            "model": "nuclearcraft:block/infiltrator_heating_unit_off"
+        }
+    }
+}

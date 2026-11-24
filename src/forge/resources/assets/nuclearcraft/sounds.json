@@ -2,5 +2,9 @@
     "block.distiller.run": {
         "subtitle": "subtitles.nuclearcraft.distiller",
         "sounds": ["nuclearcraft:block/distiller_run"]
+    },
+    "block.infiltrator.run": {
+        "subtitle": "subtitles.nuclearcraft.infiltrator",
+        "sounds": ["nuclearcraft:block/infiltrator_run"]
     }
 }

@@ -1,0 +1,6 @@
+{
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "nuclearcraft:block/machine/infiltrator/heating_unit_off"
+    }
+}

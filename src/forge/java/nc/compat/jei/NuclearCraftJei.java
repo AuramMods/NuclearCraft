@@ -40,6 +40,8 @@ import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.DecayPoolRecipe;
 import nc.recipe.DistillerRecipe;
+import nc.recipe.InfiltratorPressureRecipe;
+import nc.recipe.InfiltratorRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -112,6 +114,10 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "decay_pool_heat_source", DecayPoolRecipe.class);
     private static final RecipeType<DistillerRecipe> DISTILLER =
             RecipeType.create(NuclearCraft.MOD_ID, "multiblock_distiller", DistillerRecipe.class);
+    private static final RecipeType<InfiltratorRecipe> INFILTRATOR =
+            RecipeType.create(NuclearCraft.MOD_ID, "multiblock_infiltrator", InfiltratorRecipe.class);
+    private static final RecipeType<InfiltratorPressureRecipe> PRESSURE =
+            RecipeType.create(NuclearCraft.MOD_ID, "infiltrator_pressure_fluid", InfiltratorPressureRecipe.class);
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -141,6 +147,14 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.distiller",
                                 decimal(NCMachines.distillerTime() * recipe.timeMultiplier() / recipe.batchFactor()),
                                 decimal(NCMachines.distillerPower() * recipe.powerMultiplier()), recipe.sieveTrays())),
+                new Category<>(INFILTRATOR, NCMachines.block(Part.INFILTRATOR), gui, NuclearCraftJei::infiltratorRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.infiltrator",
+                                decimal(NCMachines.infiltratorTime() * recipe.time()),
+                                decimal(NCMachines.infiltratorPower() * recipe.power()),
+                                decimal(recipe.heatingBonus() * 100))),
+                new Category<>(PRESSURE, NCMachines.block(Part.PRESSURE_CHAMBER), gui,
+                        (layout, recipe) -> fluidSlot(layout, INPUT, 42, recipe.fluid().alternatives()),
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.infiltrator_pressure", decimal(100 * recipe.efficiency()))),
                 new Category<>(DECAY_POOL_SOURCE, NCMachines.block(Part.CONTAINER), gui, NuclearCraftJei::poolRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool_source",
                                 decimal(recipe.heat()), decimal(recipe.lifetime()))),
@@ -240,6 +254,9 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(DECAY_POOL, recipes.getAllRecipesFor(NCMachines.POOL_RECIPES.get()));
         registration.addRecipes(DISTILLER, recipes.getAllRecipesFor(NCMachines.DISTILLER_RECIPES.get()));
+        registration.addRecipes(INFILTRATOR, recipes.getAllRecipesFor(NCMachines.INFILTRATOR_RECIPES.get()));
+        registration.addRecipes(PRESSURE, recipes.getAllRecipesFor(NCMachines.PRESSURE_RECIPES.get()).stream()
+                .filter(recipe -> !recipe.fluid().alternatives().isEmpty()).toList());
         registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
@@ -269,6 +286,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCMachines.block(Part.DECAY_POOL), DECAY_POOL, DECAY_POOL_SOURCE);
         registration.addRecipeCatalyst(NCMachines.block(Part.DISTILLER), DISTILLER);
+        registration.addRecipeCatalyst(NCMachines.block(Part.INFILTRATOR), INFILTRATOR, PRESSURE);
+        registration.addRecipeCatalyst(NCMachines.block(Part.PRESSURE_CHAMBER), PRESSURE);
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
@@ -440,6 +459,18 @@ public final class NuclearCraftJei implements IModPlugin {
         }
     }
 
+    private static void infiltratorRecipe(IRecipeLayoutBuilder layout, InfiltratorRecipe recipe) {
+        for (int slot = 0; slot < recipe.items().size(); slot++) {
+            var input = recipe.items().get(slot);
+            layout.addSlot(INPUT, 20 + slot * 20, 12).setStandardSlotBackground().addItemStacks(
+                    Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
+        }
+        for (int slot = 0; slot < recipe.fluids().size(); slot++) {
+            fluidSlot(layout, INPUT, 20 + slot * 20, 33, recipe.fluids().get(slot).alternatives());
+        }
+        layout.addSlot(OUTPUT, 112, 22).setOutputSlotBackground().addItemStack(recipe.product());
+    }
+
     private static final class Category<R> implements IRecipeCategory<R> {
         private final RecipeType<R> type;
         private final Block block;
@@ -464,7 +495,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public int getWidth() {
             return switch (type.getUid().getPath()) {
-                case "fuel_reprocessor", "multiblock_distiller" -> 178;
+                case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator" -> 178;
                 case "rock_crusher", "extractor", "centrifuge" -> 166;
                 default -> 140;
             };
@@ -473,7 +504,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public int getHeight() {
             return switch (type.getUid().getPath()) {
-                case "fuel_reprocessor", "assembler", "multiblock_distiller" -> 70;
+                case "fuel_reprocessor", "assembler", "multiblock_distiller", "multiblock_infiltrator" -> 70;
                 case "electrolyzer", "centrifuge" -> 58;
                 default -> 48;
             };

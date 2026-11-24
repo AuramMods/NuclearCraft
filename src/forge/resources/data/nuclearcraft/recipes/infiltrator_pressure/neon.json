@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:infiltrator_pressure_fluid",
+    "fluid_input": {
+        "tag": "forge:neon",
+        "amount": 1
+    },
+    "efficiency": 0.9
+}

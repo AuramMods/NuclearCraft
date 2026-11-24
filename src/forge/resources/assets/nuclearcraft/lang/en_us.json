@@ -2528,5 +2528,21 @@
     "gui.nuclearcraft.distiller.stored": "%s / %s FE",
     "gui.nuclearcraft.distiller.power": "%s FE/t",
     "gui.nuclearcraft.jei.distiller": "%s base ticks, %s FE/t, %s trays",
-    "subtitles.nuclearcraft.distiller": "Distiller runs"
+    "subtitles.nuclearcraft.distiller": "Distiller runs",
+    "block.nuclearcraft.infiltrator_controller": "Infiltrator Controller",
+    "block.nuclearcraft.infiltrator_pressure_chamber": "Infiltrator Pressure Chamber",
+    "block.nuclearcraft.infiltrator_heating_unit": "Infiltrator Heating Unit",
+    "message.nuclearcraft.infiltrator.dimensions": "The Infiltrator has invalid dimensions.",
+    "message.nuclearcraft.infiltrator.unloaded": "Part of the Infiltrator is in an unloaded chunk.",
+    "message.nuclearcraft.infiltrator.wall": "The Infiltrator needs a complete shell with one controller and valid wall parts.",
+    "message.nuclearcraft.infiltrator.interior": "The Infiltrator contains a part that does not belong in its interior.",
+    "gui.nuclearcraft.infiltrator.inputs": "Inputs",
+    "gui.nuclearcraft.infiltrator.output": "Output",
+    "gui.nuclearcraft.infiltrator.pressure_short": "P.",
+    "gui.nuclearcraft.infiltrator.chambers": "Pressure chambers %s",
+    "gui.nuclearcraft.infiltrator.heating": "Heating bonus +%s%%",
+    "gui.nuclearcraft.infiltrator.pressure": "Pressure fluid efficiency %s%%",
+    "gui.nuclearcraft.jei.infiltrator": "%s base ticks, %s FE/t, heating +%s%%",
+    "gui.nuclearcraft.jei.infiltrator_pressure": "Pressure efficiency %s%%",
+    "subtitles.nuclearcraft.infiltrator": "Infiltrator runs"
 }

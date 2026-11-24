@@ -44,15 +44,19 @@ public class MachinePartBlock extends Block {
         DISTILLER("distiller_controller"), SIEVE_TRAY("distiller_sieve_tray"),
         STEEL_SIEVE("steel_sieve_assembly"), PTFE_SIEVE("polytetrafluoroethene_sieve_assembly"),
         HASTELLOY_SIEVE("hastelloy_sieve_assembly"), REFLUX("distiller_reflux_unit"),
-        REBOILER("distiller_reboiling_unit"), LIQUID_DISTRIBUTOR("distiller_liquid_distributor");
+        REBOILER("distiller_reboiling_unit"), LIQUID_DISTRIBUTOR("distiller_liquid_distributor"),
+        INFILTRATOR("infiltrator_controller"), PRESSURE_CHAMBER("infiltrator_pressure_chamber"),
+        INFILTRATOR_HEATER("infiltrator_heating_unit");
 
         private final String id;
 
         Part(String id) { this.id = id; }
         public String id() { return id; }
         boolean port() { return this == PROCESS || this == RESERVOIR || this == POWER; }
-        boolean controller() { return this == DECAY_POOL || this == DISTILLER; }
-        boolean internal() { return this == CONTAINER || this == SIEVE_TRAY || sieve(); }
+        boolean controller() { return this == DECAY_POOL || this == DISTILLER || this == INFILTRATOR; }
+        boolean internal() {
+            return this == CONTAINER || this == SIEVE_TRAY || sieve() || this == PRESSURE_CHAMBER || this == INFILTRATOR_HEATER;
+        }
         boolean sieve() { return this == STEEL_SIEVE || this == PTFE_SIEVE || this == HASTELLOY_SIEVE; }
         boolean distillerWall() { return this == REFLUX || this == REBOILER || this == LIQUID_DISTRIBUTOR; }
         public boolean wallEntity() { return port() || controller(); }
@@ -141,9 +145,9 @@ public class MachinePartBlock extends Block {
         }
     }
 
-    public static final class Reboiler extends MachinePartBlock {
-        public Reboiler(Properties properties) {
-            super(properties, Part.REBOILER);
+    public static final class Active extends MachinePartBlock {
+        public Active(Properties properties, Part part) {
+            super(properties, part);
             registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.LIT, false));
         }
 
@@ -171,6 +175,7 @@ public class MachinePartBlock extends Block {
             return switch (part(state)) {
                 case DECAY_POOL -> new DecayPool(pos, state);
                 case DISTILLER -> new Distiller(pos, state);
+                case INFILTRATOR -> new Infiltrator(pos, state);
                 default -> new MachinePort(pos, state);
             };
         }

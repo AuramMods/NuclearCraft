@@ -1,0 +1,29 @@
+{
+    "type": "nuclearcraft:multiblock_infiltrator",
+    "item_inputs": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:sintered_zirconia"
+            },
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "tag": "forge:dusts/zirconia"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:polyphenylene_sulfide",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:zirfon"
+    },
+    "time_multiplier": 1,
+    "power_multiplier": 1,
+    "heating_bonus": 0
+}

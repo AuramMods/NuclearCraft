@@ -16,6 +16,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraftforge.items.IItemHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -75,6 +76,10 @@ abstract class MachineController extends BlockEntity {
 
     abstract int tankCount(boolean product);
     abstract FluidTank tankFor(boolean product, int index);
+    @Nullable IItemHandler processItems() { return null; }
+    int itemCount(boolean output) { return 0; }
+    @Nullable FluidTank pressureTank() { return null; }
+    boolean indexedProcessPorts() { return false; }
     abstract long energyCapacity();
     abstract void processTick(ServerLevel server);
     void afterTransfers(ServerLevel server) {}
@@ -142,6 +147,8 @@ abstract class MachineController extends BlockEntity {
         int capacity = (int) Math.min(Integer.MAX_VALUE, volume * 1000);
         for (int i = 0; i < tankCount(false); i++) tankFor(false, i).setCapacity(capacity);
         for (int i = 0; i < tankCount(true); i++) tankFor(true, i).setCapacity(capacity);
+        var pressure = pressureTank();
+        if (pressure != null) pressure.setCapacity(capacity);
         var state = getBlockState();
         server.setBlock(worldPosition, state.setValue(BlockStateProperties.FACING, found.outward(worldPosition)),
                 Block.UPDATE_CLIENTS);

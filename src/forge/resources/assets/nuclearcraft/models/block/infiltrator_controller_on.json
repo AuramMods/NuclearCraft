@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/infiltrator/controller_front_on",
+        "south": "nuclearcraft:block/machine/infiltrator/controller_back",
+        "east": "nuclearcraft:block/machine/infiltrator/controller_side",
+        "west": "nuclearcraft:block/machine/infiltrator/controller_side",
+        "up": "nuclearcraft:block/machine/infiltrator/controller_top",
+        "down": "nuclearcraft:block/machine/infiltrator/controller_bottom",
+        "particle": "nuclearcraft:block/machine/infiltrator/controller_front_on"
+    }
+}

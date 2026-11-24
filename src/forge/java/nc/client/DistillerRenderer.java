@@ -5,35 +5,25 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import nc.init.NCMachines;
 import nc.multiblock.machine.Distiller;
 import nc.multiblock.machine.Distiller.RenderVolume;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
-import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidStack;
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
 
 public final class DistillerRenderer implements BlockEntityRenderer<Distiller> {
     private static final float PIXEL = 1F / 16F;
-    private final Map<Distiller, List<CornerSound>> sounds = new WeakHashMap<>();
+    private final MachineVolumeSounds<Distiller> sounds = new MachineVolumeSounds<>(NCMachines.DISTILLER_RUN,
+            tower -> tower.renderVolume() == null ? 0 : tower.renderVolume().soundVolume());
 
     @Override public void render(Distiller tower, float partialTick, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         var volume = tower.renderVolume();
         if (volume == null || volume.capacity() <= 0) return;
-        playSounds(tower, volume);
+        sounds.play(tower, tower.getBlockPos().offset(volume.origin()), volume.width(), volume.height(), volume.depth());
         var contents = List.of(volume.first(), volume.second());
         if (contents.stream().allMatch(FluidStack::isEmpty)) return;
 
@@ -94,29 +84,8 @@ public final class DistillerRenderer implements BlockEntityRenderer<Distiller> {
         if (width <= 0 || height <= 0 || depth <= 0 || opacity <= 0) return;
         pose.pushPose();
         pose.translate(x, y, z);
-        DecayPoolRenderer.renderLayer(fluid, pose.last(), vertices, (float) width, (float) depth, 0, (float) height, opacity);
+        FluidVolumeRenderer.renderLayer(fluid, pose.last(), vertices, (float) width, (float) depth, 0, (float) height, opacity);
         pose.popPose();
-    }
-
-    private void playSounds(Distiller tower, RenderVolume volume) {
-        var minecraft = Minecraft.getInstance();
-        if (volume.soundVolume() <= 0 || minecraft.options.getSoundSourceVolume(SoundSource.MASTER) == 0
-                || minecraft.options.getSoundSourceVolume(SoundSource.BLOCKS) == 0) return;
-        var running = sounds.get(tower);
-        if (running != null && running.stream().anyMatch(sound -> !sound.isStopped())) return;
-        var min = tower.getBlockPos().offset(volume.origin());
-        var corners = new HashSet<BlockPos>();
-        for (int i = 0; i < 8; i++) {
-            corners.add(min.offset((i & 1) == 0 ? 0 : volume.width() - 1,
-                    (i & 2) == 0 ? 0 : volume.height() - 1, (i & 4) == 0 ? 0 : volume.depth() - 1));
-        }
-        var next = new ArrayList<CornerSound>(corners.size());
-        for (var corner : corners) {
-            var sound = new CornerSound(tower, corner, volume.soundVolume());
-            minecraft.getSoundManager().play(sound);
-            next.add(sound);
-        }
-        sounds.put(tower, next);
     }
 
     @Override public boolean shouldRenderOffScreen(Distiller tower) { return true; }
@@ -125,30 +94,6 @@ public final class DistillerRenderer implements BlockEntityRenderer<Distiller> {
         var volume = tower.renderVolume();
         if (volume == null) return false;
         var min = tower.getBlockPos().offset(volume.origin());
-        double x = Mth.clamp(camera.x, min.getX(), min.getX() + volume.width());
-        double y = Mth.clamp(camera.y, min.getY(), min.getY() + volume.height());
-        double z = Mth.clamp(camera.z, min.getZ(), min.getZ() + volume.depth());
-        return camera.distanceToSqr(x, y, z) <= (double) getViewDistance() * getViewDistance();
-    }
-
-    private static final class CornerSound extends AbstractTickableSoundInstance {
-        private final WeakReference<Distiller> tower;
-
-        CornerSound(Distiller tower, BlockPos corner, float volume) {
-            super(NCMachines.DISTILLER_RUN.get(), SoundSource.BLOCKS, RandomSource.create());
-            this.tower = new WeakReference<>(tower);
-            this.volume = volume;
-            x = corner.getX() + 0.5;
-            y = corner.getY() + 0.5;
-            z = corner.getZ() + 0.5;
-            looping = true;
-        }
-
-        @Override public void tick() {
-            var owner = tower.get();
-            var state = owner == null || owner.isRemoved() ? null : owner.renderVolume();
-            if (state == null || state.soundVolume() <= 0) stop();
-            else volume = state.soundVolume();
-        }
+        return FluidVolumeRenderer.visible(camera, min, volume.width(), volume.height(), volume.depth(), getViewDistance());
     }
 }

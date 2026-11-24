@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BEB",
+        "TCT",
+        "BEB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "T": {
+            "tag": "forge:ingots/thermoconducting"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:infiltrator_controller"
+    }
+}

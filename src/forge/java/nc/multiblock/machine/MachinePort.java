@@ -31,6 +31,7 @@ public final class MachinePort extends BlockEntity {
     private final Part part;
     private @Nullable Binding binding;
     private int tankIndex;
+    private int itemIndex;
     private LazyOptional<IItemHandler> items = LazyOptional.empty();
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
     private LazyOptional<IEnergyStorage> energy = LazyOptional.empty();
@@ -40,7 +41,7 @@ public final class MachinePort extends BlockEntity {
         part = MachinePartBlock.part(state);
     }
 
-    private record Binding(MachineController controller, Direction side, Mode mode, int tankIndex) {
+    private record Binding(MachineController controller, Direction side, Mode mode, int index) {
         DecayPool pool() { return (DecayPool) controller; }
     }
 
@@ -48,16 +49,28 @@ public final class MachinePort extends BlockEntity {
         clearBinding();
         var state = getBlockState().setValue(BlockStateProperties.FACING, side);
         Mode mode = state.getValue(MachinePartBlock.MODE);
-        if (part == Part.PROCESS && controller.tankCount(false) > 1 && !mode.fluid()) {
-            mode = mode.output() ? Mode.FLUID_OUT : Mode.FLUID_IN;
+        if (part == Part.PROCESS && controller.indexedProcessPorts() && slots(controller, mode) == 0) {
+            mode = switch (mode) {
+                case ITEM_IN -> Mode.FLUID_IN;
+                case ITEM_OUT -> Mode.FLUID_OUT;
+                case FLUID_IN -> Mode.ITEM_IN;
+                case FLUID_OUT -> Mode.ITEM_OUT;
+            };
             state = state.setValue(MachinePartBlock.MODE, mode);
         }
-        var next = new Binding(controller, side, mode, Math.min(tankIndex, controller.tankCount(mode.output()) - 1));
+        int selected = Math.min(mode.fluid() ? tankIndex : itemIndex, Math.max(0, slots(controller, mode) - 1));
+        var next = new Binding(controller, side, mode, selected);
         binding = next;
-        if (part == Part.RESERVOIR) items = LazyOptional.of(() -> new ItemPort(next));
-        if (part == Part.RESERVOIR || part == Part.PROCESS && mode.fluid()) {
-            fluid = LazyOptional.of(() -> new FluidPort(next));
+        boolean decay = part == Part.RESERVOIR && controller instanceof DecayPool;
+        if (decay) items = LazyOptional.of(() -> new ReservoirItemPort(next));
+        if (part == Part.PROCESS && !mode.fluid() && slots(controller, mode) > 0) {
+            var handler = controller.processItems();
+            if (handler != null) items = LazyOptional.of(() -> new ProcessItemPort(next, handler));
         }
+        var tank = part == Part.RESERVOIR ? controller.pressureTank()
+                : part == Part.PROCESS && mode.fluid() && slots(controller, mode) > 0
+                        ? controller.tankFor(mode.output(), selected) : null;
+        if (decay || tank != null) fluid = LazyOptional.of(() -> new FluidPort(next, tank));
         if (part == Part.POWER) energy = LazyOptional.of(() -> new EnergyPort(next));
         if (level != null && state != getBlockState()) level.setBlock(worldPosition, state, Block.UPDATE_CLIENTS);
         notifyNeighbor(side);
@@ -98,18 +111,23 @@ public final class MachinePort extends BlockEntity {
 
     @Nullable Component cycleSetting(boolean reverse) {
         var attached = binding;
-        if (part == Part.PROCESS && attached != null && attached.controller.tankCount(false) > 1 && level != null) {
-            int inputs = attached.controller.tankCount(false);
-            int outputs = attached.controller.tankCount(true);
-            int current = attached.mode.output() ? inputs + attached.tankIndex : attached.tankIndex;
-            int next = Math.floorMod(current + (reverse ? -1 : 1), inputs + outputs);
-            Mode mode = next < inputs ? Mode.FLUID_IN : Mode.FLUID_OUT;
-            tankIndex = next < inputs ? next : next - inputs;
+        if (part == Part.PROCESS && attached != null && attached.controller.indexedProcessPorts() && level != null) {
+            var controller = attached.controller;
+            var mode = attached.mode;
+            int index = attached.index + (reverse ? -1 : 1);
+            var modes = Mode.values();
+            while (index < 0 || index >= slots(controller, mode)) {
+                if (!reverse) index -= slots(controller, mode);
+                mode = modes[Math.floorMod(mode.ordinal() + (reverse ? -1 : 1), modes.length)];
+                if (reverse) index = slots(controller, mode) - 1;
+            }
+            if (mode.fluid()) tankIndex = index;
+            else itemIndex = index;
             level.setBlock(worldPosition, getBlockState().setValue(MachinePartBlock.MODE, mode), Block.UPDATE_ALL);
-            bind(attached.controller, attached.side);
+            bind(controller, attached.side);
             setChanged();
             return Component.translatable("message.nuclearcraft.machine.tank",
-                    Component.translatable("message.nuclearcraft.machine." + mode.getSerializedName()), tankIndex + 1);
+                    Component.translatable("message.nuclearcraft.machine." + mode.getSerializedName()), index + 1);
         }
         if (reverse) return null;
         var mode = cycleMode();
@@ -117,16 +135,23 @@ public final class MachinePort extends BlockEntity {
                 Component.translatable("message.nuclearcraft.machine." + mode.getSerializedName()));
     }
 
+    private static int slots(MachineController controller, Mode mode) {
+        return mode.fluid() ? controller.tankCount(mode.output()) : controller.itemCount(mode.output());
+    }
+
     @Override protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         if (tankIndex != 0) tag.putInt("tank_index", tankIndex);
+        if (itemIndex != 0) tag.putInt("slot_index", itemIndex);
     }
 
     @Override public void load(CompoundTag tag) {
         super.load(tag);
-        int selected = Math.max(0, tag.getInt("tank_index"));
-        if (tankIndex != selected) {
-            tankIndex = selected;
+        int selectedTank = Math.max(0, tag.getInt("tank_index"));
+        int selectedItem = Math.max(0, tag.getInt("slot_index"));
+        if (tankIndex != selectedTank || itemIndex != selectedItem) {
+            tankIndex = selectedTank;
+            itemIndex = selectedItem;
             var attached = binding;
             if (attached != null) bind(attached.controller, attached.side);
         }
@@ -194,9 +219,9 @@ public final class MachinePort extends BlockEntity {
         });
     }
 
-    private final class ItemPort implements IItemHandler {
+    private final class ReservoirItemPort implements IItemHandler {
         private final Binding attached;
-        ItemPort(Binding attached) { this.attached = attached; }
+        ReservoirItemPort(Binding attached) { this.attached = attached; }
 
         @Override public int getSlots() { return connected(attached) ? 1 : 0; }
         @Override public ItemStack getStackInSlot(int slot) {
@@ -227,32 +252,71 @@ public final class MachinePort extends BlockEntity {
         }
     }
 
+    private final class ProcessItemPort implements IItemHandler {
+        private final Binding attached;
+        private final IItemHandler handler;
+        private final int index;
+
+        ProcessItemPort(Binding attached, IItemHandler handler) {
+            this.attached = attached;
+            this.handler = handler;
+            index = attached.index + (attached.mode.output() ? attached.controller.itemCount(false) : 0);
+        }
+
+        @Override public int getSlots() { return connected(attached) ? 1 : 0; }
+        @Override public ItemStack getStackInSlot(int slot) {
+            return slot == 0 && connected(attached) ? handler.getStackInSlot(index).copy() : ItemStack.EMPTY;
+        }
+
+        @Override public int getSlotLimit(int slot) {
+            return slot == 0 && connected(attached) ? handler.getSlotLimit(index) : 0;
+        }
+
+        @Override public boolean isItemValid(int slot, ItemStack stack) {
+            return slot == 0 && connected(attached) && !attached.mode.output() && handler.isItemValid(index, stack);
+        }
+
+        @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            return isItemValid(slot, stack) ? handler.insertItem(index, stack, simulate) : stack;
+        }
+
+        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return slot == 0 && amount > 0 && connected(attached) && attached.mode.output()
+                    ? handler.extractItem(index, amount, simulate) : ItemStack.EMPTY;
+        }
+    }
+
     private final class FluidPort implements IFluidHandler {
         private final Binding attached;
-        FluidPort(Binding attached) { this.attached = attached; }
+        private final @Nullable IFluidHandler tankHandler;
+
+        FluidPort(Binding attached, @Nullable IFluidHandler tankHandler) {
+            this.attached = attached;
+            this.tankHandler = tankHandler;
+        }
 
         @Override public int getTanks() { return connected(attached) ? 1 : 0; }
 
         @Override public FluidStack getFluidInTank(int tank) {
             if (tank != 0 || !connected(attached)) return FluidStack.EMPTY;
-            return part == Part.RESERVOIR ? attached.pool().reservoir().peekFluid(attached.mode.output())
-                    : attached.controller.tankFor(attached.mode.output(), attached.tankIndex).getFluid().copy();
+            return tankHandler == null ? attached.pool().reservoir().peekFluid(attached.mode.output())
+                    : tankHandler.getFluidInTank(0).copy();
         }
 
         @Override public int getTankCapacity(int tank) {
             if (tank != 0 || !connected(attached)) return 0;
-            return part == Part.RESERVOIR ? attached.pool().fuelCapacity()
-                    : attached.controller.tankFor(attached.mode.output(), attached.tankIndex).getCapacity();
+            return tankHandler == null ? attached.pool().fuelCapacity()
+                    : tankHandler.getTankCapacity(0);
         }
 
         @Override public boolean isFluidValid(int tank, FluidStack stack) {
             if (tank != 0 || !connected(attached) || attached.mode.output()) return false;
-            return part == Part.RESERVOIR ? attached.pool().acceptsFuel(stack) : attached.controller.tankFor(false, attached.tankIndex).isFluidValid(stack);
+            return tankHandler == null ? attached.pool().acceptsFuel(stack) : tankHandler.isFluidValid(0, stack);
         }
 
         @Override public int fill(FluidStack stack, FluidAction action) {
             if (!isFluidValid(0, stack)) return 0;
-            if (part != Part.RESERVOIR) return attached.controller.tankFor(false, attached.tankIndex).fill(stack, action);
+            if (tankHandler != null) return tankHandler.fill(stack, action);
             int accepted = attached.pool().reservoir().fill(stack, attached.pool().fuelCapacity(), action.simulate());
             if (action.execute() && accepted > 0) attached.controller.setChanged();
             return accepted;
@@ -260,13 +324,13 @@ public final class MachinePort extends BlockEntity {
 
         @Override public FluidStack drain(FluidStack stack, FluidAction action) {
             if (stack.isEmpty() || !connected(attached) || !attached.mode.output()) return FluidStack.EMPTY;
-            if (part != Part.RESERVOIR) return attached.controller.tankFor(true, attached.tankIndex).drain(stack, action);
+            if (tankHandler != null) return tankHandler.drain(stack, action);
             return drainReservoir(stack, stack.getAmount(), action);
         }
 
         @Override public FluidStack drain(int amount, FluidAction action) {
             if (amount <= 0 || !connected(attached) || !attached.mode.output()) return FluidStack.EMPTY;
-            if (part != Part.RESERVOIR) return attached.controller.tankFor(true, attached.tankIndex).drain(amount, action);
+            if (tankHandler != null) return tankHandler.drain(amount, action);
             return drainReservoir(FluidStack.EMPTY, amount, action);
         }
 

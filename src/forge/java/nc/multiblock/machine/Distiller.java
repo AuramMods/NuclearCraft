@@ -85,6 +85,7 @@ public final class Distiller extends MachineController {
     }
 
     @Override int tankCount(boolean output) { return (output ? outputs : inputs).size(); }
+    @Override boolean indexedProcessPorts() { return true; }
     @Override FluidTank tankFor(boolean output, int index) { return (output ? outputs : inputs).get(index); }
 
     @Override long energyCapacity() {

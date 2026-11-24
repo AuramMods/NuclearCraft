@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:multiblock_infiltrator",
+    "item_inputs": [
+        {
+            "ingredient": {
+                "tag": "forge:fibers/silicon_carbide"
+            },
+            "count": 2
+        }
+    ],
+    "fluid_inputs": [
+        {
+            "fluid": "nuclearcraft:polymethylsilylene_methylene",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:sic_sic_cmc_ingot"
+    },
+    "time_multiplier": 1,
+    "power_multiplier": 1,
+    "heating_bonus": 1
+}
