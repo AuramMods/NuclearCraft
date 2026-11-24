@@ -18,7 +18,8 @@ import java.util.HashSet;
 import java.util.Objects;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
-                          List<BlockPos> sources, FissionVariant variant) {
+                          List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers,
+                          FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
                 @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
         boolean fluid() {
@@ -56,6 +57,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         List<BlockPos> sinks = new ArrayList<>();
         List<Port> ports = new ArrayList<>();
         List<BlockPos> sources = new ArrayList<>();
+        List<BlockPos> shields = new ArrayList<>();
+        List<BlockPos> managers = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(pos);
             FissionPartBlock.Role role = FissionPartBlock.role(state);
@@ -77,6 +80,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                             sinks.add(pos.immutable());
                         }
+                        case SHIELD -> shields.add(pos.immutable());
                         case MODERATOR, REFLECTOR -> {}
                         default -> {
                             return invalid("interior", pos);
@@ -95,6 +99,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                         }
                         case SOURCE -> sources.add(pos.immutable());
+                        case SOURCE_MANAGER, SHIELD_MANAGER -> managers.add(pos.immutable());
                         case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT -> {
                             if (!validPort(variant, role) || !(level.getBlockEntity(pos) instanceof FissionPortBlockEntity entity)) {
                                 return invalid("wall", pos);
@@ -148,7 +153,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             }
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
-                List.copyOf(ports), List.copyOf(sources), variant),
+                List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), variant),
                 Component.translatable("message.nuclearcraft.fission.assembled"));
     }
 

@@ -1,0 +1,223 @@
+package nc.multiblock.fission;
+
+import com.mojang.authlib.GameProfile;
+import nc.NuclearCraft;
+import nc.init.NCFission;
+import nc.init.NCHeatExchangers;
+import nc.init.NCPebbleFission;
+import nc.init.NCSaltFission;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.registries.ForgeRegistries;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Set;
+import java.util.UUID;
+
+import static nc.multiblock.fission.FissionWallBlock.ACTIVE;
+import static nc.multiblock.fission.FissionWallBlock.FACING;
+
+@GameTestHolder(NuclearCraft.MOD_ID)
+@PrefixGameTestTemplate(false)
+public final class FissionControlGameTests {
+    private static final BlockPos CONTROLLER = new BlockPos(3, 3, 1);
+    private static final BlockPos SOURCE = new BlockPos(1, 3, 3);
+    private static final BlockPos SECOND_SOURCE = new BlockPos(7, 3, 2);
+    private static final BlockPos SOURCE_MANAGER = new BlockPos(2, 3, 1);
+    private static final BlockPos OTHER_MANAGER = new BlockPos(5, 3, 1);
+    private static final BlockPos SHIELD_MANAGER = new BlockPos(5, 3, 5);
+    private static final BlockPos BEAM_SHIELD = new BlockPos(2, 3, 3);
+    private static final BlockPos SHIELD = new BlockPos(5, 3, 3);
+    private static final BlockPos FUEL = new BlockPos(3, 3, 3);
+
+    private FissionControlGameTests() {}
+
+    @GameTest(template = "fission", timeoutTicks = 150)
+    public static void controlledShieldsInterruptPrimingAndModeratorHeat(GameTestHelper helper) {
+        build(helper, NCFission.CONTROLLER.get());
+        helper.setBlock(FUEL, NCFission.CELL.get());
+        helper.setBlock(FUEL.above(), NCFission.WATER_SINK.get());
+        helper.setBlock(FUEL.east(), NCFission.HEAVY_WATER_MODERATOR.get());
+        helper.setBlock(FUEL.east(3), NCFission.BERYLLIUM_CARBON_REFLECTOR.get());
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller(helper).assembled(), "The solid reactor must assemble"))
+                .thenExecute(() -> {
+                    var player = player(helper);
+                    select(helper, player, SOURCE_MANAGER, true);
+                    select(helper, player, SOURCE, true);
+                    select(helper, player, SOURCE_MANAGER, false);
+                    select(helper, player, SHIELD_MANAGER, true);
+                    select(helper, player, SHIELD_MANAGER, false);
+                    helper.assertTrue(control(helper, SOURCE_MANAGER).listeners().equals(Set.of(helper.absolutePos(SOURCE))),
+                            "An explicit selection should link only one source");
+                    helper.assertTrue(control(helper, SHIELD_MANAGER).listeners().size() == 2,
+                            "An empty selection should link both shields in the reactor");
+                    helper.setBlock(SOURCE_MANAGER.north(), Blocks.REDSTONE_BLOCK);
+                    helper.setBlock(SHIELD_MANAGER.south(), Blocks.REDSTONE_BLOCK);
+                    helper.assertTrue(active(helper, SOURCE) && !active(helper, SECOND_SOURCE)
+                                    && active(helper, BEAM_SHIELD) && active(helper, SHIELD),
+                            "Power should activate only the selected source and close both shields");
+                    helper.assertTrue(controller(helper).primingTarget(helper.getLevel(), helper.absolutePos(SOURCE)) == null,
+                            "A closed shield should block priming");
+                    controller(helper).inventory().setStackInSlot(0, new ItemStack(
+                            ForgeRegistries.ITEMS.getValue(NuclearCraft.id("heu_233_za"))));
+                    controller(helper).toggle();
+                })
+                .thenExecuteAfter(4, () -> {
+                    helper.assertTrue(progress(helper) == 0, "Closed shields must prevent the reaction");
+                    helper.setBlock(SHIELD_MANAGER.south(), Blocks.AIR);
+                    helper.assertTrue(controller(helper).primingTarget(helper.getLevel(), helper.absolutePos(SOURCE))
+                                    .equals(helper.absolutePos(FUEL)), "An open shield must pass the priming beam");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(progress(helper) > 0, "The open shield must pass the reflected neutron path"))
+                .thenExecute(() -> {
+                    var heat = controller(helper).partHeat(helper.absolutePos(SHIELD));
+                    helper.assertTrue(heat.processing() && heat.amount() > 0 && heat.amount() % 360 == 0,
+                            "The shield must collect 360 heat per tick from reflected heavy water: " + heat);
+                    helper.setBlock(SHIELD_MANAGER.south(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(!active(helper, CONTROLLER) && active(helper, SHIELD),
+                        "Closing the shield must shut down the sustaining path"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 120)
+    public static void pebbleReactorsReassignAndRestoreManagerLinks(GameTestHelper helper) {
+        linksSurviveReassembly(helper, NCPebbleFission.CONTROLLER.get());
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 120)
+    public static void saltReactorsReassignAndRestoreManagerLinks(GameTestHelper helper) {
+        linksSurviveReassembly(helper, NCSaltFission.CONTROLLER.get());
+    }
+
+    private static void linksSurviveReassembly(GameTestHelper helper, Block controller) {
+        build(helper, controller);
+        var toolUser = player(helper);
+        select(helper, toolUser, SOURCE_MANAGER, true);
+        select(helper, toolUser, SOURCE, true);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller(helper).assembled(), "The reactor must assemble"))
+                .thenExecute(() -> {
+                    var player = player(helper);
+                    helper.assertTrue(helper.getBlockState(SHIELD_MANAGER).getValue(FACING) == Direction.SOUTH,
+                            "The manager must face outward after assembly");
+                    select(helper, player, SOURCE_MANAGER, false);
+                    helper.assertTrue(control(helper, SOURCE_MANAGER).listeners().equals(Set.of(helper.absolutePos(SOURCE))),
+                            "Selection before assembly must link the chosen component after assembly");
+                    select(helper, player, SOURCE_MANAGER, true);
+                    select(helper, player, SOURCE_MANAGER, false);
+                    helper.setBlock(SOURCE_MANAGER.north(), Blocks.REDSTONE_BLOCK);
+                    helper.assertTrue(active(helper, SOURCE) && active(helper, SECOND_SOURCE),
+                            "A bulk link must power both sources");
+                    select(helper, player, OTHER_MANAGER, true);
+                    select(helper, player, SOURCE, true);
+                    select(helper, player, OTHER_MANAGER, false);
+                    helper.assertTrue(!active(helper, SOURCE) && active(helper, SECOND_SOURCE)
+                                    && control(helper, SOURCE_MANAGER).listeners().size() == 1,
+                            "Reassigning a source must release the earlier manager's control");
+                    helper.setBlock(SOURCE.west(), Blocks.REDSTONE_BLOCK);
+                    helper.assertTrue(active(helper, SOURCE), "Direct source redstone must still work");
+                    helper.setBlock(SOURCE.west(), Blocks.AIR);
+                    helper.setBlock(OTHER_MANAGER.north(), Blocks.REDSTONE_BLOCK);
+                    CompoundTag saved = control(helper, OTHER_MANAGER).saveWithoutMetadata();
+                    if (controller == NCSaltFission.CONTROLLER.get()) {
+                        BlockPos position = helper.absolutePos(SOURCE);
+                        long legacyPos = (long) (position.getX() & 0x3ffffff) << 38
+                                | (long) (position.getY() & 0xfff) << 26 | position.getZ() & 0x3ffffff;
+                        var legacy = new CompoundTag();
+                        legacy.putLong("long0", legacyPos);
+                        saved.remove("listeners");
+                        saved.put("listenerPosSet", legacy);
+                    }
+                    helper.setBlock(OTHER_MANAGER, NCFission.CASING.get());
+                    helper.setBlock(OTHER_MANAGER, NCFission.SOURCE_MANAGER.get());
+                    control(helper, OTHER_MANAGER).load(saved);
+                    select(helper, player, SHIELD_MANAGER, true);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller(helper).assembled(), "The reactor must reassemble"))
+                .thenExecute(() -> {
+                    helper.assertTrue(active(helper, SOURCE) && control(helper, OTHER_MANAGER).listeners()
+                                    .equals(Set.of(helper.absolutePos(SOURCE))), "The saved link must resume after reassembly");
+                    var player = player(helper);
+                    select(helper, player, SHIELD_MANAGER, false);
+                    helper.setBlock(SHIELD_MANAGER.south(), Blocks.REDSTONE_BLOCK);
+                    helper.assertTrue(active(helper, BEAM_SHIELD) && active(helper, SHIELD),
+                            "Shield controls must work in this reactor variant");
+                    helper.setBlock(SOURCE, NCFission.CASING.get());
+                    helper.setBlock(SOURCE, NCFission.RADIUM_BERYLLIUM_SOURCE.get());
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller(helper).assembled(), "Restoring the source must repair the shell"))
+                .thenExecute(() -> helper.assertTrue(!active(helper, SOURCE) && control(helper, OTHER_MANAGER).listeners().isEmpty(),
+                        "A replacement source must not inherit the removed component's link"))
+                .thenSucceed();
+    }
+
+    private static void build(GameTestHelper helper, Block controller) {
+        for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(7, 5, 5))) {
+            if (pos.getX() == 1 || pos.getX() == 7 || pos.getY() == 1 || pos.getY() == 5
+                    || pos.getZ() == 1 || pos.getZ() == 5) {
+                helper.setBlock(pos, NCFission.CASING.get());
+            } else {
+                helper.setBlock(pos, Blocks.AIR);
+            }
+        }
+        helper.setBlock(CONTROLLER, controller);
+        helper.setBlock(SOURCE, NCFission.RADIUM_BERYLLIUM_SOURCE.get());
+        helper.setBlock(SECOND_SOURCE, NCFission.POLONIUM_BERYLLIUM_SOURCE.get());
+        helper.setBlock(SOURCE_MANAGER, NCFission.SOURCE_MANAGER.get());
+        helper.setBlock(OTHER_MANAGER, NCFission.SOURCE_MANAGER.get());
+        helper.setBlock(SHIELD_MANAGER, NCFission.SHIELD_MANAGER.get());
+        helper.setBlock(BEAM_SHIELD, NCFission.GADOLINIUM_SAMARIUM_SHIELD.get());
+        helper.setBlock(SHIELD, NCFission.BORON_SILVER_SHIELD.get());
+    }
+
+    private static FakePlayer player(GameTestHelper helper) {
+        var profile = new GameProfile(UUID.nameUUIDFromBytes(helper.absolutePos(CONTROLLER).toString().getBytes(
+                StandardCharsets.UTF_8)), "FissionControls");
+        var player = FakePlayerFactory.get(helper.getLevel(), profile);
+        if (!player.getMainHandItem().is(NCHeatExchangers.MULTITOOL.get())) {
+            player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(NCHeatExchangers.MULTITOOL.get()));
+        }
+        return player;
+    }
+
+    private static void select(GameTestHelper helper, FakePlayer player, BlockPos pos, boolean sneaking) {
+        player.setShiftKeyDown(sneaking);
+        var absolute = helper.absolutePos(pos);
+        var hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.NORTH, absolute, false);
+        var tool = player.getMainHandItem();
+        helper.assertTrue(tool.getItem().onItemUseFirst(tool, new UseOnContext(player, InteractionHand.MAIN_HAND, hit))
+                .consumesAction(), "The multitool should handle the fission part");
+    }
+
+    private static SolidFissionController controller(GameTestHelper helper) {
+        return (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+    }
+
+    private static FissionControlBlockEntity control(GameTestHelper helper, BlockPos pos) {
+        return (FissionControlBlockEntity) helper.getBlockEntity(pos);
+    }
+
+    private static boolean active(GameTestHelper helper, BlockPos pos) {
+        return helper.getBlockState(pos).getValue(ACTIVE);
+    }
+
+    private static double progress(GameTestHelper helper) {
+        return helper.getBlockEntity(FUEL).saveWithoutMetadata().getDouble("progress");
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "parent": "nuclearcraft:block/fission_source_manager",
+    "textures": {
+        "north": "nuclearcraft:block/fission/source_manager_out_on"
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "parent": "nuclearcraft:block/fission_shield_overlay",
+    "textures": {
+        "all": "nuclearcraft:block/fission/shield/gadolinium_samarium",
+        "overlay": "nuclearcraft:block/fission/shield/on"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "particle": "nuclearcraft:block/fission/source_manager_side",
+        "north": "nuclearcraft:block/fission/source_manager_out_off",
+        "south": "nuclearcraft:block/fission/source_manager_in",
+        "east": "nuclearcraft:block/fission/source_manager_side",
+        "west": "nuclearcraft:block/fission/source_manager_side",
+        "up": "nuclearcraft:block/fission/source_manager_top",
+        "down": "nuclearcraft:block/fission/source_manager_top"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "active=false": {
+            "model": "nuclearcraft:block/boron_silver_shield"
+        },
+        "active=true": {
+            "model": "nuclearcraft:block/boron_silver_shield_on"
+        }
+    }
+}

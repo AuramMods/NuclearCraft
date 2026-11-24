@@ -1,7 +1,10 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionControlBlockEntity;
 import nc.multiblock.fission.FissionFuelCell;
+import nc.multiblock.fission.FissionManagerBlock;
+import nc.multiblock.fission.FissionShieldBlock;
 import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionPartBlock;
@@ -49,6 +52,10 @@ public final class NCFission {
     private static final ForgeConfigSpec.DoubleValue RADIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue POLONIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue CALIFORNIUM_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue BORON_SILVER_HEAT;
+    private static final ForgeConfigSpec.DoubleValue BORON_SILVER_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue GADOLINIUM_SAMARIUM_HEAT;
+    private static final ForgeConfigSpec.DoubleValue GADOLINIUM_SAMARIUM_EFFICIENCY;
     private static final ForgeConfigSpec.IntValue NEUTRON_REACH;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_FLUX_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue MELTDOWN_RADIATION;
@@ -68,6 +75,12 @@ public final class NCFission {
         RADIUM_EFFICIENCY = builder.defineInRange("radium_beryllium_efficiency", 0.9D, 0D, 255D);
         POLONIUM_EFFICIENCY = builder.defineInRange("polonium_beryllium_efficiency", 0.95D, 0D, 255D);
         CALIFORNIUM_EFFICIENCY = builder.defineInRange("californium_efficiency", 1D, 0D, 255D);
+        builder.pop();
+        builder.push("neutron_shields");
+        BORON_SILVER_HEAT = builder.defineInRange("boron_silver_heat_per_flux", 5D, 0D, 32767D);
+        BORON_SILVER_EFFICIENCY = builder.defineInRange("boron_silver_efficiency", 0.5D, 0D, 255D);
+        GADOLINIUM_SAMARIUM_HEAT = builder.defineInRange("gadolinium_samarium_heat_per_flux", 10D, 0D, 32767D);
+        GADOLINIUM_SAMARIUM_EFFICIENCY = builder.defineInRange("gadolinium_samarium_efficiency", 0.75D, 0D, 255D);
         builder.pop();
         builder.push("neutrons");
         NEUTRON_REACH = builder.defineInRange("reach", 4, 1, 255);
@@ -126,6 +139,41 @@ public final class NCFission {
     public static final RegistryObject<FissionSourceBlock> CALIFORNIUM_SOURCE =
             source("fission_source_californium", CALIFORNIUM_EFFICIENCY);
 
+    public static final RegistryObject<FissionManagerBlock> SOURCE_MANAGER = part("fission_source_manager",
+            () -> new FissionManagerBlock(properties(), Role.SOURCE_MANAGER));
+    public static final RegistryObject<FissionManagerBlock> SHIELD_MANAGER = part("fission_shield_manager",
+            () -> new FissionManagerBlock(properties(), Role.SHIELD_MANAGER));
+    public static final RegistryObject<FissionShieldBlock> BORON_SILVER_SHIELD = part("boron_silver_shield",
+            () -> new FissionShieldBlock(properties(), () -> configured(BORON_SILVER_HEAT),
+                    () -> configured(BORON_SILVER_EFFICIENCY)));
+    public static final RegistryObject<FissionShieldBlock> GADOLINIUM_SAMARIUM_SHIELD = part("gadolinium_samarium_shield",
+            () -> new FissionShieldBlock(properties(), () -> configured(GADOLINIUM_SAMARIUM_HEAT),
+                    () -> configured(GADOLINIUM_SAMARIUM_EFFICIENCY)));
+
+    private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SOURCE_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_source", () -> BlockEntityType.Builder.of(
+                    FissionControlBlockEntity::new, RADIUM_BERYLLIUM_SOURCE.get(), POLONIUM_BERYLLIUM_SOURCE.get(),
+                    CALIFORNIUM_SOURCE.get()).build(null));
+    private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SHIELD_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_shield", () -> BlockEntityType.Builder.of(
+                    FissionControlBlockEntity::new, BORON_SILVER_SHIELD.get(), GADOLINIUM_SAMARIUM_SHIELD.get()).build(null));
+    private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SOURCE_MANAGER_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_source_manager", () -> BlockEntityType.Builder.of(
+                    FissionControlBlockEntity::new, SOURCE_MANAGER.get()).build(null));
+    private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SHIELD_MANAGER_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_shield_manager", () -> BlockEntityType.Builder.of(
+                    FissionControlBlockEntity::new, SHIELD_MANAGER.get()).build(null));
+
+    public static BlockEntityType<FissionControlBlockEntity> controlEntity(Role role) {
+        return switch (role) {
+            case SOURCE -> SOURCE_ENTITY.get();
+            case SHIELD -> SHIELD_ENTITY.get();
+            case SOURCE_MANAGER -> SOURCE_MANAGER_ENTITY.get();
+            case SHIELD_MANAGER -> SHIELD_MANAGER_ENTITY.get();
+            default -> throw new IllegalArgumentException("Unexpected fission control role " + role);
+        };
+    }
+
     public static final RegistryObject<Item> LECF_251_OXIDE =
             NCRegistries.ITEMS.register("lecf_251_oxide", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> DEPLETED_LECF_251_OXIDE =
@@ -167,6 +215,10 @@ public final class NCFission {
                         output.accept(RADIUM_BERYLLIUM_SOURCE.get());
                         output.accept(POLONIUM_BERYLLIUM_SOURCE.get());
                         output.accept(CALIFORNIUM_SOURCE.get());
+                        output.accept(SOURCE_MANAGER.get());
+                        output.accept(SHIELD_MANAGER.get());
+                        output.accept(BORON_SILVER_SHIELD.get());
+                        output.accept(GADOLINIUM_SAMARIUM_SHIELD.get());
                         output.accept(LECF_251_OXIDE.get());
                         output.accept(DEPLETED_LECF_251_OXIDE.get());
                         NCFissionFuels.displayItems(output);

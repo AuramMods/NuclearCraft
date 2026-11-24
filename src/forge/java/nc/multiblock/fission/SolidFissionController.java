@@ -6,6 +6,7 @@ import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
+import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
 import net.minecraft.core.BlockPos;
@@ -33,9 +34,14 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 
 public final class SolidFissionController extends BlockEntity implements MenuProvider {
     private static final int BASE_TANK_CAPACITY = 4_000;
@@ -93,6 +99,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 setChanged();
             }
             if (layout != null && layout.bounds().contains(pos)) {
+                if (removed && (layout.sources().contains(pos) || layout.shields().contains(pos))
+                        && level instanceof ServerLevel server) {
+                    for (BlockPos manager : layout.managers()) {
+                        controlAt(server, manager).ifPresent(control -> control.unlink(pos));
+                    }
+                }
                 disassemble();
             }
         }
@@ -176,14 +188,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (state.getValue(FissionWallBlock.FACING) != outward) {
             server.setBlock(worldPosition, state.setValue(FissionWallBlock.FACING, outward), Block.UPDATE_CLIENTS);
         }
-        for (BlockPos source : layout.sources()) {
-            BlockState sourceState = server.getBlockState(source);
-            BlockState aligned = sourceState.setValue(FissionWallBlock.FACING, layout.bounds().outward(source))
-                    .setValue(FissionWallBlock.ACTIVE, server.hasNeighborSignal(source));
-            if (aligned != sourceState) {
-                server.setBlock(source, aligned, Block.UPDATE_CLIENTS);
-            }
-        }
+        controls(layout).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.bind(this)));
+        refreshControlStates(server);
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.bind(this, port);
@@ -203,12 +209,80 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
+        controls(previous).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.unbind(server)));
         for (SolidFissionLayout.Port port : previous.ports()) {
             var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
             if (chunk != null && chunk.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.unbind();
             }
         }
+    }
+
+    private static Stream<BlockPos> controls(SolidFissionLayout layout) {
+        return Stream.of(layout.managers(), layout.sources(), layout.shields()).flatMap(List::stream);
+    }
+
+    private static Optional<FissionControlBlockEntity> controlAt(ServerLevel level, BlockPos pos) {
+        var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+        if (chunk != null && chunk.getBlockEntity(pos) instanceof FissionControlBlockEntity control) {
+            return Optional.of(control);
+        }
+        return Optional.empty();
+    }
+
+    void refreshControlStates(ServerLevel server) {
+        if (!assembled()) {
+            return;
+        }
+        Set<BlockPos> sources = Set.copyOf(layout.sources());
+        Set<BlockPos> shields = Set.copyOf(layout.shields());
+        Set<BlockPos> powered = new HashSet<>();
+        for (BlockPos pos : layout.managers()) {
+            controlAt(server, pos).ifPresent(manager -> {
+                boolean active = server.hasNeighborSignal(pos);
+                manager.apply(server, active, layout.bounds().outward(pos));
+                Set<BlockPos> candidates = manager.role() == Role.SOURCE_MANAGER ? sources : shields;
+                Set<BlockPos> targets = new HashSet<>(manager.listeners());
+                if (targets.retainAll(candidates)) {
+                    manager.replaceListeners(targets);
+                }
+                if (active) {
+                    powered.addAll(targets);
+                }
+            });
+        }
+        for (BlockPos pos : layout.sources()) {
+            controlAt(server, pos).ifPresent(source -> source.apply(server,
+                    powered.contains(pos) || server.hasNeighborSignal(pos), layout.bounds().outward(pos)));
+        }
+        for (BlockPos pos : layout.shields()) {
+            controlAt(server, pos).ifPresent(shield -> shield.apply(server, powered.contains(pos), null));
+        }
+    }
+
+    Set<BlockPos> linkControls(ServerLevel level, FissionControlBlockEntity manager, Collection<BlockPos> requested) {
+        List<BlockPos> candidates = manager.role() == Role.SOURCE_MANAGER ? layout.sources() : layout.shields();
+        Set<BlockPos> selected = new HashSet<>(requested.isEmpty() ? candidates : requested);
+        selected.retainAll(candidates);
+        for (BlockPos pos : layout.managers()) {
+            if (!pos.equals(manager.getBlockPos())) {
+                controlAt(level, pos).ifPresent(other -> {
+                    var remaining = new HashSet<>(other.listeners());
+                    remaining.removeAll(selected);
+                    other.replaceListeners(remaining);
+                });
+            }
+        }
+        manager.replaceListeners(selected);
+        refreshControlStates(level);
+        return selected;
+    }
+
+    @Nullable BlockPos primingTarget(ServerLevel level, BlockPos source) {
+        if (!assembled()) {
+            return null;
+        }
+        return SolidFissionCore.primingTarget(level, layout, source, layout.cells()::contains);
     }
 
     private void melt(ServerLevel level, List<BlockPos> parts) {

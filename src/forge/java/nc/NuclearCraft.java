@@ -1,6 +1,7 @@
 package nc;
 
 import nc.fluid.FluidConfig;
+import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
@@ -38,6 +39,7 @@ public final class NuclearCraft {
         NCRadiation.register(context);
         FluidConfig.register(context);
         NCFission.registerConfig(context);
+        FissionHighlights.register();
         NCPebbleFission.registerConfig(context);
         NCSaltFission.registerConfig(context);
         HeatExchangerConfig.register(context);

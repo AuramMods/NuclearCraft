@@ -1,0 +1,6 @@
+{
+    "parent": "nuclearcraft:block/fission_shield_manager",
+    "textures": {
+        "north": "nuclearcraft:block/fission/shield_manager_out_on"
+    }
+}

@@ -11,6 +11,16 @@ import nc.multiblock.hx.ExchangerWallBlock;
 import nc.multiblock.machine.MachinePartBlock;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
+import nc.multiblock.fission.FissionControlBlock;
+import nc.multiblock.fission.FissionMultitool;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.flag.FeatureFlags;
@@ -58,10 +68,25 @@ public final class NCHeatExchangers {
                 @Override
                 public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
                     BlockState state = context.getLevel().getBlockState(context.getClickedPos());
+                    if (state.getBlock() instanceof FissionControlBlock) return FissionMultitool.useOn(stack, context);
                     if (state.getBlock() instanceof ExchangerTubeBlock tube) return tube.configure(state, context);
                     if (state.getBlock() instanceof MachinePartBlock.Wall wall && context.getPlayer() != null
                             && context.getPlayer().isShiftKeyDown()) return wall.reverseProcessPort(context);
                     return InteractionResult.PASS;
+                }
+
+                @Override
+                public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+                    ItemStack stack = player.getItemInHand(hand);
+                    if (level instanceof ServerLevel server && player instanceof ServerPlayer user && player.isShiftKeyDown()) {
+                        var hit = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
+                        if ((hit.getType() == HitResult.Type.MISS
+                                || !(level.getBlockState(hit.getBlockPos()).getBlock() instanceof FissionControlBlock))
+                                && FissionMultitool.clear(server, user, stack)) {
+                            return InteractionResultHolder.consume(stack);
+                        }
+                    }
+                    return super.use(level, player, hand);
                 }
             });
 

@@ -85,7 +85,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
+- Remaining work includes buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the polonium production path, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -257,6 +257,8 @@ The same JAR ran in the isolated 539-mod Auram snapshot on Forge 47.4.18, with A
 | `nuclearcraft:fission_source`, 0 | `nuclearcraft:fission_source_radium_beryllium` |
 | `nuclearcraft:fission_source`, 1 | `nuclearcraft:fission_source_polonium_beryllium` |
 | `nuclearcraft:fission_source`, 2 | `nuclearcraft:fission_source_californium` |
+| `nuclearcraft:fission_shield`, 0 | `nuclearcraft:boron_silver_shield` |
+| `nuclearcraft:fission_shield`, 1 | `nuclearcraft:gadolinium_samarium_shield` |
 | `nuclearcraft:material_block`, 5 | `nuclearcraft:soulless_sand` |
 | `nuclearcraft:material_block`, 6 | `nuclearcraft:soulless_sandstone` |
 | `nuclearcraft:fuel_californium`, 9 | `nuclearcraft:lecf_251_oxide` |
@@ -344,6 +346,20 @@ Recipes of type `nuclearcraft:electric_furnace` use the same schema as an item p
 The legacy `battery_block_capacity` and `battery_block_max_transfer` arrays map to the `capacity` and `max_transfer` settings under each named battery tier in `world/serverconfig/nuclearcraft-batteries.toml`. The item settings map to the `lithium_ion_cell` section. Placed batteries enforce the configured rate per block and per tick across all input faces and across all output faces. The bank uses a long for its combined capacity and charge. Forge Energy exposes an integer view that saturates at 2,147,483,647 FE. Legacy EU tier settings applied to IC2 and GregTech. Forge Energy uses the configured FE rate. When reducing capacity in the configuration, charge above the new per-block capacity is discarded as in the original mod.
 
 The `nuclearcraft:charged_crafting` serializer uses the shaped recipe schema. It adds the Forge Energy charge of one item from each occupied input slot to a NuclearCraft battery result. Crafting leaves the ingredients in the grid when the result has insufficient capacity for the input charge. Battery items read their charge from `energyStorage.energy`. Placed batteries save their individual share in `energy` and face settings in `energy_sides`. Moving a 1.12.2 battery bank into a converted world requires distributing the legacy controller's aggregate charge across its converted blocks.
+
+### Fission neutron controls
+
+The original `nuclearcraft:fission_source_manager` and `nuclearcraft:fission_shield_manager` fit on the walls of solid-fuel, pebble-bed, and molten-salt reactors. Sneak-use the multitool on a manager to start a selection and sneak-use it on matching parts. Use the multitool normally on that manager after assembly to apply the selection to its reactor. Finishing without selecting individual parts links all components of the appropriate type in the reactor. Use the tool normally on a manager to see its links, or on a neutron source to locate its current priming target. The outline remains visible through the casing for five seconds. Sneak-use the tool in the air to cancel the selection. [Forge networking](https://docs.minecraftforge.net/en/1.20.1/networking/simpleimpl/)
+
+A neutron source responds to its own redstone input or to its linked manager. A powered shield manager closes linked shields, which interrupt both priming beams and moderator lines. An open shield carries a moderator line with zero added flux and generates heat from the completed line, at most once per axis. Boron-silver uses 5 heat per flux at 0.5 efficiency. Gadolinium-samarium uses 10 heat per flux at 0.75 efficiency. Transfer the two legacy `fission_shield_heat_per_flux` and `fission_shield_efficiency` values in that order into the named `neutron_shields` entries in `world/serverconfig/nuclearcraft-fission.toml`.
+
+The saved manager stores the `listeners` long array using Forge 1.20.1 packed block positions. Converted managers can also read the legacy `listenerPosSet` compound with 1.12.2 packed positions. Keep the manager registry IDs and convert the legacy shield metadata to the corresponding block IDs. Manager power and linked shielding are recalculated after the reactor forms. Reassigning a component moves control to the new manager.
+
+All 134 GameTests passed. Tests exercised selection before assembly, bulk linking, reassignment, local redstone, reflected-line shield heating, reassembly across all three reactor variants, and loading the legacy manager position format.
+
+Packaged Forge 47.4.18 tests powered both managers with vanilla redstone and with Auram's Ender IO 8.2.22-beta redstone conduits. The closed shields prevented priming and stopped a running reaction. After server restart, the links and fuel progress persisted, and opening the shields resumed the same fuel.
+
+A muted multiplayer client used the multitool on the source manager. It received the saved link and drew the linked source's outline through the opaque reactor wall. The native observer recorded zero foreground, activation, and visible window samples. [Forge render stages](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/src/main/java/net/minecraftforge/client/event/RenderLevelStageEvent.java)
 
 ### Player radiation
 

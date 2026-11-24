@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PEP",
+        "RFR",
+        "PEP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "E": {
+            "tag": "forge:dusts/energetic"
+        },
+        "R": {
+            "item": "minecraft:repeater"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_source_manager",
+        "count": 4
+    }
+}

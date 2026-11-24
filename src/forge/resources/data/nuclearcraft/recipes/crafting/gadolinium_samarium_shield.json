@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "SFS",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "G": {
+            "tag": "forge:ingots/gadolinium"
+        },
+        "S": {
+            "tag": "forge:ingots/samarium"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:gadolinium_samarium_shield",
+        "count": 4
+    }
+}

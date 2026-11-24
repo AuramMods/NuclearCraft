@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PTP",
+        "RFR",
+        "PTP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "R": {
+            "item": "minecraft:repeater"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_shield_manager",
+        "count": 4
+    }
+}

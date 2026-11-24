@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PBP",
+        "SFS",
+        "PBP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "B": {
+            "tag": "forge:ingots/boron"
+        },
+        "S": {
+            "tag": "forge:ingots/silver"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:boron_silver_shield",
+        "count": 4
+    }
+}
