@@ -217,6 +217,15 @@ public final class PlayerRadiation {
         return read(player).getDouble(DOSE);
     }
 
+    static double setDose(ServerPlayer player, double dose) {
+        CompoundTag data = read(player);
+        double value = Math.max(0, Math.min(dose, RadiationConfig.MAX_DOSE.get()));
+        data.putDouble(DOSE, value);
+        save(player, data);
+        RadiationSync.send(player);
+        return value;
+    }
+
     public static double rate(Player player) {
         return read(player).getDouble(RATE);
     }

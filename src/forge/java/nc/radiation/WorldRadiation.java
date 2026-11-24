@@ -103,6 +103,34 @@ public final class WorldRadiation {
         return RadiationConfig.ENABLED.get() ? store(level).rates.get(ChunkPos.asLong(pos)) : 0;
     }
 
+    static void setChunkRate(ServerLevel level, ChunkPos pos, double rate) {
+        store(level).set(pos.toLong(), rate);
+    }
+
+    static int setRegionRate(ServerLevel level, ChunkPos center, int radius, double rate) {
+        Levels readings = store(level);
+        int count = 0;
+        for (int x = center.x - radius; x <= center.x + radius; ++x) {
+            for (int z = center.z - radius; z <= center.z + radius; ++z) {
+                readings.set(ChunkPos.asLong(x, z), rate);
+                ++count;
+            }
+        }
+        return count;
+    }
+
+    static int setLoadedRate(ServerLevel level, double rate) {
+        LoadedChunks loaded = LOADED.get(level);
+        if (loaded == null || loaded.chunks.isEmpty()) {
+            return 0;
+        }
+        Levels readings = store(level);
+        for (LevelChunk chunk : loaded.chunks) {
+            readings.set(chunk.getPos().toLong(), rate);
+        }
+        return loaded.chunks.size();
+    }
+
     public static void addLeak(ServerLevel level, BlockPos pos, double amount) {
         if (amount > 0 && Double.isFinite(amount) && RadiationConfig.ENABLED.get()) {
             Levels readings = store(level);

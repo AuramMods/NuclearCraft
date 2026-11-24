@@ -496,6 +496,23 @@ A packaged dedicated run with container radiation enabled measured separate chun
 
 The final packaged JAR loaded in the isolated 539-JAR Auram snapshot on Forge 47.4.18. A KubeJS probe found the RTG in the saved world, read a comparator signal of 9 in its chunk, and measured radiation in all four cardinal neighbors. JEI loaded and the muted client exited cleanly. The native observer recorded zero visible window samples and zero focus activations.
 
+### Radiation commands
+
+The original radiation commands require operator permission level 2. Decimal and scientific notation are accepted. Negative values clear radiation.
+
+| Command | Effect |
+| --- | --- |
+| `/nc_set_chunk_radiation <Rad/t> [x z]` | Sets the current chunk or the chunk containing the given absolute block coordinates. |
+| `/nc_set_chunk_radius_radiation <Rad/t> <radius>` | Sets a square centered on the source chunk. A radius of one covers nine chunks. |
+| `/nc_set_world_radiation <Rad/t>` | Updates every loaded chunk in the source dimension. |
+| `/nc_set_player_radiation <Rad> [player]` | Sets the sender's dose or the dose of one named player or selector target. The configured maximum still applies. |
+
+`/execute in` selects a dimension and `/execute positioned` sets the origin. Single-chunk and radius edits write rates directly to the dimension's radiation save, including when the targeted terrain is unloaded. The radius command uses `commandModificationBlockLimit` as its maximum number of chunks per change. Stored rates continue to follow the world's ordinary spread, decay, and source settings. Editing a player dose preserves immunity and treatment and immediately syncs the HUD.
+
+All 151 local GameTests passed. The packaged Forge 47.4.18 server preserved distinct Overworld and Nether rates through a restart. A radius edit recorded nine previously unloaded chunks. Loading its center later produced the expected Geiger comparator signal, and clearing the chunk removed the saved rate.
+
+In the isolated Auram client with all 538 installed mod JARs, the named-player form synced 42.5 Rad and the sender form synced 87.5 Rad. Normal shutdown saved exactly 87.5 Rad in the player's data. The fixture disabled dose decay and radiation spread to measure exact values. OpenAL used its No Output device and the native watcher recorded zero focus activations or visible window samples.
+
 ### Radiation effects and mob exposure
 
 The player, passive, and hostile effect lists keep their original config keys. Entries select the highest attained threshold and use `percent_namespace:effect@amplifier,namespace:attribute@amount@operation`. Use modern effect and attribute registry IDs. Operations 0, 1, and 2 add, multiply the base, and multiply the total respectively. Radiation attributes last while their tier applies. The player warning follows the first configured effect threshold.
