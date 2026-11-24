@@ -6,4 +6,5 @@ public interface FissionFuelStats {
     int criticality();
     int intrinsicFlux();
     boolean selfPriming();
+    double decayFactor();
 }

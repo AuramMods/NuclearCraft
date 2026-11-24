@@ -12,5 +12,6 @@
     "criticality": 28,
     "intrinsic_flux": 0,
     "self_priming": false,
+    "decay_factor": 0.085,
     "radiation": 0.0006862065972222223
 }

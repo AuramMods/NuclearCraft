@@ -85,7 +85,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
+- Remaining work includes buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -398,6 +398,29 @@ All 143 GameTests passed, including heat flow in all three reactor types, revers
 In separate Ender IO 8.2.22-beta and Mekanism 10.4.16.80 routes, each isolated solid-fuel reactor reached criticality with a gap in the conductor bridge and produced no steam. Completing each conductor bridge let the reactors turn 1,000 mB of imported water into 4,000 mB of high-pressure steam. Both attached turbines exported 16,000 mB of exhaust and saved 5,051 FE. After the server restarted, each transport routed that energy to a Melter, which spent 4,000 FE and produced 1,000 mB of water from one ice.
 
 The packaged conductor rendered with its original texture in the isolated client with all 538 installed Auram mods. The saved block entities retained their exact heat values. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
+
+### Fission fuel decay
+
+All three reactors support the legacy optional fuel decay model. Fresh fuel starts below its nominal criticality. While it burns, the fuel component builds decay heat, iodine, and neutron poison. Poison can raise the flux it needs enough to stall the reaction. After shutdown or a stall, the fractions continue to change while the block entity is loaded. The residual heat joins ordinary heat clusters, cooling rules, and overheating checks. It can help prime a still-warm fuel component once the poison falls enough for the available flux.
+
+The options retain their legacy names in `world/serverconfig/nuclearcraft-fission.toml`. Decay defaults to disabled. The first three arrays use the order heat, iodine, poison. Daughter multipliers use the order heat-to-iodine, iodine-to-poison. The terms use the order exponential, linear.
+
+| Setting | Default |
+| --- | --- |
+| `fission_decay_mechanics` | `false` |
+| `fission_decay_build_up_times` | `[24000, 24000, 24000]` ticks |
+| `fission_decay_lifetimes` | `[6000, 8000, 12000]` ticks |
+| `fission_decay_equilibrium_factors` | `[1, 5, 1]` |
+| `fission_decay_daughter_multipliers` | `[5, 5]` |
+| `fission_decay_term_multipliers` | `[0.95, 0.05]` |
+
+Each of the 81 solid-fuel, 27 pebble-bed, and 27 molten-salt recipes ships with its original `decay_factor`. For datapacks or KubeJS, set this field on the Forge fuel recipe. Transfer the legacy material-family decay factor arrays into each corresponding fuel form's recipe when they were customized. JEI displays the base criticality, intrinsic flux, and recipe decay factor.
+
+Converted fuel components read the original `decayProcessHeat`, `baseProcessDecayFactor`, `decayHeatFraction`, `iodineFraction`, and `poisonFraction` block entity fields. The existing item or fluid and recipe progress need the corresponding Forge save mapping. The decay state stays with the fuel component when a batch changes, a reactor separates, or the chunk saves.
+
+All 146 GameTests passed, including the arithmetic, legacy state conversion, and packet round trips for the item-fuel catalogs. On packaged Forge 47.4.18, Ender IO 8.2.22-beta supplied solid fuel and Mekanism 10.4.16.80 supplied pebbles and fuel salt. Under shortened test timers, poison stalled all three reactions with fuel remaining. The reactors continued to heat their casings while fuel progress stayed fixed after shutdown. Ender IO extracted 126 mB of depleted salt. The reactors retained their decay state and exact fuel progress after chunk unload and server restart. They resumed fission without their wall sources after the poison dissipated. A clean Forge server also verified that detached fuel components continued to decay and that disabling the setting cleared their fractions.
+
+A packaged Forge 47.4.10 test with Auram's KubeJS 2001.6.5-build.16 changed the LECf-251 oxide decay factor to 0.55. The resulting fresh fuel ran on a 36-flux path with an effective criticality of 31. The isolated Forge 47.4.18 client with all 538 installed Auram mod JARs showed the original factors in all three JEI fuel categories. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
 
 ### Player radiation
 

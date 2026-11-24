@@ -126,8 +126,11 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             refresh(server);
         }
         boolean active = false;
-        if (layout != null && (enabled || server.hasNeighborSignal(worldPosition))) {
-            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling, saltFuel, saltCooling);
+        boolean requested = layout != null && (enabled || server.hasNeighborSignal(worldPosition));
+        var decaySettings = layout == null ? null : NCFission.decaySettings();
+        if (layout != null && (requested || decaySettings != null)) {
+            SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling, saltFuel, saltCooling,
+                    requested, decaySettings);
             if (!generated.overheatedCells().isEmpty()) {
                 melt(server, generated.overheatedCells());
                 return;
@@ -147,7 +150,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             if (active || generated.storedHeatChanged()) {
                 setChanged();
             }
-        } else if (layout != null && variant != FissionVariant.SOLID && casingHeat > 0) {
+        }
+        if (layout != null && !requested && variant != FissionVariant.SOLID && casingHeat > 0) {
             coolCasing();
         }
         BlockState state = getBlockState();
@@ -192,6 +196,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         controls(layout).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.bind(this)));
         refreshControlStates(server);
         bindIrradiators(server);
+        for (BlockPos pos : layout.cells()) {
+            var decay = FissionFuelDecay.of(server.getBlockEntity(pos));
+            if (decay != null) {
+                decay.bind(this);
+            }
+        }
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.bind(this, port);
@@ -212,6 +222,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return;
         }
         irradiationBanks.clear();
+        for (BlockPos pos : previous.cells()) {
+            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            var decay = FissionFuelDecay.of(chunk == null ? null : chunk.getBlockEntity(pos));
+            if (decay != null) {
+                decay.unbind(this);
+            }
+        }
         for (BlockPos pos : previous.irradiators()) {
             var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             if (chunk != null && chunk.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {

@@ -19,6 +19,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private ItemStack reservedFuel = ItemStack.EMPTY;
+    private final FissionFuelDecay decay = new FissionFuelDecay(this);
     private double progress;
     private double sourceEfficiency = -1;
     private long emissionTick = Long.MIN_VALUE;
@@ -50,6 +51,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (recipe == null) {
             return null;
         }
+        decay.remember(recipe, recipe.heat());
         if (needsFuel) {
             reservedFuel = inventory.extractItem(0, 1, false);
             setChanged();
@@ -70,6 +72,10 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
             sourceEfficiency = efficiency;
             setChanged();
         }
+    }
+
+    FissionFuelDecay decay() {
+        return decay;
     }
 
     double sourceEfficiency() {
@@ -105,6 +111,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        decay.save(tag);
         tag.put("fuel", reservedFuel.save(new CompoundTag()));
         tag.putDouble("progress", progress);
         if (sourceEfficiency >= 0) {
@@ -115,6 +122,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        decay.load(tag);
         reservedFuel = ItemStack.of(tag.getCompound("fuel"));
         double stored = tag.getDouble("progress");
         progress = Double.isFinite(stored) ? Math.max(0, stored) : 0;

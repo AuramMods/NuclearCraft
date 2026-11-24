@@ -11,6 +11,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.fluids.FluidUtil;
@@ -19,6 +21,18 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class SaltVesselBlock extends FissionPartBlock implements EntityBlock {
     public SaltVesselBlock(Properties properties) {
         super(properties, Role.VESSEL);
+    }
+
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (level instanceof ServerLevel server) {
+            return (world, pos, block, entity) -> {
+                if (entity instanceof SaltVessel fuel) {
+                    fuel.decay().tickUnmanaged(server);
+                }
+            };
+        }
+        return null;
     }
 
     @Override

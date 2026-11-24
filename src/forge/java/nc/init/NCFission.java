@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.multiblock.fission.FissionConductor;
 import nc.multiblock.fission.FissionConductorBlock;
 import nc.multiblock.fission.FissionControlBlockEntity;
+import nc.multiblock.fission.FissionDecaySettings;
 import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionIrradiator;
 import nc.multiblock.fission.FissionIrradiatorBlock;
@@ -68,6 +69,12 @@ public final class NCFission {
     private static final ForgeConfigSpec.DoubleValue MELTDOWN_RADIATION;
     private static final ForgeConfigSpec.BooleanValue OVERHEAT;
     private static final ForgeConfigSpec.BooleanValue HEAT_DAMAGE;
+    private static final ForgeConfigSpec.BooleanValue FUEL_DECAY;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> DECAY_BUILDUP;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> DECAY_LIFETIME;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> DECAY_EQUILIBRIUM;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> DECAY_DAUGHTERS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> DECAY_TERMS;
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_HEAT = new EnumMap<>(Material.class);
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_EFFICIENCY = new EnumMap<>(Material.class);
 
@@ -83,6 +90,12 @@ public final class NCFission {
         var builder = new ForgeConfigSpec.Builder();
         OVERHEAT = builder.define("fission_overheat", true);
         HEAT_DAMAGE = builder.define("fission_heat_damage", false);
+        FUEL_DECAY = builder.define("fission_decay_mechanics", false);
+        DECAY_BUILDUP = decayList(builder, "fission_decay_build_up_times", Integer.MAX_VALUE, List.of(24_000D, 24_000D, 24_000D));
+        DECAY_LIFETIME = decayList(builder, "fission_decay_lifetimes", Integer.MAX_VALUE, List.of(6_000D, 8_000D, 12_000D));
+        DECAY_EQUILIBRIUM = decayList(builder, "fission_decay_equilibrium_factors", 255D, List.of(1D, 5D, 1D));
+        DECAY_DAUGHTERS = decayList(builder, "fission_decay_daughter_multipliers", 255D, List.of(5D, 5D));
+        DECAY_TERMS = decayList(builder, "fission_decay_term_multipliers", 1D, List.of(0.95D, 0.05D));
         MELTDOWN_RADIATION = builder.defineInRange("fission_meltdown_radiation_multiplier", 1D, 0D, 255D);
         builder.push("neutron_sources");
         RADIUM_EFFICIENCY = builder.defineInRange("radium_beryllium_efficiency", 0.9D, 0D, 255D);
@@ -383,6 +396,35 @@ public final class NCFission {
 
     public static boolean heatDamage() {
         return configured(HEAT_DAMAGE);
+    }
+
+    private static ForgeConfigSpec.ConfigValue<List<? extends Number>> decayList(ForgeConfigSpec.Builder builder,
+            String key, double max, List<? extends Number> defaults) {
+        return builder.defineList(key, defaults, value -> value instanceof Number number
+                && number.doubleValue() >= 0 && number.doubleValue() <= max);
+    }
+
+    private static double decayValue(ForgeConfigSpec.ConfigValue<List<? extends Number>> value, int index) {
+        var configured = configured(value);
+        return (index < configured.size() ? configured : value.getDefault()).get(index).doubleValue();
+    }
+
+    private static FissionDecaySettings.Step decayStep(int index, double daughterMultiplier) {
+        return new FissionDecaySettings.Step(decayValue(DECAY_BUILDUP, index), decayValue(DECAY_LIFETIME, index),
+                decayValue(DECAY_EQUILIBRIUM, index), daughterMultiplier);
+    }
+
+    public static boolean fuelDecayEnabled() {
+        return configured(FUEL_DECAY);
+    }
+
+    public static @Nullable FissionDecaySettings decaySettings() {
+        if (!fuelDecayEnabled()) {
+            return null;
+        }
+        return new FissionDecaySettings(decayStep(0, decayValue(DECAY_DAUGHTERS, 0)),
+                decayStep(1, decayValue(DECAY_DAUGHTERS, 1)), decayStep(2, 0),
+                decayValue(DECAY_TERMS, 0), decayValue(DECAY_TERMS, 1));
     }
 
     private NCFission() {}

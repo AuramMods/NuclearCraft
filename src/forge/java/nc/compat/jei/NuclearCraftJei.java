@@ -67,6 +67,7 @@ import nc.recipe.ScrubberRecipe;
 import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
+import nc.recipe.FissionFuelStats;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -660,8 +661,15 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void getTooltip(ITooltipBuilder tooltip, R recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
-            if (!(recipe instanceof FissionIrradiatorRecipe irradiation) || mouseY < 9 || mouseY >= 30
-                    || mouseX < 69 || mouseX >= 95) {
+            if (mouseY < 9 || mouseY >= 30 || mouseX < 69 || mouseX >= 95) {
+                return;
+            }
+            if (recipe instanceof FissionFuelStats fuel) {
+                tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_criticality", fuel.criticality(), fuel.intrinsicFlux()));
+                tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_decay", decimal(fuel.decayFactor() * 100D)));
+                return;
+            }
+            if (!(recipe instanceof FissionIrradiatorRecipe irradiation)) {
                 return;
             }
             Object maximum = irradiation.maxFlux() < 0

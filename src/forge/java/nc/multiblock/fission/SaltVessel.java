@@ -28,6 +28,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     private @Nullable ResourceLocation filter;
     private @Nullable ResourceLocation reservedCircuit;
     private FluidStack reserved = FluidStack.EMPTY;
+    private final FissionFuelDecay decay = new FissionFuelDecay(this);
     private double progress;
     private double sourceEfficiency = -1;
     private long emissionTick = Long.MIN_VALUE;
@@ -64,6 +65,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         if (recipe == null) {
             return null;
         }
+        decay.remember(recipe, (int) (recipe.heat() * NCSaltFission.heatMultiplier()));
         double processTime = recipe.ticks() * NCSaltFission.timeMultiplier();
         if (fromTank) {
             // Reserve a measured input once and keep its destination channel through a rebuild.
@@ -110,6 +112,10 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             sourceEfficiency = efficiency;
             setChanged();
         }
+    }
+
+    FissionFuelDecay decay() {
+        return decay;
     }
 
     double sourceEfficiency() {
@@ -183,6 +189,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        decay.save(tag);
         if (filter != null) {
             tag.putString("fuel_filter", filter.toString());
         }
@@ -199,6 +206,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        decay.load(tag);
         filter = tag.contains("fuel_filter") ? ResourceLocation.tryParse(tag.getString("fuel_filter")) : null;
         reservedCircuit = tag.contains("reserved_circuit") ? ResourceLocation.tryParse(tag.getString("reserved_circuit")) : null;
         reserved = FluidStack.loadFluidStackFromNBT(tag.getCompound("fuel"));

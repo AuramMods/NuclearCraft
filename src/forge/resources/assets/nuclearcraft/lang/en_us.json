@@ -2524,6 +2524,8 @@
     "gui.nuclearcraft.irradiator.local_items": "Local storage",
     "gui.nuclearcraft.irradiator.linked_items": "Reactor storage",
     "gui.nuclearcraft.irradiator.flux": "Neutron flux %s/t",
+    "gui.nuclearcraft.jei.fission_criticality": "Criticality %s, intrinsic flux %s",
+    "gui.nuclearcraft.jei.fission_decay": "Fuel decay factor %s%%",
     "gui.nuclearcraft.jei.irradiation": "%s total flux",
     "gui.nuclearcraft.jei.irradiation_range": "Flux window %s to %s per tick",
     "gui.nuclearcraft.jei.irradiation_unlimited": "Unlimited",
