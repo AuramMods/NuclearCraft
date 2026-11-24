@@ -19,16 +19,16 @@ public final class DecayPoolScreen extends AbstractContainerScreen<DecayPoolMenu
 
     public DecayPoolScreen(DecayPoolMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        imageHeight = 106;
+        imageHeight = 118;
     }
 
     @Override protected void init() {
         super.init();
         toggle = addRenderableWidget(Button.builder(toggleLabel(), button -> click(DecayPoolMenu.TOGGLE))
-                .bounds(leftPos + 14, topPos + 82, 70, 18).build());
+                .bounds(leftPos + 14, topPos + 94, 70, 18).build());
         clear = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.decay_pool.clear"), button -> {
             if (Screen.hasShiftDown() || Screen.hasControlDown()) click(DecayPoolMenu.CLEAR);
-        }).bounds(leftPos + 92, topPos + 82, 70, 18).build());
+        }).bounds(leftPos + 92, topPos + 94, 70, 18).build());
     }
 
     private void click(int button) {
@@ -47,12 +47,13 @@ public final class DecayPoolScreen extends AbstractContainerScreen<DecayPoolMenu
 
     @Override protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         int color = menu.processing() ? 0x404040 : 0x6c401d;
-        centered(graphics, 6, color, "title", menu.lengthX(), menu.lengthY(), menu.lengthZ(), title);
+        centered(graphics, 6, color, "title", menu.lengthX(), menu.lengthY(), menu.lengthZ());
         centered(graphics, 21, color, "containers", menu.containers());
         centered(graphics, 33, color, "heat", String.format(Locale.ROOT, "%.2f", menu.heatRate()));
         centered(graphics, 45, color, "decay", String.format(Locale.ROOT, "%.5f", menu.decayRate()));
-        centered(graphics, 57, color, "water", menu.feedAmount(), menu.productAmount());
-        centered(graphics, 69, color, "rate", String.format(Locale.ROOT, "%.2f", menu.processRate()));
+        centered(graphics, 57, color, "water", menu.feedAmount());
+        centered(graphics, 69, color, "product", menu.productAmount());
+        centered(graphics, 81, color, "rate", String.format(Locale.ROOT, "%.2f", menu.processRate()));
     }
 
     private void centered(GuiGraphics graphics, int y, int color, String key, Object... values) {
@@ -65,7 +66,7 @@ public final class DecayPoolScreen extends AbstractContainerScreen<DecayPoolMenu
         toggle.setMessage(toggleLabel());
         clear.active = Screen.hasShiftDown() || Screen.hasControlDown();
         super.render(graphics, x, y, delta);
-        if (isHovering(92, 82, 70, 18, x, y)) {
+        if (isHovering(92, 94, 70, 18, x, y)) {
             graphics.renderTooltip(font, Component.translatable("gui.nuclearcraft.decay_pool.clear_hint"), x, y);
         }
     }
