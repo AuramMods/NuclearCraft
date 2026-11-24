@@ -17,6 +17,8 @@ public final class RadiationHudConfig {
                             value -> value instanceof Number number
                                     && number.doubleValue() >= 0 && number.doubleValue() <= 1);
     public static final ForgeConfigSpec.BooleanValue TEXT_OUTLINE = BUILDER.define("radiation_hud_text_outline", false);
+    public static final ForgeConfigSpec.BooleanValue CHUNK_BOUNDARIES =
+            BUILDER.define("radiation_chunk_boundaries", true);
     private static final ForgeConfigSpec SPEC = BUILDER.build();
 
     private RadiationHudConfig() {}
