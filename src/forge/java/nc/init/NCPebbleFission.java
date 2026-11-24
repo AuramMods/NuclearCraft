@@ -6,7 +6,9 @@ import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.PebbleCooler;
 import nc.multiblock.fission.PebbleCoolerBlock;
+import nc.multiblock.fission.PebblePartMenu;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.SolidFissionRecipe;
@@ -15,6 +17,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -68,12 +71,28 @@ public final class NCPebbleFission {
     public static final RegistryObject<BlockEntityType<FissionFuelCell>> CHAMBER_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("pebble_fission_chamber", () ->
                     BlockEntityType.Builder.of(FissionFuelCell::new, CHAMBER.get()).build(null));
+    public static final RegistryObject<BlockEntityType<PebbleCooler>> COOLER_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("pebble_fission_cooler", () ->
+                    BlockEntityType.Builder.of(PebbleCooler::new,
+                            COOLERS.values().stream().map(RegistryObject::get).toArray(Block[]::new)).build(null));
     public static final RegistryObject<MenuType<SolidFissionMenu>> MENU = NCRegistries.MENUS.register("pebble_fission_controller",
             () -> new MenuType<>((id, inventory) -> new SolidFissionMenu(id, inventory, true), FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<SolidFissionRecipe>> FUEL_TYPE = NCRegistries.RECIPE_TYPES.register("pebble_fission",
             () -> RecipeType.simple(NuclearCraft.id("pebble_fission")));
     public static final RegistryObject<RecipeSerializer<SolidFissionRecipe>> FUEL_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("pebble_fission", () -> new SolidFissionRecipe.Serializer(true));
+
+    private static final Map<PebblePartMenu.Kind, RegistryObject<MenuType<PebblePartMenu>>> PART_MENUS =
+            new EnumMap<>(PebblePartMenu.Kind.class);
+
+    static {
+        for (var kind : PebblePartMenu.Kind.values()) {
+            PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
+                    () -> new MenuType<>((id, inventory) -> new PebblePartMenu(id, inventory, kind), FeatureFlags.DEFAULT_FLAGS)));
+        }
+    }
+
+    public static MenuType<PebblePartMenu> partMenu(PebblePartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
 
     private NCPebbleFission() {}
 

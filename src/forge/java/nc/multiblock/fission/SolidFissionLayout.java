@@ -114,7 +114,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                             var wall = (FissionWallBlock) state.getBlock();
                             ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),
-                                    wall.coolant(), wall.saltCoolant(), role == Role.VESSEL_PORT ? entity.fuelFilter() : null));
+                                    wall.coolant(), wall.saltCoolant(), role == Role.VESSEL_PORT || role == Role.CHAMBER_PORT ? entity.fuelFilter() : null));
                         }
                         default -> {
                             return invalid("wall", pos);
@@ -133,16 +133,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             return invalid("wall", origin);
         }
         if (hasUnpairedPorts(ports, Role.VENT, null)
-                || (!cells.isEmpty() && (hasUnpairedPorts(ports, Role.FUEL_PORT, null)
-                || hasUnpairedPorts(ports, Role.CHAMBER_PORT, null)))) {
+                || (!cells.isEmpty() && hasUnpairedPorts(ports, Role.FUEL_PORT, null))) {
             return invalid("port_pair", origin);
-        }
-        if (variant == FissionVariant.PEBBLE) {
-            for (NCGasCoolants gas : NCGasCoolants.values()) {
-                if (hasUnpairedPorts(ports, Role.COOLER_PORT, gas)) {
-                    return invalid("port_pair", origin);
-                }
-            }
         }
         if (variant == FissionVariant.SALT) {
             var filters = new HashSet<ResourceLocation>();
@@ -186,7 +178,6 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             Object current = switch (role) {
                 case VESSEL_PORT -> port.fuelFilter();
                 case HEATER_PORT -> port.salt();
-                case COOLER_PORT -> port.gas();
                 default -> null;
             };
             if (port.role() == role && Objects.equals(current, filter)) {

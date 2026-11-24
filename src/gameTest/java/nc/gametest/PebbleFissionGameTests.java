@@ -1,5 +1,6 @@
 package nc.gametest;
 
+import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
@@ -8,6 +9,7 @@ import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import nc.init.NCFluids;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.PebblePartMenu;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.turbine.TurbineController;
 import net.minecraft.core.BlockPos;
@@ -15,12 +17,16 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.Container;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -31,6 +37,8 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Objects;
+import java.util.OptionalInt;
+import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -220,6 +228,140 @@ public final class PebbleFissionGameTests {
                     double leak = WorldRadiation.rate(helper.getLevel(), helper.absolutePos(CHAMBER));
                     helper.assertTrue(leak > 8 * 1.4647403038194445E-5, "The meltdown immediately contaminates the cell's chunk");
                 }).thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 130)
+    public static void filteredChambersMatchTheirPortsAndKeepReservations(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(MIN, Blocks.AIR);
+        BlockPos second = CHAMBER.north().above();
+        BlockPos secondInput = FUEL_IN.east();
+        helper.setBlock(second, NCPebbleFission.CHAMBER.get());
+        helper.setBlock(secondInput, NCPebbleFission.CHAMBER_PORT.get());
+        FakePlayer player = inspector(helper);
+        var leu235 = new ItemStack(item("leu_235_triso"));
+        var leu233 = new ItemStack(item("leu_233_triso"));
+        player.setItemInHand(InteractionHand.MAIN_HAND, leu235);
+        helper.useBlock(CHAMBER, player);
+        helper.useBlock(FUEL_IN, player);
+        helper.useBlock(FUEL_OUT, player);
+        helper.assertTrue(player.getMainHandItem().getCount() == 1, "Setting a filter must preserve its sample");
+        player.setItemInHand(InteractionHand.MAIN_HAND, leu233);
+        helper.useBlock(second, player);
+        helper.useBlock(secondInput, player);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.setBlock(MIN, NCFission.CASING.get());
+
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var first = items(helper, FUEL_IN, Direction.DOWN);
+                    var next = items(helper, secondInput, Direction.DOWN);
+                    helper.assertTrue(first.insertItem(0, leu233, true).getCount() == 1
+                                    && next.insertItem(0, leu235, false).getCount() == 1,
+                            "Each outward input rejects the valid fuel of the other circuit");
+                    helper.assertTrue(first.insertItem(0, leu235.copyWithCount(2), false).isEmpty()
+                                    && next.insertItem(0, leu233.copyWithCount(3), false).isEmpty(),
+                            "Matching pellets reach both circuits");
+                    helper.useBlock(second, player);
+                    var menu = (PebblePartMenu) player.containerMenu;
+                    helper.assertTrue(menu.linked() && menu.fuelFilter().is(leu233.getItem())
+                                    && menu.getSlot(0).getItem().getCount() == 3,
+                            "The chamber menu reads only its matching port circuit");
+                    player.getInventory().setItem(9, leu233.copy());
+                    helper.assertTrue(menu.quickMoveStack(player, 2).is(leu233.getItem())
+                                    && player.getInventory().getItem(9).isEmpty() && next.getStackInSlot(0).getCount() == 4,
+                            "Shift-clicking a pellet in the menu inserts into the same circuit");
+                    fluids(helper, COLD, Direction.NORTH).fill(new FluidStack(NCGasCoolants.OXYGEN.cold(), 1200), FluidAction.EXECUTE);
+                    runReactor(helper);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        helper.getBlockEntity(CHAMBER).saveWithoutMetadata().getDouble("progress") > 0,
+                        "The first chamber reserves and starts consuming its matched fuel"))
+                .thenExecute(() -> {
+                    var before = helper.getBlockEntity(second).saveWithoutMetadata();
+                    helper.assertTrue(ItemStack.of(before.getCompound("fuel")).is(leu233.getItem()),
+                            "The second chamber reserved its own fuel");
+                    var old = helper.getBlockEntity(FUEL_IN).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.DOWN);
+                    helper.setBlock(MIN, Blocks.AIR);
+                    helper.assertTrue(!old.isPresent(), "A broken shell invalidates old item capabilities");
+                    var first = helper.getBlockEntity(CHAMBER);
+                    var saved = first.saveWithoutMetadata();
+                    saved.putDouble("progress", 4800D);
+                    first.load(saved);
+                    helper.setBlock(MIN, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> {
+                    requireAssembled(helper);
+                    helper.assertTrue(items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0)
+                            .is(item("depleted_leu_235_triso")), "Reassembly discharges reserved fuel into its original filtered circuit");
+                })
+                .thenExecute(() -> helper.setBlock(FUEL_OUT.above(), Blocks.BARREL))
+                .thenWaitUntil(() -> {
+                    var barrel = (Container) helper.getBlockEntity(FUEL_OUT.above());
+                    helper.assertTrue(barrel.getItem(0).is(item("depleted_leu_235_triso"))
+                                    && barrel.getItem(0).getCount() == 1
+                                    && items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0).isEmpty(),
+                            "The output port pushes the one depleted pellet into adjacent storage");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 165)
+    public static void unportedCoolerProcessesFromItsLocalTanks(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(COLD, NCFission.CASING.get());
+        helper.setBlock(HOT, NCFission.CASING.get());
+        BlockPos cooler = CHAMBER.above();
+        FakePlayer player = inspector(helper);
+        BlockPos pos = helper.absolutePos(cooler);
+        player.moveTo(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(NCGasCoolants.OXYGEN.cold().getBucket()));
+                    helper.useBlock(cooler, player);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    helper.useBlock(cooler, player);
+                    var menu = (PebblePartMenu) player.containerMenu;
+                    helper.assertTrue(menu.connected() && !menu.linked() && menu.gas(false).getAmount() == 1000
+                                    && menu.capacity(false) == 1296, "Fill and inspect the cooler without a gas port");
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
+                    runReactor(helper);
+                })
+                .thenWaitUntil(() -> {
+                    var menu = (PebblePartMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.gas(true).getAmount() > 0, "Local cold oxygen is heated inside the reactor");
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    var menu = (PebblePartMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    int output = menu.gas(true).getAmount();
+                    player.moveTo(pos.getX() + 20, pos.getY(), pos.getZ());
+                    helper.assertTrue(!menu.clickMenuButton(player, PebblePartMenu.CLEAR_OUTPUT),
+                            "A player out of range cannot void cooler contents");
+                    player.moveTo(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D);
+                    helper.setBlock(MIN, Blocks.AIR);
+                    menu.broadcastChanges();
+                    helper.assertTrue(!menu.connected() && menu.gas(true).getAmount() == output
+                                    && menu.clickMenuButton(player, PebblePartMenu.CLEAR_OUTPUT),
+                            "Disassembly retains local output and a valid menu can clear it");
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.gas(true).isEmpty(), "The clear command affects only the selected output tank");
+                })
+                .thenSucceed();
+    }
+
+    private static FakePlayer inspector(GameTestHelper helper) {
+        return new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "PebbleInspector")) {
+            @Override
+            public OptionalInt openMenu(MenuProvider provider) {
+                containerMenu = provider.createMenu(1, getInventory(), this);
+                return OptionalInt.of(1);
+            }
+        };
     }
 
     @GameTest(template = "empty")

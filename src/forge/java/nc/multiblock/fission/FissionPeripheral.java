@@ -156,9 +156,9 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         var entity = level.getBlockEntity(pos);
         if (entity instanceof FissionFuelCell cell) {
             var items = controller.inventory();
-            var fuel = cell.reservedFuel().isEmpty() ? items.getStackInSlot(0) : cell.reservedFuel();
+            var fuel = cell.reservedFuel().isEmpty() ? cell.itemForInspection(items, false) : cell.reservedFuel();
             return fuelStats(core.fuelStats(pos), ComputerValues.item(fuel),
-                    ComputerValues.item(items.getStackInSlot(1)), cell.computerProgress());
+                    ComputerValues.item(cell.itemForInspection(items, true)), cell.computerProgress());
         }
         if (entity instanceof SaltVessel vessel) {
             var fuel = vessel.reservedForInspection();
@@ -184,10 +184,10 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
                     controller.existingSaltCoolantTank(coolant, false), controller.existingSaltCoolantTank(coolant, true),
                     controller.heaterProgress(pos, coolant), NCSaltFission.cooling(coolant), core.isCooling(pos));
         }
-        if (state.getBlock() instanceof PebbleCoolerBlock cooler) {
+        if (entity instanceof PebbleCooler cooler) {
             var gas = cooler.gas();
-            return coolerStats(core.coolerStats(pos), gas.name().toLowerCase(Locale.ROOT),
-                    controller.existingGasTank(gas, false), controller.existingGasTank(gas, true),
+            var tanks = cooler.tanks();
+            return coolerStats(core.coolerStats(pos), gas.name().toLowerCase(Locale.ROOT), tanks.cold, tanks.hot,
                     controller.gasProgress(pos), NCPebbleFission.cooling(gas), core.isCooling(pos));
         }
         if (state.getBlock() instanceof FissionShieldBlock) {

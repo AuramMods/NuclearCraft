@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import org.jetbrains.annotations.Nullable;
 import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.core.BlockPos;
@@ -8,12 +7,14 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,47 +26,52 @@ final class PebbleCooling {
     private static final int PORT_VOLUME = 1296;
     private final SolidFissionController owner;
     private final EnumMap<NCGasCoolants, Tanks> circuits = new EnumMap<>(NCGasCoolants.class);
+    private final EnumSet<NCGasCoolants> connected = EnumSet.noneOf(NCGasCoolants.class);
     private final Map<BlockPos, Double> credit = new HashMap<>();
 
     PebbleCooling(SolidFissionController owner) {
         this.owner = owner;
     }
 
-    FluidTank tank(NCGasCoolants gas, boolean output) {
-        Tanks tanks = circuits.computeIfAbsent(gas, Tanks::new);
-        return output ? tanks.hot : tanks.cold;
+    Tanks circuit(NCGasCoolants gas) {
+        return circuits.computeIfAbsent(gas, key -> new Tanks(key, owner, stack -> true));
+    }
+
+    Tanks tanks(PebbleCooler cooler) {
+        return connected.contains(cooler.gas()) ? circuit(cooler.gas()) : cooler.localTanks();
     }
 
     void clearMaterial() {
-        for (var circuit : circuits.values()) {
-            circuit.cold.setFluid(FluidStack.EMPTY);
-            circuit.hot.setFluid(FluidStack.EMPTY);
-        }
+        circuits.values().forEach(Tanks::clear);
         credit.clear();
         owner.setChanged();
-    }
-
-    @Nullable FluidTank existingTank(NCGasCoolants gas, boolean output) {
-        Tanks tanks = circuits.get(gas);
-        return tanks == null ? null : output ? tanks.hot : tanks.cold;
     }
 
     double progress(BlockPos pos) {
         return credit.getOrDefault(pos, 0D);
     }
 
-    void resize(SolidFissionLayout layout) {
+    void resize(ServerLevel level, SolidFissionLayout layout) {
         var portCounts = new EnumMap<NCGasCoolants, Integer>(NCGasCoolants.class);
         for (var port : layout.ports()) {
             if (port.gas() != null) {
                 portCounts.merge(port.gas(), 1, Integer::sum);
             }
         }
+        connected.clear();
+        connected.addAll(portCounts.keySet());
+        var coolerCounts = new EnumMap<NCGasCoolants, Integer>(NCGasCoolants.class);
+        for (BlockPos pos : layout.sinks()) {
+            if (level.getBlockState(pos).getBlock() instanceof PebbleCoolerBlock cooler) {
+                coolerCounts.merge(cooler.gas(), 1, Integer::sum);
+            }
+        }
         for (var entry : portCounts.entrySet()) {
-            Tanks tanks = circuits.computeIfAbsent(entry.getKey(), Tanks::new);
-            // Keep both inputs and products if a circuit is rebuilt with fewer ports.
-            resize(tanks.hot, PORT_VOLUME * entry.getValue());
-            resize(tanks.cold, PORT_VOLUME * entry.getValue());
+            Tanks tanks = circuit(entry.getKey());
+            int capacity = Math.max(PORT_VOLUME * entry.getValue(), 36 * coolerCounts.getOrDefault(entry.getKey(), 0));
+            // Retain both inputs and products through changes to the shell.
+            resize(tanks.hot, capacity);
+            resize(tanks.cold, capacity);
         }
         credit.keySet().retainAll(layout.sinks());
     }
@@ -78,10 +84,9 @@ final class PebbleCooling {
                                             Set<BlockPos> moderators) {
         var eligible = new EnumMap<NCGasCoolants, List<BlockPos>>(NCGasCoolants.class);
         for (BlockPos pos : layout.sinks()) {
-            if (level.getBlockState(pos).getBlock() instanceof PebbleCoolerBlock block) {
-                NCGasCoolants gas = block.gas();
-                Tanks tanks = circuits.get(gas);
-                if (tanks != null && tanks.transferable() > 0 && NCPebbleFission.cooling(gas) > 0) {
+            if (level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
+                NCGasCoolants gas = cooler.gas();
+                if (tanks(cooler).transferable() > 0 && NCPebbleFission.cooling(gas) > 0) {
                     eligible.computeIfAbsent(gas, ignored -> new ArrayList<>()).add(pos);
                 }
             }
@@ -92,7 +97,10 @@ final class PebbleCooling {
     }
 
     void heatGas(BlockPos pos, NCGasCoolants gas, double multiplier) {
-        Tanks tanks = circuits.get(gas);
+        if (!(owner.getLevel().getBlockEntity(pos) instanceof PebbleCooler cooler)) {
+            return;
+        }
+        Tanks tanks = tanks(cooler);
         int transferable = tanks.transferable();
         if (transferable <= 0 || multiplier <= 0) {
             return;
@@ -136,7 +144,7 @@ final class PebbleCooling {
     void load(CompoundTag tag) {
         for (NCGasCoolants gas : NCGasCoolants.values()) {
             if (tag.contains(gas.id(), Tag.TAG_COMPOUND) || circuits.containsKey(gas)) {
-                circuits.computeIfAbsent(gas, Tanks::new).load(tag.getCompound(gas.id()));
+                circuit(gas).load(tag.getCompound(gas.id()));
             }
         }
         credit.clear();
@@ -149,7 +157,7 @@ final class PebbleCooling {
         }
     }
 
-    private FluidTank createTank(Predicate<FluidStack> accepts) {
+    private static FluidTank createTank(BlockEntity owner, Predicate<FluidStack> accepts) {
         return new FluidTank(PORT_VOLUME, accepts) {
             @Override
             protected void onContentsChanged() {
@@ -158,13 +166,22 @@ final class PebbleCooling {
         };
     }
 
-    private final class Tanks {
+    static final class Tanks {
         final FluidTank cold;
         final FluidTank hot;
 
-        Tanks(NCGasCoolants gas) {
-            cold = createTank(stack -> stack.getFluid().is(gas.input()));
-            hot = createTank(stack -> stack.getFluid() == gas.hot());
+        Tanks(NCGasCoolants gas, BlockEntity owner, Predicate<FluidStack> acceptsCold) {
+            cold = createTank(owner, stack -> stack.getFluid().is(gas.input()) && acceptsCold.test(stack));
+            hot = createTank(owner, stack -> stack.getFluid() == gas.hot());
+        }
+
+        FluidTank tank(boolean output) {
+            return output ? hot : cold;
+        }
+
+        void clear() {
+            cold.drain(cold.getFluidAmount(), FluidAction.EXECUTE);
+            hot.drain(hot.getFluidAmount(), FluidAction.EXECUTE);
         }
 
         int transferable() {

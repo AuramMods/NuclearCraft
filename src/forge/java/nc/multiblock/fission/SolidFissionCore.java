@@ -206,7 +206,9 @@ final class SolidFissionCore {
 
         @Override
         boolean sameFuel(Reaction<?> other) {
-            return other instanceof ItemReaction item && ItemStack.isSameItemSameTags(cell.reservedFuel(), item.cell.reservedFuel());
+            return other instanceof ItemReaction item
+                    && Objects.equals(cell.pebbleFilter(), item.cell.pebbleFilter())
+                    && ItemStack.isSameItemSameTags(cell.reservedFuel(), item.cell.reservedFuel());
         }
     }
 

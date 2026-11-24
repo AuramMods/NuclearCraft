@@ -16,6 +16,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
@@ -27,6 +28,8 @@ import java.util.Objects;
 
 public final class FissionPortBlockEntity extends BlockEntity {
     private final @Nullable IrradiatorItems irradiationItems;
+    private final @Nullable PebbleFuelItems localPebbleFuel;
+    private final @Nullable PebbleCooling.Tanks localPebbleGas;
     private Binding binding;
     private @Nullable ResourceLocation fuelFilter;
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
@@ -39,6 +42,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
             case POWER_PORT -> NCFission.POWER_PORT_ENTITY.get();
             default -> NCFission.PORT_ENTITY.get();
         }, pos, state);
+        localPebbleGas = FissionPartBlock.role(state) == Role.COOLER_PORT
+                ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, stack -> true) : null;
+        localPebbleFuel = FissionPartBlock.role(state) == Role.CHAMBER_PORT ? new PebbleFuelItems(this, null) : null;
         irradiationItems = FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? new IrradiatorItems(this) : null;
     }
 
@@ -99,6 +105,31 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return binding != null && connected(binding);
     }
 
+    @Nullable SolidFissionController pebbleController() {
+        Binding current = binding;
+        return current != null && connected(current) && current.controller.variant() == FissionVariant.PEBBLE
+                ? current.controller : null;
+    }
+
+    PebbleFuelItems localPebbleFuel() {
+        return Objects.requireNonNull(localPebbleFuel);
+    }
+
+    PebbleFuelItems pebbleFuel() {
+        var controller = pebbleController();
+        return controller == null ? localPebbleFuel() : controller.pebbleItems(localPebbleFuel().filter());
+    }
+
+    PebbleCooling.Tanks localPebbleGas() {
+        return Objects.requireNonNull(localPebbleGas);
+    }
+
+    PebbleCooling.Tanks pebbleGas() {
+        var controller = pebbleController();
+        return controller == null ? localPebbleGas()
+                : controller.pebbleCircuit(((FissionWallBlock) getBlockState().getBlock()).coolant());
+    }
+
     @Nullable SolidFissionController saltController() {
         Binding current = binding;
         return current != null && connected(current) && current.controller.variant() == FissionVariant.SALT
@@ -146,8 +177,69 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
     }
 
+    void exportPebble(ServerLevel level) {
+        Binding current = binding;
+        if (current == null || !current.port.output() || !connected(current)) {
+            return;
+        }
+
+        Role role = current.port.role();
+        var fuel = role == Role.CHAMBER_PORT ? current.controller.pebbleItems(current.port.fuelFilter()) : null;
+        var gas = role == Role.COOLER_PORT ? current.controller.fluidTank(current.port) : null;
+        if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (gas == null || gas.isEmpty())) {
+            return;
+        }
+        Direction outward = current.port.side();
+        BlockPos adjacent = worldPosition.relative(outward);
+        var chunk = level.getChunkSource().getChunkNow(adjacent.getX() >> 4, adjacent.getZ() >> 4);
+        var target = chunk == null ? null : chunk.getBlockEntity(adjacent);
+        if (target == null) {
+            return;
+        }
+        Direction side = outward.getOpposite();
+        if (fuel != null) {
+            target.getCapability(ForgeCapabilities.ITEM_HANDLER, side).ifPresent(destination -> pushFuel(fuel, destination));
+        } else if (gas != null) {
+            target.getCapability(ForgeCapabilities.FLUID_HANDLER, side).ifPresent(destination -> pushGas(gas, destination));
+        }
+    }
+
+    private static void pushFuel(PebbleFuelItems source, IItemHandler target) {
+        var offer = source.getStackInSlot(1).copy();
+        int accepted = offer.getCount() - ItemHandlerHelper.insertItem(target, offer.copy(), true).getCount();
+        if (accepted <= 0) {
+            return;
+        }
+        var reserved = source.extractItem(1, accepted, false);
+        ItemStack remaining = reserved;
+        try {
+            remaining = ItemHandlerHelper.insertItem(target, reserved.copy(), false);
+        } finally {
+            if (!remaining.isEmpty()) {
+                source.insertItem(1, remaining, false);
+            }
+        }
+    }
+
+    private static void pushGas(FluidTank source, IFluidHandler target) {
+        int accepted = target.fill(source.getFluid().copy(), FluidAction.SIMULATE);
+        if (accepted <= 0) {
+            return;
+        }
+        var reserved = source.drain(accepted, FluidAction.EXECUTE);
+        int sent = 0;
+        try {
+            sent = Math.max(0, Math.min(reserved.getAmount(), target.fill(reserved.copy(), FluidAction.EXECUTE)));
+        } finally {
+            if (sent < reserved.getAmount()) {
+                reserved.shrink(sent);
+                source.fill(reserved, FluidAction.EXECUTE);
+            }
+        }
+    }
+
     @Nullable ResourceLocation fuelFilter() {
-        return fuelFilter;
+        return localPebbleFuel == null ? fuelFilter : localPebbleFuel.filter();
     }
 
     void fuelFilter(@Nullable ResourceLocation next) {
@@ -158,6 +250,12 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        if (localPebbleFuel != null) {
+            localPebbleFuel.save(tag);
+        }
+        if (localPebbleGas != null) {
+            tag.put("pebble_gas", localPebbleGas.save());
+        }
         if (irradiationItems != null) {
             irradiationItems.save(tag);
         }
@@ -169,6 +267,17 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (localPebbleGas != null) {
+            localPebbleGas.load(tag.getCompound("pebble_gas"));
+        }
+        if (localPebbleFuel != null) {
+            var previous = localPebbleFuel.filter();
+            localPebbleFuel.load(tag);
+            if (level instanceof ServerLevel server && !Objects.equals(previous, localPebbleFuel.filter())) {
+                FissionPartBlock.geometryChanged(server, worldPosition);
+            }
+            return;
+        }
         if (irradiationItems != null) {
             var previous = irradiationItems.filter();
             irradiationItems.load(tag);
@@ -257,6 +366,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
         private FuelHandler(Binding connection) {
             this.connection = connection;
             inventory = irradiationItems != null ? connection.controller.irradiatorItems(irradiationItems)
+                    : localPebbleFuel != null ? connection.controller.pebbleItems(connection.port.fuelFilter())
                     : connection.controller.inventory();
         }
 
@@ -289,7 +399,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return slot == 0 && !connection.port.output() && connected(connection)
-                    && (irradiationItems != null ? inventory.isItemValid(0, stack) : connection.controller.acceptsFuel(stack));
+                    && (irradiationItems != null || localPebbleFuel != null
+                    ? inventory.isItemValid(0, stack) : connection.controller.acceptsFuel(stack));
         }
     }
 }

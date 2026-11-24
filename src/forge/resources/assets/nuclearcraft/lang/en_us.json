@@ -2662,6 +2662,7 @@
     "gui.nuclearcraft.fission.hot_nak": "Hot NaK",
     "gui.nuclearcraft.jei.coolant_heater": "%s H/t cooling",
     "gui.nuclearcraft.salt_part.heat": "Cluster heat  %s / %s H",
+    "gui.nuclearcraft.pebble_part.reserved": "Reserved %s",
     "gui.nuclearcraft.salt_part.no_cluster": "No heat cluster",
     "gui.nuclearcraft.salt_part.capacity": "Capacity %s mB",
     "gui.nuclearcraft.salt_part.filter": "Filter %s",

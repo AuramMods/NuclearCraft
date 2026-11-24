@@ -88,6 +88,10 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         if (level instanceof ServerLevel && role == Role.IRRADIATOR_PORT && type == NCFission.IRRADIATOR_PORT_ENTITY.get()) {
             return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportIrradiation((ServerLevel) world);
         }
+        if (level instanceof ServerLevel && (role == Role.CHAMBER_PORT || role == Role.COOLER_PORT)
+                && type == NCFission.PORT_ENTITY.get()) {
+            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportPebble((ServerLevel) world);
+        }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
         }
@@ -126,6 +130,14 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             for (int slot = 0; slot < controller.inventory().getSlots(); slot++) {
                 Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(),
                         controller.inventory().getStackInSlot(slot));
+            }
+            controller.dropFilteredPebbleFuel();
+        }
+        if (!level.isClientSide && role(state) == Role.CHAMBER_PORT && !state.is(replacement.getBlock())
+                && level.getBlockEntity(pos) instanceof FissionPortBlockEntity port) {
+            var local = port.localPebbleFuel();
+            for (int slot = 0; slot < local.getSlots(); slot++) {
+                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), local.getStackInSlot(slot));
             }
         }
         if (!level.isClientSide && role(state) == Role.IRRADIATOR_PORT && !state.is(replacement.getBlock())
@@ -166,7 +178,8 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
                 return InteractionResult.PASS;
             }
         } else if (!isController(role) && role != Role.MONITOR && role != Role.IRRADIATOR_PORT
-                && role != Role.VESSEL_PORT && role != Role.HEATER_PORT && !sneaking && !multitool) {
+                && role != Role.VESSEL_PORT && role != Role.HEATER_PORT
+                && role != Role.CHAMBER_PORT && role != Role.COOLER_PORT && !sneaking && !multitool) {
             return InteractionResult.PASS;
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
@@ -193,6 +206,16 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
                 return false;
             }
             togglePort(level, state, pos, player);
+            return true;
+        }
+        if (role == Role.CHAMBER_PORT) {
+            PebblePartMenu.interactFuel(player, hand, port, PebblePartMenu.Kind.CHAMBER_PORT);
+            return true;
+        }
+        if (role == Role.COOLER_PORT) {
+            if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                PebblePartMenu.open(player, port, PebblePartMenu.Kind.COOLER_PORT);
+            }
             return true;
         }
         if (role == Role.VESSEL_PORT || role == Role.HEATER_PORT) {
