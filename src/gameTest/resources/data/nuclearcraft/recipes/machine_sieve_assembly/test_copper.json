@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:machine_sieve_assembly",
+    "block": {
+        "tag": "nuclearcraft:test_sieves"
+    },
+    "efficiency": 1.6
+}

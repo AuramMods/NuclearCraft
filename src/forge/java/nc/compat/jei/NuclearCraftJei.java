@@ -55,8 +55,8 @@ import nc.recipe.InfiltratorPressureRecipe;
 import nc.recipe.InfiltratorRecipe;
 import nc.recipe.LargeElectrolyzerRecipe;
 import nc.recipe.ElectrolyzerElectrolyteRecipe;
-import nc.recipe.ElectrolyzerMaterialRecipe;
-import nc.recipe.ElectrolyzerMaterialRecipe.Kind;
+import nc.recipe.MachineMaterialRecipe;
+import nc.recipe.MachineMaterialRecipe.Kind;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -173,12 +173,17 @@ public final class NuclearCraftJei implements IModPlugin {
                     NuclearCraftJei::itemRecipe, recipe -> energy(recipe.configuredTime(), recipe.configuredPower())));
         }
         for (Kind kind : Kind.values()) {
-            registration.addRecipeCategories(new Category<>(materialType(kind), materialBlock(kind), gui,
+            Block catalyst = materialBlock(kind);
+            registration.addRecipeCategories(new Category<>(materialType(kind), catalyst, gui,
                     (layout, material) -> layout.addSlot(INPUT, 24, 12).setStandardSlotBackground()
                             .addItemStacks(Arrays.stream(material.block().getItems()).filter(material::accepts).toList()),
-                    material -> kind == Kind.DIAPHRAGM
-                            ? Component.translatable("gui.nuclearcraft.jei.diaphragm", decimal(100 * material.efficiency()), decimal(material.contact()))
-                            : Component.translatable("gui.nuclearcraft.jei.electrode", decimal(100 * material.efficiency()))));
+                    material -> switch (kind) {
+                        case DIAPHRAGM -> Component.translatable("gui.nuclearcraft.jei.diaphragm",
+                                decimal(100 * material.efficiency()), decimal(material.contact()));
+                        case SIEVE -> Component.translatable("gui.nuclearcraft.jei.sieve_efficiency",
+                                decimal(100 * material.efficiency()));
+                        default -> Component.translatable("gui.nuclearcraft.jei.electrode", decimal(100 * material.efficiency()));
+                    }, kind == Kind.SIEVE ? Component.translatable("gui.nuclearcraft.jei.sieve_assembly") : catalyst.getName()));
         }
         registration.addRecipeCategories(
                 new Category<>(DECAY, NCGenerators.DECAY_GENERATOR.get(), gui, (layout, recipe) -> {
@@ -375,7 +380,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCMachines.block(Part.DECAY_POOL), DECAY_POOL, DECAY_POOL_SOURCE);
-        registration.addRecipeCatalyst(NCMachines.block(Part.DISTILLER), DISTILLER);
+        registration.addRecipeCatalyst(NCMachines.block(Part.DISTILLER), DISTILLER, materialType(Kind.SIEVE));
         registration.addRecipeCatalyst(NCMachines.block(Part.INFILTRATOR), INFILTRATOR, PRESSURE);
         registration.addRecipeCatalyst(NCMachines.block(Part.PRESSURE_CHAMBER), PRESSURE);
         registration.addRecipeCatalyst(NCMachines.block(Part.ELECTROLYZER), LARGE_ELECTROLYZER, ELECTROLYTE,
@@ -619,8 +624,8 @@ public final class NuclearCraftJei implements IModPlugin {
         layout.addSlot(OUTPUT, 112, 22).setOutputSlotBackground().addItemStack(recipe.product());
     }
 
-    private static RecipeType<ElectrolyzerMaterialRecipe> materialType(Kind kind) {
-        return RecipeType.create(NuclearCraft.MOD_ID, kind.id(), ElectrolyzerMaterialRecipe.class);
+    private static RecipeType<MachineMaterialRecipe> materialType(Kind kind) {
+        return RecipeType.create(NuclearCraft.MOD_ID, kind.id(), MachineMaterialRecipe.class);
     }
 
     private static Block materialBlock(Kind kind) {
@@ -628,6 +633,7 @@ public final class NuclearCraftJei implements IModPlugin {
             case CATHODE -> Part.CATHODE_TERMINAL;
             case ANODE -> Part.ANODE_TERMINAL;
             case DIAPHRAGM -> Part.STEEL_DIAPHRAGM;
+            case SIEVE -> Part.SIEVE_TRAY;
         });
     }
 

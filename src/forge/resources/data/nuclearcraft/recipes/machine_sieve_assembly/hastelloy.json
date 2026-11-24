@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:machine_sieve_assembly",
+    "block": {
+        "item": "nuclearcraft:hastelloy_sieve_assembly"
+    },
+    "legacy_profile": "hastelloy"
+}

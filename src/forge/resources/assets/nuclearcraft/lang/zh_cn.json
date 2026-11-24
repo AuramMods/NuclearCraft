@@ -182,5 +182,7 @@
     "gui.nuclearcraft.processor_fluids.shared": "共享",
     "gui.nuclearcraft.processor_fluids.split_help": "每种流体使用一个输入储槽。",
     "gui.nuclearcraft.processor_fluids.shared_help": "多个输入储槽可以接收同一种流体。",
-    "gui.nuclearcraft.fission_part.gas_tag": "接受带有 %s 标签的流体"
+    "gui.nuclearcraft.fission_part.gas_tag": "接受带有 %s 标签的流体",
+    "gui.nuclearcraft.jei.sieve_assembly": "筛网组件",
+    "gui.nuclearcraft.jei.sieve_efficiency": "效率 %s%%"
 }

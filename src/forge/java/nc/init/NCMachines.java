@@ -15,8 +15,9 @@ import nc.multiblock.machine.MachinePort;
 import nc.recipe.DecayPoolRecipe;
 import nc.recipe.DistillerRecipe;
 import nc.recipe.ElectrolyzerElectrolyteRecipe;
-import nc.recipe.ElectrolyzerMaterialRecipe;
-import nc.recipe.ElectrolyzerMaterialRecipe.Kind;
+import nc.recipe.MachineMaterialRecipe;
+import nc.recipe.MachineMaterialRecipe.Kind;
+import nc.recipe.MachineMaterialRecipe.SieveProfile;
 import nc.recipe.InfiltratorPressureRecipe;
 import nc.recipe.InfiltratorRecipe;
 import nc.recipe.LargeElectrolyzerRecipe;
@@ -32,7 +33,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -56,9 +58,10 @@ public final class NCMachines {
     private static final ForgeConfigSpec.IntValue ELECTROLYZER_POWER;
     private static final ForgeConfigSpec.DoubleValue ELECTROLYZER_SOUND_VOLUME;
     private static final ForgeConfigSpec.BooleanValue ELECTROLYZER_SMART_INPUT;
-    private static final EnumMap<Part, ForgeConfigSpec.DoubleValue> SIEVE_EFFICIENCIES = new EnumMap<>(Part.class);
-    private static final EnumMap<Kind, RegistryObject<RecipeType<ElectrolyzerMaterialRecipe>>> MATERIAL_RECIPES = new EnumMap<>(Kind.class);
-    private static final EnumMap<Kind, RegistryObject<RecipeSerializer<ElectrolyzerMaterialRecipe>>> MATERIAL_SERIALIZERS =
+    private static final EnumMap<SieveProfile, ForgeConfigSpec.DoubleValue> SIEVE_EFFICIENCIES = new EnumMap<>(SieveProfile.class);
+    private static volatile int distillerConfigRevision;
+    private static final EnumMap<Kind, RegistryObject<RecipeType<MachineMaterialRecipe>>> MATERIAL_RECIPES = new EnumMap<>(Kind.class);
+    private static final EnumMap<Kind, RegistryObject<RecipeSerializer<MachineMaterialRecipe>>> MATERIAL_SERIALIZERS =
             new EnumMap<>(Kind.class);
 
     static {
@@ -74,9 +77,9 @@ public final class NCMachines {
         DISTILLER_FACTOR_RECIPES = config.comment("Divide recipe amounts and duration by their greatest common divisor")
                 .define("factor_recipes", false);
         config.push("sieve_efficiency");
-        SIEVE_EFFICIENCIES.put(Part.STEEL_SIEVE, config.defineInRange("steel", 0.8D, 0D, 255D));
-        SIEVE_EFFICIENCIES.put(Part.PTFE_SIEVE, config.defineInRange("polytetrafluoroethene", 0.9D, 0D, 255D));
-        SIEVE_EFFICIENCIES.put(Part.HASTELLOY_SIEVE, config.defineInRange("hastelloy", 1D, 0D, 255D));
+        SIEVE_EFFICIENCIES.put(SieveProfile.STEEL, config.defineInRange("steel", 0.8D, 0D, 255D));
+        SIEVE_EFFICIENCIES.put(SieveProfile.POLYTETRAFLUOROETHENE, config.defineInRange("polytetrafluoroethene", 0.9D, 0D, 255D));
+        SIEVE_EFFICIENCIES.put(SieveProfile.HASTELLOY, config.defineInRange("hastelloy", 1D, 0D, 255D));
         config.pop(2);
         config.push("infiltrator");
         INFILTRATOR_TIME = config.defineInRange("time", 1600, 1, 128000);
@@ -113,7 +116,7 @@ public final class NCMachines {
         }
         for (Kind kind : Kind.values()) {
             MATERIAL_RECIPES.put(kind, NCRegistries.RECIPE_TYPES.register(kind.id(), () -> RecipeType.simple(NuclearCraft.id(kind.id()))));
-            MATERIAL_SERIALIZERS.put(kind, NCRegistries.RECIPE_SERIALIZERS.register(kind.id(), () -> new ElectrolyzerMaterialRecipe.Serializer(kind)));
+            MATERIAL_SERIALIZERS.put(kind, NCRegistries.RECIPE_SERIALIZERS.register(kind.id(), () -> new MachineMaterialRecipe.Serializer(kind)));
         }
     }
 
@@ -173,9 +176,14 @@ public final class NCMachines {
 
     private NCMachines() {}
 
-    public static void registerConfig(ModLoadingContext context) {
+    public static void registerConfig(FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-machines.toml");
+        context.getModEventBus().addListener((ModConfigEvent.Reloading event) -> {
+            if (event.getConfig().getSpec() == SPEC) distillerConfigRevision++;
+        });
     }
+
+    public static int distillerConfigRevision() { return distillerConfigRevision; }
 
     public static MachinePartBlock block(Part part) { return BLOCKS.get(part).get(); }
     public static int minSize() { return SPEC.isLoaded() ? MIN_SIZE.get() : MIN_SIZE.getDefault(); }
@@ -207,10 +215,10 @@ public final class NCMachines {
     public static boolean electrolyzerSmartInput() {
         return SPEC.isLoaded() ? ELECTROLYZER_SMART_INPUT.get() : ELECTROLYZER_SMART_INPUT.getDefault();
     }
-    public static RecipeType<ElectrolyzerMaterialRecipe> materialRecipes(Kind kind) { return MATERIAL_RECIPES.get(kind).get(); }
-    public static RecipeSerializer<ElectrolyzerMaterialRecipe> materialSerializer(Kind kind) { return MATERIAL_SERIALIZERS.get(kind).get(); }
-    public static double sieveEfficiency(Part part) {
-        var efficiency = SIEVE_EFFICIENCIES.get(part);
+    public static RecipeType<MachineMaterialRecipe> materialRecipes(Kind kind) { return MATERIAL_RECIPES.get(kind).get(); }
+    public static RecipeSerializer<MachineMaterialRecipe> materialSerializer(Kind kind) { return MATERIAL_SERIALIZERS.get(kind).get(); }
+    public static double sieveEfficiency(SieveProfile profile) {
+        var efficiency = SIEVE_EFFICIENCIES.get(profile);
         return SPEC.isLoaded() ? efficiency.get() : efficiency.getDefault();
     }
 

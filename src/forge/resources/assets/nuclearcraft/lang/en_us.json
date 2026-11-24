@@ -2849,6 +2849,8 @@
     "gui.nuclearcraft.jei.electrolytes": "Electrolyzer Electrolytes",
     "gui.nuclearcraft.jei.electrolyte_group": "Electrolyte %s",
     "gui.nuclearcraft.jei.electrode": "Electrode efficiency %s%%",
+    "gui.nuclearcraft.jei.sieve_assembly": "Sieve Assembly",
+    "gui.nuclearcraft.jei.sieve_efficiency": "Efficiency %s%%",
     "gui.nuclearcraft.jei.diaphragm": "Efficiency %s%%, contact %s",
     "subtitles.nuclearcraft.large_electrolyzer": "Electrolyzer runs",
     "death.attack.superfluid_freeze": "%1$s was Bose-Einstein condensated",

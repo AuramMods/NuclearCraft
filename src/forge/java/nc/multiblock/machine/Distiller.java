@@ -5,6 +5,8 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.multiblock.machine.MachinePartBlock.TrayPosition;
 import nc.recipe.DistillerRecipe;
+import nc.recipe.MachineMaterialRecipe;
+import nc.recipe.MachineMaterialRecipe.Kind;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -14,6 +16,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -37,6 +40,8 @@ public final class Distiller extends MachineController {
     private List<Block> layers = List.of();
     private List<Integer> trayLevels = List.of();
     private List<Integer> positionedTrays = List.of();
+    private @Nullable RecipeManager sieveRecipeManager;
+    private int distillerConfigRevision;
     private int area;
     private int trays;
     private int refluxUnits;
@@ -104,6 +109,10 @@ public final class Distiller extends MachineController {
     }
 
     @Override @Nullable String validateLayout(ServerLevel server, Cuboid found) {
+        RecipeManager recipes = server.getRecipeManager();
+        int configRevision = NCMachines.distillerConfigRevision();
+        var sieves = recipes.getAllRecipesFor(NCMachines.materialRecipes(Kind.SIEVE)).stream()
+                .sorted(Comparator.comparing(MachineMaterialRecipe::id)).toList();
         var low = found.min().offset(1, 1, 1);
         var high = found.max().offset(-1, -1, -1);
         var plane = new ArrayList<Block>(found.yLength() - 2);
@@ -121,18 +130,21 @@ public final class Distiller extends MachineController {
             if (!uniformPlane(server, low, high, y, block)) return "symmetry";
             plane.add(block);
             Part part = MachinePartBlock.part(sample);
-            if (part == null) continue;
             if (part == Part.SIEVE_TRAY) {
-                Part sieve = MachinePartBlock.part(server.getBlockState(new BlockPos(low.getX(), y + 1, low.getZ())));
-                if (sieve == null || !sieve.sieve()) return "sieve";
-                trayEfficiency += NCMachines.sieveEfficiency(sieve);
+                Block upper = server.getBlockState(new BlockPos(low.getX(), y + 1, low.getZ())).getBlock();
+                var sieve = MachineMaterialRecipe.firstMatch(sieves, upper);
+                if (sieve == null) return "sieve";
+                trayEfficiency += sieve.efficiency();
                 installedTrays.add(y - low.getY());
-            } else if (part.sieve()) {
-                if (y == low.getY() || plane.get(plane.size() - 2) != NCMachines.block(Part.SIEVE_TRAY)) {
-                    packedEfficiency += NCMachines.sieveEfficiency(part);
+            } else {
+                if (part != null && !part.sieve()) return "interior";
+                boolean placedOnTray = y > low.getY() && plane.get(plane.size() - 2) == NCMachines.block(Part.SIEVE_TRAY);
+                var sieve = placedOnTray ? null : MachineMaterialRecipe.firstMatch(sieves, block);
+                if (sieve != null) {
+                    packedEfficiency += sieve.efficiency();
                     packedCount++;
                 }
-            } else return "interior";
+            }
         }
 
         for (int x = low.getX(); x <= high.getX(); x++) {
@@ -158,6 +170,8 @@ public final class Distiller extends MachineController {
                 : (packedCount * trayEfficiency + packedEfficiency) / (1D + packedCount);
         baseSpeed = area * efficiency;
         basePower = (double) area * (trays + packedCount) + reboilers.size();
+        sieveRecipeManager = recipes;
+        distillerConfigRevision = configRevision;
         return null;
     }
 
@@ -173,6 +187,13 @@ public final class Distiller extends MachineController {
     }
 
     @Override void processTick(ServerLevel server) {
+        if (sieveRecipeManager != server.getRecipeManager() || distillerConfigRevision != NCMachines.distillerConfigRevision()) {
+            String error = validateLayout(server, bounds);
+            if (error != null) {
+                fail(error);
+                return;
+            }
+        }
         // Commands and other mods can change ordinary interior blocks without notifying a machine part.
         if (server.getGameTime() % 20 == Math.floorMod(worldPosition.asLong(), 20)) {
             var low = bounds.min().offset(1, 1, 1);

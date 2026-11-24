@@ -3,12 +3,11 @@ package nc.multiblock.machine;
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
-import nc.recipe.ElectrolyzerMaterialRecipe;
-import nc.recipe.ElectrolyzerMaterialRecipe.Kind;
+import nc.recipe.MachineMaterialRecipe;
+import nc.recipe.MachineMaterialRecipe.Kind;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -29,19 +28,19 @@ final class ElectrolyzerLayout {
     private final int height;
     private final int depth;
     private final Cell[] cells;
-    private final Map<Kind, List<ElectrolyzerMaterialRecipe>> materials;
+    private final Map<Kind, List<MachineMaterialRecipe>> materials;
     private final List<BlockPos> terminals;
     private final double speed;
     private final double power;
 
     record Validation(@Nullable ElectrolyzerLayout layout, @Nullable String error) {}
-    private record Cell(Block block, @Nullable ElectrolyzerMaterialRecipe material) {
+    private record Cell(Block block, @Nullable MachineMaterialRecipe material) {
         boolean diaphragm() { return material != null && material.kind() == Kind.DIAPHRAGM; }
     }
     private record Electrode(int x, int z, double efficiency) {}
 
     private ElectrolyzerLayout(BlockPos origin, int width, int height, int depth, Cell[] cells,
-                               Map<Kind, List<ElectrolyzerMaterialRecipe>> materials, List<BlockPos> terminals,
+                               Map<Kind, List<MachineMaterialRecipe>> materials, List<BlockPos> terminals,
                                double speed, double power) {
         this.origin = origin;
         this.width = width;
@@ -81,15 +80,15 @@ final class ElectrolyzerLayout {
                 for (int y = 1; y < height; y++) {
                     if (identity(level.getBlockState(base.above(y))) != block) return new Validation(null, "symmetry");
                 }
-                ElectrolyzerMaterialRecipe material = null;
+                MachineMaterialRecipe material = null;
                 if (bottom != null) {
                     Kind kind = bottom == Part.CATHODE_TERMINAL ? Kind.CATHODE : Kind.ANODE;
-                    material = match(materials.get(kind), block);
+                    material = MachineMaterialRecipe.firstMatch(materials.get(kind), block);
                     if (material == null) return new Validation(null, "electrode");
                     terminals.add(floor);
                     terminals.add(roof);
                 } else if (!state.canBeReplaced() && !state.isAir()) {
-                    material = match(materials.get(Kind.DIAPHRAGM), block);
+                    material = MachineMaterialRecipe.firstMatch(materials.get(Kind.DIAPHRAGM), block);
                     if (material == null) return new Validation(null, "interior");
                 }
                 cells[index(x, z, width)] = new Cell(block, material);
@@ -177,17 +176,12 @@ final class ElectrolyzerLayout {
     private static Block identity(BlockState state) { return state.isAir() ? Blocks.AIR : state.getBlock(); }
     private static int index(int x, int z, int width) { return z * width + x; }
 
-    private static Map<Kind, List<ElectrolyzerMaterialRecipe>> materials(ServerLevel level) {
-        var recipes = new EnumMap<Kind, List<ElectrolyzerMaterialRecipe>>(Kind.class);
-        for (var kind : Kind.values()) {
+    private static Map<Kind, List<MachineMaterialRecipe>> materials(ServerLevel level) {
+        var recipes = new EnumMap<Kind, List<MachineMaterialRecipe>>(Kind.class);
+        for (var kind : List.of(Kind.CATHODE, Kind.ANODE, Kind.DIAPHRAGM)) {
             recipes.put(kind, level.getRecipeManager().getAllRecipesFor(NCMachines.materialRecipes(kind)).stream()
-                    .sorted(Comparator.comparing(ElectrolyzerMaterialRecipe::id)).toList());
+                    .sorted(Comparator.comparing(MachineMaterialRecipe::id)).toList());
         }
         return recipes;
-    }
-
-    private static @Nullable ElectrolyzerMaterialRecipe match(List<ElectrolyzerMaterialRecipe> materials, Block block) {
-        var stack = new ItemStack(block);
-        return materials.stream().filter(material -> material.accepts(stack)).findFirst().orElse(null);
     }
 }

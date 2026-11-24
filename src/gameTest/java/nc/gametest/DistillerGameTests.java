@@ -83,6 +83,31 @@ public final class DistillerGameTests {
                 }).thenSucceed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 240)
+    public static void customSieveTagWorksAboveATrayAndAsAPackedLayer(GameTestHelper helper) {
+        var distiller = build(helper);
+        for (int x = 2; x <= 3; x++) {
+            for (int z = 2; z <= 3; z++) {
+                helper.setBlock(new BlockPos(x, 3, z), Blocks.WAXED_COPPER_BLOCK);
+                helper.setBlock(new BlockPos(x, 4, z), Blocks.COPPER_BLOCK);
+            }
+        }
+        double speed = 4 * 1.6 * Math.pow(1.125, 3);
+        int ticks = (int) Math.ceil(800 / speed);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "The tagged material supports both sieve planes"))
+                .thenExecute(() -> {
+                    var power = helper.getBlockEntity(POWER).getCapability(ForgeCapabilities.ENERGY, Direction.WEST)
+                            .orElseThrow(AssertionError::new);
+                    power.receiveEnergy(20_000, false);
+                    feed(helper, "minecraft:water", "nuclearcraft:hydrogen_sulfide");
+                })
+                .thenWaitUntil(() -> product(helper, "le_water", "depleted_hydrogen_sulfide"))
+                .thenExecute(() -> helper.assertTrue(distiller.saveWithoutMetadata().getLong("energy") == 20_000 - 45L * ticks,
+                        "The tagged tray and packed materials each contribute exactly once to the batch"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 300)
     public static void pausesBothProductsAndPreservesProgressAcrossReassembly(GameTestHelper helper) {
         var distiller = build(helper);

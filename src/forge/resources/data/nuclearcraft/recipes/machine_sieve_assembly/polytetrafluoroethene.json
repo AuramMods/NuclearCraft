@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:machine_sieve_assembly",
+    "block": {
+        "item": "nuclearcraft:polytetrafluoroethene_sieve_assembly"
+    },
+    "legacy_profile": "polytetrafluoroethene"
+}
