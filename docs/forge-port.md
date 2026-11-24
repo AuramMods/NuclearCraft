@@ -203,6 +203,8 @@ The packaged Distributor ran on a headless Forge 47.4.10 server with Auram's End
 
 A second dedicated server loaded an isolated Distributor, saved it when the chunk unloaded, and routed its stored contents after the chunk reloaded. The destination stores received 33 iron ingots, 2,880 mB of water, and 3,900 FE, matching the quantities stored before unloading.
 
+The full 539-mod snapshot with AuramCore 1.0.34 repeated both item, fluid, and energy chains on official Forge 47.4.18. Each destination saved 31 iron ingots, 2,300 mB of water, or 6,000 FE. The source stores and Distributors were empty after the transfers. The client loaded JEI and exited cleanly using OpenAL No Output, with zero visible windows or focus activations. The saved snapshot also contained tagged air in two empty Distributor slots. The port now writes an empty compound for empty slots and still reads the older air representation.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |

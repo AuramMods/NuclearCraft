@@ -49,6 +49,8 @@ public final class DistributorGameTests {
         var outletItems = oldItems.orElseThrow(AssertionError::new);
         var outletFluid = oldFluid.orElseThrow(AssertionError::new);
 
+        helper.assertTrue(buffer.saveWithoutMetadata().getCompound("items").isEmpty(),
+                "An empty Distributor slot saves as an empty compound");
         helper.assertTrue(!inlet.getCapability(ForgeCapabilities.ENERGY, Direction.EAST).isPresent()
                         && !inlet.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.EAST).isPresent()
                         && !outlet.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST).isPresent()

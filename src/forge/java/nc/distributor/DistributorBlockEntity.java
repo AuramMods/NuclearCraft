@@ -158,7 +158,7 @@ public final class DistributorBlockEntity extends EnergyBankBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("items", items.save(new CompoundTag()));
+        tag.put("items", items.isEmpty() ? new CompoundTag() : items.save(new CompoundTag()));
         tag.put("fluid", fluid.writeToNBT(new CompoundTag()));
         tag.putIntArray("output_offsets", outputOffsets);
     }
@@ -167,7 +167,8 @@ public final class DistributorBlockEntity extends EnergyBankBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("items", Tag.TAG_COMPOUND)) {
-            var saved = ItemStack.of(tag.getCompound("items"));
+            var itemTag = tag.getCompound("items");
+            var saved = itemTag.isEmpty() ? ItemStack.EMPTY : ItemStack.of(itemTag);
             if (saved.getCount() > ITEM_CAPACITY) {
                 saved.setCount(ITEM_CAPACITY);
             }
