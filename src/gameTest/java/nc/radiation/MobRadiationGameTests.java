@@ -10,6 +10,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.animal.Cow;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
@@ -60,5 +63,42 @@ public final class MobRadiationGameTests {
         MobRadiation.tick(restored, 4, 100);
         helper.assertTrue(!restored.isAlive(), "A fatal passive dose kills through the radiation damage type");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void mobsStoreFoodRadiationAndApplyInternalResistanceAfterReload(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var cow = new EatingCow(level);
+        cow.eatGoldenApple();
+        var data = cow.getPersistentData().getCompound(MobRadiation.DATA);
+        helper.assertTrue(cow.getMainHandItem().isEmpty() && data.getDouble(RadiationTreatment.RESISTANCE) == 0.1D
+                        && data.getDouble(MedicineItem.Kind.RADAWAY.id()) == 20D,
+                "Completing the actual use of a golden apple stores resistance and buffered treatment");
+
+        var loaded = EntityType.COW.create(level);
+        loaded.load(cow.saveWithoutId(new CompoundTag()));
+        MobRadiation.tick(loaded, 1D, 10D);
+        var reading = MobRadiation.reading(loaded);
+        helper.assertTrue(Math.abs(reading.rate() - 1D / 1.1D) < 1E-10
+                        && Math.abs(reading.dose() - 10D / 1.1D) < 1E-10,
+                "The saved food resistance attenuates the applied ambient rate");
+        data = loaded.getPersistentData().getCompound(MobRadiation.DATA);
+        helper.assertTrue(data.getDouble(MedicineItem.Kind.RADAWAY.id()) == 20D
+                        && data.getDouble(RadiationTreatment.RESISTANCE) == 0.1D,
+                "Mob updates preserve the queued treatment and resistance like the legacy sampler");
+        helper.succeed();
+    }
+
+    private static final class EatingCow extends Cow {
+        EatingCow(Level level) {
+            super(EntityType.COW, level);
+            setSilent(true);
+        }
+
+        void eatGoldenApple() {
+            setItemInHand(InteractionHand.MAIN_HAND, Items.GOLDEN_APPLE.getDefaultInstance());
+            startUsingItem(InteractionHand.MAIN_HAND);
+            completeUsingItem();
+        }
     }
 }

@@ -1,10 +1,13 @@
 package nc.radiation;
 
 import nc.NuclearCraft;
+import nc.init.NCRadiation;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.entity.living.LivingEntityUseItemEvent;
@@ -20,11 +23,47 @@ public final class FoodRadiation {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onEat(LivingEntityUseItemEvent.Finish event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            Effects effects = effects(event.getItem(), player);
-            if (effects != null) {
-                PlayerRadiation.eat(player, effects);
-            }
+        LivingEntity eater = event.getEntity();
+        if (eater.level().isClientSide) {
+            return;
+        }
+        Effects effects = effects(event.getItem(), eater);
+        if (effects == null) {
+            return;
+        }
+        if (eater instanceof ServerPlayer player) {
+            PlayerRadiation.eat(player, effects);
+        } else {
+            CompoundTag persistent = eater.getPersistentData();
+            CompoundTag data = persistent.getCompound(MobRadiation.DATA);
+            apply(eater, data, effects);
+            persistent.put(MobRadiation.DATA, data);
+        }
+    }
+
+    static boolean apply(LivingEntity eater, CompoundTag data, Effects effects) {
+        double dose = effects.dose();
+        if (dose > 0) {
+            RadiationPoison.add(data, dose);
+            playSound(eater, NCRadiation.RAD_POISONING.get(), Math.sqrt(dose) / 10);
+        } else if (dose < 0) {
+            RadiationTreatment.addRadaway(data, -dose);
+            playSound(eater, NCRadiation.RADAWAY_SOUND.get(), Math.sqrt(-dose) / 10);
+        }
+        double resistance = effects.resistance();
+        if (resistance != 0 && data.getDouble(RadiationTreatment.RAD_X_COOLDOWN) <= 0) {
+            RadiationTreatment.addResistance(data, resistance);
+            playSound(eater, resistance > 0 ? NCRadiation.RAD_X_SOUND.get() : NCRadiation.CHEMS_WEAR_OFF.get(),
+                    5 * Math.sqrt(Math.abs(resistance)) / RadiationConfig.RAD_X_AMOUNT.get());
+            return true;
+        }
+        return false;
+    }
+
+    private static void playSound(LivingEntity eater, SoundEvent sound, double strength) {
+        if (!eater.isSilent()) {
+            eater.level().playSound(null, eater.getX(), eater.getY(), eater.getZ(), sound, eater.getSoundSource(),
+                    (float) ((1 - Math.pow(10, -strength)) * RadiationConfig.soundVolume(3)), 1F);
         }
     }
 

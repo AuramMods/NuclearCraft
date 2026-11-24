@@ -9,7 +9,7 @@ import net.minecraft.world.entity.monster.Enemy;
 import net.minecraftforge.registries.ForgeRegistries;
 
 final class MobRadiation {
-    private static final String DATA = "nuclearcraft:radiation";
+    static final String DATA = "nuclearcraft:radiation";
     private static final String DOSE = "dose";
     private static final String MAXIMUM = "maximum";
     private static final String RATE = "rate";
@@ -21,7 +21,7 @@ final class MobRadiation {
         CompoundTag data = tag.getCompound(DATA);
         double multiplier = mob.isInWater() ? RadiationConfig.WATER_MULTIPLIER.get()
                 : mob.isInWaterOrRain() ? RadiationConfig.RAIN_MULTIPLIER.get() : 1;
-        double resistance = 0;
+        double resistance = data.getDouble(RadiationTreatment.RESISTANCE);
         for (var armor : mob.getArmorSlots()) {
             resistance += RadiationShielding.armorResistance(armor);
         }
