@@ -60,10 +60,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private ResourceLocation activeRecipe;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
-    private int recipeTicks;
 
     public ItemProcessorBlockEntity(BlockPos pos, BlockState state, Machine machine) {
-        super(machine.entityType(), pos, state, 512_000);
+        super(machine.entityType(), pos, state, machine.rate(), 512_000);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
@@ -170,11 +169,11 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             activeRecipe = next;
             setChanged();
         }
-        recipeTicks = recipe == null ? 0 : recipe.ticks();
-        basePower = recipe == null ? 0 : recipe.energyPerTick();
         if (recipe == null) {
+            updateRates(0, 0, 0);
             return false;
         }
+        updateRates(recipe.ticks(), recipe.configuredTime(), recipe.configuredPower());
         List<ItemProcessorRecipe.Product> products = recipe.products();
         FluidStack fluidProduct = machine.hasFluidOutput() ? recipe.fluidOutput() : FluidStack.EMPTY;
         boolean room = hasOutputSpace(products, fluidProduct);
@@ -192,7 +191,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
-        double batch = 2D * recipeTicks;
+        double batch = 2D * batchTicks;
         while (progressHalfTicks >= batch) {
             int[] amounts = recipe.match(input);
             for (int slot = 0; slot < amounts.length; slot++) {
@@ -363,8 +362,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case ItemProcessorMenu.PROGRESS -> recipeTicks == 0 ? 0
-                            : (int) (1000L * Math.min(progressHalfTicks, 2L * recipeTicks) / (2L * recipeTicks));
+                    case ItemProcessorMenu.PROGRESS -> progress();
                     case ItemProcessorMenu.ENERGY -> (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
                     case ItemProcessorMenu.FLUID_ID -> fluid == null ? 0
                             : BuiltInRegistries.FLUID.getId(fluid.stored(0).getFluid());

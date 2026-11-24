@@ -13,5 +13,6 @@
     },
     "ticks": 3465,
     "energy_per_tick": 10,
+    "decay_time_from_radiation": true,
     "radiation": 4.7e-07
 }

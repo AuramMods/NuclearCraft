@@ -9,5 +9,5 @@
         "item": "minecraft:glowstone_dust"
     },
     "ticks": 100,
-    "energy_per_tick": 0
+    "power_multiplier": 1
 }

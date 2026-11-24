@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.init.NCItemProcessors;
+import nc.init.NCItemProcessors.Rate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,14 +18,31 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     final ProcessorUpgrades upgrades = new ProcessorUpgrades(this);
     final ProcessorEnergy power;
+    final Rate rate;
     private final int baseCapacity;
-    int basePower;
+    private double basePower;
+    double batchTicks;
     double progressHalfTicks;
 
-    UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int baseCapacity) {
+    UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rate rate, int baseCapacity) {
         super(type, pos, state);
+        this.rate = rate;
         this.baseCapacity = baseCapacity;
         power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity);
+    }
+
+    void updateRates(double rawTicks, double configuredTicks, double configuredPower) {
+        double previousTicks = batchTicks > 0 ? batchTicks : rawTicks;
+        if (progressHalfTicks > 0 && configuredTicks > 0 && previousTicks > 0 && previousTicks != configuredTicks) {
+            progressHalfTicks = progressHalfTicks * (configuredTicks / previousTicks);
+            setChanged();
+        }
+        batchTicks = configuredTicks;
+        basePower = configuredPower;
+    }
+
+    int progress() {
+        return batchTicks > 0 ? (int) (1000D * Math.min(1D, progressHalfTicks / (2D * batchTicks))) : 0;
     }
 
     double speed() {
@@ -41,7 +59,8 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     }
 
     private int energyCapacity() {
-        return Math.max(energyPerTick(), (int) Math.ceil(baseCapacity * powerMultiplier() / speed()));
+        double scaledCapacity = rate.time(baseCapacity) * rate.powerScale() * powerMultiplier() / speed();
+        return Math.max(1, Math.max(energyPerTick(), (int) Math.ceil(scaledCapacity)));
     }
 
     boolean installUpgrade(Player player, InteractionHand hand, Direction face) {
@@ -74,8 +93,13 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         tag.putInt("energy", power.getEnergyStored());
         long whole = (long) progressHalfTicks;
         tag.putLong("progress_half_ticks", whole);
-        if (progressHalfTicks > whole) {
-            tag.putDouble("progress_fraction", progressHalfTicks - whole);
+        if (progressHalfTicks > 0) {
+            if (progressHalfTicks > whole) {
+                tag.putDouble("progress_fraction", progressHalfTicks - whole);
+            }
+            if (batchTicks > 0) {
+                tag.putDouble("progress_duration", batchTicks);
+            }
         }
     }
 
@@ -88,5 +112,7 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         power.load(tag.getInt("energy"));
         double fraction = tag.getDouble("progress_fraction");
         progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks")) + (fraction > 0 && fraction < 1 ? fraction : 0);
+        double savedDuration = tag.getDouble("progress_duration");
+        batchTicks = Double.isFinite(savedDuration) && savedDuration > 0 ? savedDuration : 0;
     }
 }

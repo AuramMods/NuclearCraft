@@ -3,6 +3,7 @@ package nc.processor;
 import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
+import nc.init.NCItemProcessors.Rate;
 
 import nc.init.NCRegistries;
 import nc.recipe.CentrifugeRecipe;
@@ -55,10 +56,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
-    private double recipeTicks;
 
     public FluidProcessorBlockEntity(Machine machine, BlockPos pos, BlockState state) {
-        super(machine.entity(), pos, state, 256_000);
+        super(machine.entity(), pos, state, machine.rate, 256_000);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
@@ -113,9 +113,12 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             activeRecipe = next;
             setChanged();
         }
-        recipeTicks = recipe == null ? 0 : recipe.duration();
-        basePower = recipe == null ? 0 : recipe.energyPerTick();
-        if (recipe == null || halted) {
+        if (recipe == null) {
+            updateRates(0, 0, 0);
+            return false;
+        }
+        updateRates(recipe.duration(), rate.time(recipe.duration()), rate.power(recipe.energyPerTick()));
+        if (halted) {
             return false;
         }
         List<FluidStack> outputs = recipe.results();
@@ -129,7 +132,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         }
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
-        double batchHalfTicks = 2 * recipeTicks;
+        double batchHalfTicks = 2 * batchTicks;
         while (progressHalfTicks >= batchHalfTicks) {
             var item = recipe.itemInput();
             if (item != null && machine.hasItemInput) {
@@ -267,7 +270,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             @Override
             public int get(int index) {
                 if (index == FluidProcessorMenu.PROGRESS) {
-                    return recipeTicks == 0 ? 0 : (int) (1000L * Math.min(progressHalfTicks, 2D * recipeTicks) / (2D * recipeTicks));
+                    return progress();
                 }
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
@@ -306,6 +309,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         private final int inputs;
         private final int outputs;
         private final boolean hasItemInput;
+        private final Rate rate = Rate.valueOf(name());
 
         Machine(int inputs, int outputs) {
             this(inputs, outputs, false);

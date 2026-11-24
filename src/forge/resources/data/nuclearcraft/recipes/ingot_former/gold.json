@@ -9,5 +9,5 @@
         "item": "minecraft:gold_ingot"
     },
     "ticks": 400,
-    "energy_per_tick": 0
+    "power_multiplier": 1
 }

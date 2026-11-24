@@ -22,6 +22,7 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.List;
 
 public final class NCItemProcessors {
@@ -32,16 +33,28 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
+    private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
+    private static final ForgeConfigSpec.DoubleValue POWER_MULTIPLIER;
+    private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_TIMES;
+    private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_POWERS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPEED_POWERS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPEED_FACTORS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> ENERGY_POWERS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> ENERGY_FACTORS;
-    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> UPGRADE_LIMITS;
+    private static final ForgeConfigSpec.ConfigValue<List<Integer>> UPGRADE_LIMITS;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
         MEKANISM_GAS = builder.comment("Allow the Universal Bin to accept Mekanism gases.")
                 .define("enable_mek_gas", true);
+        builder.push("rates");
+        TIME_MULTIPLIER = builder.defineInRange("processor_time_multiplier", 1D, 0.001D, 255D);
+        POWER_MULTIPLIER = builder.defineInRange("processor_power_multiplier", 1D, 0D, 255D);
+        PROCESSOR_TIMES = integerArray(builder, "processor_time",
+                Arrays.stream(Rate.values()).map(rate -> rate.stockTime).toList(), 1, 128_000);
+        PROCESSOR_POWERS = integerArray(builder, "processor_power",
+                Arrays.stream(Rate.values()).map(rate -> rate.stockPower).toList(), 0, 16_000);
+        builder.pop();
         builder.push("upgrades");
         String speedOrder = "Order: Processor Time, Processor Power, Generator Time, Generator Power.";
         String energyOrder = "Order: Processor Power, Generator Time.";
@@ -51,10 +64,9 @@ public final class NCItemProcessors {
                 List.of(1D, 1D, 1D, 1D), 0, 15);
         ENERGY_POWERS = upgradeArray(builder, "energy_upgrade_power_laws_fp", energyOrder, List.of(1D, 1D), 1, 15);
         ENERGY_FACTORS = upgradeArray(builder, "energy_upgrade_multipliers_fp", energyOrder, List.of(1D, 1D), 0, 15);
-        UPGRADE_LIMITS = builder.comment("Stack limits for Speed Upgrades and Energy Upgrades, from 1 to 64.")
-                .define("upgrade_stack_sizes", List.of(64, 64), candidate -> candidate instanceof List<?> values
-                        && values.size() == 2 && values.stream().allMatch(element ->
-                        element instanceof Integer size && size >= 1 && size <= 64));
+        UPGRADE_LIMITS = integerArray(
+                builder.comment("Stack limits for Speed Upgrades and Energy Upgrades."),
+                "upgrade_stack_sizes", List.of(64, 64), 1, 64);
         builder.pop();
         builder.push("rock_crusher");
         ROCK_CRUSHER_ALTERNATE = builder.comment("Use the legacy alternate granite and andesite products.")
@@ -91,7 +103,7 @@ public final class NCItemProcessors {
     }
 
     public static int upgradeLimit(int slot) {
-        return value(UPGRADE_LIMITS, slot).intValue();
+        return value(UPGRADE_LIMITS).get(slot);
     }
 
     private static double upgradeFactor(int count, ForgeConfigSpec.ConfigValue<List<? extends Number>> powers,
@@ -101,7 +113,18 @@ public final class NCItemProcessors {
     }
 
     private static Number value(ForgeConfigSpec.ConfigValue<List<? extends Number>> setting, int index) {
-        return (SPEC.isLoaded() ? setting.get() : setting.getDefault()).get(index);
+        return value(setting).get(index);
+    }
+
+    private static <T> T value(ForgeConfigSpec.ConfigValue<T> setting) {
+        return SPEC.isLoaded() ? setting.get() : setting.getDefault();
+    }
+
+    private static ForgeConfigSpec.ConfigValue<List<Integer>> integerArray(ForgeConfigSpec.Builder builder,
+            String key, List<Integer> defaults, int min, int max) {
+        return builder.define(key, defaults, candidate -> candidate instanceof List<?> values
+                && values.size() == defaults.size() && values.stream().allMatch(element ->
+                element instanceof Integer size && size >= min && size <= max));
     }
 
     private static ForgeConfigSpec.ConfigValue<List<? extends Number>> upgradeArray(ForgeConfigSpec.Builder builder,
@@ -121,6 +144,43 @@ public final class NCItemProcessors {
 
     public record TankSlot(int x, int y, int size, boolean output) {}
 
+    // The order matches the two 1.12.2 processor config arrays.
+    public enum Rate {
+        MANUFACTORY(400, 20), SEPARATOR(800, 10), DECAY_HASTENER(800, 10), FUEL_REPROCESSOR(400, 20),
+        ALLOY_FURNACE(400, 10), INFUSER(600, 10), MELTER(800, 40), SUPERCOOLER(600, 20),
+        ELECTROLYZER(3200, 40), ASSEMBLER(600, 10), INGOT_FORMER(400, 0), PRESSURIZER(600, 40),
+        CHEMICAL_REACTOR(800, 10), SALT_MIXER(600, 20), CRYSTALLIZER(1600, 10), ENRICHER(600, 10),
+        EXTRACTOR(2400, 10), CENTRIFUGE(1200, 10), ROCK_CRUSHER(400, 20), ELECTRIC_FURNACE(200, 20);
+
+        private final int stockTime;
+        private final int stockPower;
+
+        Rate(int stockTime, int stockPower) {
+            this.stockTime = stockTime;
+            this.stockPower = stockPower;
+        }
+
+        public double baseTime() {
+            return value(PROCESSOR_TIMES).get(ordinal()) * value(TIME_MULTIPLIER);
+        }
+
+        public double basePower() {
+            return value(PROCESSOR_POWERS).get(ordinal()) * value(POWER_MULTIPLIER);
+        }
+
+        public double time(double ticks) {
+            return ticks * (baseTime() / stockTime);
+        }
+
+        public double power(int energyPerTick) {
+            return energyPerTick * powerScale();
+        }
+
+        public double powerScale() {
+            return stockPower == 0 ? value(POWER_MULTIPLIER) : basePower() / stockPower;
+        }
+    }
+
     public enum Machine {
         MANUFACTORY("manufactory", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
         DECAY_HASTENER("decay_hastener", 1, 1, false, 56, null, 116, 0, 74, 35, 16),
@@ -137,6 +197,7 @@ public final class NCItemProcessors {
         ELECTRIC_FURNACE("electric_furnace", 1, 1, false, 56, null, 116, 0, 74, 35, 16);
 
         private final String id;
+        private final Rate rate = Rate.valueOf(name());
         private final int inputs;
         private final int outputs;
         private final boolean losesProgress;
@@ -196,6 +257,10 @@ public final class NCItemProcessors {
 
         public String id() {
             return id;
+        }
+
+        public Rate rate() {
+            return rate;
         }
 
         public int inputs() {

@@ -34,7 +34,8 @@ import java.util.List;
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
                                   @Nullable FluidIngredient fluidInput, FluidStack fluidOutput,
                                   List<Product> results, List<Product> alternateResults,
-                                  int ticks, int energyPerTick, double radiation) implements ProcessingRecipe {
+                                  int ticks, int energyPerTick, double radiation,
+                                  @Nullable Double powerMultiplier, boolean decayTimeFromRadiation) implements ProcessingRecipe {
     private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
 
     public ItemProcessorRecipe {
@@ -42,6 +43,27 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         fluidOutput = fluidOutput.copy();
         results = List.copyOf(results);
         alternateResults = List.copyOf(alternateResults);
+    }
+
+    public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
+                               @Nullable FluidIngredient fluidInput, FluidStack fluidOutput, List<Product> results,
+                               List<Product> alternateResults, int ticks, int energyPerTick, double radiation) {
+        this(id, machine, inputs, fluidInput, fluidOutput, results, alternateResults, ticks, energyPerTick, radiation,
+                null, false);
+    }
+
+    public double configuredTime() {
+        if (!decayTimeFromRadiation) {
+            return machine.rate().time(ticks);
+        }
+        double scaledRadiation = radiation / 9E-6D;
+        double multiplier = scaledRadiation > 1D ? Math.log(2D) / Math.log1p(scaledRadiation)
+                : (Math.log1p(scaledRadiation) - Math.log(scaledRadiation)) / Math.log(2D);
+        return Math.max(5D, 5D * Math.round(machine.rate().baseTime() * multiplier / 5D));
+    }
+
+    public double configuredPower() {
+        return powerMultiplier == null ? machine.rate().power(energyPerTick) : machine.rate().basePower() * powerMultiplier;
     }
 
     public static ItemProcessorRecipe electricSmelting(SmeltingRecipe source, RegistryAccess registries) {
@@ -227,12 +249,21 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 alternate = readResults(id, json, "alternate_results", context);
             }
             int ticks = GsonHelper.getAsInt(json, "ticks");
-            int energy = GsonHelper.getAsInt(json, "energy_per_tick");
+            Double power = json.has("power_multiplier") ? GsonHelper.getAsDouble(json, "power_multiplier") : null;
+            if (power != null && (json.has("energy_per_tick") || !Double.isFinite(power) || power < 0)) {
+                throw new JsonSyntaxException("Expected one valid power setting for " + id);
+            }
+            int energy = power == null ? GsonHelper.getAsInt(json, "energy_per_tick") : 0;
             if (ticks <= 0 || energy < 0) {
                 throw new JsonSyntaxException("Invalid item processor recipe " + id);
             }
+            double radiation = ProcessingRecipe.readRadiation(json, id);
+            boolean decayTime = GsonHelper.getAsBoolean(json, "decay_time_from_radiation", false);
+            if (decayTime && (machine != Machine.DECAY_HASTENER || radiation == 0)) {
+                throw new JsonSyntaxException("Radiation-derived decay time requires a positive Decay Hastener radiation rate for " + id);
+            }
             return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
-                    ticks, energy, ProcessingRecipe.readRadiation(json, id));
+                    ticks, energy, radiation, power, decayTime);
         }
 
         private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
@@ -299,7 +330,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             List<Product> results = readProducts(buffer);
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
             return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
-                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+                    buffer.readNullable(FriendlyByteBuf::readDouble), buffer.readBoolean());
         }
 
         @Override
@@ -322,6 +354,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            buffer.writeNullable(recipe.powerMultiplier, FriendlyByteBuf::writeDouble);
+            buffer.writeBoolean(recipe.decayTimeFromRadiation);
         }
 
         private List<Product> readProducts(FriendlyByteBuf buffer) {

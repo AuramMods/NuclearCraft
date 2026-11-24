@@ -9,5 +9,5 @@
         "item": "minecraft:end_stone"
     },
     "ticks": 800,
-    "energy_per_tick": 0
+    "power_multiplier": 1
 }

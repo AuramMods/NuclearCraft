@@ -3,6 +3,7 @@ package nc.processor;
 import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
+import nc.init.NCItemProcessors.Rate;
 
 import nc.init.NCRegistries;
 import nc.recipe.MelterRecipe;
@@ -49,10 +50,9 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
-    private int recipeDuration;
 
     public MelterBlockEntity(BlockPos pos, BlockState state) {
-        super(NCRegistries.MELTER_ENTITY.get(), pos, state, ENERGY_CAPACITY);
+        super(NCRegistries.MELTER_ENTITY.get(), pos, state, Rate.MELTER, ENERGY_CAPACITY);
     }
 
     ItemStackHandler inventory() {
@@ -80,10 +80,12 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                 setChanged();
             }
         }
-        recipeDuration = recipe == null ? 0 : recipe.ticks();
-        basePower = recipe == null ? 0 : recipe.energyPerTick();
-
-        if (recipe == null || halted) {
+        if (recipe == null) {
+            updateRates(0, 0, 0);
+            return false;
+        }
+        updateRates(recipe.ticks(), rate.time(recipe.ticks()), rate.power(recipe.energyPerTick()));
+        if (halted) {
             return false;
         }
         FluidStack product = recipe.product();
@@ -98,7 +100,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
-        double batch = 2D * recipeDuration;
+        double batch = 2D * batchTicks;
         while (progressHalfTicks >= batch) {
             tank.produce(product);
             inventory.extractItem(0, 1, false);
@@ -176,8 +178,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case MelterMenu.PROGRESS -> recipeDuration == 0 ? 0 :
-                            (int) (PROGRESS_SCALE * Math.min(progressHalfTicks, 2L * recipeDuration) / (2L * recipeDuration));
+                    case MelterMenu.PROGRESS -> progress();
                     case MelterMenu.ENERGY -> (int) ((long) PROGRESS_SCALE * power.getEnergyStored() / power.getMaxEnergyStored());
                     case MelterMenu.FLUID_AMOUNT -> tank.getFluidAmount();
                     case MelterMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());

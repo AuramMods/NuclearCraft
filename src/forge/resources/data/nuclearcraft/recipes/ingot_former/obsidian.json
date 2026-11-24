@@ -9,7 +9,7 @@
         "item": "minecraft:obsidian"
     },
     "ticks": 800,
-    "energy_per_tick": 0,
+    "power_multiplier": 1,
     "conditions": [
         {
             "type": "forge:tag_empty",

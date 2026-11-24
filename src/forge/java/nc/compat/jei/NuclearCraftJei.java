@@ -38,6 +38,7 @@ import nc.init.NCGenerators;
 import nc.init.NCMachines;
 import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
+import nc.init.NCItemProcessors.Rate;
 import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
 import nc.init.NCRadiation;
@@ -87,6 +88,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -166,7 +168,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
         for (Machine machine : Machine.values()) {
             registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
-                    NuclearCraftJei::itemRecipe, recipe -> energy(recipe.ticks(), recipe.energyPerTick())));
+                    NuclearCraftJei::itemRecipe, recipe -> energy(recipe.configuredTime(), recipe.configuredPower())));
         }
         for (Kind kind : Kind.values()) {
             registration.addRecipeCategories(new Category<>(materialType(kind), materialBlock(kind), gui,
@@ -212,7 +214,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(MELTER, NCRegistries.MELTER.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.input());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.MELTER, recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(ELECTROLYZER, NCRegistries.ELECTROLYZER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     List<FluidStack> outputs = recipe.results();
@@ -220,7 +222,7 @@ public final class NuclearCraftJei implements IModPlugin {
                         fluidSlot(layout, OUTPUT, 98 + (index % 2) * 20, 2 + (index / 2) * 20,
                                 List.of(outputs.get(index)));
                     }
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.ELECTROLYZER, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(CHEMICAL_REACTOR, NCRegistries.CHEMICAL_REACTOR.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
                     fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
@@ -228,7 +230,7 @@ public final class NuclearCraftJei implements IModPlugin {
                     for (int index = 0; index < results.size(); index++) {
                         fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(results.get(index)));
                     }
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.CHEMICAL_REACTOR, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(SCRUBBER, NCRadiation.SCRUBBER.get(), gui, NuclearCraftJei::scrubberRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.scrubber",
                                 recipe.ticks(), recipe.power(), decimal(recipe.efficiency()))),
@@ -238,18 +240,18 @@ public final class NuclearCraftJei implements IModPlugin {
                             Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
                     fluidSlot(layout, INPUT, 40, recipe.fluidInput().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.ENRICHER, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(SALT_MIXER, NCRegistries.SALT_MIXER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
                     fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.SALT_MIXER, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(SUPERCOOLER, NCRegistries.SUPERCOOLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.SUPERCOOLER, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(CENTRIFUGE, NCRegistries.CENTRIFUGE.get(), gui, NuclearCraftJei::centrifugeRecipe,
-                        recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                        recipe -> energy(Rate.CENTRIFUGE, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(IRRADIATION, NCFission.IRRADIATOR.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 30, 12).setStandardSlotBackground().addItemStacks(
                             Arrays.stream(recipe.input().getItems())
@@ -465,8 +467,13 @@ public final class NuclearCraftJei implements IModPlugin {
         return BigDecimal.valueOf(value).stripTrailingZeros().toPlainString();
     }
 
-    private static Component energy(int ticks, int power) {
-        return Component.translatable("gui.nuclearcraft.jei.energy", ticks, power);
+    private static Component energy(Rate rate, double ticks, int power) {
+        return energy(rate.time(ticks), rate.power(power));
+    }
+
+    private static Component energy(double ticks, double power) {
+        String time = BigDecimal.valueOf(ticks).round(MathContext.DECIMAL32).stripTrailingZeros().toPlainString();
+        return Component.translatable("gui.nuclearcraft.jei.energy", time, (int) Math.ceil(power));
     }
 
     private static void fissionHeat(IRecipeLayoutBuilder layout, FissionHeatRecipe recipe) {

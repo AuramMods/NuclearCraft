@@ -9,5 +9,5 @@
         "item": "minecraft:redstone"
     },
     "ticks": 100,
-    "energy_per_tick": 0
+    "power_multiplier": 1
 }

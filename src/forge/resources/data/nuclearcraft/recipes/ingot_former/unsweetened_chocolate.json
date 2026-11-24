@@ -9,5 +9,5 @@
         "item": "nuclearcraft:unsweetened_chocolate"
     },
     "ticks": 200,
-    "energy_per_tick": 0
+    "power_multiplier": 0.5
 }
