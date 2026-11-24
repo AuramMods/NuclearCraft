@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "nuclearcraft:helm_boron",
+    "nuclearcraft:chest_boron",
+    "nuclearcraft:legs_boron",
+    "nuclearcraft:boots_boron",
+    "nuclearcraft:helm_tough",
+    "nuclearcraft:chest_tough",
+    "nuclearcraft:legs_tough",
+    "nuclearcraft:boots_tough",
+    "nuclearcraft:helm_hard_carbon",
+    "nuclearcraft:chest_hard_carbon",
+    "nuclearcraft:legs_hard_carbon",
+    "nuclearcraft:boots_hard_carbon",
+    "nuclearcraft:helm_boron_nitride",
+    "nuclearcraft:chest_boron_nitride",
+    "nuclearcraft:legs_boron_nitride",
+    "nuclearcraft:boots_boron_nitride"
+  ]
+}

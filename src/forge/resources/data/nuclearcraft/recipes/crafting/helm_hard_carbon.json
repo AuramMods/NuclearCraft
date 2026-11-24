@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "hard_carbon",
+      "armor": true
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:ingots/hard_carbon"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:helm_hard_carbon"
+  }
+}

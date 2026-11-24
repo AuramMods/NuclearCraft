@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "nuclearcraft:pickaxe_boron",
+    "nuclearcraft:pickaxe_tough",
+    "nuclearcraft:pickaxe_hard_carbon",
+    "nuclearcraft:pickaxe_boron_nitride"
+  ]
+}

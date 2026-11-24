@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "nuclearcraft:spaxelhoe_boron",
+    "nuclearcraft:spaxelhoe_tough",
+    "nuclearcraft:spaxelhoe_hard_carbon",
+    "nuclearcraft:spaxelhoe_boron_nitride"
+  ]
+}

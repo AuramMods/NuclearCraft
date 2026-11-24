@@ -88,6 +88,14 @@ dependencies {
     compileOnly fg.deobf("com.github.glitchfiend:TerraBlender-forge:${minecraft_version}-${terrablender_version}")
 }
 
+def equipmentFamilies = ['boron', 'tough', 'hard_carbon', 'boron_nitride']
+def equipmentItems = equipmentFamilies.collectMany { family ->
+    ['sword', 'pickaxe', 'shovel', 'axe', 'hoe', 'spaxelhoe', 'helm', 'chest', 'legs', 'boots']
+            .collect { kind -> "${kind}_${family}" }
+}
+def equipmentTextures = equipmentItems.collect { "assets/nuclearcraft/textures/items/${it}.png".toString() } +
+        equipmentFamilies.collect { "assets/nuclearcraft/textures/models/armor/${it}_layer_*.png".toString() }
+
 tasks.named('processResources', ProcessResources) {
     inputs.property 'mod_version', mod_version
     filesMatching('META-INF/mods.toml') {
@@ -150,6 +158,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/items/radiation_badge.png'
         include 'assets/nuclearcraft/textures/items/*_hazmat.png'
         include 'assets/nuclearcraft/textures/models/armor/hazmat_layer_*.png'
+        include equipmentTextures
         include 'assets/nuclearcraft/textures/items/rad_shielding/*.png'
         include 'assets/nuclearcraft/textures/items/radaway.png'
         include 'assets/nuclearcraft/textures/items/radaway_slow.png'

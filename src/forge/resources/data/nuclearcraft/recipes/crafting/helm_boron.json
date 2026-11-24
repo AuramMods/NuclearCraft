@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "boron",
+      "armor": true
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:ingots/boron"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:helm_boron"
+  }
+}

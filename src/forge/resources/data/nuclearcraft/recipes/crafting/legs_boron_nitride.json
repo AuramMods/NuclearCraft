@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "boron_nitride",
+      "armor": true
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "M M",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:gems/boron_nitride"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:legs_boron_nitride"
+  }
+}

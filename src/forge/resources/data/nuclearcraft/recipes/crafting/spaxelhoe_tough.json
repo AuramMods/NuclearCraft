@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "tough",
+      "armor": false
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "ASP",
+    "HIW",
+    " I "
+  ],
+  "key": {
+    "A": {
+      "item": "nuclearcraft:axe_tough"
+    },
+    "S": {
+      "item": "nuclearcraft:shovel_tough"
+    },
+    "P": {
+      "item": "nuclearcraft:pickaxe_tough"
+    },
+    "H": {
+      "item": "nuclearcraft:hoe_tough"
+    },
+    "W": {
+      "item": "nuclearcraft:sword_tough"
+    },
+    "I": {
+      "tag": "forge:ingots/iron"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:spaxelhoe_tough"
+  }
+}

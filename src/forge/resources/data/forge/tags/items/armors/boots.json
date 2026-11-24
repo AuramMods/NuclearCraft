@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "nuclearcraft:boots_boron",
+    "nuclearcraft:boots_tough",
+    "nuclearcraft:boots_hard_carbon",
+    "nuclearcraft:boots_boron_nitride"
+  ]
+}

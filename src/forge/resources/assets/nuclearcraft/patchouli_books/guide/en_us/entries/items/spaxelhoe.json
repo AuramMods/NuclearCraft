@@ -1,14 +1,18 @@
 {
-	"name": "Spaxelhoe",
-	"icon": "minecraft:iron_pickaxe",
-	"category": "nuclearcraft:items",
-	"sortnum": 0,
-	"pages": [
-		{
-			"anchor": "spaxelhoe",
-			"type": "patchouli:text",
-			"title": "Spaxelhoe",
-			"text": "The $(item)Spaxelhoe$() is every tool condensed into one. It has the function of an axe, a sword, a shovel, a hoe, and a pickaxe.$(br2)The Spaxelhoe is pending in the Forge port."
-		}
-	]
+  "name": "Spaxelhoe",
+  "icon": "nuclearcraft:spaxelhoe_boron",
+  "category": "nuclearcraft:items",
+  "sortnum": 0,
+  "pages": [
+    {
+      "anchor": "spaxelhoe",
+      "type": "nuclearcraft:items/4",
+      "header": "Spaxelhoe",
+      "item1": "nuclearcraft:spaxelhoe_boron",
+      "item2": "nuclearcraft:spaxelhoe_tough",
+      "item3": "nuclearcraft:spaxelhoe_hard_carbon",
+      "item4": "nuclearcraft:spaxelhoe_boron_nitride",
+      "text": "The $(item)Spaxelhoe$() is every tool condensed into one. It has the function of an axe, a sword, a shovel, a hoe, and a pickaxe."
+    }
+  ]
 }

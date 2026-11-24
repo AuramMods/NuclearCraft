@@ -1,14 +1,18 @@
 {
-	"name": "镐尖斧",
-	"icon": "minecraft:iron_pickaxe",
-	"category": "nuclearcraft:items",
-	"sortnum": 0,
-	"pages": [
-		{
-			"anchor": "spaxelhoe",
-			"type": "patchouli:text",
-			"title": "镐尖斧",
-			"text": "$(item)镐尖斧$()是所有工具的集合，能当剑、斧、镐、锹和锄用。$(br2)此多用途工具尚未移植到 Forge 版。"
-		}
-	]
+  "name": "镐尖斧",
+  "icon": "nuclearcraft:spaxelhoe_boron",
+  "category": "nuclearcraft:items",
+  "sortnum": 0,
+  "pages": [
+    {
+      "anchor": "spaxelhoe",
+      "type": "nuclearcraft:items/4",
+      "header": "镐尖斧",
+      "item1": "nuclearcraft:spaxelhoe_boron",
+      "item2": "nuclearcraft:spaxelhoe_tough",
+      "item3": "nuclearcraft:spaxelhoe_hard_carbon",
+      "item4": "nuclearcraft:spaxelhoe_boron_nitride",
+      "text": "$(item)镐尖斧$()是所有工具的集合，能当剑、斧、镐、锹和锄用。"
+    }
+  ]
 }

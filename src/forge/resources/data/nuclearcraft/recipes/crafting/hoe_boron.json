@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "boron",
+      "armor": false
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "MM",
+    " S",
+    " S"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:ingots/boron"
+    },
+    "S": {
+      "tag": "forge:rods/wooden"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:hoe_boron"
+  }
+}

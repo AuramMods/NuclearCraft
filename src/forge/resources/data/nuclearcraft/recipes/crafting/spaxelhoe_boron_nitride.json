@@ -1,0 +1,39 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "boron_nitride",
+      "armor": false
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "ASP",
+    "HIW",
+    " I "
+  ],
+  "key": {
+    "A": {
+      "item": "nuclearcraft:axe_boron_nitride"
+    },
+    "S": {
+      "item": "nuclearcraft:shovel_boron_nitride"
+    },
+    "P": {
+      "item": "nuclearcraft:pickaxe_boron_nitride"
+    },
+    "H": {
+      "item": "nuclearcraft:hoe_boron_nitride"
+    },
+    "W": {
+      "item": "nuclearcraft:sword_boron_nitride"
+    },
+    "I": {
+      "tag": "forge:ingots/iron"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:spaxelhoe_boron_nitride"
+  }
+}

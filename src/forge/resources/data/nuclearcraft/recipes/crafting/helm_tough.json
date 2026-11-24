@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "tough",
+      "armor": true
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "MMM",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:ingots/tough"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:helm_tough"
+  }
+}

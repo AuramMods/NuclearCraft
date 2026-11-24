@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "conditions": [
+    {
+      "type": "nuclearcraft:equipment_enabled",
+      "family": "hard_carbon",
+      "armor": true
+    }
+  ],
+  "category": "equipment",
+  "pattern": [
+    "M M",
+    "M M"
+  ],
+  "key": {
+    "M": {
+      "tag": "forge:ingots/hard_carbon"
+    }
+  },
+  "result": {
+    "item": "nuclearcraft:boots_hard_carbon"
+  }
+}

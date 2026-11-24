@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "nuclearcraft:hoe_boron",
+    "nuclearcraft:hoe_tough",
+    "nuclearcraft:hoe_hard_carbon",
+    "nuclearcraft:hoe_boron_nitride"
+  ]
+}
