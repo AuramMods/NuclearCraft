@@ -1,0 +1,13 @@
+{
+	"name": "Condenser",
+	"icon": "nuclearcraft:condenser_controller",
+	"category": "nuclearcraft:heat_exchanger",
+	"sortnum": 1,
+	"pages": [
+		{
+			"type": "patchouli:text",
+			"text": "Condensers cool turbine exhaust or low-quality steam back into condensate. Connect an inlet to an outlet through a bank of condenser tubes. Airflow over the tubes increases the cooling rate.",
+			"anchor": "intro"
+		}
+	]
+}

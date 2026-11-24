@@ -1,0 +1,13 @@
+{
+	"name": "熔盐反应堆",
+	"icon": "nuclearcraft:salt_fission_controller",
+	"category": "nuclearcraft:fission",
+	"sortnum": 3,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "燃料盐通过容器端口进入燃料容器。冷却剂加热器将燃料的热量传给钠钾合金冷却剂。$(l:heat_exchanger/heat_exchanger#intro)热交换器$()可将冷却后的流体送回反应堆，并利用热量产生蒸汽。"
+		}
+	]
+}

@@ -1,0 +1,12 @@
+{
+	"name": "托卡马克反应堆（未完成）",
+	"icon": "nuclearcraft:wire_copper",
+	"category": "nuclearcraft:fusion",
+	"sortnum": 0,
+	"pages": [
+		{
+			"type": "patchouli:text",
+			"text": "暂未实装。"
+		}
+	]
+}

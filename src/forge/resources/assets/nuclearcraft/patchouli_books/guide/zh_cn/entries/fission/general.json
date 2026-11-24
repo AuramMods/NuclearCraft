@@ -1,0 +1,147 @@
+{
+	"name": "通用信息",
+	"icon": "nuclearcraft:fission_casing",
+	"category": "nuclearcraft:fission",
+	"sortnum": 0,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "$(thing)裂变反应堆$()从裂变燃料的自持核裂变反应中获取热量。这些热量最终将被转化为可用的能量，转化的方式取决于建造的反应堆类型。"
+		},
+		{
+			"anchor": "casing",
+			"type": "nuclearcraft:blocks/2",
+			"header": "反应堆外壳",
+			"block1": "nuclearcraft:fission_casing",
+			"block2": "nuclearcraft:fission_glass",
+			"text": "反应堆的内部组件被包含在一个长方体结构中。长方体结构的十二条边（含角）必须由$(item)裂变反应堆外壳$()构成，其他面可以由$(item)透明裂变反应堆外壳$()替代。当多方块结构成形时，边上的裂变反应堆外壳的材质将发生变化。"
+		},
+		{
+			"anchor": "controller",
+			"type": "nuclearcraft:blocks/3",
+			"header": "反应堆控制器",
+			"block1": "nuclearcraft:solid_fission_controller",
+			"block2": "nuclearcraft:salt_fission_controller",
+			"text": "反应堆的类型由$(item)反应堆控制器$()决定。必须安装在反应堆外壳的某个面上，没有控制器的反应堆多方块结构不会成形。控制器的 GUI 将显示反应堆的整体信息，如相关组件的平均状态信息等等。",
+			"block3": "nuclearcraft:pebble_fission_controller"
+		},
+		{
+			"anchor": "clusters",
+			"type": "patchouli:text",
+			"title": "反应堆集群",
+			"text": "$(thing)集群$()是相连的导热组件。这些组件只能处于有效状态或空闲状态，有效状态下会导热。$(l:fission/general#conductor)连接器$()一类的被动方块无论何时都会导热，而$(l:fission/general#moderator)减速剂$()和$(l:fission/general#reflector)反射器$()甚至不致使集群成形。"
+		},
+		{
+			"type": "patchouli:text",
+			"title": "反应堆集群",
+			"text": "同一热簇中的活跃组件共享热量。导热块能连接热簇，也可将热簇与反应堆外壳相连。热量无法导出时，组件可能过热。"
+		},
+		{
+			"anchor": "conductor",
+			"type": "nuclearcraft:blocks/1",
+			"header": "反应堆连接器",
+			"block": "nuclearcraft:fission_conductor",
+			"text": "$(item)反应堆连接器$()可用于把组件连接到外壳，也可将集群连接到一起。"
+		},
+		{
+			"anchor": "monitor",
+			"type": "nuclearcraft:blocks/1",
+			"header": "反应堆监视器",
+			"block": "nuclearcraft:fission_monitor",
+			"text": "反应堆运行时，监视器会亮起。潜行并用多功能工具点击组件，再用工具点击监视器完成绑定。右击监视器可显示该组件所在热簇的轮廓。"
+		},
+		{
+			"anchor": "fuel_component",
+			"type": "nuclearcraft:blocks/3",
+			"header": "反应堆燃料组件",
+			"block1": "nuclearcraft:solid_fission_cell",
+			"block2": "nuclearcraft:salt_fission_vessel",
+			"text": "每种反应堆都有对应的燃料组件。固体燃料反应堆使用燃料单元，卵石床反应堆使用燃料室，熔盐反应堆使用燃料容器。燃料发生裂变时会产生热量。",
+			"block3": "nuclearcraft:pebble_fission_chamber"
+		},
+		{
+			"anchor": "criticality",
+			"type": "patchouli:text",
+			"title": "临界系数",
+			"text": "发生裂变的燃料必须接收到中子通量（单位：N/t）。进入$(l:fission/general#fuel_component)燃料组件$()的中子通量高于燃料的临界系数时才能让燃料发生裂变。这一过程产出的除了热量，还有更多的中子。"
+		},
+		{
+			"type": "patchouli:text",
+			"text": "如果燃料单元接收到的中子通量超出燃料临界系数的两倍，则反应堆的效率会降低。中子通量在$(l:fission/general#irradiator)辐照器$()的配方中也有用处。"
+		},
+		{
+			"anchor": "moderator",
+			"type": "nuclearcraft:blocks/3",
+			"header": "减速剂",
+			"block1": "nuclearcraft:graphite_block",
+			"block2": "nuclearcraft:beryllium_block",
+			"block3": "nuclearcraft:heavy_water_moderator",
+			"text": " $(item)反应堆减速剂$()可以减少$(l:fission/general#fuel_component)燃料组件$()产出的、能继续导致其他燃料组件裂变的高能中子的能量。减速剂应当位于一条直线上，且每列不能超过四个。减速剂的一端应当有一个$(o)有效的$()燃料单元。"
+		},
+		{
+			"type": "patchouli:text",
+			"title": "减速剂",
+			"text": "另一端产生的中子通量等于减速剂列上减速剂通量系数之和。如果两端都有有效的燃料单元，则两端都能接收到等于这条线上所有减速剂通量系数之和的中子通量。在一些设计规则中可能会出现“有效的”减速剂这一称呼，指的是直接与燃料单元相邻的减速剂。"
+		},
+		{
+			"anchor": "heatsink",
+			"type": "nuclearcraft:blocks/2",
+			"block1": "nuclearcraft:water_heat_sink,nuclearcraft:iron_heat_sink,nuclearcraft:redstone_heat_sink,nuclearcraft:quartz_heat_sink,nuclearcraft:obsidian_heat_sink,nuclearcraft:nether_brick_heat_sink,nuclearcraft:glowstone_heat_sink,nuclearcraft:lapis_heat_sink,nuclearcraft:gold_heat_sink,nuclearcraft:prismarine_heat_sink,nuclearcraft:slime_heat_sink,nuclearcraft:end_stone_heat_sink,nuclearcraft:purpur_heat_sink,nuclearcraft:diamond_heat_sink,nuclearcraft:emerald_heat_sink,nuclearcraft:copper_heat_sink",
+			"block2": "nuclearcraft:tin_heat_sink,nuclearcraft:lead_heat_sink,nuclearcraft:boron_heat_sink,nuclearcraft:lithium_heat_sink,nuclearcraft:magnesium_heat_sink,nuclearcraft:manganese_heat_sink,nuclearcraft:aluminum_heat_sink,nuclearcraft:silver_heat_sink,nuclearcraft:fluorite_heat_sink,nuclearcraft:villiaumite_heat_sink,nuclearcraft:carobbiite_heat_sink,nuclearcraft:arsenic_heat_sink,nuclearcraft:liquid_nitrogen_heat_sink,nuclearcraft:liquid_helium_heat_sink,nuclearcraft:enderium_heat_sink,nuclearcraft:cryotheum_heat_sink",
+			"header": "散热器",
+			"text": "$(item)反应堆散热器$()以及$(l:fission/molten_salt#intro)熔盐裂变反应堆$()中对应的$(item)反应堆冷却剂加热器$()用于调整反应堆的$(thing)净热量$()。设计者应当以 0±5 H/t的产热作为反应堆的目标。散热器都具有特定的摆放规则。"
+		},
+		{
+			"type": "patchouli:text",
+			"text": "散热器可以移除反应堆的热量。有效的燃料单元会产出其基础产热乘以$(thing)热量倍率$()的热量。单元的热量倍率取决于减速剂列的数量。只与一条减速剂列相连的单元的热量效率是 100%，与两条相连的的热量效率则是 200%。"
+		},
+		{
+			"type": "patchouli:text",
+			"title": "散热器",
+			"text": "集群内有效的散热器会从集群抽取等于其冷却的热量。散热器的冷却各不相同。"
+		},
+		{
+			"anchor": "fission_source",
+			"type": "nuclearcraft:blocks/3",
+			"block1": "nuclearcraft:fission_source_radium_beryllium",
+			"block2": "nuclearcraft:fission_source_polonium_beryllium",
+			"block3": "nuclearcraft:fission_source_californium",
+			"header": "中子源",
+			"text": "$(item)反应堆中子源$()用于启动反应堆。中子源必须位于反应堆的表面，收到红石信号时中子源会启动指向的燃料组件，在其中产生裂变，产出更多中子并输送给其他燃料单元。"
+		},
+		{
+			"type": "patchouli:text",
+			"title": "中子源",
+			"text": "燃料组件启动时不能被阻挡。中子源的效率倍率会影响燃料组件的效率。"
+		},
+		{
+			"anchor": "reflector",
+			"type": "nuclearcraft:blocks/2",
+			"header": "反射器",
+			"block1": "nuclearcraft:beryllium_carbon_reflector",
+			"block2": "nuclearcraft:lead_steel_reflector",
+			"text": "$(item)反应堆反射器$()会将中子通量反射回源头。由于中子反射回$(l:fission/general#moderator)减速剂$()而并未有损失，反射系数为 100% 的反射器会使燃料单元中的中子通量翻倍。反射器距离燃料单元不能有超过两个减速剂的距离。"
+		},
+		{
+			"anchor": "irradiator",
+			"type": "nuclearcraft:blocks/1",
+			"header": "辐照器",
+			"block": "nuclearcraft:fission_irradiator",
+			"text": "$(item)反应堆辐照器$()在位于$(l:fission/general#moderator)减速剂$()列的末端时会利用中子通量完成配方。中子通量越大，配方便会进行得越快。辐照器在完成配方时会消耗热量并向环境释放辐射。"
+		},
+		{
+			"anchor": "shield",
+			"type": "nuclearcraft:blocks/1",
+			"header": "中子防护屏",
+			"block": "nuclearcraft:boron_silver_shield",
+			"text": "$(item)反应堆中子防护屏$()类似于可操纵的$(l:fission/general#moderator)减速剂$()，关闭时阻挡中子通量并产生热量，开启时允许中子通过但不像减速剂一样增加通量。中子防护屏能够在反应堆成形的状态下使减速剂无效。"
+		},
+		{
+			"anchor": "planner",
+			"type": "patchouli:text",
+			"title": "设计时需注意",
+			"text": "设计反应堆时应当以$(l:https://github.com/ThizThizzyDizzy/nc-reactor-generator/releases)反应堆设计器$()作为辅助工具，你可以利用它综合各类信息，包括摆放规则、输出、产热等等。"
+		}
+	]
+}

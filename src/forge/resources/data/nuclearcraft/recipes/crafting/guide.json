@@ -1,0 +1,22 @@
+{
+    "type": "forge:conditional",
+    "recipes": [
+        {
+            "conditions": [
+                { "type": "forge:mod_loaded", "modid": "patchouli" }
+            ],
+            "recipe": {
+                "type": "minecraft:crafting_shapeless",
+                "category": "misc",
+                "ingredients": [
+                    { "item": "minecraft:book" },
+                    { "tag": "forge:ingots/uranium" }
+                ],
+                "result": {
+                    "item": "patchouli:guide_book",
+                    "nbt": { "patchouli:book": "nuclearcraft:guide" }
+                }
+            }
+        }
+    ]
+}

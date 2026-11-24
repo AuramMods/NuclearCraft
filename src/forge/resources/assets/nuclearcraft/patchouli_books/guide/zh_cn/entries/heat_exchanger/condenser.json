@@ -1,0 +1,13 @@
+{
+	"name": "冷凝器",
+	"icon": "nuclearcraft:condenser_controller",
+	"category": "nuclearcraft:heat_exchanger",
+	"sortnum": 1,
+	"pages": [
+		{
+			"type": "patchouli:text",
+			"text": "冷凝器将涡轮机排出的乏汽或低品质蒸汽转化为冷凝水。用冷凝管将输入口与输出口相连。流过管道的空气可提高冷却速度。",
+			"anchor": "intro"
+		}
+	]
+}

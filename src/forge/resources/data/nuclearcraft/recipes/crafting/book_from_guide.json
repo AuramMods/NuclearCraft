@@ -1,0 +1,22 @@
+{
+    "type": "forge:conditional",
+    "recipes": [
+        {
+            "conditions": [
+                { "type": "forge:mod_loaded", "modid": "patchouli" }
+            ],
+            "recipe": {
+                "type": "minecraft:crafting_shapeless",
+                "category": "misc",
+                "ingredients": [
+                    {
+                        "type": "forge:partial_nbt",
+                        "item": "patchouli:guide_book",
+                        "nbt": { "patchouli:book": "nuclearcraft:guide" }
+                    }
+                ],
+                "result": { "item": "minecraft:book" }
+            }
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+	"name": "Tokamak Reactor (WIP)",
+	"icon": "nuclearcraft:wire_copper",
+	"category": "nuclearcraft:fusion",
+	"sortnum": 0,
+	"pages": [
+		{
+			"type": "patchouli:text",
+			"text": "Tokamak reactors have not been implemented yet."
+		}
+	]
+}

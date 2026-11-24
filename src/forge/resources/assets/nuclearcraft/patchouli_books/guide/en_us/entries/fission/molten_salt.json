@@ -1,0 +1,13 @@
+{
+	"name": "Molten Salt Reactor",
+	"icon": "nuclearcraft:salt_fission_controller",
+	"category": "nuclearcraft:fission",
+	"sortnum": 3,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "Fuel salt enters vessels through a vessel port. A coolant heater transfers heat from the fuel to NaK coolant. A $(l:heat_exchanger/heat_exchanger#intro)heat exchanger$() can return the coolant to the reactor and use the heat to make steam."
+		}
+	]
+}

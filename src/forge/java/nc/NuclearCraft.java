@@ -1,5 +1,6 @@
 package nc;
 
+import nc.compat.patchouli.Guidebook;
 import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
@@ -37,6 +38,7 @@ public final class NuclearCraft {
         NCEntities.register(context);
         NCGenerators.register(context);
         NCRadiation.register(context);
+        Guidebook.register(context);
         FluidConfig.register(context);
         NCFission.registerConfig(context);
         FissionHighlights.register();

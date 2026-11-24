@@ -1,0 +1,14 @@
+{
+	"name": "Spaxelhoe",
+	"icon": "minecraft:iron_pickaxe",
+	"category": "nuclearcraft:items",
+	"sortnum": 0,
+	"pages": [
+		{
+			"anchor": "spaxelhoe",
+			"type": "patchouli:text",
+			"title": "Spaxelhoe",
+			"text": "The $(item)Spaxelhoe$() is every tool condensed into one. It has the function of an axe, a sword, a shovel, a hoe, and a pickaxe.$(br2)The Spaxelhoe is pending in the Forge port."
+		}
+	]
+}

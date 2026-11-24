@@ -1,0 +1,13 @@
+{
+	"name": "卵石床反应堆",
+	"icon": "nuclearcraft:pebble_fission_controller",
+	"category": "nuclearcraft:fission",
+	"sortnum": 1,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "燃料室消耗分层的 TRISO 燃料球。满足摆放规则的气体冷却器带走反应热。用冷却器端口输入冷气，再从输出端口将热气送入$(l:multiblocks/turbine#intro)蒸汽涡轮机$()。"
+		}
+	]
+}

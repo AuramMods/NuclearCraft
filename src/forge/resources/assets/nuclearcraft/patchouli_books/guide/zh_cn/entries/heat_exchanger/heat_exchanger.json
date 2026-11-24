@@ -1,0 +1,13 @@
+{
+	"name": "热交换器",
+	"icon": "nuclearcraft:heat_exchanger_controller",
+	"category": "nuclearcraft:heat_exchanger",
+	"sortnum": 0,
+	"pages": [
+		{
+			"type": "patchouli:text",
+			"text": "热交换器在管内与管外的流体之间传递热量。用多功能工具配置管子的各个面，并用挡板引导管外流体。可在 JEI 中查看支持的冷热流体组合。",
+			"anchor": "intro"
+		}
+	]
+}

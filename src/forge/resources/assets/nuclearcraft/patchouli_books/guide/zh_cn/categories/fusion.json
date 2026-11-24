@@ -1,0 +1,7 @@
+{
+	"name": "核聚变（未完成）",
+	"description": "$(l)使原子核聚合，既有趣，又有荣。",
+	"icon": "nuclearcraft:wire_copper",
+	"parent": "nuclearcraft:multiblocks",
+	"sortnum": 1
+}

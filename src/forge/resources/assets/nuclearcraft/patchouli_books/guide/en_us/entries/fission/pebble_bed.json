@@ -1,0 +1,13 @@
+{
+	"name": "Pebble-Bed Reactor",
+	"icon": "nuclearcraft:pebble_fission_controller",
+	"category": "nuclearcraft:fission",
+	"sortnum": 1,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "Fuel chambers burn layered TRISO pellets. Valid gas coolers carry heat out of the reaction. Feed cold gas through a cooler port and route hot gas from an output port to a $(l:multiblocks/turbine#intro)turbine$()."
+		}
+	]
+}

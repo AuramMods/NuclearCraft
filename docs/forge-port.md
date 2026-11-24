@@ -245,6 +245,14 @@ After restarting the dedicated server, both routes processed a second feed and d
 
 The same JAR ran in the isolated 539-mod Auram snapshot on Forge 47.4.18, with AuramCore 1.0.37 build `a064b87` and Thaumaturge 1.1.6. A KubeJS override raised the low-enriched water recipe's oxygen output per batch from 250 mB to 300 mB. The Mekanism route saved 750 mB of hydrogen, 250 mB of deuterium, and 600 mB of oxygen. The Ender IO route saved 1,000 mB of hydrogen and 500 mB of oxygen. Both machines retained 64,000 mB of electrolyte. JEI initialized, OpenAL used No Output, and the native observer recorded zero visible windows and zero focus activations through a clean exit.
 
+### NuclearCraft Guide
+
+With Patchouli installed, `nuclearcraft:guide` has all 20 legacy entries, six categories, original page anchors, and English and Simplified Chinese text. Item and block diagrams use Forge registry IDs. The reactor, heat exchanger, and condenser entries explain how to run the ported machines. The Spaxelhoe, Machine Interface, and Universal Bin entries describe legacy features that are still pending in the Forge port. The Tokamak chapter retains its legacy work-in-progress status.
+
+One book and one ingot from `forge:ingots/uranium` craft the guide. The guide can be crafted back into an ordinary book. The recipe checks the `patchouli:book` tag to identify the NuclearCraft guide. With `give_guidebook` enabled in `world/serverconfig/nuclearcraft-misc.toml`, the server also gives each player one starter copy. The gift retries if their inventory is full. For a converted player save, map the inverse of legacy `giveGuidebook` to Forge's `PlayerPersisted."nuclearcraft:guide_given"`.
+
+All 151 GameTests passed on Forge without Patchouli. A packaged multiplayer test with Patchouli 84.1 verified both recipes and confirmed that the one-time starter grant survives restart and respawn. A full Creative inventory kept the gift pending until a slot opened. A server built the packaged turbine preview block for block, then converted 1,200 mB of high-pressure steam into 4,800 mB of exhaust while generating Forge Energy. The Simplified Chinese pages and turbine preview rendered in multiplayer. The English pages rendered with all 538 installed Auram mod JARs. The clients used OpenAL No Output with zero activation, foreground, and visible-window samples.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |

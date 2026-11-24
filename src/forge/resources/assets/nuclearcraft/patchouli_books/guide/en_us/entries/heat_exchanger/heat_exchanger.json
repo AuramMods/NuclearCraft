@@ -1,0 +1,13 @@
+{
+	"name": "Heat Exchanger",
+	"icon": "nuclearcraft:heat_exchanger_controller",
+	"category": "nuclearcraft:heat_exchanger",
+	"sortnum": 0,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "Heat exchangers transfer heat between the fluid around the tubes and the fluid inside them. Use the Multitool to configure tube faces and baffles to guide the shell fluid. Check JEI for the available hot and cold fluid pairs."
+		}
+	]
+}

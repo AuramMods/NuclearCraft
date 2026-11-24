@@ -1,0 +1,25 @@
+{
+	"name": "Miscellaneous Machines",
+	"icon": "nuclearcraft:machine_frame",
+	"category": "nuclearcraft:machines",
+	"sortnum": 3,
+	"pages": [
+		{
+			"anchor": "intro",
+			"type": "patchouli:text",
+			"text": "These machine-like block assist in building a clean, efficient, nuclear-oriented factory."
+		},
+		{
+			"anchor": "machine_interface",
+			"type": "patchouli:text",
+			"title": "Machine Interface",
+			"text": "The $(item)Machine Interface$() extends a processing machine on one of its sides. It can be used if there is no room for pipes or cables.$(br2)This block is pending in the Forge port."
+		},
+		{
+			"anchor": "bin",
+			"type": "patchouli:text",
+			"title": "Universal Bin",
+			"text": "The $(item)Universal Bin$() allows for the simple disposal of anything. It destroys all materials and energy fed to it.$(br2)This block is pending in the Forge port."
+		}
+	]
+}
