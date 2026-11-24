@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "GIG",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "G": {
+            "tag": "forge:ingots/graphite"
+        },
+        "I": [
+            {
+                "tag": "forge:ingots/americium_241"
+            },
+            {
+                "tag": "forge:ingots/americium_241_carbide"
+            },
+            {
+                "tag": "forge:ingots/americium_241_oxide"
+            },
+            {
+                "tag": "forge:ingots/americium_241_nitride"
+            },
+            {
+                "tag": "forge:ingots/americium_241_za"
+            }
+        ]
+    },
+    "result": {
+        "item": "nuclearcraft:rtg_americium"
+    }
+}

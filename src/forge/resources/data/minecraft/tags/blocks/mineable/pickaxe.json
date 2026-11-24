@@ -226,6 +226,14 @@
         "nuclearcraft:lithium_ion_battery_basic",
         "nuclearcraft:lithium_ion_battery_advanced",
         "nuclearcraft:lithium_ion_battery_du",
-        "nuclearcraft:lithium_ion_battery_elite"
+        "nuclearcraft:lithium_ion_battery_elite",
+        "nuclearcraft:rtg_uranium",
+        "nuclearcraft:rtg_plutonium",
+        "nuclearcraft:rtg_americium",
+        "nuclearcraft:rtg_californium",
+        "nuclearcraft:solar_panel_basic",
+        "nuclearcraft:solar_panel_advanced",
+        "nuclearcraft:solar_panel_du",
+        "nuclearcraft:solar_panel_elite"
     ]
 }

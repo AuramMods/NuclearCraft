@@ -3,6 +3,8 @@ package nc.init;
 import nc.NuclearCraft;
 import nc.generator.DecayGeneratorBlock;
 import nc.generator.DecayGeneratorBlockEntity;
+import nc.generator.PassiveGeneratorBlock;
+import nc.generator.PassiveGeneratorBlockEntity;
 import nc.recipe.DecayGeneratorRecipe;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -13,8 +15,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
@@ -24,6 +27,8 @@ public final class NCGenerators {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.IntValue DECAY_INTERVAL;
     private static final EnumMap<DecayFamily, DecaySettings> DECAY_SETTINGS = new EnumMap<>(DecayFamily.class);
+    private static final EnumMap<PassiveGenerator, ForgeConfigSpec.IntValue> POWER = new EnumMap<>(PassiveGenerator.class);
+    private static volatile int configRevision;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
@@ -37,6 +42,12 @@ public final class NCGenerators {
             builder.pop();
         }
         builder.pop();
+        for (PassiveGenerator generator : PassiveGenerator.values()) {
+            builder.push(generator.id);
+            POWER.put(generator, builder.comment(generator.solar ? "Maximum daytime output in FE per tick." : "Output in FE per tick.")
+                    .defineInRange("power", generator.defaultPower, 1, Integer.MAX_VALUE));
+            builder.pop();
+        }
         SPEC = builder.build();
     }
 
@@ -55,12 +66,20 @@ public final class NCGenerators {
 
     private NCGenerators() {}
 
-    public static void register(ModLoadingContext context) {
+    public static void register(FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-generators.toml");
+        context.getModEventBus().addListener((ModConfigEvent.Reloading event) -> {
+            if (event.getConfig().getSpec() == SPEC) {
+                configRevision++;
+            }
+        });
     }
 
     static void displayItems(CreativeModeTab.Output output) {
         output.accept(DECAY_ITEM.get());
+        for (PassiveGenerator generator : PassiveGenerator.values()) {
+            output.accept(generator.block());
+        }
     }
 
     public static int decayInterval() {
@@ -68,6 +87,54 @@ public final class NCGenerators {
     }
 
     private record DecaySettings(ForgeConfigSpec.DoubleValue lifetime, ForgeConfigSpec.DoubleValue power) {}
+
+    public static int configRevision() {
+        return configRevision;
+    }
+
+    public enum PassiveGenerator {
+        RTG_URANIUM("rtg_uranium", 1, false),
+        RTG_PLUTONIUM("rtg_plutonium", 40, false),
+        RTG_AMERICIUM("rtg_americium", 10, false),
+        RTG_CALIFORNIUM("rtg_californium", 200, false),
+        SOLAR_BASIC("solar_panel_basic", 5, true),
+        SOLAR_ADVANCED("solar_panel_advanced", 20, true),
+        SOLAR_DU("solar_panel_du", 80, true),
+        SOLAR_ELITE("solar_panel_elite", 320, true);
+
+        private final String id;
+        private final int defaultPower;
+        private final boolean solar;
+        private final RegistryObject<PassiveGeneratorBlock> block;
+        private final RegistryObject<BlockEntityType<PassiveGeneratorBlockEntity>> entity;
+
+        PassiveGenerator(String id, int power, boolean solar) {
+            this.id = id;
+            this.defaultPower = power;
+            this.solar = solar;
+            block = NCRegistries.BLOCKS.register(id, () -> new PassiveGeneratorBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK), this));
+            NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+            entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
+                    (pos, state) -> new PassiveGeneratorBlockEntity(pos, state, this), block.get()).build(null));
+        }
+
+        public PassiveGeneratorBlock block() {
+            return block.get();
+        }
+
+        public BlockEntityType<PassiveGeneratorBlockEntity> entity() {
+            return entity.get();
+        }
+
+        public int power() {
+            return SPEC.isLoaded() ? POWER.get(this).get() : defaultPower;
+        }
+
+        public boolean solar() {
+            return solar;
+        }
+    }
 
     public enum DecayFamily {
         THORIUM(165260, 1.45), URANIUM(136120, 1.75), URANIUM_238(145415, 1.65), NEPTUNIUM_237(19740, 12.15),

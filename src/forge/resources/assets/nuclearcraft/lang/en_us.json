@@ -2451,5 +2451,15 @@
     "block.nuclearcraft.battery.side": "%1$s face  %2$s",
     "block.nuclearcraft.battery.in": "Input",
     "block.nuclearcraft.battery.out": "Output",
-    "block.nuclearcraft.battery.off": "Disabled"
+    "block.nuclearcraft.battery.off": "Disabled",
+    "block.nuclearcraft.rtg_uranium": "Uranium RTG",
+    "block.nuclearcraft.rtg_plutonium": "Plutonium RTG",
+    "block.nuclearcraft.rtg_americium": "Americium RTG",
+    "block.nuclearcraft.rtg_californium": "Californium RTG",
+    "block.nuclearcraft.solar_panel_basic": "Basic Solar Panel",
+    "block.nuclearcraft.solar_panel_advanced": "Advanced Solar Panel",
+    "block.nuclearcraft.solar_panel_du": "DU Solar Panel",
+    "block.nuclearcraft.solar_panel_elite": "Elite Solar Panel",
+    "block.nuclearcraft.rtg.output": "Produces %s FE per tick",
+    "block.nuclearcraft.solar_panel.maximum": "Produces up to %s FE per tick"
 }

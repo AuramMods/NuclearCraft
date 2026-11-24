@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "GQG",
+        "PLP",
+        "CPC"
+    ],
+    "key": {
+        "G": {
+            "tag": "forge:dusts/graphite"
+        },
+        "Q": {
+            "tag": "nuclearcraft:solar_panel_quartz"
+        },
+        "P": {
+            "item": "minecraft:heavy_weighted_pressure_plate"
+        },
+        "L": {
+            "tag": "forge:gems/lapis"
+        },
+        "C": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:solar_panel_basic"
+    }
+}

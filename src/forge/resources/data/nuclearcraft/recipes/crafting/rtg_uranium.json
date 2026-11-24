@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "GIG",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "G": {
+            "tag": "forge:ingots/graphite"
+        },
+        "I": {
+            "tag": "forge:storage_blocks/uranium_238"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:rtg_uranium"
+    }
+}

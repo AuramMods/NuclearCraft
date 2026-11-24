@@ -22,7 +22,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 public final class BatteryBlock extends BaseEntityBlock {
-    static final Direction[] FACES = Direction.values();
     private final Tier tier;
 
     public BatteryBlock(Properties properties, Tier tier) {

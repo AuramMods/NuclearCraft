@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PXP",
+        "SSS",
+        "PWP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "X": {
+            "tag": "forge:gems/boron_arsenide"
+        },
+        "S": {
+            "item": "nuclearcraft:solar_panel_du"
+        },
+        "W": {
+            "item": "nuclearcraft:wire_magnesium_diboride"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:solar_panel_elite"
+    }
+}

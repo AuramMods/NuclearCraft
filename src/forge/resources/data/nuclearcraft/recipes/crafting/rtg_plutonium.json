@@ -1,0 +1,37 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PGP",
+        "GIG",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "G": {
+            "tag": "forge:ingots/graphite"
+        },
+        "I": [
+            {
+                "tag": "forge:ingots/plutonium_238"
+            },
+            {
+                "tag": "forge:ingots/plutonium_238_carbide"
+            },
+            {
+                "tag": "forge:ingots/plutonium_238_oxide"
+            },
+            {
+                "tag": "forge:ingots/plutonium_238_nitride"
+            },
+            {
+                "tag": "forge:ingots/plutonium_238_za"
+            }
+        ]
+    },
+    "result": {
+        "item": "nuclearcraft:rtg_plutonium"
+    }
+}

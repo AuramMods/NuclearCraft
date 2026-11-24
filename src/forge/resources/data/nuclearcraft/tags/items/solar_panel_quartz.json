@@ -1,0 +1,10 @@
+{
+    "replace": false,
+    "values": [
+        "#forge:dusts/quartz",
+        {
+            "id": "#forge:dusts/nether_quartz",
+            "required": false
+        }
+    ]
+}

@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_column",
+    "textures": {
+        "end": "nuclearcraft:block/rtg_americium_top",
+        "side": "nuclearcraft:block/rtg_americium_side"
+    }
+}
