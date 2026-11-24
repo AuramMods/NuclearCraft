@@ -12,5 +12,6 @@
         "item": "nuclearcraft:curium_246_za_ingot"
     },
     "ticks": 60,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.0765
 }

@@ -13,7 +13,7 @@ import net.minecraftforge.fluids.FluidStack;
 import java.util.List;
 
 public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, FluidStack product,
-                               int ticks, int energyPerTick) implements FluidProcessorRecipe {
+                               int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public SupercoolerRecipe {
         product = product.copy();
     }
@@ -52,13 +52,13 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
                 throw new JsonSyntaxException("Invalid Supercooler recipe " + id);
             }
             return new SupercoolerRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy);
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public SupercoolerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -67,6 +67,7 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
             buffer.writeFluidStack(recipe.product);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

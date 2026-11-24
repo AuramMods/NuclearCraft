@@ -74,7 +74,7 @@ public final class TrisoProcessingGameTests {
         var quartz = new ItemProcessorRecipe.Input(Ingredient.of(Items.QUARTZ), 1);
         var recipe = new ItemProcessorRecipe(NuclearCraft.id("qa_shapeless"), Machine.ASSEMBLER,
                 List.of(alternative, iron, coal, quartz), null, FluidStack.EMPTY,
-                List.of(new ItemProcessorRecipe.Product(stack("leu_235_triso", 1), 100, 0)), List.of(), 1, 1);
+                List.of(new ItemProcessorRecipe.Product(stack("leu_235_triso", 1), 100, 0)), List.of(), 1, 1, 0D);
         var input = new SimpleContainer(new ItemStack(Items.IRON_INGOT, 2), new ItemStack(Items.COPPER_INGOT),
                 new ItemStack(Items.QUARTZ), new ItemStack(Items.COAL));
         helper.assertTrue(Arrays.equals(recipe.match(input), new int[]{2, 1, 1, 1}),

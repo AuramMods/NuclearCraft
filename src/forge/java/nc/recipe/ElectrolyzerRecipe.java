@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidStack> results,
-                                 int ticks, int energyPerTick) implements FluidProcessorRecipe {
+                                 int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 4;
 
     public ElectrolyzerRecipe {
@@ -55,14 +55,14 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             for (var entry : entries) {
                 outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
             }
-            return new ElectrolyzerRecipe(id, input, outputs, ticks, energy);
+            return new ElectrolyzerRecipe(id, input, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public ElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt());
+            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -71,6 +71,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             buffer.writeCollection(recipe.results, FriendlyByteBuf::writeFluidStack);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

@@ -12,5 +12,6 @@
         "item": "nuclearcraft:curium_245_carbide_ingot"
     },
     "ticks": 95,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.00285
 }

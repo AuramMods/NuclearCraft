@@ -20,5 +20,6 @@
         "item": "nuclearcraft:bismuth_dust"
     },
     "ticks": 1025,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 6.3e-06
 }

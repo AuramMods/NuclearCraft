@@ -12,5 +12,6 @@
         "item": "nuclearcraft:tbu_pellet"
     },
     "ticks": 60,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.08358024698110801
 }

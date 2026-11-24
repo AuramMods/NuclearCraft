@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> results,
-                                    int ticks, int energyPerTick) implements FluidProcessorRecipe {
+                                    int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 2;
 
     public ChemicalReactorRecipe {
@@ -50,14 +50,14 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             for (var entry : entries) {
                 outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
             }
-            return new ChemicalReactorRecipe(id, FluidIngredient.readPair(json, id), outputs, ticks, energy);
+            return new ChemicalReactorRecipe(id, FluidIngredient.readPair(json, id), outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public ChemicalReactorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             List<FluidIngredient> inputs = FluidIngredient.readPair(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt());
+            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -66,6 +66,7 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             buffer.writeCollection(recipe.results, FriendlyByteBuf::writeFluidStack);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

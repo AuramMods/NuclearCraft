@@ -12,5 +12,6 @@
         "item": "nuclearcraft:zirconium_dust"
     },
     "ticks": 65,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.0345
 }

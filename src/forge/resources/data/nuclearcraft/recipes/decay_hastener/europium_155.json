@@ -12,5 +12,6 @@
         "item": "nuclearcraft:gadolinium_dust"
     },
     "ticks": 55,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.21
 }

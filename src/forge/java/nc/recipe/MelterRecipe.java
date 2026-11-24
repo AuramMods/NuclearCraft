@@ -10,7 +10,6 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -19,8 +18,8 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
-public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack product, int ticks, int energyPerTick)
-        implements Recipe<Container> {
+public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack product, int ticks, int energyPerTick, double radiation)
+        implements ProcessingRecipe {
 
     @Override
     public boolean matches(Container container, Level level) {
@@ -80,13 +79,13 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
             if (fluid == null || fluid == Fluids.EMPTY || amount <= 0 || ticks <= 0 || energyPerTick < 0) {
                 throw new JsonSyntaxException("Invalid Melter recipe " + id);
             }
-            return new MelterRecipe(id, input, new FluidStack(fluid, amount), ticks, energyPerTick);
+            return new MelterRecipe(id, input, new FluidStack(fluid, amount), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public MelterRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new MelterRecipe(id, Ingredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -95,6 +94,7 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
             buffer.writeFluidStack(recipe.product);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

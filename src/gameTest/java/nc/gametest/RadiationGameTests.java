@@ -320,6 +320,56 @@ public final class RadiationGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 160)
+    public static void poweredProcessorsEmitOnlyWhenTheirRecipeAdvances(GameTestHelper helper) {
+        var hastenerPos = new BlockPos(2, 1, 2);
+        var crystallizerPos = new BlockPos(4, 1, 2);
+        helper.setBlock(hastenerPos, Machine.DECAY_HASTENER.block());
+        helper.setBlock(crystallizerPos, Machine.CRYSTALLIZER.block());
+        var hastener = helper.getBlockEntity(hastenerPos);
+        var crystallizer = helper.getBlockEntity(crystallizerPos);
+        var hasteSource = (ChunkRadiationSource) hastener;
+        var crystalSource = (ChunkRadiationSource) crystallizer;
+        var hastePower = hastener.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        var items = hastener.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        helper.assertTrue(items.insertItem(0, stack("ruthenium_106_dust", 1), false).isEmpty(),
+                "The Hastener accepts the radioactive input from above");
+        var inputFluid = crystallizer.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
+                .orElseThrow(AssertionError::new);
+        var solution = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("irradiated_borax_solution"));
+        helper.assertTrue(inputFluid.fill(new FluidStack(solution, 666), FluidAction.EXECUTE) == 666,
+                "The Crystallizer accepts the full irradiated borax batch");
+        var crystalPower = crystallizer.getCapability(ForgeCapabilities.ENERGY, Direction.EAST)
+                .orElseThrow(AssertionError::new);
+        crystalPower.receiveEnergy(15, false);
+        helper.startSequence()
+                .thenWaitUntil(() -> near(helper, crystalSource.radiationEmission(), 0.033D / 4D,
+                        "Processing irradiated borax emits the legacy Caesium-137 fraction"))
+                .thenExecute(() -> {
+                    near(helper, hasteSource.radiationEmission(), 0D, "An unpowered Hastener stays quiet");
+                    hastePower.receiveEnergy(1000, false);
+                })
+                .thenWaitUntil(() -> near(helper, hasteSource.radiationEmission(), 0.98D,
+                        "The Hastener emits in proportion to the active ruthenium batch"))
+                .thenExecute(() -> helper.setBlock(hastenerPos.west(), Blocks.REDSTONE_BLOCK))
+                .thenExecuteAfter(4, () -> {
+                    near(helper, hasteSource.radiationEmission(), 0D, "Redstone stops the Hastener emission");
+                    near(helper, crystalSource.radiationEmission(), 0D, "Power loss stops the Crystallizer emission");
+                    helper.assertTrue(items.getStackInSlot(0).getCount() == 1
+                                    && inputFluid.getFluidInTank(0).getAmount() == 666,
+                            "No batch finishes while the machine cannot run");
+                    helper.setBlock(hastenerPos.west(), Blocks.AIR);
+                })
+                .thenWaitUntil(() -> near(helper, hasteSource.radiationEmission(), 0.98D,
+                        "Removing redstone resumes processing and radiation"))
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(items.getStackInSlot(1).is(stack("palladium_dust", 1).getItem()),
+                            "The Hastener produces the legacy decay product");
+                    near(helper, hasteSource.radiationEmission(), 0D, "Emission ends after the last processing tick");
+                })
+                .thenSucceed();
+    }
+
     private static FakePlayer player(GameTestHelper helper, String name) {
         var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
         // Keep inventory-only cases separate from the active emitters in the GameTest area.

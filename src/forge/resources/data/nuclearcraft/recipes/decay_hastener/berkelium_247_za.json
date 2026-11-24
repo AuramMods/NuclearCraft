@@ -12,5 +12,6 @@
         "item": "nuclearcraft:americium_243_za_ingot"
     },
     "ticks": 125,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.000725
 }

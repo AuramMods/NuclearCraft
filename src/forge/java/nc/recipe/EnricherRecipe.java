@@ -14,7 +14,7 @@ import net.minecraftforge.fluids.FluidStack;
 import java.util.List;
 
 public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidIngredient fluidInput,
-                             FluidStack product, int ticks, int energyPerTick) implements FluidProcessorRecipe {
+                             FluidStack product, int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public EnricherRecipe {
         product = product.copy();
     }
@@ -57,14 +57,14 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             var ingredient = Ingredient.fromJson(GsonHelper.getNonNull(item, "ingredient"));
             return new EnricherRecipe(id, new ItemProcessorRecipe.Input(ingredient, count),
                     FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy);
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = new ItemProcessorRecipe.Input(Ingredient.fromNetwork(buffer), buffer.readVarInt());
             return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -75,6 +75,7 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             buffer.writeFluidStack(recipe.product);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

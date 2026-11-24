@@ -20,5 +20,6 @@
         "item": "nuclearcraft:lead_dust"
     },
     "ticks": 85,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.0071
 }

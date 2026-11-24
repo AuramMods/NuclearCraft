@@ -20,5 +20,6 @@
         "item": "nuclearcraft:radium_dust"
     },
     "ticks": 12230,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 2.25e-10
 }

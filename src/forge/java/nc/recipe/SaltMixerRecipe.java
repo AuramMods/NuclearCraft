@@ -13,7 +13,7 @@ import net.minecraftforge.fluids.FluidStack;
 import java.util.List;
 
 public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs, FluidStack product,
-                              int ticks, int energyPerTick) implements FluidProcessorRecipe {
+                              int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public SaltMixerRecipe {
         inputs = List.copyOf(inputs);
         product = product.copy();
@@ -48,13 +48,13 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
                 throw new JsonSyntaxException("Invalid Salt Mixer recipe " + id);
             }
             return new SaltMixerRecipe(id, FluidIngredient.readPair(json, id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy);
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override
         public SaltMixerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var inputs = FluidIngredient.readPair(buffer);
-            return new SaltMixerRecipe(id, inputs, buffer.readFluidStack(), buffer.readVarInt(), buffer.readVarInt());
+            return new SaltMixerRecipe(id, inputs, buffer.readFluidStack(), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -63,6 +63,7 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             buffer.writeFluidStack(recipe.product);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
@@ -40,7 +41,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
-public final class ItemProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
+public final class ItemProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private static final Direction[] SIDES = Direction.values();
 
     private final Machine machine;
@@ -55,6 +56,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
     private final EnumMap<Direction, ItemAccess> ports = new EnumMap<>(Direction.class);
     private ItemAccess unsided;
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
+    private double radiationEmission;
     private ResourceLocation activeRecipe;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
@@ -145,7 +147,13 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
         return cachedSmeltingRecipe;
     }
 
+    @Override
+    public double radiationEmission() {
+        return radiationEmission;
+    }
+
     private boolean process(Level level, boolean halted) {
+        radiationEmission = 0D;
         refreshInput();
         ItemProcessorRecipe recipe = findRecipe(level);
         ResourceLocation next = recipe == null ? null : recipe.id();
@@ -173,6 +181,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
             }
             return false;
         }
+        radiationEmission = recipe.radiation();
         progressHalfTicks += 2;
         if (progressHalfTicks >= 2L * recipe.ticks()) {
             int[] amounts = recipe.match(input);
@@ -311,6 +320,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        radiationEmission = 0D;
         inventory.deserializeNBT(tag.getCompound("inventory"));
         power.load(tag.getInt("energy"));
         progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks"));

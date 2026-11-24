@@ -2662,6 +2662,7 @@
     "gui.nuclearcraft.fission.hot_nak": "Hot NaK",
     "gui.nuclearcraft.jei.coolant_heater": "%s H/t cooling",
     "gui.nuclearcraft.jei.fission_heat": "%s H/mB absorbed",
+    "gui.nuclearcraft.jei.process_radiation": "Process radiation %s",
     "gui.nuclearcraft.jei.fission_heating": "Fission Casing Heating",
     "gui.nuclearcraft.jei.fission_emergency_cooling": "Fission Emergency Cooling",
     "gui.nuclearcraft.salt_part.heat": "Cluster heat  %s / %s H",

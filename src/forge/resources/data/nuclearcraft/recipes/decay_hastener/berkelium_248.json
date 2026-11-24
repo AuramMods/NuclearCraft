@@ -20,5 +20,6 @@
         "item": "nuclearcraft:thorium_dust"
     },
     "ticks": 95,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.00325
 }

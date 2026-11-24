@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<Product> products,
-                               double duration, int energyPerTick) implements FluidProcessorRecipe {
+                               double duration, int energyPerTick, double radiation) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 6;
 
     public CentrifugeRecipe {
@@ -97,7 +97,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
                 throw new JsonSyntaxException("Centrifuge recipe needs a fluid output for " + id);
             }
             return new CentrifugeRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    products, ticks, energy);
+                    products, ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         private static Product readProduct(ResourceLocation id, JsonObject json) {
@@ -117,7 +117,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             var products = buffer.readList(packet -> new Product(packet.readFluidStack(),
                     packet.readVarInt(), packet.readVarInt(), packet.readUnsignedByte()));
-            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt());
+            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -131,6 +131,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             });
             buffer.writeDouble(recipe.duration);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

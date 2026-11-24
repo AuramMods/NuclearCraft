@@ -12,5 +12,6 @@
         "item": "nuclearcraft:neptunium_237_carbide_ingot"
     },
     "ticks": 100,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.00235
 }

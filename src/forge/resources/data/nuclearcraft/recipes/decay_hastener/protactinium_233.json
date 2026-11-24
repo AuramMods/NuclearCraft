@@ -12,5 +12,6 @@
         "item": "nuclearcraft:uranium_233_ingot"
     },
     "ticks": 45,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 1.5044444444444443
 }

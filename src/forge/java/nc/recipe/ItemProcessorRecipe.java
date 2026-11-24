@@ -18,7 +18,6 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
@@ -35,7 +34,7 @@ import java.util.List;
 public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
                                   @Nullable FluidIngredient fluidInput, FluidStack fluidOutput,
                                   List<Product> results, List<Product> alternateResults,
-                                  int ticks, int energyPerTick) implements Recipe<Container> {
+                                  int ticks, int energyPerTick, double radiation) implements ProcessingRecipe {
     private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
 
     public ItemProcessorRecipe {
@@ -48,7 +47,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
     public static ItemProcessorRecipe electricSmelting(SmeltingRecipe source, RegistryAccess registries) {
         return new ItemProcessorRecipe(source.getId(), Machine.ELECTRIC_FURNACE,
                 List.of(new Input(source.getIngredients().get(0), 1)), null, FluidStack.EMPTY,
-                List.of(new Product(source.getResultItem(registries), 100, 0)), List.of(), 200, 20);
+                List.of(new Product(source.getResultItem(registries), 100, 0)), List.of(), 200, 20, 0D);
     }
 
     @Override
@@ -232,7 +231,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             if (ticks <= 0 || energy < 0) {
                 throw new JsonSyntaxException("Invalid item processor recipe " + id);
             }
-            return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate, ticks, energy);
+            return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
+                    ticks, energy, ProcessingRecipe.readRadiation(json, id));
         }
 
         private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
@@ -299,7 +299,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             List<Product> results = readProducts(buffer);
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
             return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
-                    buffer.readVarInt(), buffer.readVarInt());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
         @Override
@@ -321,6 +321,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             }
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
+            buffer.writeDouble(recipe.radiation);
         }
 
         private List<Product> readProducts(FriendlyByteBuf buffer) {

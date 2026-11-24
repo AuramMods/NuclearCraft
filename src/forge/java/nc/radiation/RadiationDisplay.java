@@ -64,6 +64,10 @@ public final class RadiationDisplay {
                 format(dose, minimum, digits, "Rad"), Math.round(percent), reading).withStyle(doseColor(percent)));
     }
 
+    public static String formatRate(double value) {
+        return format(value, 0D, 0, "Rad/t");
+    }
+
     static String format(double value, double minimumRate, int digits, String unit) {
         if (value <= 0 || value < minimumRate) {
             return "0 " + unit;

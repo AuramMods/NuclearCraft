@@ -12,5 +12,6 @@
         "item": "nuclearcraft:samarium_ingot"
     },
     "ticks": 50,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.38
 }

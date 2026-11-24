@@ -12,5 +12,6 @@
         "item": "nuclearcraft:plutonium_242_ingot"
     },
     "ticks": 175,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.000215
 }

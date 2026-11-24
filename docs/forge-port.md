@@ -809,4 +809,16 @@ A second trace moved the five fixtures to fresh chunks. All four working transfe
 
 At the original fixture coordinates, a 1,000-tick window without force-loading again returned the same chunk instances. A 7,200-tick window let the exact pack finish unloading all five chunks. Every unload save contained the expected block entities, including the two previously affected marker barrels. Reloading the chunks produced five new instances from disk and preserved the four working transfer results and all five markers. The energy-only comparator still never powered. The earlier failure remains intermittent and its trigger is unresolved.
 
-Radiation work still includes remaining machine emissions and general non-player food effects.
+### Processor radiation
+
+The Decay Hastener's 87 recipes use their legacy process radiation rates. Crystallizing irradiated borax solution emits 8.25 mRad/t. Only a tick that advances the recipe contributes process radiation. A machine that has stopped due to redstone, lack of power, or a blocked output contributes zero. Processing resumes from the existing saved recipe and progress, and each tick recalculates the emission. The chunk sampler still honors `radiation_tile_entities` and container shielding.
+
+Single-block processor recipes, including Melter and fluid processor recipes, accept an optional nonnegative `radiation` value in Rad/t. Recipes without the field default to zero. Datapacks and KubeJS can supply the value in the recipe JSON. JEI shows nonzero rates on the recipe arrow. Legacy scripts can move the third processor extra into this field.
+
+All 175 local GameTests passed. On the packaged Forge 47.4.18 build, the Hastener added 0.98 Rad/t above the configured chunk background and the Crystallizer added 0.00825 Rad/t. Custom Melter and Supercooler recipes added 0.42 and 0.125 Rad/t. Datapacks and Auram's KubeJS both loaded those custom rates. Redstone, a full output, loss of FE, and machine removal each ended emission. The clean server resumed an active batch after restart. Turning off machine sources suppressed its contribution while the batch continued.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied two ruthenium-106 dust, 666 mB of irradiated borax solution, and 5,000 FE. Each transport collected two palladium dust and one borax. The outputs and empty input and energy buffers survived a dedicated server restart.
+
+The isolated Auram client booted with the installed 539 mod JARs and the packaged port. A clean Forge 47.4.18 multiplayer client also read both catalogs from a dedicated server. JEI produced the expected 980 mRad/t and 8.25 mRad/t tooltips on both clients. They used master volume zero and OpenAL No Output. The native observers recorded zero activations, foreground samples, and visible window samples.
+
+Radiation work still includes general non-player food effects.

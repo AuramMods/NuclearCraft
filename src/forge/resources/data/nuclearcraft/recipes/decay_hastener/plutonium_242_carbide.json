@@ -12,5 +12,6 @@
         "item": "nuclearcraft:uranium_238_carbide_ingot"
     },
     "ticks": 1690,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 2.7e-06
 }

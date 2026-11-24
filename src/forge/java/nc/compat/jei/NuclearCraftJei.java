@@ -69,6 +69,8 @@ import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionFuelStats;
 import nc.recipe.FissionHeatRecipe;
+import nc.recipe.ProcessingRecipe;
+import nc.radiation.RadiationDisplay;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -686,8 +688,14 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void getTooltip(ITooltipBuilder tooltip, R recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
-            if (mouseY < 9 || mouseY >= 30 || mouseX < 69 || mouseX >= 95) {
+            int arrowY = getHeight() >= 70 ? 22 : 12;
+            if (mouseY < arrowY - 3 || mouseY >= arrowY + 18 || mouseX < 69 || mouseX >= 95) {
                 return;
+            }
+            if (recipe instanceof ProcessingRecipe processing && processing.radiation() > 0D) {
+                double rate = processing.radiation();
+                tooltip.add(Component.translatable("gui.nuclearcraft.jei.process_radiation",
+                        Component.literal(RadiationDisplay.formatRate(rate)).withStyle(RadiationDisplay.rateColor(rate))));
             }
             if (recipe instanceof FissionFuelStats fuel) {
                 tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_criticality", fuel.criticality(), fuel.intrinsicFlux()));

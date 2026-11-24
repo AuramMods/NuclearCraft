@@ -12,5 +12,6 @@
         "item": "nuclearcraft:palladium_dust"
     },
     "ticks": 50,
-    "energy_per_tick": 10
+    "energy_per_tick": 10,
+    "radiation": 0.98
 }

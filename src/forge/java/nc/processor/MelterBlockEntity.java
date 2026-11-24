@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
@@ -36,7 +37,7 @@ import net.minecraftforge.items.wrapper.RangedWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class MelterBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
+public final class MelterBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     static final int TANK_CAPACITY = 16_000;
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
@@ -62,6 +63,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     private LazyOptional<IItemHandler> itemCapability = LazyOptional.of(() -> automationInput);
     private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.of(() -> tank);
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> power);
+    private double radiationEmission;
     private ResourceLocation activeRecipe;
     private long progressHalfTicks;
     private int recipeDuration;
@@ -79,7 +81,13 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
         ProcessorBlock.setRunning(level, pos, state, processing);
     }
 
+    @Override
+    public double radiationEmission() {
+        return radiationEmission;
+    }
+
     private boolean process(Level level, boolean halted) {
+        radiationEmission = 0D;
         recipeInput.setItem(0, inventory.getStackInSlot(0));
         MelterRecipe recipe = recipeInput.isEmpty() ? null : recipes.getRecipeFor(recipeInput, level).orElse(null);
         if (recipe == null || !recipe.id().equals(activeRecipe)) {
@@ -103,6 +111,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
             return false;
         }
 
+        radiationEmission = recipe.radiation();
         progressHalfTicks += 2;
         if (progressHalfTicks >= 2L * recipe.ticks()) {
             tank.produce(product);
@@ -128,6 +137,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        radiationEmission = 0D;
         inventory.deserializeNBT(tag.getCompound("inventory"));
         tank.readFromNBT(tag.getCompound("output"));
         power.load(tag.getInt("energy"));

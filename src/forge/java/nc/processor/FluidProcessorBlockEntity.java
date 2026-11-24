@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.radiation.ChunkRadiationSource;
 import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
@@ -44,7 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public final class FluidProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
+public final class FluidProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ? extends FluidProcessorRecipe> recipes;
     private final ProcessorInputs input;
@@ -54,6 +55,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     private final OutputMode[] outputModes;
 
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
+    private double radiationEmission;
     private ResourceLocation activeRecipe;
     private double progressHalfTicks;
     private double recipeTicks;
@@ -89,7 +91,13 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
         return Objects.requireNonNull(itemInput);
     }
 
+    @Override
+    public double radiationEmission() {
+        return radiationEmission;
+    }
+
     private boolean process(Level level, boolean halted) {
+        radiationEmission = 0D;
         if (itemInput != null) {
             input.setItem(0, itemInput.getStackInSlot(0));
         }
@@ -116,6 +124,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
             }
             return false;
         }
+        radiationEmission = recipe.radiation();
         progressHalfTicks += 2;
         double batchHalfTicks = 2 * recipeTicks;
         if (progressHalfTicks >= batchHalfTicks) {
@@ -241,6 +250,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        radiationEmission = 0D;
         if (itemInput != null) {
             itemInput.load(tag);
         }

@@ -9,5 +9,6 @@
         "item": "nuclearcraft:borax"
     },
     "ticks": 800,
-    "energy_per_tick": 5
+    "energy_per_tick": 5,
+    "radiation": 0.00825
 }
