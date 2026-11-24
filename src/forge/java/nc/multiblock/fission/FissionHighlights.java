@@ -22,8 +22,7 @@ public final class FissionHighlights {
     private static final String PROTOCOL = "1";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(NuclearCraft.id("fission_highlight"),
             () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
-    private static final int MAX_POSITIONS = FissionPartBlock.MAX_INTERIOR_LENGTH * FissionPartBlock.MAX_INTERIOR_LENGTH
-            * FissionPartBlock.MAX_INTERIOR_LENGTH;
+    private static final int MAX_POSITIONS = 16_384;
     private static final Map<BlockPos, Long> SHOWN = new LinkedHashMap<>();
     private static ResourceLocation dimension;
 
@@ -45,8 +44,12 @@ public final class FissionHighlights {
 
     public static void send(ServerPlayer player, Collection<BlockPos> positions) {
         if (!positions.isEmpty() && !(player instanceof FakePlayer) && player.connection != null) {
-            CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
-                    new Report(player.serverLevel().dimension().location(), List.copyOf(positions)));
+            var all = List.copyOf(positions);
+            var dimension = player.serverLevel().dimension().location();
+            for (int start = 0; start < all.size(); start += MAX_POSITIONS) {
+                int end = Math.min(all.size(), start + MAX_POSITIONS);
+                CHANNEL.send(PacketDistributor.PLAYER.with(() -> player), new Report(dimension, all.subList(start, end)));
+            }
         }
     }
 

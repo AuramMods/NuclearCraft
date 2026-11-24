@@ -30,7 +30,6 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class FissionPartBlock extends Block {
-    public static final int MAX_INTERIOR_LENGTH = 24;
     private static final VoxelShape HEAT_CONTACT_SHAPE = box(0.032, 0.032, 0.032, 15.968, 15.968, 15.968);
     private static final ResourceKey<DamageType> FISSION_BURN =
             ResourceKey.create(Registries.DAMAGE_TYPE, NuclearCraft.id("fission_burn"));
@@ -73,7 +72,7 @@ public class FissionPartBlock extends Block {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         if (NCFission.heatDamage() && level instanceof ServerLevel server && entity instanceof LivingEntity living) {
-            Cuboid.visitNearby(server, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, SolidFissionController.class,
+            Cuboid.visitNearby(server, new ChunkPos(pos), NCFission.searchLength(), SolidFissionController.class,
                     controller -> {
                         float damage = controller.contactDamage(server, pos);
                         if (damage > 0F) {
@@ -109,7 +108,7 @@ public class FissionPartBlock extends Block {
     }
 
     private static void geometryChanged(ServerLevel level, BlockPos pos, boolean removed) {
-        Cuboid.visitNearby(level, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, SolidFissionController.class,
+        Cuboid.visitNearby(level, new ChunkPos(pos), NCFission.searchLength(), SolidFissionController.class,
                 controller -> controller.partChanged(pos, removed));
     }
 
@@ -117,7 +116,7 @@ public class FissionPartBlock extends Block {
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
             ChunkPos pos = event.getChunk().getPos();
-            Cuboid.visitNearby(level, pos, MAX_INTERIOR_LENGTH + 2, SolidFissionController.class,
+            Cuboid.visitNearby(level, pos, NCFission.searchLength(), SolidFissionController.class,
                     controller -> controller.chunkUnloaded(pos));
         }
     }

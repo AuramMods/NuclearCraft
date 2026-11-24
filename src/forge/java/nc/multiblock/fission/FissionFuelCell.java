@@ -91,14 +91,14 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (recipe == null) {
             return null;
         }
-        decay.remember(recipe, recipe.heat());
+        decay.remember(recipe, recipe.runtimeHeat());
         if (needsFuel) {
             reservedFuel = feed.extractItem(0, 1, false);
             reservedLocal = feed == localItems;
             reservedFilter = filter();
             setChanged();
         }
-        if (progress >= recipe.ticks()) {
+        if (progress >= recipe.runtimeTicks()) {
             discharge(recipe);
             return null;
         }
@@ -114,7 +114,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
             return 0D;
         }
         recipeInput.setItem(0, reservedFuel);
-        return recipes.getRecipeFor(recipeInput, level).map(recipe -> Math.min(1D, progress / recipe.ticks())).orElse(0D);
+        return recipes.getRecipeFor(recipeInput, level).map(recipe -> Math.min(1D, progress / recipe.runtimeTicks())).orElse(0D);
     }
 
     double computerProgress() {
@@ -144,11 +144,11 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     }
 
     void burn(SolidFissionRecipe recipe, double speed) {
-        emission = recipe.radiation() * speed;
+        emission = Math.min(Double.MAX_VALUE, recipe.runtimeRadiation() * speed);
         emissionTick = level.getGameTime();
         progress += speed;
-        if (progress >= recipe.ticks()) {
-            progress = recipe.ticks();
+        if (progress >= recipe.runtimeTicks()) {
+            progress = recipe.runtimeTicks();
             discharge(recipe);
         }
         setChanged();

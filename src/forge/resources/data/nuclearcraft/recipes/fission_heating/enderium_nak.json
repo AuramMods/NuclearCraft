@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "fluid": "nuclearcraft:enderium_nak",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:enderium_nak_hot",
+        "amount": 1
+    },
+    "legacy_profile": "nak"
+}

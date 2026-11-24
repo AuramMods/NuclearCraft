@@ -22,6 +22,11 @@ public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack
                                  boolean pebbleBed, double decayFactor, double radiation)
         implements Recipe<Container>, FissionFuelStats {
     @Override
+    public double runtimeTicks() {
+        return Math.max(1, (int) (ticks * NCFission.fuelTimeMultiplier()));
+    }
+
+    @Override
     public boolean matches(Container input, Level level) {
         return fuel.test(input.getItem(0));
     }

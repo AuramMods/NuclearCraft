@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "tag": "forge:carbon_dioxide",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:carbon_dioxide_hot",
+        "amount": 2
+    },
+    "legacy_profile": "gas"
+}

@@ -138,8 +138,11 @@ public record Cuboid(BlockPos min, BlockPos max) {
         return (xLength() - 2) * (yLength() - 2) * (zLength() - 2);
     }
 
+    public int exteriorSurfaceArea() {
+        return 2 * (xLength() * yLength() + yLength() * zLength() + zLength() * xLength());
+    }
+
     public int capacityMultiplier() {
-        int surface = 2 * (xLength() * yLength() + yLength() * zLength() + zLength() * xLength());
-        return Math.max(surface, interiorVolume());
+        return Math.max(exteriorSurfaceArea(), interiorVolume());
     }
 }

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "tag": "forge:sulfur_trioxide",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:sulfur_trioxide_hot",
+        "amount": 2
+    },
+    "legacy_profile": "gas"
+}

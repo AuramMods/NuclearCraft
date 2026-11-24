@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "tag": "forge:ethene",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:ethene_hot",
+        "amount": 2
+    },
+    "legacy_profile": "gas"
+}

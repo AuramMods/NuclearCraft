@@ -24,6 +24,7 @@ import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidHeatSinkBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.recipe.FissionHeatRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionIrradiatorRecipe.Material;
@@ -44,6 +45,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
@@ -52,10 +54,27 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public final class NCFission {
+    public static final int MAX_CONFIGURED_SIZE = 255;
+    private static final AtomicLong CONFIG_REVISION = new AtomicLong();
+    private static final ForgeConfigSpec.IntValue MIN_SIZE;
+    private static final ForgeConfigSpec.IntValue MAX_SIZE;
+    private static final ForgeConfigSpec.DoubleValue FUEL_TIME;
+    private static final ForgeConfigSpec.DoubleValue FUEL_HEAT;
+    private static final ForgeConfigSpec.DoubleValue FUEL_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue FUEL_RADIATION;
+    private static final ForgeConfigSpec.IntValue COOLING_LENIENCY;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPARSITY;
+    private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DISSIPATION;
+    private static final ForgeConfigSpec.DoubleValue DISSIPATION_RATE;
+    private static final ForgeConfigSpec.DoubleValue EMERGENCY_COOLING;
+    private static final ForgeConfigSpec.DoubleValue HEATING_GAS;
+    private static final ForgeConfigSpec.DoubleValue HEATING_NAK;
+    private static final ForgeConfigSpec.DoubleValue SOUND_VOLUME;
     private static final Map<NCHeatSinks, RegistryObject<SolidHeatSinkBlock>> SINKS = new EnumMap<>(NCHeatSinks.class);
     private static final Map<NCHeatSinks, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCHeatSinks.class);
     private static final CoolingPlacementConfig<NCHeatSinks> PLACEMENT;
@@ -91,6 +110,25 @@ public final class NCFission {
 
     static {
         var builder = new ForgeConfigSpec.Builder();
+        MIN_SIZE = builder.defineInRange("fission_min_size", 1, 1, MAX_CONFIGURED_SIZE);
+        MAX_SIZE = builder.defineInRange("fission_max_size", 24, 3, MAX_CONFIGURED_SIZE);
+        FUEL_TIME = builder.defineInRange("fission_fuel_time_multiplier", 1D, 0.001D, 255D);
+        FUEL_HEAT = builder.defineInRange("fission_fuel_heat_multiplier", 1D, 0D, 255D);
+        FUEL_EFFICIENCY = builder.defineInRange("fission_fuel_efficiency_multiplier", 1D, 0D, 255D);
+        FUEL_RADIATION = builder.defineInRange("fission_fuel_radiation_multiplier", 1D, 0D, 255D);
+        COOLING_LENIENCY = builder.defineInRange("fission_cooling_efficiency_leniency", 10, 0, 32_767);
+        SPARSITY = builder.comment("Minimum efficiency followed by the useful-part density for full efficiency.")
+                .define("fission_sparsity_penalty_params", List.of(0.5D, 0.75D),
+                        entry -> entry instanceof List<?> values && values.size() == 2 && values.stream().allMatch(
+                                value -> value instanceof Number number && number.doubleValue() >= 0D && number.doubleValue() <= 1D));
+        DISSIPATION = builder.comment("Passive casing heat dissipation while switched off, then while switched on.")
+                .define("fission_heat_dissipation", List.of(true, false),
+                        entry -> entry instanceof List<?> values && values.size() == 2 && values.stream().allMatch(Boolean.class::isInstance));
+        DISSIPATION_RATE = builder.defineInRange("fission_heat_dissipation_rate", 0D, 0D, 1D);
+        EMERGENCY_COOLING = builder.defineInRange("fission_emergency_cooling_multiplier", 1D, 0.001D, 255D);
+        HEATING_GAS = builder.defineInRange("fission_heating_gas_coolant_heat_mult", 1.5D, 0.001D, Integer.MAX_VALUE);
+        HEATING_NAK = builder.defineInRange("fission_heating_nak_coolant_heat_mult", 2D, 0.001D, Integer.MAX_VALUE);
+        SOUND_VOLUME = builder.defineInRange("fission_sound_volume", 1D, 0D, 15D);
         OVERHEAT = builder.define("fission_overheat", true);
         HEAT_DAMAGE = builder.define("fission_heat_damage", false);
         FUEL_DECAY = builder.define("fission_decay_mechanics", false);
@@ -280,6 +318,17 @@ public final class NCFission {
     public static final RegistryObject<RecipeSerializer<SolidFissionRecipe>> FUEL_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("solid_fission", SolidFissionRecipe.Serializer::new);
 
+    public static final RegistryObject<RecipeType<FissionHeatRecipe>> HEATING_TYPE =
+            NCRegistries.RECIPE_TYPES.register("fission_heating",
+                    () -> RecipeType.simple(NuclearCraft.id("fission_heating")));
+    public static final RegistryObject<RecipeSerializer<FissionHeatRecipe>> HEATING_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("fission_heating", () -> new FissionHeatRecipe.Serializer(false));
+    public static final RegistryObject<RecipeType<FissionHeatRecipe>> EMERGENCY_COOLING_TYPE =
+            NCRegistries.RECIPE_TYPES.register("fission_emergency_cooling",
+                    () -> RecipeType.simple(NuclearCraft.id("fission_emergency_cooling")));
+    public static final RegistryObject<RecipeSerializer<FissionHeatRecipe>> EMERGENCY_COOLING_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("fission_emergency_cooling", () -> new FissionHeatRecipe.Serializer(true));
+
     public static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("fission", () ->
             CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.fission"))
                     .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
@@ -348,6 +397,34 @@ public final class NCFission {
             return BERYLLIUM_CARBON;
         }
         return state.is(LEAD_STEEL_REFLECTOR.get()) ? LEAD_STEEL : null;
+    }
+
+    public static int minSize() { return configured(MIN_SIZE); }
+    public static int maxSize() { return configured(MAX_SIZE); }
+    public static int searchLength() { return maxSize() + 2; }
+    public static long configRevision() { return CONFIG_REVISION.get(); }
+    public static double fuelTimeMultiplier() { return configured(FUEL_TIME); }
+    public static double fuelHeatMultiplier() { return configured(FUEL_HEAT); }
+    public static double fuelEfficiencyMultiplier() { return configured(FUEL_EFFICIENCY); }
+    public static double fuelRadiationMultiplier() { return configured(FUEL_RADIATION); }
+    public static int coolingLeniency() { return configured(COOLING_LENIENCY); }
+    public static double emergencyCoolingMultiplier() { return configured(EMERGENCY_COOLING); }
+    public static double heatingGasMultiplier() { return configured(HEATING_GAS); }
+    public static double heatingNakMultiplier() { return configured(HEATING_NAK); }
+    public static double soundVolume() { return configured(SOUND_VOLUME); }
+
+    public static double sparsityEfficiency(double density) {
+        var values = configured(SPARSITY);
+        double floor = values.get(0).doubleValue();
+        double threshold = values.get(1).doubleValue();
+        return density >= threshold ? 1D : floor + (1D - floor) * Math.sin(density * Math.PI / (2D * threshold));
+    }
+
+    public static long casingHeatLost(long heat, int surface, boolean requested) {
+        if (heat <= 0 || !configured(DISSIPATION).get(requested ? 1 : 0)) {
+            return 0L;
+        }
+        return Math.min(heat, Math.max(1L, (long) (configured(DISSIPATION_RATE) * heat * surface)));
     }
 
     public static int neutronReach() {
@@ -478,6 +555,11 @@ public final class NCFission {
     }
 
     public static void registerConfig(FMLJavaModLoadingContext context) {
+        context.getModEventBus().addListener((ModConfigEvent.Reloading event) -> {
+            if (event.getConfig().getSpec() == SPEC) {
+                CONFIG_REVISION.incrementAndGet();
+            }
+        });
         PLACEMENT.register(context, SPEC, "nuclearcraft-fission.toml");
     }
 }

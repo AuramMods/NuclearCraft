@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "fluid": "nuclearcraft:glowstone_nak",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:glowstone_nak_hot",
+        "amount": 1
+    },
+    "legacy_profile": "nak"
+}

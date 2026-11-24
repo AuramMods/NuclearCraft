@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_emergency_cooling",
+    "input": {
+        "fluid": "nuclearcraft:emergency_coolant",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:emergency_coolant_heated",
+        "amount": 1
+    },
+    "legacy_profile": "emergency"
+}

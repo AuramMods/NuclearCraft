@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.multiblock.Cuboid;
@@ -256,7 +257,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         }
         if (controller == null && level != null && level.getGameTime() >= nextSearch) {
             nextSearch = level.getGameTime() + 20;
-            Cuboid.visitNearby(level, new ChunkPos(pos), FissionPartBlock.MAX_INTERIOR_LENGTH + 2,
+            Cuboid.visitNearby(level, new ChunkPos(pos), NCFission.searchLength(),
                     SolidFissionController.class, candidate -> {
                         if (controller == null && candidate.containsSaltComponent(pos, kind)) {
                             controller = candidate;

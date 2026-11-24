@@ -2,6 +2,7 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import nc.init.NCFission;
 import nc.init.NCSaltFission;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
@@ -21,6 +22,22 @@ public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, Fluid
                                 double decayFactor, double radiation) implements Recipe<Container>, FissionFuelStats {
     public SaltFissionRecipe {
         depleted = depleted.copy();
+    }
+
+    @Override
+    public double runtimeTicks() {
+        double scaled = ticks * (NCFission.fuelTimeMultiplier() * NCSaltFission.timeMultiplier());
+        return Math.max(Double.MIN_VALUE, Math.min(Double.MAX_VALUE, scaled));
+    }
+
+    @Override
+    public int runtimeHeat() {
+        return (int) (heat * (NCFission.fuelHeatMultiplier() * NCSaltFission.heatMultiplier()));
+    }
+
+    @Override
+    public double runtimeEfficiency() {
+        return Math.min(Double.MAX_VALUE, efficiency * (NCFission.fuelEfficiencyMultiplier() * NCSaltFission.efficiencyMultiplier()));
     }
 
     @Override

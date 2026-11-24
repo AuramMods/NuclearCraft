@@ -115,12 +115,12 @@ final class PebbleCooling {
         owner.setChanged();
     }
 
-    int gasAmount(boolean output) {
-        return circuits.values().stream().mapToInt(tanks -> (output ? tanks.hot : tanks.cold).getFluidAmount()).sum();
+    long gasAmount(boolean output) {
+        return circuits.values().stream().mapToLong(tanks -> (output ? tanks.hot : tanks.cold).getFluidAmount()).sum();
     }
 
-    int gasCapacity(boolean output) {
-        return circuits.values().stream().mapToInt(tanks -> (output ? tanks.hot : tanks.cold).getCapacity()).sum();
+    long gasCapacity(boolean output) {
+        return circuits.values().stream().mapToLong(tanks -> (output ? tanks.hot : tanks.cold).getCapacity()).sum();
     }
 
     CompoundTag save() {

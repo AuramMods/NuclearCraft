@@ -56,13 +56,14 @@ final class SaltFuelBank {
             }
         }
         ports.forEach((filter, count) -> {
-            resize(tank(filter, false), PORT_VOLUME * count);
-            resize(tank(filter, true), PORT_VOLUME * count);
+            long capacity = (long) PORT_VOLUME * count;
+            resize(tank(filter, false), capacity);
+            resize(tank(filter, true), capacity);
         });
     }
 
-    static void resize(FluidTank tank, int minimum) {
-        tank.setCapacity(Math.max(minimum, tank.getFluidAmount()));
+    static void resize(FluidTank tank, long minimum) {
+        tank.setCapacity((int) Math.min(Integer.MAX_VALUE, Math.max(minimum, tank.getFluidAmount())));
     }
 
     ListTag save() {

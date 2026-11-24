@@ -12,6 +12,7 @@ import nc.init.NCFluids;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
+import nc.recipe.FissionHeatRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -32,7 +33,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.Containers;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
@@ -49,8 +49,6 @@ import java.util.stream.Stream;
 
 public final class SolidFissionController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int BASE_TANK_CAPACITY = 4_000;
-    private static final int WATER_HEAT_PER_MB = 64;
-    private static final int STEAM_PER_WATER = 4;
     private final ItemStackHandler inventory;
     private final FissionVariant variant;
     private final @Nullable FissionItemFuelBank itemFuel;
@@ -70,6 +68,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private long casingHeat;
     private boolean enabled;
     private boolean dirty = true;
+    private long configRevision = -1;
 
     public SolidFissionController(BlockPos pos, BlockState state) {
         this(pos, state, FissionVariant.forController(FissionPartBlock.role(state)));
@@ -122,7 +121,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     void partChanged(BlockPos pos, boolean removed) {
-        int reach = FissionPartBlock.MAX_INTERIOR_LENGTH + 2;
+        int reach = NCFission.searchLength();
         if (Math.abs(pos.getX() - worldPosition.getX()) <= reach && Math.abs(pos.getY() - worldPosition.getY()) <= reach
                 && Math.abs(pos.getZ() - worldPosition.getZ()) <= reach) {
             dirty = true;
@@ -152,7 +151,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (layout != null && !layout.bounds().isLoaded(server)) {
             disassemble();
         }
-        if (dirty || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
+        long revision = NCFission.configRevision();
+        if (dirty || revision != configRevision || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
+            configRevision = revision;
             refresh(server);
         }
         boolean active = false;
@@ -175,7 +176,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             }
             active = generated.raw() > 0;
             if (active && variant == FissionVariant.SOLID) {
-                heatWater(generated.effective() / generated.raw());
+                exchangeCasingHeat(generated.effective() / generated.raw());
             }
             if (active || generated.storedHeatChanged()) {
                 setChanged();
@@ -185,7 +186,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             core.resetTelemetry();
         }
         if (layout != null && !requested && variant != FissionVariant.SOLID && casingHeat > 0) {
-            coolCasing();
+            exchangeCasingHeat(1D);
+        }
+        if (layout != null) {
+            long lost = NCFission.casingHeatLost(casingHeat, layout.bounds().exteriorSurfaceArea(), requested);
+            if (lost > 0) {
+                casingHeat -= lost;
+                setChanged();
+            }
         }
         BlockState state = getBlockState();
         if (state.getValue(FissionWallBlock.ACTIVE) == active) {
@@ -219,7 +227,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         computerPorts.bind(server, layout.computers());
         core = new SolidFissionCore(layout);
         casingHeat = Math.min(casingHeat, heatCapacity());
-        int capacity = BASE_TANK_CAPACITY * layout.bounds().capacityMultiplier();
+        int capacity = (int) Math.min(Integer.MAX_VALUE, (long) BASE_TANK_CAPACITY * layout.bounds().capacityMultiplier());
         // A smaller re-formed reactor retains previously stored fluids until they can be drained.
         coolant.setCapacity(Math.max(capacity, coolant.getFluidAmount()));
         steam.setCapacity(Math.max(capacity, steam.getFluidAmount()));
@@ -424,30 +432,55 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         setChanged();
     }
 
-    private void heatWater(double efficiency) {
-        int steamRoom = (steam.getCapacity() - steam.getFluidAmount()) / STEAM_PER_WATER;
-        int water = Math.min(Math.min(coolant.getFluidAmount(), steamRoom),
-                (int) (casingHeat * efficiency / WATER_HEAT_PER_MB));
-        if (water > 0) {
-            FluidStack product = new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), water * STEAM_PER_WATER);
-            if (steam.fill(product, FluidAction.SIMULATE) == product.getAmount()) {
-                steam.fill(product, FluidAction.EXECUTE);
-                coolant.drain(water, FluidAction.EXECUTE);
-                casingHeat -= (long) (water * (double) WATER_HEAT_PER_MB / efficiency);
+    private @Nullable FissionHeatRecipe casingRecipe(FluidStack fluid) {
+        if (level == null || fluid.isEmpty()) {
+            return null;
+        }
+        var type = variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE;
+        FissionHeatRecipe selected = null;
+        for (FissionHeatRecipe recipe : level.getRecipeManager().getAllRecipesFor(type.get())) {
+            if (recipe.input().accepts(fluid) && (selected == null
+                    || selected.input().tag() && !recipe.input().tag()
+                    || selected.input().tag() == recipe.input().tag() && recipe.id().compareTo(selected.id()) < 0)) {
+                selected = recipe;
             }
         }
+        return selected;
     }
 
-    private void coolCasing() {
-        double heatPerMb = variant == FissionVariant.SALT ? NCSaltFission.emergencyMultiplier() : NCPebbleFission.emergencyMultiplier();
-        int amount = Math.min(coolant.getFluidAmount(), Math.min(steam.getCapacity() - steam.getFluidAmount(),
-                (int) (casingHeat / heatPerMb)));
-        if (amount > 0) {
-            var product = new FluidStack(NCFluids.HEATED_EMERGENCY_COOLANT.source().get(), amount);
-            if (steam.fill(product, FluidAction.SIMULATE) == amount) {
+    private void exchangeCasingHeat(double efficiency) {
+        if (!(efficiency > 0D) || casingHeat == 0 || coolant.isEmpty()) {
+            return;
+        }
+        FissionHeatRecipe recipe = casingRecipe(coolant.getFluid());
+        if (recipe == null) {
+            return;
+        }
+        int inputAmount = recipe.input().amount();
+        long availableInput = coolant.getFluidAmount();
+        double heatPerBatch = inputAmount * recipe.heatPerMb();
+        if (recipe.emergency()) {
+            long vents = layout.ports().stream().filter(port -> port.role() == Role.VENT).count();
+            availableInput = Math.min(availableInput, BASE_TANK_CAPACITY * vents);
+            if (recipe.baseHeat() <= 0D && recipe.profile() == FissionHeatRecipe.Profile.EMERGENCY) {
+                heatPerBatch *= variant == FissionVariant.SALT
+                        ? NCSaltFission.emergencyMultiplier() : NCPebbleFission.emergencyMultiplier();
+            }
+        }
+        if (!Double.isFinite(heatPerBatch)) {
+            return;
+        }
+        FluidStack product = recipe.output();
+        int outputAmount = product.getAmount();
+        int outputRoom = steam.getCapacity() - steam.getFluidAmount();
+        int batches = (int) Math.min(Math.min(availableInput / inputAmount, outputRoom / outputAmount),
+                casingHeat * efficiency / heatPerBatch);
+        if (batches > 0) {
+            product.setAmount(batches * outputAmount);
+            if (steam.fill(product, FluidAction.SIMULATE) == product.getAmount()) {
                 steam.fill(product, FluidAction.EXECUTE);
-                coolant.drain(amount, FluidAction.EXECUTE);
-                casingHeat = (long) Math.max(0, casingHeat - amount * heatPerMb);
+                coolant.drain(batches * inputAmount, FluidAction.EXECUTE);
+                casingHeat -= Math.min(casingHeat, (long) (batches * heatPerBatch / efficiency));
                 setChanged();
             }
         }
@@ -704,13 +737,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     private int coolerFill(boolean output) {
         if (saltCooling != null) {
-            int capacity = saltCooling.capacity(output);
+            long capacity = saltCooling.capacity(output);
             return capacity == 0 ? 0 : (int) (1000L * saltCooling.amount(output) / capacity);
         }
         if (gasCooling == null) {
             return tankFill(output ? steam : coolant);
         }
-        int capacity = gasCooling.gasCapacity(output);
+        long capacity = gasCooling.gasCapacity(output);
         return capacity == 0 ? 0 : (int) (1000L * gasCooling.gasAmount(output) / capacity);
     }
 
@@ -745,11 +778,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     private final class ReactorTank extends FluidTank {
-        ReactorTank(boolean water) {
-            super(BASE_TANK_CAPACITY, fluid -> water
-                    ? fluid.getFluid() == (variant != FissionVariant.SOLID ? NCFluids.EMERGENCY_COOLANT.source().get() : Fluids.WATER)
-                    : fluid.getFluid() == (variant != FissionVariant.SOLID ? NCFluids.HEATED_EMERGENCY_COOLANT.source().get()
-                            : NCFluids.HIGH_PRESSURE_STEAM.source().get()));
+        ReactorTank(boolean input) {
+            super(BASE_TANK_CAPACITY, fluid -> !input || casingRecipe(fluid) != null);
         }
 
         @Override

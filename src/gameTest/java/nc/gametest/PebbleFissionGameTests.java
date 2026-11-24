@@ -183,8 +183,8 @@ public final class PebbleFissionGameTests {
                     var emergency = fluids(helper, HOT_NITROGEN, Direction.SOUTH).getFluidInTank(0);
                     helper.assertTrue(emergency.getFluid() == NCFluids.HEATED_EMERGENCY_COOLANT.source().get()
                                     && emergency.getAmount() == 100 && amount(helper, HOT, Direction.SOUTH) == 0
-                                    && controller(helper).saveWithoutMetadata().getLong("heat") == 23,
-                            "The idle vent converts exactly 100 mB of coolant and removes 100 casing heat");
+                                    && controller(helper).saveWithoutMetadata().getLong("heat") == 22,
+                            "The idle vent removes 100 casing heat and passive cooling removes another 1 H");
                 })
                 .thenSucceed();
     }

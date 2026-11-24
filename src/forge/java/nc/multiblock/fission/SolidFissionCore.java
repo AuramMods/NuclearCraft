@@ -4,6 +4,7 @@ import nc.init.NCFission;
 import nc.init.NCGasCoolants;
 import nc.init.NCHeatSinks;
 import nc.init.NCPebbleFission;
+import nc.init.NCRadiation;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.multiblock.Cuboid;
@@ -15,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +35,6 @@ import java.util.function.Predicate;
 
 final class SolidFissionCore {
     static final long BASE_HEAT_CAPACITY = 32_000;
-    private static final int COOLING_LENIENCY = 10;
 
     record Heat(long raw, long casingHeat, double effective, boolean storedHeatChanged,
                 List<BlockPos> overheatedCells) {}
@@ -42,7 +43,7 @@ final class SolidFissionCore {
         static final PartHeat NONE = new PartHeat(0, 0, false);
     }
 
-    record ClusterStats(long heatCapacity, long heatStored, int cooling, long heating, List<BlockPos> positions) {}
+    record ClusterStats(long heatCapacity, long heatStored, long cooling, long heating, List<BlockPos> positions) {}
     record HeatStats(long heating, long cooling, double efficiency, double heatMultiplier) {
         static final HeatStats IDLE = new HeatStats(0, 0, 0D, 0D);
     }
@@ -160,11 +161,11 @@ final class SolidFissionCore {
         abstract void burn(double speed);
 
         int baseHeat() {
-            return recipe.heat();
+            return recipe.runtimeHeat();
         }
 
         double baseEfficiency() {
-            return recipe.efficiency();
+            return recipe.runtimeEfficiency();
         }
 
         private void receive(long addedFlux, double efficiency) {
@@ -222,8 +223,6 @@ final class SolidFissionCore {
         @Override void primeWith(double efficiency) { vessel.primeWith(efficiency); }
         @Override double sourceEfficiency() { return vessel.sourceEfficiency(); }
         @Override void burn(double speed) { vessel.burn(recipe, bank, speed); }
-        @Override int baseHeat() { return (int) (recipe.heat() * NCSaltFission.heatMultiplier()); }
-        @Override double baseEfficiency() { return recipe.efficiency() * NCSaltFission.efficiencyMultiplier(); }
 
         @Override
         boolean sameFuel(Reaction<?> other) {
@@ -429,11 +428,8 @@ final class SolidFissionCore {
         if (measuredFuel != null) {
             reactions.forEach((pos, reaction) -> {
                 boolean processing = burning.contains(pos);
-                boolean isSalt = reaction instanceof SaltReaction;
-                double ticks = isSalt ? ((SaltFissionRecipe) reaction.recipe).ticks() * NCSaltFission.timeMultiplier()
-                        : ((SolidFissionRecipe) reaction.recipe).ticks();
-                double radiation = isSalt ? ((SaltFissionRecipe) reaction.recipe).radiation()
-                        : ((SolidFissionRecipe) reaction.recipe).radiation();
+                double ticks = reaction.recipe.runtimeTicks();
+                double radiation = reaction.recipe.runtimeRadiation();
                 double heat = processing ? reaction.effectiveHeat() : 0D;
                 int base = reaction.baseHeat();
                 boolean primed = sourceTargets.contains(pos) || reaction.recipe.selfPriming() || processing;
@@ -442,6 +438,7 @@ final class SolidFissionCore {
                         processing ? reaction.lines * reaction.bunch.packing : 0, reaction.bunch.flux));
             });
         }
+        int coolingLeniency = NCFission.coolingLeniency();
         for (Cluster cluster : clusters) {
             long rawCluster = 0;
             long rawDecay = 0;
@@ -488,7 +485,7 @@ final class SolidFissionCore {
                 baseCluster += heat;
             }
 
-            int cooling = 0;
+            long cooling = 0;
             for (BlockPos sink : cluster.sinks()) {
                 NCGasCoolants gas = coolers.get(sink);
                 NCSaltCoolants salt = heaters.get(sink);
@@ -518,7 +515,7 @@ final class SolidFissionCore {
                 }
             }
             if (rawCluster > 0) {
-                double speed = Math.max(1D, (double) rawCluster / (cooling + COOLING_LENIENCY));
+                double speed = Math.max(1D, (double) rawCluster / Math.max(1L, cooling + coolingLeniency));
                 for (BlockPos pos : cluster.cells()) {
                     Reaction<?> reaction = reactions.get(pos);
                     if (reaction != null && reaction.active()) {
@@ -555,14 +552,13 @@ final class SolidFissionCore {
                 raw += totalHeat;
                 casing += !fluidCooling ? totalHeat : Math.max(0, netHeat);
                 effective += effectiveDecay + (cooling == 0 ? effectiveCluster
-                        : effectiveCluster * Math.min(1D, (double) (rawCluster + COOLING_LENIENCY) / cooling));
+                        : effectiveCluster * Math.min(1D, (double) (rawCluster + coolingLeniency) / cooling));
                 usefulParts += activeCells;
             } else if (fluidCooling) {
                 raw += totalHeat;
             }
         }
-        double density = Math.min(0.75D, (double) usefulParts / layout.bounds().interiorVolume());
-        double sparsityEfficiency = 0.5D + 0.5D * Math.sin(density * Math.PI / 1.5D);
+        double sparsityEfficiency = NCFission.sparsityEfficiency((double) usefulParts / layout.bounds().interiorVolume());
         if (gasCooling != null) {
             for (GasLoad load : gasLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
@@ -594,7 +590,30 @@ final class SolidFissionCore {
             shieldStats = measuredShields;
             coolerStats = measuredCoolers;
         }
+        if (requested && raw > 0) {
+            playOperatingSound(level, burning, reactions);
+        }
         return new Heat(raw, casing, effective * sparsityEfficiency, storedHeatChanged, List.of());
+    }
+
+    private static void playOperatingSound(ServerLevel level, Set<BlockPos> burning, Map<BlockPos, Reaction<?>> reactions) {
+        double volume = NCFission.soundVolume();
+        if (volume == 0D || burning.isEmpty() || level.players().isEmpty()) {
+            return;
+        }
+        int index = level.random.nextInt(burning.size());
+        var positions = burning.iterator();
+        while (index-- > 0) {
+            positions.next();
+        }
+        BlockPos pos = positions.next();
+        Reaction<?> reaction = reactions.get(pos);
+        double efficiency = reaction.heat() == 0 ? 0D : reaction.effectiveHeat() / reaction.heat();
+        if (level.random.nextDouble() < Math.min(1D, efficiency / (14D * NCFission.maxSize()))) {
+            float loudness = (float) (volume * 1.6D * Math.log1p(Math.sqrt(burning.size())));
+            float pitch = 1F + 0.12F * (level.random.nextFloat() - 0.5F);
+            level.playSound(null, pos, NCRadiation.GEIGER_TICK.get(), SoundSource.BLOCKS, loudness, pitch);
+        }
     }
 
     private Map<BlockPos, NCHeatSinks> availableSinks(ServerLevel level, Set<BlockPos> burning,

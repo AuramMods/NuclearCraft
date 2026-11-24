@@ -65,8 +65,8 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         if (recipe == null) {
             return null;
         }
-        decay.remember(recipe, (int) (recipe.heat() * NCSaltFission.heatMultiplier()));
-        double processTime = recipe.ticks() * NCSaltFission.timeMultiplier();
+        decay.remember(recipe, recipe.runtimeHeat());
+        double processTime = recipe.runtimeTicks();
         if (fromTank) {
             // Reserve a measured input once and keep its destination channel through a rebuild.
             if (!hasOutputSpace(recipe, bank.tank(filter, true))) {
@@ -100,7 +100,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         }
         recipeInput.setFluid(reserved);
         return recipes.getRecipeFor(recipeInput, level).map(recipe ->
-                Math.min(1, progress / (recipe.ticks() * NCSaltFission.timeMultiplier()))).orElse(0D);
+                Math.min(1, progress / recipe.runtimeTicks())).orElse(0D);
     }
 
     boolean sameFuel(SaltVessel other) {
@@ -134,9 +134,9 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     }
 
     void burn(SaltFissionRecipe recipe, SaltFuelBank bank, double speed) {
-        emission = recipe.radiation() * speed;
+        emission = Math.min(Double.MAX_VALUE, recipe.runtimeRadiation() * speed);
         emissionTick = level.getGameTime();
-        double ticks = recipe.ticks() * NCSaltFission.timeMultiplier();
+        double ticks = recipe.runtimeTicks();
         progress += speed;
         if (progress >= ticks) {
             finishDoses(recipe, bank, ticks);

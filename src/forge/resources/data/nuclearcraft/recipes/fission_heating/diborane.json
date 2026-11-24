@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "tag": "forge:diborane",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:diborane_hot",
+        "amount": 2
+    },
+    "legacy_profile": "gas"
+}

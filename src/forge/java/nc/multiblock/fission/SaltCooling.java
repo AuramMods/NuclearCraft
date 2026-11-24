@@ -66,8 +66,8 @@ final class SaltCooling {
             }
         }
         counts.forEach((coolant, count) -> {
-            SaltFuelBank.resize(tank(coolant, false), PORT_VOLUME * count);
-            SaltFuelBank.resize(tank(coolant, true), PORT_VOLUME * count);
+            SaltFuelBank.resize(tank(coolant, false), (long) PORT_VOLUME * count);
+            SaltFuelBank.resize(tank(coolant, true), (long) PORT_VOLUME * count);
         });
         credit.keySet().retainAll(layout.sinks());
     }
@@ -107,12 +107,12 @@ final class SaltCooling {
         return true;
     }
 
-    int amount(boolean output) {
-        return circuits.values().stream().mapToInt(circuit -> (output ? circuit.hot : circuit.cold).getFluidAmount()).sum();
+    long amount(boolean output) {
+        return circuits.values().stream().mapToLong(circuit -> (output ? circuit.hot : circuit.cold).getFluidAmount()).sum();
     }
 
-    int capacity(boolean output) {
-        return circuits.values().stream().mapToInt(circuit -> (output ? circuit.hot : circuit.cold).getCapacity()).sum();
+    long capacity(boolean output) {
+        return circuits.values().stream().mapToLong(circuit -> (output ? circuit.hot : circuit.cold).getCapacity()).sum();
     }
 
     CompoundTag save() {

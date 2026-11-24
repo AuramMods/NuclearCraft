@@ -5,6 +5,7 @@ import nc.NuclearCraft;
 import nc.radiation.ChunkRadiationSource;
 import nc.init.NCFission;
 import nc.init.NCFluids;
+import nc.init.NCGasCoolants;
 import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
@@ -91,6 +92,50 @@ public final class SolidFissionGameTests {
                     IItemHandler spentFuel = items(helper, FUEL_OUT, Direction.UP);
                     helper.assertTrue(spentFuel.extractItem(0, 2, false).is(NCFission.DEPLETED_LECF_251_OXIDE.get())
                             && spentFuel.getStackInSlot(0).isEmpty(), "One fuel should yield one depleted fuel item");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 240)
+    public static void casingRecipesRespectOutputBackpressureAndFluidRatios(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var recipes = helper.getLevel().getRecipeManager();
+                    helper.assertTrue(recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()).size() == 50
+                                    && recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()).size() == 1,
+                            "Load all water, gas, NaK and emergency casing recipes");
+                    var inlet = fluids(helper, WATER_IN, Direction.NORTH);
+                    var water = new FluidStack(NCFluids.PREHEATED_WATER.source().get(), 20);
+                    helper.assertTrue(inlet.fill(water, FluidAction.EXECUTE) == 20, "The solid reactor accepts preheated water");
+                    items(helper, FUEL_IN, Direction.DOWN)
+                            .insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var steam = fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(steam.getFluid() == NCFluids.HIGH_PRESSURE_STEAM.source().get()
+                                    && steam.getAmount() == 80,
+                            "Preheated water produces 4 mB of high-pressure steam per mB");
+                })
+                .thenExecute(() -> {
+                    var oxygen = new FluidStack(NCGasCoolants.OXYGEN.cold(), 20);
+                    helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).fill(oxygen, FluidAction.EXECUTE) == 20,
+                            "The same inlet accepts a gas recipe once the input tank is empty");
+                })
+                .thenExecuteAfter(5, () -> {
+                    var inlet = fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0);
+                    var outlet = fluids(helper, STEAM_OUT, Direction.SOUTH);
+                    helper.assertTrue(inlet.getFluid() == NCGasCoolants.OXYGEN.cold() && inlet.getAmount() == 20,
+                            "Steam in the output tank blocks the gas recipe without consuming its input");
+                    helper.assertTrue(outlet.drain(80, FluidAction.EXECUTE).getAmount() == 80, "Empty the steam output");
+                })
+                .thenWaitUntil(() -> {
+                    var gas = fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(gas.getFluid() == NCGasCoolants.OXYGEN.hot() && gas.getAmount() == 40
+                                    && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                            "Gas heating resumes and produces exactly 2 mB of hot oxygen per mB");
                 })
                 .thenSucceed();
     }

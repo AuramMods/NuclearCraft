@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "input": {
+        "fluid": "nuclearcraft:purpur_nak",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "nuclearcraft:purpur_nak_hot",
+        "amount": 1
+    },
+    "legacy_profile": "nak"
+}

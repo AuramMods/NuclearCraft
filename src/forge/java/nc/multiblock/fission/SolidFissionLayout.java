@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.init.NCFission;
 import nc.multiblock.Cuboid;
 import nc.init.NCGasCoolants;
 import nc.init.NCSaltCoolants;
@@ -34,12 +35,13 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
     record Validation(@Nullable SolidFissionLayout layout, Component message, @Nullable BlockPos errorPosition) {}
 
     static Validation find(ServerLevel level, BlockPos origin) {
-        Cuboid bounds = Cuboid.findConnected(level, origin, FissionPartBlock.MAX_INTERIOR_LENGTH + 2,
+        Cuboid bounds = Cuboid.findConnected(level, origin, NCFission.searchLength(),
                 SolidFissionLayout::connectsReactor);
         if (bounds == null) {
             return invalid("too_large", origin);
         }
-        if (bounds.xLength() < 3 || bounds.yLength() < 3 || bounds.zLength() < 3) {
+        int minimum = NCFission.minSize() + 2;
+        if (bounds.xLength() < minimum || bounds.yLength() < minimum || bounds.zLength() < minimum) {
             return invalid("too_small", origin);
         }
         if (!bounds.isLoaded(level)) {

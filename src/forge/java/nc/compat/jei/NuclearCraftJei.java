@@ -68,6 +68,7 @@ import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionFuelStats;
+import nc.recipe.FissionHeatRecipe;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -118,6 +119,10 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "pebble_fission", SolidFissionRecipe.class);
     private static final RecipeType<SaltFissionRecipe> SALT_FISSION =
             RecipeType.create(NuclearCraft.MOD_ID, "salt_fission", SaltFissionRecipe.class);
+    private static final RecipeType<FissionHeatRecipe> FISSION_HEATING =
+            RecipeType.create(NuclearCraft.MOD_ID, "fission_heating", FissionHeatRecipe.class);
+    private static final RecipeType<FissionHeatRecipe> FISSION_EMERGENCY_COOLING =
+            RecipeType.create(NuclearCraft.MOD_ID, "fission_emergency_cooling", FissionHeatRecipe.class);
     private static final RecipeType<NCSaltCoolants> SALT_HEATING =
             RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", NCSaltCoolants.class);
     private static final RecipeType<HeatExchangerRecipe> HEAT_EXCHANGER =
@@ -248,14 +253,19 @@ public final class NuclearCraftJei implements IModPlugin {
                     layout.addSlot(OUTPUT, 108, 12).setStandardSlotBackground().addItemStack(recipe.result());
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.irradiation", recipe.fluxRequired())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
-                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", (int) recipe.runtimeTicks(), recipe.runtimeHeat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
-                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.fission", (int) recipe.runtimeTicks(), recipe.runtimeHeat())),
                 new Category<>(SALT_FISSION, NCSaltFission.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.fuel().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.depleted()));
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.fission",
-                        decimal(recipe.ticks()), recipe.heat())),
+                        decimal(recipe.runtimeTicks()), recipe.runtimeHeat())),
+                new Category<>(FISSION_HEATING, NCFission.VENT.get(), gui, NuclearCraftJei::fissionHeat,
+                        NuclearCraftJei::fissionHeatCost, Component.translatable("gui.nuclearcraft.jei.fission_heating")),
+                new Category<>(FISSION_EMERGENCY_COOLING, NCPebbleFission.CONTROLLER.get(), gui,
+                        NuclearCraftJei::fissionHeat, NuclearCraftJei::fissionHeatCost,
+                        Component.translatable("gui.nuclearcraft.jei.fission_emergency_cooling")),
                 new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, coolant) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStack(new ItemStack(NCSaltFission.heater(coolant)));
                     fluidSlot(layout, INPUT, 43, List.of(new FluidStack(coolant.cold(), 1)));
@@ -331,6 +341,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
+        registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));
+        registration.addRecipes(FISSION_EMERGENCY_COOLING, recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()));
         registration.addRecipes(SALT_HEATING, List.of(NCSaltCoolants.values()));
         registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
@@ -369,6 +381,10 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), SALT_FISSION);
         registration.addRecipeCatalyst(NCSaltFission.VESSEL.get(), SALT_FISSION);
+        registration.addRecipeCatalyst(NCFission.VENT.get(), FISSION_HEATING, FISSION_EMERGENCY_COOLING);
+        registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION_HEATING);
+        registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), FISSION_EMERGENCY_COOLING);
+        registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), FISSION_EMERGENCY_COOLING);
         for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
             registration.addRecipeCatalyst(NCSaltFission.heater(coolant), SALT_HEATING);
         }
@@ -445,6 +461,15 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static Component energy(int ticks, int power) {
         return Component.translatable("gui.nuclearcraft.jei.energy", ticks, power);
+    }
+
+    private static void fissionHeat(IRecipeLayoutBuilder layout, FissionHeatRecipe recipe) {
+        fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
+        fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+    }
+
+    private static Component fissionHeatCost(FissionHeatRecipe recipe) {
+        return Component.translatable("gui.nuclearcraft.jei.fission_heat", decimal(recipe.heatPerMb()));
     }
 
     private static void fissionFuel(IRecipeLayoutBuilder layout, SolidFissionRecipe recipe) {
