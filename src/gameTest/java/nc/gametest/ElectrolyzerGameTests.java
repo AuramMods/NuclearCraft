@@ -33,8 +33,8 @@ public final class ElectrolyzerGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 3380)
     public static void waterBatchPausesForFullOxygenTankAndResumesAfterReload(GameTestHelper helper) {
-        helper.assertTrue(helper.getLevel().getRecipeManager().getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()).size() == 64,
-                "All 64 legacy recipes with registered fluids load on clean Forge");
+        helper.assertTrue(helper.getLevel().getRecipeManager().getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()).size() == 86,
+                "All 86 legacy recipes with registered fluids load on clean Forge");
         helper.assertTrue(NCFluids.HYDROGEN.block().get().defaultBlockState().getLightEmission() == 0
                         && NCFluids.SULFUR.block().get().defaultBlockState().getLightEmission() == 10,
                 "Gas and molten liquid blocks use their registered light levels");
@@ -133,6 +133,57 @@ public final class ElectrolyzerGameTests {
             assertFluid(helper, tank, 3, "beryllium", 72);
             assertFluid(helper, tank, 4, "fluorine", CAPACITY);
         });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 2250)
+    public static void recoversAnIsotopeAndFluorineFromTheChemicalReactor(GameTestHelper helper) {
+        BlockPos reactorPos = ELECTROLYZER.west();
+        helper.setBlock(reactorPos, NCRegistries.CHEMICAL_REACTOR.get());
+        helper.setBlock(ELECTROLYZER, NCRegistries.ELECTROLYZER.get());
+        var reactor = helper.getBlockEntity(reactorPos);
+        var electrolyzer = helper.getBlockEntity(ELECTROLYZER);
+        var reactionState = reactor.saveWithoutMetadata();
+        setFace(reactionState, 2, Direction.EAST, ProcessorFluidTanks.Mode.AUTO_OUTPUT);
+        reactor.load(reactionState);
+        var fluorine = NCFluids.FLUORINE.source().get();
+        var electrolyteState = electrolyzer.saveWithoutMetadata();
+        electrolyteState.put("fluid_2", new FluidStack(fluorine, CAPACITY).writeToNBT(new CompoundTag()));
+        electrolyzer.load(electrolyteState);
+        var feed = fluid(reactor, Direction.NORTH);
+        var uranium = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("uranium_235"));
+        helper.assertTrue(feed.fill(new FluidStack(uranium, 72), EXECUTE) == 72
+                        && feed.fill(new FluidStack(fluorine, 500), EXECUTE) == 500,
+                "Supply the isotope and fluorine to the Chemical Reactor");
+        energy(reactor).receiveEnergy(2_000, false);
+        energy(electrolyzer).receiveEnergy(64_000, false);
+        var tanks = fluid(electrolyzer, Direction.SOUTH);
+        helper.startSequence()
+                .thenWaitUntil(() -> assertFluid(helper, tanks, 0, "uranium_235_fluoride", 72))
+                .thenExecuteAfter(8, () -> {
+                    helper.assertTrue(energy(reactor).getEnergyStored() == 0
+                                    && feed.getFluidInTank(0).isEmpty() && feed.getFluidInTank(1).isEmpty(),
+                            "The original Chemical Reactor batch uses 2,000 FE and passes its product to the Electrolyzer");
+                    helper.assertTrue(energy(electrolyzer).getEnergyStored() == 64_000 && tanks.getFluidInTank(1).isEmpty(),
+                            "A full fluorine outlet holds the isotope fluoride and FE");
+                    helper.assertTrue(tanks.drain(new FluidStack(fluorine, 500), EXECUTE).getAmount() == 500,
+                            "Open room for the recovered fluorine");
+                })
+                .thenExecuteAfter(30, () -> {
+                    CompoundTag saved = electrolyzer.saveWithoutMetadata();
+                    helper.assertTrue(saved.getLong("progress_half_ticks") > 0, "Save a running isotope batch");
+                    helper.setBlock(ELECTROLYZER, Blocks.AIR);
+                    helper.setBlock(ELECTROLYZER, NCRegistries.ELECTROLYZER.get());
+                    helper.getBlockEntity(ELECTROLYZER).load(saved);
+                })
+                .thenWaitUntil(() -> {
+                    var restored = helper.getBlockEntity(ELECTROLYZER);
+                    var products = fluid(restored, Direction.SOUTH);
+                    assertFluid(helper, products, 1, "uranium_235", 72);
+                    assertFluid(helper, products, 2, "fluorine", CAPACITY);
+                    helper.assertTrue(products.getFluidInTank(0).isEmpty() && energy(restored).getEnergyStored() == 0,
+                            "The restored batch returns the original fluids for exactly 64,000 FE");
+                })
+                .thenSucceed();
     }
 
     private static void setFace(CompoundTag data, int tank, Direction side, ProcessorFluidTanks.Mode mode) {

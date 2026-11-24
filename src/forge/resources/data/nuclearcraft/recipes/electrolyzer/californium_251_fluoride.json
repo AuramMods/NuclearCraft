@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:electrolyzer",
+    "fluid_input": {
+        "fluid": "nuclearcraft:californium_251_fluoride",
+        "amount": 72
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:californium_251",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:fluorine",
+            "amount": 500
+        }
+    ],
+    "ticks": 1600,
+    "energy_per_tick": 40
+}
