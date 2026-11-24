@@ -218,6 +218,14 @@
         "nuclearcraft:centrifuge",
         "nuclearcraft:ingot_former",
         "nuclearcraft:crystallizer",
-        "nuclearcraft:electric_furnace"
+        "nuclearcraft:electric_furnace",
+        "nuclearcraft:voltaic_pile_basic",
+        "nuclearcraft:voltaic_pile_advanced",
+        "nuclearcraft:voltaic_pile_du",
+        "nuclearcraft:voltaic_pile_elite",
+        "nuclearcraft:lithium_ion_battery_basic",
+        "nuclearcraft:lithium_ion_battery_advanced",
+        "nuclearcraft:lithium_ion_battery_du",
+        "nuclearcraft:lithium_ion_battery_elite"
     ]
 }

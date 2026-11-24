@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "CCC",
+        "FLF",
+        "DDD"
+    ],
+    "key": {
+        "C": {
+            "tag": "forge:ingots/hard_carbon"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "L": {
+            "tag": "forge:ingots/lithium"
+        },
+        "D": {
+            "tag": "forge:ingots/lithium_manganese_dioxide"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_ion_cell"
+    }
+}

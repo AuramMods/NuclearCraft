@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:charged_crafting",
+    "category": "redstone",
+    "pattern": [
+        "PDP",
+        "LLL",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "D": {
+            "tag": "forge:ingots/lithium_manganese_dioxide"
+        },
+        "L": {
+            "item": "nuclearcraft:lithium_ion_battery_du"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_magnesium_diboride"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_ion_battery_elite"
+    }
+}

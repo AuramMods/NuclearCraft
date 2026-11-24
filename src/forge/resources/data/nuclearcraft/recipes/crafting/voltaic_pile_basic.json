@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PSP",
+        "SMS",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "M": {
+            "tag": "forge:storage_blocks/magnesium"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:voltaic_pile_basic"
+    }
+}

@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:charged_crafting",
+    "category": "redstone",
+    "pattern": [
+        "PCP",
+        "CSC",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "C": {
+            "item": "nuclearcraft:lithium_ion_cell"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_magnesium_diboride"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_ion_battery_basic"
+    }
+}

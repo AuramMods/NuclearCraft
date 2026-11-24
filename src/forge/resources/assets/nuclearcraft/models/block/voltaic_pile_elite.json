@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_column",
+    "textures": {
+        "side": "nuclearcraft:block/voltaic_pile_elite/side_in",
+        "end": "nuclearcraft:block/voltaic_pile_elite/top_in"
+    }
+}

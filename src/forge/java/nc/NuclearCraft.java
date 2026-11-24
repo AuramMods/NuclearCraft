@@ -1,6 +1,7 @@
 package nc;
 
 import nc.init.HeatExchangerConfig;
+import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
@@ -24,6 +25,7 @@ public final class NuclearCraft {
     }
 
     public NuclearCraft(FMLJavaModLoadingContext context) {
+        NCBatteries.register(context);
         NCCollectors.register(context);
         NCGenerators.register(context);
         NCFission.registerConfig(context);

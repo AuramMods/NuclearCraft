@@ -2437,5 +2437,19 @@
     "item.nuclearcraft.sic_vapor_bucket": "Silicon Carbide Vapor Bucket",
     "fluid_type.nuclearcraft.zirconium": "Molten Zirconium",
     "block.nuclearcraft.zirconium": "Molten Zirconium",
-    "item.nuclearcraft.zirconium_bucket": "Molten Zirconium Bucket"
+    "item.nuclearcraft.zirconium_bucket": "Molten Zirconium Bucket",
+    "block.nuclearcraft.voltaic_pile_basic": "Basic Voltaic Pile",
+    "block.nuclearcraft.voltaic_pile_advanced": "Advanced Voltaic Pile",
+    "block.nuclearcraft.voltaic_pile_du": "DU Voltaic Pile",
+    "block.nuclearcraft.voltaic_pile_elite": "Elite Voltaic Pile",
+    "block.nuclearcraft.lithium_ion_battery_basic": "Basic Lithium Ion Battery",
+    "block.nuclearcraft.lithium_ion_battery_advanced": "Advanced Lithium Ion Battery",
+    "block.nuclearcraft.lithium_ion_battery_du": "DU Lithium Ion Battery",
+    "block.nuclearcraft.lithium_ion_battery_elite": "Elite Lithium Ion Battery",
+    "item.nuclearcraft.lithium_ion_cell": "Lithium Ion Cell",
+    "block.nuclearcraft.battery.charge": "Stored energy %1$s / %2$s FE",
+    "block.nuclearcraft.battery.side": "%1$s face  %2$s",
+    "block.nuclearcraft.battery.in": "Input",
+    "block.nuclearcraft.battery.out": "Output",
+    "block.nuclearcraft.battery.off": "Disabled"
 }

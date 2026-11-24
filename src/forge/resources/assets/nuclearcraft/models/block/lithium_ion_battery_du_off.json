@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_column",
+    "textures": {
+        "side": "nuclearcraft:block/lithium_ion_battery_du/side_non",
+        "end": "nuclearcraft:block/lithium_ion_battery_du/top_non"
+    }
+}
