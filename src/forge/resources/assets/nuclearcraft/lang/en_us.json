@@ -806,6 +806,8 @@
     "gui.nuclearcraft.jei.gas_cooler.rule.sulfur_hexafluoride": "Adjacent to casing and between two opposite sulfur trioxide coolers",
     "gui.nuclearcraft.jei.fission": "%s ticks, %s heat/t",
     "gui.nuclearcraft.jei.turbine": "%s FE/mB, %s× expansion",
+    "tooltip.nuclearcraft.turbine.blade_efficiency": "Blade efficiency %s",
+    "tooltip.nuclearcraft.turbine.stage_expansion": "Expansion coefficient %s",
     "item.nuclearcraft.uranium_233_ingot": "Uranium-233",
     "item.nuclearcraft.uranium_233_carbide_ingot": "Uranium-233 Carbide",
     "item.nuclearcraft.uranium_233_oxide_ingot": "Uranium-233 Oxide",

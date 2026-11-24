@@ -10,6 +10,7 @@ import nc.multiblock.turbine.TurbineRotorBlock;
 import nc.multiblock.turbine.TurbineWallBlock;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
@@ -89,6 +91,23 @@ public final class NCTurbine {
 
     private static RegistryObject<TurbineRotorBlock> rotor(String id, Part part) {
         return block(id, () -> new TurbineRotorBlock(properties().noOcclusion(), part));
+    }
+
+    public static TurbineRotorBlock createScriptedBlade(double efficiency, double expansion) {
+        return TurbineRotorBlock.scriptedBlade(properties().noOcclusion(), efficiency, expansion);
+    }
+
+    public static TurbineRotorBlock createScriptedStator(double expansion) {
+        return TurbineRotorBlock.scriptedStator(properties().noOcclusion(), expansion);
+    }
+
+    public static BlockItem createScriptedRotorItem(String blockId) {
+        var id = ResourceLocation.tryParse(blockId);
+        var block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
+        if (!(block instanceof TurbineRotorBlock)) {
+            throw new IllegalArgumentException("No NuclearCraft turbine rotor block with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
     }
 
     private static <T extends Block> RegistryObject<T> block(String id, Supplier<T> supplier) {

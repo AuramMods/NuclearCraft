@@ -55,7 +55,7 @@ final class TurbineDrive {
         double minStator = 1D;
         double idealExpansion = recipe.expansion();
         for (int depth = 0; depth < stageCount; depth++) {
-            TurbinePartBlock.Part stage = layout.stages().get(depth);
+            TurbineRotorBlock stage = layout.stages().get(depth);
             double coefficient = stage.expansion();
             double intermediate = expansion * Math.sqrt(coefficient);
             expansion *= coefficient;

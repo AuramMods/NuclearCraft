@@ -14,21 +14,29 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
+
+import java.util.List;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class TurbineGameTests {
     private static final BlockPos CONTROLLER = new BlockPos(1, 3, 2);
     private static final BlockPos INLET = new BlockPos(2, 3, 1);
@@ -37,6 +45,79 @@ public final class TurbineGameTests {
     private static final BlockPos UNUSED_COIL = new BlockPos(4, 3, 4);
     private static final BlockPos SHAFT = new BlockPos(3, 3, 2);
     private static final BlockPos FRAME = new BlockPos(1, 1, 1);
+
+    @SubscribeEvent
+    public static void registerScriptedRotor(RegisterEvent event) {
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> {
+            helper.register(NuclearCraft.id("turbine_rotor_blade_qa"), NCTurbine.createScriptedBlade(0.64D, 1.75D));
+            helper.register(NuclearCraft.id("turbine_rotor_blade_qa_other"), NCTurbine.createScriptedBlade(0.64D, 1.75D));
+            helper.register(NuclearCraft.id("turbine_rotor_stator_qa"), NCTurbine.createScriptedStator(0.8D));
+        });
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 165)
+    public static void turbineSynchronizesAndRunsScriptedRotorStages(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        var blade = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_rotor_blade_qa"));
+        var other = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_rotor_blade_qa_other"));
+        var stator = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_rotor_stator_qa"));
+        for (Direction side : new Direction[]{Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN}) {
+            helper.setBlock(SHAFT.relative(side), blade);
+            helper.setBlock(SHAFT.south().relative(side), stator);
+        }
+        helper.setBlock(SHAFT.east(), other);
+        var client = new TurbineController(helper.absolutePos(CONTROLLER), helper.getBlockState(CONTROLLER));
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    var controller = controller(helper, CONTROLLER);
+                    helper.assertTrue(!controller.assembled()
+                                    && controller.validationMessage().getContents() instanceof TranslatableContents text
+                                    && text.getKey().equals("message.nuclearcraft.turbine.blades"),
+                            "A stage rejects two scripted block IDs even when their coefficients match");
+                })
+                .thenExecute(() -> helper.setBlock(SHAFT.east(), blade))
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdateTag());
+                    var visual = client.visuals();
+                    helper.assertTrue(visual != null && visual.glass() && visual.stages().equals(List.of(blade, stator))
+                                    && !visual.stages().get(0).stator() && visual.stages().get(1).stator(),
+                            "The client resolves the two distinct scripted blocks in flow order");
+                    var intake = fluid(helper, INLET, Direction.NORTH);
+                    var oxygen = new FluidStack(NCGasCoolants.OXYGEN.hot(), 512);
+                    helper.assertTrue(intake.fill(oxygen, FluidAction.EXECUTE) == 512, "Feed the scripted rotor through Forge");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var out = fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(out.isFluidStackIdentical(new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 1024))
+                                    && energy(helper, COIL, Direction.SOUTH).getEnergyStored() > 0,
+                            "The scripted rotor produces exact exhaust and Forge Energy");
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdateTag());
+                    helper.assertTrue(client.visuals() != null && client.visuals().velocity() > 0D,
+                            "The scripted blade receives rotation updates");
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdateTag());
+                    helper.assertTrue(client.visuals() == null && !helper.getBlockState(SHAFT.east()).getValue(TurbineRotorBlock.ANIMATED),
+                            "Disassembly restores the scripted blade's static model");
+                    var saved = controller(helper, CONTROLLER).saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCTurbine.CONTROLLER.get());
+                    controller(helper, CONTROLLER).load(saved);
+                    helper.setBlock(FRAME, NCTurbine.CASING.get());
+                })
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdateTag());
+                    helper.assertTrue(client.visuals() != null && client.visuals().stages().equals(List.of(blade, stator))
+                                    && fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 1024,
+                            "Reassembly rediscovers scripted stages and preserves their buffered exhaust");
+                })
+                .thenSucceed();
+    }
 
     @GameTest(template = "turbine", timeoutTicks = 150)
     public static void turbineUsesSidedSteamAndDynamoCapabilities(GameTestHelper helper) {
@@ -236,9 +317,16 @@ public final class TurbineGameTests {
                     client.handleUpdateTag(controller(helper, CONTROLLER).getUpdatePacket().getTag());
                     var visual = client.visuals();
                     helper.assertTrue(visual != null && visual.glass()
-                                    && visual.stages().equals(java.util.List.of(Part.STEEL, Part.STATOR))
+                                    && visual.stages().equals(List.of(NCTurbine.STEEL.get(), NCTurbine.STATOR.get()))
                                     && visual.velocity() == 0D,
                             "The idle client receives the actual blade and stator order");
+                    var legacy = controller(helper, CONTROLLER).getUpdateTag();
+                    legacy.getCompound("visuals").remove("stage_blocks");
+                    legacy.getCompound("visuals").putIntArray("stages", new int[]{Part.STEEL.ordinal(), Part.STATOR.ordinal()});
+                    client.handleUpdateTag(legacy);
+                    helper.assertTrue(client.visuals() != null
+                                    && client.visuals().stages().equals(List.of(NCTurbine.STEEL.get(), NCTurbine.STATOR.get())),
+                            "An earlier Forge visual payload still resolves its stock stage ordinals");
                     helper.assertTrue(helper.getBlockState(SHAFT).getValue(TurbineRotorBlock.ANIMATED),
                             "The assembled glass turbine replaces the static shaft model");
                     var steam = fluid(helper, INLET, Direction.NORTH);

@@ -455,6 +455,36 @@ The same packaged JAR ran both solid-fission-to-turbine-to-condenser chains with
 
 The isolated 539-mod Auram client loaded JEI and opened a world with custom blade expansion, a higher ideal steam expansion, and fast blade rendering. Captured frames showed different blade positions through the windows as an east-flowing turbine spun up through a stationary stator stage. The client displayed 475,000 mB of exhaust and returned to static rotor models when the shell broke. Repair restored the render and retained the exhaust. OpenAL used No Output and the focus observer recorded zero activations, foreground samples, and visible-window samples.
 
+### Scripted turbine blades and stators
+
+Migrate `Registration.registerTurbineBlade` and `Registration.registerTurbineStator` to KubeJS startup registrations. Keep the original `nuclearcraft:turbine_rotor_blade_<id>` and `nuclearcraft:turbine_rotor_stator_<id>` block and item IDs on both the client and server.
+
+```js
+const NuclearCraftTurbines = Java.loadClass('nc.init.NCTurbine')
+const stages = {
+    'nuclearcraft:turbine_rotor_blade_demo': () => NuclearCraftTurbines.createScriptedBlade(0.64, 1.75),
+    'nuclearcraft:turbine_rotor_stator_demo': () => NuclearCraftTurbines.createScriptedStator(0.8)
+}
+
+StartupEvents.registry('block', event => {
+    for (const id in stages) event.createCustom(id, stages[id])
+})
+
+StartupEvents.registry('item', event => {
+    for (const id in stages) event.createCustom(id, () => NuclearCraftTurbines.createScriptedRotorItem(id))
+})
+```
+
+The blade takes a finite nonnegative efficiency followed by a finite positive expansion coefficient. The stator takes only its expansion coefficient. A stage uses the same registered block on all four arms. Different stages may use stock or scripted parts in any valid order. A scripted stator contributes to the expansion calculation and remains stationary in the animated rotor. The item tooltips report the configured values, and the existing computer methods report those values in steam-flow order.
+
+Supply directional blockstates, block and item models, mining tags, loot tables, and crafting recipes through the pack. The animated renderer uses the stage block's default, Y-oriented model as the basis for its rotor arms. For converted saves, preserve the registered part IDs and the rotor's placed axes. The controller discovers the stages from the assembled blocks and continues to use its existing energy and fluid save fields. The client update now identifies stages by block ID and can read older Forge updates with stock stage ordinals.
+
+All 206 local GameTests passed. The scripted turbine rejected a stage with two registered blade IDs at the same coefficients. After repair it converted 512 mB of hot oxygen into 1,024 mB of exhaust, produced Forge Energy, and recovered the buffered exhaust when reassembled from its save. The stock update test also read the older ordinal-based packet.
+
+The packaged JAR started on clean Forge 47.4.18. On the dedicated server, CC: Tweaked 1.120.2 read 64 percent blade efficiency, the stationary stator marker, and 1.4× total expansion from a rotor supplied by KubeJS 2001.6.5-build.16. Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied 8,000 mB of steam and powered a Melter that produced 1,000 mB of water. Each turbine held 32,000 mB of exhaust against an incompatible outlet tank. Both networks later collected the exact amount after restart. The outputs persisted through confirmed chunk unload and reload.
+
+The isolated 539-mod Auram client verified both fluid and power routes, distinct models for the rotating blade and fixed stator, synchronized recipes, and the configured tooltips. Breaking the shell restored the static scripted models. Repair restored the animated rotor and retained the exhaust. The client used master volume zero and OpenAL No Output and exited normally with zero recorded focus activations, foreground samples, or visible window samples.
+
 ### Portable Ender Chest, Tritium Lamp, and food
 
 The Portable Ender Chest opens the player's vanilla Ender Chest inventory and increments the vanilla Ender Chest statistic. Both original recipes are available, one with purple wool and one with black wool. The Mary Poppins advancement uses the original item ID and triggers when the player obtains it.

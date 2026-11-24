@@ -36,14 +36,18 @@ public class TurbinePartBlock extends Block {
         CASING, GLASS, COMPUTER, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
         STEEL, EXTREME, SIC_SIC_CMC, STATOR,
         MAGNESIUM, BERYLLIUM, ALUMINUM, GOLD, COPPER, SILVER,
-        CONNECTOR, REDSTONE;
+        CONNECTOR, REDSTONE, SCRIPTED_BLADE, SCRIPTED_STATOR;
 
         boolean blade() {
-            return this == STEEL || this == EXTREME || this == SIC_SIC_CMC;
+            return this == STEEL || this == EXTREME || this == SIC_SIC_CMC || this == SCRIPTED_BLADE;
+        }
+
+        boolean stator() {
+            return this == STATOR || this == SCRIPTED_STATOR;
         }
 
         boolean stage() {
-            return blade() || this == STATOR;
+            return blade() || stator();
         }
 
         boolean coil() {
@@ -61,15 +65,6 @@ public class TurbinePartBlock extends Block {
         double conductivity() {
             return TurbineConfig.coilConductivity(ordinal() - MAGNESIUM.ordinal());
         }
-
-        double efficiency() {
-            return this == STATOR ? -1D : TurbineConfig.bladeEfficiency(ordinal() - STEEL.ordinal());
-        }
-
-        double expansion() {
-            return this == STATOR ? TurbineConfig.statorExpansion()
-                    : TurbineConfig.bladeExpansion(ordinal() - STEEL.ordinal());
-        }
     }
 
     private final Part part;
@@ -77,6 +72,10 @@ public class TurbinePartBlock extends Block {
     public TurbinePartBlock(Properties properties, Part part) {
         super(properties);
         this.part = part;
+    }
+
+    Part part() {
+        return part;
     }
 
     @Override

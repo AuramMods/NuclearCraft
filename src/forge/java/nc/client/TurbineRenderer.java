@@ -5,7 +5,6 @@ import com.mojang.math.Axis;
 import nc.init.NCTurbine;
 import nc.init.TurbineConfig;
 import nc.multiblock.turbine.TurbineController;
-import nc.multiblock.turbine.TurbinePartBlock.Part;
 import nc.multiblock.turbine.TurbineVisuals;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -77,7 +76,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
         var v = otherCrossAxis(axis);
         int length = visual.stages().size();
         for (int stage = 0; stage < length; stage++) {
-            Part material = visual.stages().get(stage);
+            var material = visual.stages().get(stage);
             double longitudinal = flow.getAxisDirection() == Direction.AxisDirection.POSITIVE
                     ? stage + 0.5D : length - stage - 0.5D;
             double taper = Math.pow(TurbineConfig.expansion(), (1D + stage - length) / length);
@@ -88,7 +87,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
             float span = (float) (scale * taper);
             pose.scale(axis == Direction.Axis.X ? 1F : span, axis == Direction.Axis.Y ? 1F : span,
                     axis == Direction.Axis.Z ? 1F : span);
-            if (material != Part.STATOR) {
+            if (!material.stator()) {
                 pose.mulPose(rotation(axis).rotationDegrees((float) angle));
             }
             pose.pushPose();
@@ -98,7 +97,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
             draw(shaft, pose, buffers, light, overlay);
             pose.popPose();
 
-            BlockState blade = bladeState(material);
+            BlockState blade = material.defaultBlockState();
             renderArm(blade, visual, Direction.get(Direction.AxisDirection.POSITIVE, u), pose, buffers, light, overlay);
             renderArm(blade, visual, Direction.get(Direction.AxisDirection.NEGATIVE, u), pose, buffers, light, overlay);
             renderArm(blade, visual, Direction.get(Direction.AxisDirection.POSITIVE, v), pose, buffers, light, overlay);
@@ -134,16 +133,6 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
     private void draw(BlockState state, PoseStack pose, MultiBufferSource buffers, int light, int overlay) {
         pose.translate(-0.5D, -0.5D, -0.5D);
         blocks.renderSingleBlock(state, pose, buffers, light, overlay);
-    }
-
-    private static BlockState bladeState(Part part) {
-        return switch (part) {
-            case STEEL -> NCTurbine.STEEL.get().defaultBlockState();
-            case EXTREME -> NCTurbine.EXTREME.get().defaultBlockState();
-            case SIC_SIC_CMC -> NCTurbine.SIC_SIC_CMC.get().defaultBlockState();
-            case STATOR -> NCTurbine.STATOR.get().defaultBlockState();
-            default -> throw new IllegalArgumentException("Not a rotor stage: " + part);
-        };
     }
 
     private static Vector3f normal(Direction direction) {

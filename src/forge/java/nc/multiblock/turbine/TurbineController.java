@@ -241,7 +241,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         }
         for (BlockPos pos : damaged.rotor().keySet()) {
             TurbinePartBlock.Part part = TurbinePartBlock.part(server.getBlockState(pos));
-            if (part == TurbinePartBlock.Part.STATOR && server.random.nextFloat() < 0.04F) {
+            if (part != null && part.stator() && server.random.nextFloat() < 0.04F) {
                 server.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
             } else if (part != null && part.blade() && server.random.nextFloat() < 0.18F) {
                 server.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
@@ -475,14 +475,14 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
     double computerTotalExpansion() {
         double expansion = 1D;
-        for (TurbinePartBlock.Part stage : layout.stages()) expansion *= stage.expansion();
+        for (TurbineRotorBlock stage : layout.stages()) expansion *= stage.expansion();
         return expansion;
     }
 
     List<Double> computerExpansionLevels() {
         var values = new ArrayList<Double>(layout.stages().size());
         double expansion = 1D;
-        for (TurbinePartBlock.Part stage : layout.stages()) {
+        for (TurbineRotorBlock stage : layout.stages()) {
             values.add(expansion * Math.sqrt(stage.expansion()));
             expansion *= stage.expansion();
         }
@@ -495,7 +495,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     List<Double> computerBladeEfficiencies() {
-        return layout.stages().stream().map(TurbinePartBlock.Part::efficiency).toList();
+        return layout.stages().stream().map(TurbineRotorBlock::efficiency).toList();
     }
 
     List<List<Object>> computerDynamoParts() {

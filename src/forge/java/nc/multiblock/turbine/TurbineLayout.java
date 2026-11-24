@@ -18,7 +18,7 @@ import java.util.Set;
 
 import static nc.multiblock.turbine.TurbinePartBlock.Part;
 
-record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLength, List<Part> stages,
+record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLength, List<TurbineRotorBlock> stages,
                      Map<BlockPos, Axis> rotor, Set<BlockPos> bearings, List<Port> ports,
                      List<BlockPos> redstonePorts, List<BlockPos> computers, Dynamo dynamo, boolean glass) {
     record Port(BlockPos pos, Direction side, Part part) {}
@@ -42,7 +42,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
     }
 
     int bladeSets() {
-        return (int) stages.stream().filter(Part::blade).count();
+        return (int) stages.stream().filter(TurbineRotorBlock::blade).count();
     }
 
     int bladeArea() {
@@ -149,11 +149,11 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             }
         }
 
-        List<Part> stages = new ArrayList<>();
+        List<TurbineRotorBlock> stages = new ArrayList<>();
         Map<BlockPos, Axis> rotor = new LinkedHashMap<>();
         for (int d = 1; d < cross.length(axis) - 1; d++) {
             int depth = flow.getAxisDirection() == Direction.AxisDirection.POSITIVE ? d : cross.length(axis) - 1 - d;
-            Part stage = null;
+            TurbineRotorBlock stage = null;
             for (int u = 1; u <= diameter; u++) {
                 boolean centerU = u >= first && u <= last;
                 for (int v = 1; v <= diameter; v++) {
@@ -167,10 +167,11 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                         }
                         rotor.put(pos, axis);
                     } else if (centerU || centerV) {
-                        if (part == null || !part.stage() || (stage != null && stage != part)) {
+                        if (!(state.getBlock() instanceof TurbineRotorBlock rotorBlock) || !rotorBlock.stage()
+                                || (stage != null && stage != rotorBlock)) {
                             return invalid("blades", pos);
                         }
-                        stage = part;
+                        stage = rotorBlock;
                         rotor.put(pos, centerU ? cross.v : cross.u);
                     } else if (part != null || !state.canBeReplaced()) {
                         return invalid("rotor_space", pos);
@@ -179,7 +180,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             }
             stages.add(stage);
         }
-        if (stages.stream().noneMatch(Part::blade)) {
+        if (stages.stream().noneMatch(TurbineRotorBlock::blade)) {
             return invalid("blades", origin);
         }
 
