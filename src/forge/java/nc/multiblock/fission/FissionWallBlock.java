@@ -88,9 +88,9 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         if (level instanceof ServerLevel && role == Role.IRRADIATOR_PORT && type == NCFission.IRRADIATOR_PORT_ENTITY.get()) {
             return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportIrradiation((ServerLevel) world);
         }
-        if (level instanceof ServerLevel && (role == Role.FUEL_PORT || role == Role.CHAMBER_PORT || role == Role.COOLER_PORT)
+        if (level instanceof ServerLevel && (role == Role.FUEL_PORT || role == Role.CHAMBER_PORT || role == Role.COOLER_PORT || role == Role.HEATER_PORT)
                 && type == NCFission.PORT_ENTITY.get()) {
-            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportFuelOrGas((ServerLevel) world);
+            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportFuelOrCoolant((ServerLevel) world);
         }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);

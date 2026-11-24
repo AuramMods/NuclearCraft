@@ -15,7 +15,10 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -179,13 +182,7 @@ public final class SaltFissionGameTests {
         shell(helper);
         addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
         helper.runAtTickTime(15, () -> {
-            var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "SaltInspector")) {
-                @Override
-                public OptionalInt openMenu(MenuProvider provider) {
-                    containerMenu = provider.createMenu(1, getInventory(), this);
-                    return OptionalInt.of(1);
-                }
-            };
+            var player = saltInspector(helper);
             BlockPos absolutePort = helper.absolutePos(FUEL_IN);
             player.moveTo(absolutePort.getX() + 0.5, absolutePort.getY(), absolutePort.getZ() - 1.0);
             var initial = fluids(helper, FUEL_IN, Direction.NORTH);
@@ -222,6 +219,123 @@ public final class SaltFissionGameTests {
                     })
                     .thenSucceed();
         });
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 240)
+    public static void saltHeatersKeepIndependentLocalAndSharedCoolant(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        var heater = FIRST_VESSEL.below();
+        helper.setBlock(CASE, Blocks.AIR);
+        helper.setBlock(NAK_OUT, NCFission.CASING.get());
+        var portState = NCSaltFission.port(NCSaltCoolants.NAK).defaultBlockState()
+                .setValue(FissionWallBlock.FACING, Direction.DOWN);
+        helper.setBlock(NAK_IN, portState);
+        var port = helper.getBlockEntity(NAK_IN);
+        var detached = port.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.DOWN);
+        var local = detached.orElseThrow(AssertionError::new);
+        helper.assertTrue(!port.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP).isPresent()
+                        && local.getTankCapacity(0) == 1296 && local.fill(stack("iron_nak", 1), EXECUTE) == 0
+                        && local.fill(stack("nak", 111), SIMULATE) == 111 && local.getFluidInTank(0).isEmpty()
+                        && local.fill(stack("nak", 111), EXECUTE) == 111 && local.drain(1, EXECUTE).isEmpty(),
+                "A detached port fills its own tanks with the proper coolant from its configured face");
+        helper.setBlock(NAK_IN, portState.setValue(FissionWallBlock.ACTIVE, true));
+        helper.assertTrue(!detached.isPresent() && local.fill(stack("nak", 1), EXECUTE) == 0
+                        && fluids(helper, NAK_IN, Direction.DOWN).fill(stack("nak", 1), EXECUTE) == 0,
+                "Changing detached direction revokes the previous input handler");
+        helper.setBlock(NAK_IN, portState);
+        var beforeAssembly = helper.getBlockEntity(NAK_IN).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.DOWN);
+        var stale = beforeAssembly.orElseThrow(AssertionError::new);
+
+        var player = saltInspector(helper);
+        var portPos = helper.absolutePos(NAK_IN);
+        player.moveTo(portPos.getX() + 0.5, portPos.getY(), portPos.getZ() - 1);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(NCSaltCoolants.NAK.cold().getBucket()));
+        helper.useBlock(heater, player);
+        helper.assertTrue(player.getMainHandItem().is(Items.BUCKET)
+                        && heaterFluid(helper, heater, false).isFluidStackIdentical(stack("nak", 1000)),
+                "A coolant bucket fills the unassembled heater's local tank");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.setBlock(CASE, NCFission.CASING.get());
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var shared = new CompoundTag[1];
+        var detachedHeater = new CompoundTag[1];
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "One coolant port can serve a reactor"))
+                .thenExecute(() -> {
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    helper.assertTrue(!beforeAssembly.isPresent() && stale.getFluidInTank(0).isEmpty()
+                                    && input.getTankCapacity(0) == 1296 && input.getFluidInTank(0).isEmpty(),
+                            "Assembly switches the port to the shared bank and revokes detached access");
+                    helper.useBlock(NAK_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.linked() && menu.clickMenuButton(player, SaltFissionPartMenu.SWITCH_BUFFER)
+                                    && menu.local() && menu.fluid(false).isFluidStackIdentical(stack("nak", 111)),
+                            "The linked port menu still lets the player inspect its preserved local buffer");
+                    input.fill(stack("nak", 240), EXECUTE);
+                    fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 30), EXECUTE);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(sharedCoolant(controller).getCompound("output").getInt("Amount") > 0,
+                        "The lone input port provides coolant to its heater"))
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    shared[0] = sharedCoolant(controller);
+                    helper.assertTrue(heaterFluid(helper, heater, false).getAmount() == 1000
+                                    && heaterFluid(helper, heater, true).isEmpty(),
+                            "A linked heater leaves its local supply intact");
+                    helper.setBlock(NAK_IN, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The shell can run without heater ports"))
+                .thenExecute(() -> helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK))
+                .thenWaitUntil(() -> helper.assertTrue(heaterFluid(helper, heater, true).getAmount() > 0,
+                        "The unlinked heater uses its local supply"))
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    int hot = heaterFluid(helper, heater, true).getAmount();
+                    helper.assertTrue(heaterFluid(helper, heater, false).getAmount() + hot == 1000
+                                    && sharedCoolant(controller).equals(shared[0]),
+                            "Heating transfers coolant once and leaves the removed circuit's stock intact");
+                    detachedHeater[0] = helper.getBlockEntity(heater).saveWithoutMetadata();
+                    helper.setBlock(heater, Blocks.AIR);
+                    helper.setBlock(heater, NCSaltFission.heater(NCSaltCoolants.NAK));
+                    helper.getBlockEntity(heater).load(detachedHeater[0]);
+                    helper.setBlock(NAK_OUT, NCSaltFission.port(NCSaltCoolants.NAK).defaultBlockState()
+                            .setValue(FissionWallBlock.ACTIVE, true));
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "A lone output port reconnects the same circuit"))
+                .thenExecute(() -> {
+                    var output = fluids(helper, NAK_OUT, Direction.UP);
+                    var savedHot = FluidStack.loadFluidStackFromNBT(shared[0].getCompound("output"));
+                    helper.assertTrue(output.drain(savedHot, SIMULATE).isFluidStackIdentical(savedHot)
+                                    && output.getFluidInTank(0).isFluidStackIdentical(savedHot)
+                                    && output.drain(savedHot, EXECUTE).isFluidStackIdentical(savedHot)
+                                    && output.getFluidInTank(0).isEmpty(),
+                            "Both simulated and live drains use the reconnected shared buffer");
+                    helper.assertTrue(helper.getBlockEntity(heater).saveWithoutMetadata().equals(detachedHeater[0]),
+                            "Reloading the local tanks and attaching a hot port leaves the local stock intact");
+                })
+                .thenSucceed();
+    }
+
+    private static FluidStack heaterFluid(GameTestHelper helper, BlockPos heater, boolean output) {
+        return FluidStack.loadFluidStackFromNBT(helper.getBlockEntity(heater).saveWithoutMetadata()
+                .getCompound("coolant").getCompound(output ? "output" : "input"));
+    }
+
+    private static CompoundTag sharedCoolant(SolidFissionController controller) {
+        return controller.saveWithoutMetadata().getCompound("salt_cooling").getCompound("nak");
+    }
+
+    private static FakePlayer saltInspector(GameTestHelper helper) {
+        return new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "SaltInspector")) {
+            @Override
+            public OptionalInt openMenu(MenuProvider provider) {
+                containerMenu = provider.createMenu(1, getInventory(), this);
+                return OptionalInt.of(1);
+            }
+        };
     }
 
     private static void shell(GameTestHelper helper) {

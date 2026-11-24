@@ -6,6 +6,7 @@ import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionVariant;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SaltFissionPartMenu;
+import nc.multiblock.fission.SaltHeater;
 import nc.multiblock.fission.SaltHeaterBlock;
 import nc.multiblock.fission.SaltVessel;
 import nc.multiblock.fission.SaltVesselBlock;
@@ -17,6 +18,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -89,6 +91,10 @@ public final class NCSaltFission {
     public static final RegistryObject<BlockEntityType<SaltVessel>> VESSEL_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("salt_fission_vessel", () ->
                     BlockEntityType.Builder.of(SaltVessel::new, VESSEL.get()).build(null));
+    public static final RegistryObject<BlockEntityType<SaltHeater>> HEATER_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("salt_fission_heater", () ->
+                    BlockEntityType.Builder.of(SaltHeater::new,
+                            HEATERS.values().stream().map(RegistryObject::get).toArray(Block[]::new)).build(null));
     public static final RegistryObject<MenuType<SolidFissionMenu>> MENU = NCRegistries.MENUS.register("salt_fission_controller",
             () -> new MenuType<>((id, player) -> new SolidFissionMenu(id, player, FissionVariant.SALT), FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<SaltFissionRecipe>> FUEL_TYPE =

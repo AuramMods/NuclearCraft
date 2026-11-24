@@ -572,7 +572,7 @@ final class SolidFissionCore {
             var heating = new HashSet<BlockPos>();
             for (SaltLoad load : saltLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
-                boolean processing = saltCooling.heat(load.pos(), load.coolant(), speed);
+                boolean processing = saltCooling.heat(level, load.pos(), load.coolant(), speed);
                 if (processing) {
                     heating.add(load.pos());
                 }

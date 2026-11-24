@@ -177,10 +177,11 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
             return Map.of("type", sink.material().name().toLowerCase(Locale.ROOT),
                     "cooling", valid ? NCFission.cooling(sink.material()) : 0, "is_valid", valid);
         }
-        if (state.getBlock() instanceof SaltHeaterBlock heater) {
+        if (entity instanceof SaltHeater heater) {
             var coolant = heater.coolant();
+            var tanks = heater.tanks();
             return coolerStats(core.coolerStats(pos), coolant.name().toLowerCase(Locale.ROOT),
-                    controller.existingSaltCoolantTank(coolant, false), controller.existingSaltCoolantTank(coolant, true),
+                    tanks.tank(false), tanks.tank(true),
                     controller.heaterProgress(pos, coolant), NCSaltFission.cooling(coolant), core.isCooling(pos));
         }
         if (entity instanceof PebbleCooler cooler) {

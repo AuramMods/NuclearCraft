@@ -3,6 +3,7 @@ package nc.client;
 import nc.NuclearCraft;
 import nc.multiblock.fission.SaltFissionPartMenu;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -19,10 +20,35 @@ public final class SaltFissionPartScreen extends AbstractContainerScreen<SaltFis
     private static final Tank COMPONENT_INPUT = new Tank(56, 35, 16);
     private static final Tank OUTPUT = new Tank(112, 31, 24);
     private final ResourceLocation texture;
+    private Button storage;
 
     public SaltFissionPartScreen(SaltFissionPartMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         texture = NuclearCraft.id("textures/gui/container/" + menu.kind().id() + ".png");
+    }
+
+    @Override
+    protected void init() {
+        super.init();
+        storage = addRenderableWidget(Button.builder(Component.empty(), button -> send(SaltFissionPartMenu.SWITCH_BUFFER))
+                .bounds(leftPos + 45, topPos + 55, 86, 14).build());
+        refreshStorageButton();
+    }
+
+    @Override
+    protected void containerTick() {
+        super.containerTick();
+        refreshStorageButton();
+    }
+
+    private void refreshStorageButton() {
+        storage.visible = menu.linked();
+        storage.setMessage(Component.translatable(menu.local()
+                ? "gui.nuclearcraft.irradiator.local_items" : "gui.nuclearcraft.irradiator.linked_items"));
+    }
+
+    private void send(int button) {
+        minecraft.gameMode.handleInventoryButtonClick(menu.containerId, button);
     }
 
     @Override
@@ -80,7 +106,7 @@ public final class SaltFissionPartScreen extends AbstractContainerScreen<SaltFis
         if (menu.kind().port() || !menu.connected()) {
             String key = !menu.connected() ? "disconnected" : menu.outputPort() ? "output" : "input";
             var status = Component.translatable("gui.nuclearcraft.salt_part." + key);
-            graphics.drawString(font, status, (imageWidth - font.width(status)) / 2, 64, 0x404040, false);
+            graphics.drawString(font, status, (imageWidth - font.width(status)) / 2, menu.linked() ? 20 : 64, 0x404040, false);
         }
     }
 
@@ -122,11 +148,11 @@ public final class SaltFissionPartScreen extends AbstractContainerScreen<SaltFis
     public boolean mouseClicked(double x, double y, int button) {
         if (button == 0 && (hasShiftDown() || hasControlDown())) {
             if (hovered(input(), x, y)) {
-                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, SaltFissionPartMenu.CLEAR_INPUT);
+                send(SaltFissionPartMenu.CLEAR_INPUT);
                 return true;
             }
             if (hovered(OUTPUT, x, y)) {
-                minecraft.gameMode.handleInventoryButtonClick(menu.containerId, SaltFissionPartMenu.CLEAR_OUTPUT);
+                send(SaltFissionPartMenu.CLEAR_OUTPUT);
                 return true;
             }
         }

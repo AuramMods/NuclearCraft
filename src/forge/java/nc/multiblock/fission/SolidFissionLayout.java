@@ -161,11 +161,6 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             if (filters.stream().anyMatch(filter -> hasUnpairedPorts(ports, Role.VESSEL_PORT, filter))) {
                 return invalid("port_pair", origin);
             }
-            for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
-                if (hasUnpairedPorts(ports, Role.HEATER_PORT, coolant)) {
-                    return invalid("port_pair", origin);
-                }
-            }
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
@@ -192,7 +187,6 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         for (Port port : ports) {
             Object current = switch (role) {
                 case FUEL_PORT, CHAMBER_PORT, VESSEL_PORT -> port.fuelFilter();
-                case HEATER_PORT -> port.salt();
                 default -> null;
             };
             if (port.role() == role && Objects.equals(current, filter)) {
