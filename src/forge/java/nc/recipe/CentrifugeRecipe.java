@@ -10,12 +10,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<Product> products,
-                               double duration, int energyPerTick, double radiation) implements FluidProcessorRecipe {
+                               double duration, int energyPerTick, double radiation,
+                               @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 6;
 
     public CentrifugeRecipe {
@@ -97,7 +99,8 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
                 throw new JsonSyntaxException("Centrifuge recipe needs a fluid output for " + id);
             }
             return new CentrifugeRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    products, ticks, energy, ProcessingRecipe.readRadiation(json, id));
+                    products, ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         private static Product readProduct(ResourceLocation id, JsonObject json) {
@@ -117,7 +120,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             var products = buffer.readList(packet -> new Product(packet.readFluidStack(),
                     packet.readVarInt(), packet.readVarInt(), packet.readUnsignedByte()));
-            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble());
+            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

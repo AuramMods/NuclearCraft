@@ -22,9 +22,11 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.Nullable;
 
-public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack product, double ticks, int energyPerTick, double radiation)
-        implements ProcessingRecipe {
+public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack product, double ticks,
+                           int energyPerTick, double radiation,
+                           @Nullable ProcessorRecipeDefaults defaults) implements ProcessingRecipe {
 
     @Override
     public boolean matches(Container container, Level level) {
@@ -89,7 +91,8 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
             if (fluid == null || fluid == Fluids.EMPTY || amount <= 0 || !Double.isFinite(ticks) || ticks <= 0 || energyPerTick < 0) {
                 throw new JsonSyntaxException("Invalid Melter recipe " + id);
             }
-            return new MelterRecipe(id, input, new FluidStack(fluid, amount), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id));
+            return new MelterRecipe(id, input, new FluidStack(fluid, amount), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         private static Ingredient readIngredient(JsonElement json, ICondition.IContext context) {
@@ -124,7 +127,7 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
         @Override
         public MelterRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new MelterRecipe(id, Ingredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readDouble(), buffer.readVarInt(), buffer.readDouble());
+                    buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

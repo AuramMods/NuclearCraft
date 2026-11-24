@@ -23,6 +23,7 @@ import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 public final class NCItemProcessors {
@@ -35,6 +36,8 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
     private static final ForgeConfigSpec.BooleanValue ORE_PROCESSING;
     private static final ForgeConfigSpec.BooleanValue SMART_PROCESSOR_INPUT;
+    private static final ForgeConfigSpec.BooleanValue DEFAULT_RECIPES_GLOBAL;
+    private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DEFAULT_RECIPES;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
     private static final ForgeConfigSpec.DoubleValue POWER_MULTIPLIER;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_TIMES;
@@ -53,6 +56,12 @@ public final class NCItemProcessors {
                 .define("ore_processing", true);
         SMART_PROCESSOR_INPUT = builder.comment("Accept processor ingredients that can be combined with the other stored inputs.")
                 .define("smart_processor_input", true);
+        DEFAULT_RECIPES_GLOBAL = builder.comment("Enable the default recipe catalogs for NuclearCraft processors.")
+                .define("default_processor_recipes_global", true);
+        var recipeDefaults = Collections.nCopies(Rate.values().length, true);
+        DEFAULT_RECIPES = builder.comment("Enable defaults per processor, in processor_time order. The Electric Furnace uses furnace recipes.")
+                .define("default_processor_recipes", recipeDefaults, candidate -> candidate instanceof List<?> values
+                        && values.size() == recipeDefaults.size() && values.stream().allMatch(Boolean.class::isInstance));
         builder.push("rates");
         TIME_MULTIPLIER = builder.defineInRange("processor_time_multiplier", 1D, 0.001D, 255D);
         POWER_MULTIPLIER = builder.defineInRange("processor_power_multiplier", 1D, 0D, 255D);
@@ -105,6 +114,10 @@ public final class NCItemProcessors {
 
     public static boolean smartProcessorInput() {
         return value(SMART_PROCESSOR_INPUT);
+    }
+
+    public static boolean defaultRecipes(Rate rate) {
+        return value(DEFAULT_RECIPES_GLOBAL) && value(DEFAULT_RECIPES).get(rate.ordinal());
     }
 
     public static double speedUpgrade(int count) {

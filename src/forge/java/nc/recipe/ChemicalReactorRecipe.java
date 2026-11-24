@@ -9,12 +9,14 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> results,
-                                    int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
+                                    int ticks, int energyPerTick, double radiation,
+                                    @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 2;
 
     public ChemicalReactorRecipe {
@@ -50,14 +52,15 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             for (var entry : entries) {
                 outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
             }
-            return new ChemicalReactorRecipe(id, FluidIngredient.readPair(json, id), outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id));
+            return new ChemicalReactorRecipe(id, FluidIngredient.readPair(json, id), outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public ChemicalReactorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             List<FluidIngredient> inputs = FluidIngredient.readPair(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
+            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

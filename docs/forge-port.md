@@ -85,7 +85,21 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- The remaining audit covers the reactor catalogs, legacy processor config switches and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
+- The remaining audit covers the reactor catalogs, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
+
+### Default processor recipes
+
+The world's `nuclearcraft-processors.toml` accepts the legacy `default_processor_recipes_global` switch and `default_processor_recipes` array. Both default to true. The 20 array positions match `processor_time`. Turning off the global switch removes all shipped processor recipes. Turning off one array entry removes that machine’s shipped recipes. Both switches include recipes discovered from material tags by the Melter and Pressurizer. The Electric Furnace still uses vanilla and modded furnace recipes, as it did in 2o.9.7.
+
+Datapacks and KubeJS keep their own recipes, including replacements that reuse a stock recipe ID. Omit `nuclearcraft_default` when copying a packaged recipe JSON for independent use. The server applies the switches when the world starts and filters the recipe catalog again when datapacks reload. JEI receives the enabled recipes. Setting `ore_processing` to false also disables generated Melter ore recipes and the Manufactory’s shipped ore and raw ore recipes. The Manufactory can still grind ingots.
+
+All 192 local GameTests passed. The packaged-data audit verified unchanged recipe payloads and markers on all 1,606 shipped processor recipe definitions, including both conditional Rock Crusher variants. On clean Forge 47.4.18, per-machine switches blocked the shipped and generated Melter and Pressurizer recipes. The global switch also blocked the conditional Rock Crusher recipe. A custom Electrolyzer batch and Electric Furnace smelting still ran. Re-enabling the catalogs restored processing against retained inputs, and disabling ores still allowed ingot grinding.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each left packed ice in the source barrel while stock defaults were off. After restart, both networks supplied ice and 200 FE and collected exactly 601 mB from the custom recipe using the original recipe ID. The outputs survived a confirmed chunk unload and reload.
+
+The clean multiplayer client saw the same-ID Melter replacement in JEI while stock and generated recipes were absent. A datapack reload changed its yield from 721 to 722 mB. The client could still unlock the Melter’s crafting recipe. Audio was muted, and the background client recorded zero focus activations, foreground samples, or visible windows.
+
+The isolated 539-mod Auram client listed one Melter recipe with the global switch off. KubeJS reused the original ice recipe ID, and its batch produced 781 mB of water while a packed-ice batch preserved its input and charge. This client also ran muted with zero focus activations, foreground samples, or visible windows.
 
 ### Melter material recipes
 

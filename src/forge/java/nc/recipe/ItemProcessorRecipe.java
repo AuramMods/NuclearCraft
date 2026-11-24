@@ -35,7 +35,8 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                                   @Nullable FluidIngredient fluidInput, FluidStack fluidOutput,
                                   List<Product> results, List<Product> alternateResults,
                                   int ticks, int energyPerTick, double radiation,
-                                  @Nullable Double powerMultiplier, boolean decayTimeFromRadiation) implements ProcessingRecipe {
+                                  @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
+                                  @Nullable ProcessorRecipeDefaults defaults) implements ProcessingRecipe {
     private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
 
     public ItemProcessorRecipe {
@@ -49,7 +50,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                                @Nullable FluidIngredient fluidInput, FluidStack fluidOutput, List<Product> results,
                                List<Product> alternateResults, int ticks, int energyPerTick, double radiation) {
         this(id, machine, inputs, fluidInput, fluidOutput, results, alternateResults, ticks, energyPerTick, radiation,
-                null, false);
+                null, false, null);
     }
 
     public double configuredTime() {
@@ -275,7 +276,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
                 throw new JsonSyntaxException("Radiation-derived decay time requires a positive Decay Hastener radiation rate for " + id);
             }
             return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
-                    ticks, energy, radiation, power, decayTime);
+                    ticks, energy, radiation, power, decayTime, ProcessorRecipeDefaults.fromJson(json));
         }
 
         private @Nullable FluidIngredient readFluidInput(ResourceLocation recipeId, JsonObject json) {
@@ -343,7 +344,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
             return new ItemProcessorRecipe(id, machine, inputs, fluid, fluidOutput, results, alternate,
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
-                    buffer.readNullable(FriendlyByteBuf::readDouble), buffer.readBoolean());
+                    buffer.readNullable(FriendlyByteBuf::readDouble), buffer.readBoolean(), null);
         }
 
         @Override

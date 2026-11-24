@@ -1,3 +1,6 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
 plugins {
     id 'net.minecraftforge.gradle' version '6.0.54'
 }
@@ -26,6 +29,7 @@ configurations {
 
 minecraft {
     mappings channel: 'official', version: minecraft_version
+    accessTransformer = file('src/forge/resources/META-INF/accesstransformer.cfg')
 
     runs {
         configureEach {
@@ -103,10 +107,40 @@ def equipmentItems = equipmentFamilies.collectMany { family ->
 def equipmentTextures = equipmentItems.collect { "assets/nuclearcraft/textures/items/${it}.png".toString() } +
         equipmentFamilies.collect { "assets/nuclearcraft/textures/models/armor/${it}_layer_*.png".toString() }
 
+def processorRecipeFolders = ['manufactory', 'separator', 'decay_hastener', 'fuel_reprocessor', 'alloy_furnace',
+        'infuser', 'melter', 'supercooler', 'electrolyzer', 'assembler', 'ingot_former', 'pressurizer',
+        'chemical_reactor', 'salt_mixer', 'crystallizer', 'enricher', 'extractor', 'centrifuge', 'rock_crusher']
+
+def markProcessorDefault
+markProcessorDefault = { Map recipe, String marker ->
+    if (recipe.type == 'forge:conditional') {
+        recipe.recipes.each { markProcessorDefault(it.recipe, marker) }
+    } else {
+        recipe.nuclearcraft_default = marker
+    }
+}
+
 tasks.named('processResources', ProcessResources) {
     inputs.property 'mod_version', mod_version
+    inputs.property 'processorRecipeFolders', processorRecipeFolders
+    inputs.file(buildFile).withPropertyName('resourceBuildRules')
     filesMatching('META-INF/mods.toml') {
         expand mod_version: mod_version
+    }
+    filesMatching(processorRecipeFolders.collect { "data/nuclearcraft/recipes/${it}/**/*.json".toString() }) { details ->
+        String machine = details.path.split('/')[3]
+        boolean ore = machine == 'manufactory' && (details.name.endsWith('_from_ore.json') || details.name.endsWith('_from_raw.json'))
+        Map recipe = new JsonSlurper().parse(details.file)
+        markProcessorDefault(recipe, ore ? machine + '/ore' : machine)
+        String content = JsonOutput.toJson(recipe)
+        boolean written = false
+        details.filter { String ignored ->
+            if (written) {
+                return null
+            }
+            written = true
+            return content
+        }
     }
     from('src/main/resources') {
         include 'logo.png'

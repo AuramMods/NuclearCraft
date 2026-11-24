@@ -9,11 +9,13 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, FluidStack product,
-                               int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
+                               int ticks, int energyPerTick, double radiation,
+                               @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public SupercoolerRecipe {
         product = product.copy();
     }
@@ -52,13 +54,14 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
                 throw new JsonSyntaxException("Invalid Supercooler recipe " + id);
             }
             return new SupercoolerRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id));
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public SupercoolerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

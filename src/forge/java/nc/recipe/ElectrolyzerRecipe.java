@@ -9,12 +9,14 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidStack> results,
-                                 int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
+                                 int ticks, int energyPerTick, double radiation,
+                                 @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 4;
 
     public ElectrolyzerRecipe {
@@ -55,14 +57,15 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             for (var entry : entries) {
                 outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
             }
-            return new ElectrolyzerRecipe(id, input, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id));
+            return new ElectrolyzerRecipe(id, input, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public ElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
+            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

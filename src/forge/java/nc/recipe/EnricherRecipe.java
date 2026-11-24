@@ -10,11 +10,13 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
 public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidIngredient fluidInput,
-                             FluidStack product, int ticks, int energyPerTick, double radiation) implements FluidProcessorRecipe {
+                             FluidStack product, int ticks, int energyPerTick, double radiation,
+                             @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public EnricherRecipe {
         product = product.copy();
     }
@@ -57,14 +59,15 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             var ingredient = Ingredient.fromJson(GsonHelper.getNonNull(item, "ingredient"));
             return new EnricherRecipe(id, new ItemProcessorRecipe.Input(ingredient, count),
                     FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id));
+                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = new ItemProcessorRecipe.Input(Ingredient.fromNetwork(buffer), buffer.readVarInt());
             return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override

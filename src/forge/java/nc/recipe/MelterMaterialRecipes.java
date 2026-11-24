@@ -2,6 +2,7 @@ package nc.recipe;
 
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors;
+import nc.init.NCItemProcessors.Rate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -78,7 +79,8 @@ public final class MelterMaterialRecipes {
     }
 
     private static boolean enabled(MelterRecipe recipe) {
-        return !recipe.id().getPath().endsWith("/ore") || NCItemProcessors.oreProcessing();
+        return NCItemProcessors.defaultRecipes(Rate.MELTER)
+                && (!recipe.id().getPath().endsWith("/ore") || NCItemProcessors.oreProcessing());
     }
 
     private static <T> Map<ResourceLocation, List<Holder<T>>> tags(Registry<T> registry) {
@@ -196,7 +198,7 @@ public final class MelterMaterialRecipes {
             ResourceLocation id = NuclearCraft.id("melter/" + path);
             if (fluid != null && !inputs.isEmpty() && recipes.byKey(id).isEmpty()) {
                 result.put(id, new MelterRecipe(id, Ingredient.of(inputs.stream().map(Item::getDefaultInstance)),
-                        new FluidStack(fluid, amount), ticks, power, 0D));
+                        new FluidStack(fluid, amount), ticks, power, 0D, null));
             }
         }
     }

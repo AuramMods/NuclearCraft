@@ -1,7 +1,9 @@
 package nc.recipe;
 
 import nc.NuclearCraft;
+import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
+import nc.init.NCItemProcessors.Rate;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
@@ -46,10 +48,13 @@ public final class PressurizerPlateRecipes {
     }
 
     public static List<ItemProcessorRecipe> forServer(RecipeManager recipes) {
-        return SERVER_RECIPES.getOrDefault(recipes, List.of());
+        return NCItemProcessors.defaultRecipes(Rate.PRESSURIZER) ? SERVER_RECIPES.getOrDefault(recipes, List.of()) : List.of();
     }
 
     public static List<ItemProcessorRecipe> fromSyncedTags(RecipeManager recipes, Registry<Item> items) {
+        if (!NCItemProcessors.defaultRecipes(Rate.PRESSURIZER)) {
+            return List.of();
+        }
         var tags = items.getTags().collect(Collectors.toMap(pair -> pair.getFirst().location(),
                 pair -> pair.getSecond().stream().toList()));
         return discover(recipes, tags);
