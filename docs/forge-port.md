@@ -195,6 +195,8 @@ The refreshed 539-mod instance on official Forge 47.4.18 reached a modded integr
 
 On a headless Forge 47.4.10 server, Californium and Plutonium RTG banks sent power through Auram's Ender IO energy conduits and Mekanism Basic Universal Cables. Each network charged a Voltaic Pile that supplied an Electric Furnace over a second length of the same transport. Elite Solar Panels left their networks at zero FE at midnight and powered the same chain at noon. All four furnaces smelted one raw iron from generator power.
 
+The isolated copy with all 539 Auram JARs plus NuclearCraft repeated both generator chains on official Forge 47.4.18. KubeJS checks found zero FE in the panels, batteries, and furnaces on both solar lines at midnight. After noon all four furnaces saved one iron ingot, and the saved blocks confirmed the expected Ender IO conduits and Mekanism cables on their separate lines. JEI loaded and the client exited cleanly with OpenAL No Output and zero visible windows or focus activations.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
