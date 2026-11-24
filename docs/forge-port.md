@@ -212,6 +212,8 @@ The refreshed full snapshot with AuramCore 1.0.36 repeated both Distributor chai
 
 In a packaged Forge 47.4.10 dedicated server, Ender IO and Mekanism supplied water and an item heat source to separate Decay Pools and carried both products out. Each pool produced exactly 1,000 mB of preheated water and one palladium dust. A disposable datapack shortened the Ruthenium-106 recipe's lifetime to 300 ticks for this transport test.
 
+The full Auram snapshot with AuramCore 1.0.36 build `a3e441f` repeated both Decay Pool chains on Forge 47.4.18. KubeJS applied the same 300-tick test override. Both destination pairs saved 1,000 mB of preheated water and one palladium dust, and both source pairs and controllers saved their tanks and reservoirs empty. JEI loaded, the client used OpenAL No Output, and the native observer recorded zero visible windows or focus activations through a clean exit.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
