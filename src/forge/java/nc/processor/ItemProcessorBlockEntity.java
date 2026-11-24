@@ -42,13 +42,12 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
-public final class ItemProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
+public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private static final Direction[] SIDES = Direction.values();
 
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ItemProcessorRecipe> recipes;
     private final @Nullable RecipeManager.CachedCheck<Container, SmeltingRecipe> smeltingRecipes;
-    private final ProcessorEnergy power = new ProcessorEnergy(this, 512_000);
     private final ProcessorInputs input;
     private final ItemStackHandler inventory;
     private final @Nullable ProcessorFluidTanks fluid;
@@ -61,11 +60,10 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
     private ResourceLocation activeRecipe;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
-    private long progressHalfTicks;
     private int recipeTicks;
 
     public ItemProcessorBlockEntity(BlockPos pos, BlockState state, Machine machine) {
-        super(machine.entityType(), pos, state);
+        super(machine.entityType(), pos, state, 512_000);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
@@ -173,16 +171,17 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
             setChanged();
         }
         recipeTicks = recipe == null ? 0 : recipe.ticks();
+        basePower = recipe == null ? 0 : recipe.energyPerTick();
         if (recipe == null) {
             return false;
         }
         List<ItemProcessorRecipe.Product> products = recipe.products();
         FluidStack fluidProduct = machine.hasFluidOutput() ? recipe.fluidOutput() : FluidStack.EMPTY;
-        boolean room = hasOutputSpace(products) && (fluid == null || fluidProduct.isEmpty()
-                || fluid.canProduce(0, fluidProduct, fluidOutputMode));
-        if (!room || halted || !power.spend(recipe.energyPerTick())) {
+        boolean room = hasOutputSpace(products, fluidProduct);
+        double speed = speed();
+        if (!room || halted || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
-                long nextProgress = machine.losesProgress() && !halted ? Math.max(0, progressHalfTicks - 3)
+                double nextProgress = machine.losesProgress() && !halted ? Math.max(0, progressHalfTicks - 3 * speed)
                         : room ? progressHalfTicks : 0;
                 if (nextProgress != progressHalfTicks) {
                     progressHalfTicks = nextProgress;
@@ -191,9 +190,10 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
             }
             return false;
         }
-        radiationEmission = recipe.radiation();
-        progressHalfTicks += 2;
-        if (progressHalfTicks >= 2L * recipe.ticks()) {
+        radiationEmission = recipe.radiation() * speed;
+        progressHalfTicks += 2 * speed;
+        double batch = 2D * recipeTicks;
+        while (progressHalfTicks >= batch) {
             int[] amounts = recipe.match(input);
             for (int slot = 0; slot < amounts.length; slot++) {
                 inventory.extractItem(slot, amounts[slot], false);
@@ -212,13 +212,19 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
             if (fluid != null && !fluidProduct.isEmpty()) {
                 fluid.produce(0, fluidProduct, fluidOutputMode);
             }
-            progressHalfTicks = 0;
+            progressHalfTicks -= batch;
+            if (progressHalfTicks > 0) {
+                refreshInput();
+                if (!recipe.matches(input, level) || !hasOutputSpace(products, fluidProduct)) {
+                    progressHalfTicks = 0;
+                }
+            }
         }
         setChanged();
         return true;
     }
 
-    private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products) {
+    private boolean hasOutputSpace(List<ItemProcessorRecipe.Product> products, FluidStack fluidProduct) {
         for (int index = 0; index < products.size(); index++) {
             ItemStack stored = inventory.getStackInSlot(machine.inputs() + index);
             if (!stored.isEmpty()) {
@@ -229,7 +235,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
                 }
             }
         }
-        return true;
+        return fluid == null || fluidProduct.isEmpty() || fluid.canProduce(0, fluidProduct, fluidOutputMode);
     }
 
     public void cycleSide(Direction side) {
@@ -309,8 +315,6 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("inventory", inventory.serializeNBT());
-        tag.putInt("energy", power.getEnergyStored());
-        tag.putLong("progress_half_ticks", progressHalfTicks);
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -332,8 +336,6 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
         super.load(tag);
         radiationEmission = 0D;
         inventory.deserializeNBT(tag.getCompound("inventory"));
-        power.load(tag.getInt("energy"));
-        progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         int[] modes = tag.getIntArray("item_sides");
         if (modes.length == SIDES.length) {
@@ -381,7 +383,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
                 return ItemProcessorMenu.dataSize(machine);
             }
         };
-        return new ItemProcessorMenu(id, playerInventory, machine, inventory, data,
+        return new ItemProcessorMenu(id, playerInventory, machine, inventory, upgrades, data,
                 ContainerLevelAccess.create(player.level(), worldPosition), this);
     }
 
@@ -413,7 +415,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
     }
 
     private ItemAccess itemAccess(SideMode mode) {
-        return new ItemAccess(this, inventory, machine.inputs(), mode);
+        return new ItemAccess(this, inventory, machine.inputs(), mode, upgrades);
     }
 
     static final class ItemAccess implements IItemHandler {
@@ -421,14 +423,21 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
         private final ItemStackHandler inventory;
         private final int inputs;
         private final SideMode mode;
+        private final @Nullable ProcessorUpgrades upgrades;
         final LazyOptional<IItemHandler> capability;
         private boolean valid = true;
 
         ItemAccess(BlockEntity owner, ItemStackHandler inventory, int inputs, SideMode mode) {
+            this(owner, inventory, inputs, mode, null);
+        }
+
+        ItemAccess(BlockEntity owner, ItemStackHandler inventory, int inputs, SideMode mode,
+                   @Nullable ProcessorUpgrades upgrades) {
             this.owner = owner;
             this.inventory = inventory;
             this.inputs = inputs;
             this.mode = mode;
+            this.upgrades = upgrades;
             capability = mode == SideMode.OFF ? LazyOptional.empty() : LazyOptional.of(() -> this);
         }
 
@@ -438,39 +447,51 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
         }
 
         private boolean visible(int slot) {
-            return valid && !owner.isRemoved() && slot >= 0 && slot < inventory.getSlots()
-                    && (slot < inputs ? mode.input : mode.output);
+            return valid && !owner.isRemoved() && slot >= 0 && slot < getSlots()
+                    && (inputSlot(slot) ? mode.input : mode.output);
+        }
+
+        private boolean inputSlot(int slot) {
+            return slot < inputs || slot >= inventory.getSlots();
+        }
+
+        private ItemStackHandler handler(int slot) {
+            return slot < inventory.getSlots() ? inventory : Objects.requireNonNull(upgrades);
+        }
+
+        private int index(int slot) {
+            return slot < inventory.getSlots() ? slot : slot - inventory.getSlots();
         }
 
         @Override
         public int getSlots() {
-            return inventory.getSlots();
+            return inventory.getSlots() + (upgrades == null ? 0 : upgrades.getSlots());
         }
 
         @Override
         public @NotNull ItemStack getStackInSlot(int slot) {
-            return visible(slot) ? inventory.getStackInSlot(slot).copy() : ItemStack.EMPTY;
+            return visible(slot) ? handler(slot).getStackInSlot(index(slot)).copy() : ItemStack.EMPTY;
         }
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return visible(slot) && slot < inputs ? inventory.insertItem(slot, stack, simulate) : stack;
+            return visible(slot) && inputSlot(slot) ? handler(slot).insertItem(index(slot), stack, simulate) : stack;
         }
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return visible(slot) && slot >= inputs && amount > 0
+            return visible(slot) && !inputSlot(slot) && amount > 0
                     ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 
         @Override
         public int getSlotLimit(int slot) {
-            return visible(slot) ? inventory.getSlotLimit(slot) : 0;
+            return visible(slot) ? handler(slot).getSlotLimit(index(slot)) : 0;
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return visible(slot) && inventory.isItemValid(slot, stack);
+            return visible(slot) && handler(slot).isItemValid(index(slot), stack);
         }
     }
 }

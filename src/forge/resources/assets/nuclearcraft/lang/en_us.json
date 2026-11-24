@@ -2587,7 +2587,7 @@
     "block.nuclearcraft.enricher": "Enricher",
     "block.nuclearcraft.glowing_mushroom": "Glowing Mushroom",
     "block.nuclearcraft.glowing_mushroom_block": "Glowing Mushroom Block",
-    "gui.nuclearcraft.fluid_processor.item_input": "Item",
+    "gui.nuclearcraft.fluid_processor.item_input": "Items",
     "gui.nuclearcraft.fluid_processor.item_sides": "Configure item input sides",
     "block.nuclearcraft.salt_fission_controller": "Molten Salt Fission Controller",
     "block.nuclearcraft.salt_fission_vessel": "Fission Fuel Vessel",
@@ -2880,5 +2880,13 @@
     "block.nuclearcraft.tritium_lamp": "Tritium Lamp",
     "advancement.nuclearcraft.portable_ender_chest.name": "Mary Poppins",
     "advancement.nuclearcraft.portable_ender_chest.desc": "Craft a Portable Ender Chest",
-    "subtitles.nuclearcraft.turbine": "Turbine Running"
+    "subtitles.nuclearcraft.turbine": "Turbine Running",
+    "item.nuclearcraft.speed_upgrade": "Speed Upgrade",
+    "item.nuclearcraft.energy_upgrade": "Energy Upgrade",
+    "item.nuclearcraft.speed_upgrade.desc": "Processes batches faster and increases energy use per tick.",
+    "item.nuclearcraft.energy_upgrade.desc": "Reduces energy use. Each Speed Upgrade enables one Energy Upgrade.",
+    "advancement.nuclearcraft.speed_upgrade.name": "Overclocking",
+    "advancement.nuclearcraft.speed_upgrade.desc": "Craft a Speed Upgrade",
+    "advancement.nuclearcraft.energy_upgrade.name": "Polynomial Quenching",
+    "advancement.nuclearcraft.energy_upgrade.desc": "Craft an Energy Upgrade"
 }

@@ -22,7 +22,6 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -31,13 +30,11 @@ import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.wrapper.RangedWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class MelterBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
+public final class MelterBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     static final int TANK_CAPACITY = 16_000;
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
@@ -45,31 +42,17 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     private final RecipeManager.CachedCheck<Container, MelterRecipe> recipes =
             RecipeManager.createCheck(NCRegistries.MELTING.get());
     private final SimpleContainer recipeInput = new SimpleContainer(1);
-    private final ItemStackHandler inventory = new ItemStackHandler(1) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-        }
-    };
-    private final RangedWrapper automationInput = new RangedWrapper(inventory, 0, 1) {
-        @Override
-        public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return ItemStack.EMPTY;
-        }
-    };
+    private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, stack -> true);
     private final OutputTank tank = new OutputTank();
-    private final ProcessorEnergy power = new ProcessorEnergy(this, ENERGY_CAPACITY);
 
-    private LazyOptional<IItemHandler> itemCapability = LazyOptional.of(() -> automationInput);
     private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.of(() -> tank);
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
-    private long progressHalfTicks;
     private int recipeDuration;
 
     public MelterBlockEntity(BlockPos pos, BlockState state) {
-        super(NCRegistries.MELTER_ENTITY.get(), pos, state);
+        super(NCRegistries.MELTER_ENTITY.get(), pos, state, ENERGY_CAPACITY);
     }
 
     ItemStackHandler inventory() {
@@ -98,25 +81,34 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
             }
         }
         recipeDuration = recipe == null ? 0 : recipe.ticks();
+        basePower = recipe == null ? 0 : recipe.energyPerTick();
 
         if (recipe == null || halted) {
             return false;
         }
         FluidStack product = recipe.product();
-        if (!tank.canAccept(product) || !power.spend(recipe.energyPerTick())) {
+        double speed = speed();
+        if (!tank.canAccept(product) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
-                progressHalfTicks = Math.max(0, progressHalfTicks - 3);
+                progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
                 setChanged();
             }
             return false;
         }
 
-        radiationEmission = recipe.radiation();
-        progressHalfTicks += 2;
-        if (progressHalfTicks >= 2L * recipe.ticks()) {
+        radiationEmission = recipe.radiation() * speed;
+        progressHalfTicks += 2 * speed;
+        double batch = 2D * recipeDuration;
+        while (progressHalfTicks >= batch) {
             tank.produce(product);
             inventory.extractItem(0, 1, false);
-            progressHalfTicks = 0;
+            progressHalfTicks -= batch;
+            if (progressHalfTicks > 0) {
+                recipeInput.setItem(0, inventory.getStackInSlot(0));
+                if (!recipe.matches(recipeInput, level) || !tank.canAccept(product)) {
+                    progressHalfTicks = 0;
+                }
+            }
         }
         setChanged();
         return true;
@@ -127,8 +119,6 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
         super.saveAdditional(tag);
         tag.put("inventory", inventory.serializeNBT());
         tag.put("output", tank.writeToNBT(new CompoundTag()));
-        tag.putInt("energy", power.getEnergyStored());
-        tag.putLong("progress_half_ticks", progressHalfTicks);
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -140,8 +130,6 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
         radiationEmission = 0D;
         inventory.deserializeNBT(tag.getCompound("inventory"));
         tank.readFromNBT(tag.getCompound("output"));
-        power.load(tag.getInt("energy"));
-        progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
     }
 
@@ -149,7 +137,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> capability, @Nullable Direction side) {
         if (!isRemoved()) {
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
-                return itemCapability.cast();
+                return inventory.capability(side).cast();
             }
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return fluidCapability.cast();
@@ -164,7 +152,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        itemCapability.invalidate();
+        inventory.invalidate();
         fluidCapability.invalidate();
         energyCapability.invalidate();
     }
@@ -172,7 +160,7 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
     @Override
     public void reviveCaps() {
         super.reviveCaps();
-        itemCapability = LazyOptional.of(() -> automationInput);
+        inventory.revive();
         fluidCapability = LazyOptional.of(() -> tank);
         energyCapability = LazyOptional.of(() -> power);
     }
@@ -184,13 +172,13 @@ public final class MelterBlockEntity extends BlockEntity implements MachineInter
 
     @Override
     public MelterMenu createMenu(int menuId, Inventory playerInventory, Player player) {
-        return new MelterMenu(menuId, playerInventory, inventory, new ContainerData() {
+        return new MelterMenu(menuId, playerInventory, inventory, upgrades, new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
                     case MelterMenu.PROGRESS -> recipeDuration == 0 ? 0 :
                             (int) (PROGRESS_SCALE * Math.min(progressHalfTicks, 2L * recipeDuration) / (2L * recipeDuration));
-                    case MelterMenu.ENERGY -> PROGRESS_SCALE * power.getEnergyStored() / power.getMaxEnergyStored();
+                    case MelterMenu.ENERGY -> (int) ((long) PROGRESS_SCALE * power.getEnergyStored() / power.getMaxEnergyStored());
                     case MelterMenu.FLUID_AMOUNT -> tank.getFluidAmount();
                     case MelterMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());
                     default -> 0;

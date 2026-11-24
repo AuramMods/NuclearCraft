@@ -37,7 +37,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + face.getName() + ".short"),
                     ignored -> minecraft.gameMode.handleInventoryButtonClick(menu.containerId,
                             menu.machine().tank() != null && hasShiftDown() ? ItemProcessorMenu.FLUID_SIDE_BUTTON + index : index))
-                    .bounds(leftPos + 44 + index * 20, topPos + sideY, 19, fluidOutput ? 14 : 17)
+                    .bounds(leftPos + 27 + index * 17, topPos + sideY, 16, fluidOutput ? 14 : 17)
                     .build();
             sideButtons.put(face, addRenderableWidget(button));
         }
@@ -97,7 +97,6 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         } else {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
             if (machine.menuExtension() > 0) {
-                // The legacy background has upgrade sockets where the face controls now sit.
                 graphics.fill(leftPos + 130, topPos + 74, leftPos + 170, topPos + 94, 0xFFC6C6C6);
             } else if (usesCenteredTitle(machine)) {
                 graphics.fill(leftPos + 130, topPos + 62, leftPos + 170, topPos + 81, 0xFFC6C6C6);
@@ -115,6 +114,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             FluidTankRenderer.draw(graphics, leftPos + tank.x(), topPos + tank.y(), tank.size(),
                     menu.fluid(), ProcessorFluidTanks.CAPACITY);
         }
+        ProcessorUpgradeSlots.draw(graphics, menu, machine.slots(), leftPos, topPos);
     }
 
     private static boolean usesCenteredTitle(Machine machine) {

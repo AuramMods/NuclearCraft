@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {"item": "minecraft:stick"},
+    "result": {"fluid": "minecraft:water", "amount": 100},
+    "ticks": 2,
+    "energy_per_tick": 5
+}

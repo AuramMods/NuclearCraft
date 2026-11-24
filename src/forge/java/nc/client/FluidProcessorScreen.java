@@ -64,20 +64,18 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + side.getName() + ".short"),
                     ignored -> send(selectedTank == ITEM_INPUT ? menu.itemSideButton(side)
                             : FluidProcessorMenu.sideButton(selectedTank, side)))
-                    .bounds(leftPos + 27 + side.ordinal() * 18, topPos + 69, 17, 14)
+                    .bounds(leftPos + 27 + side.ordinal() * 17, topPos + 69, 16, 14)
                     .build();
             sides.put(side, addRenderableWidget(button));
         }
         overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
                         ignored -> send(menu.outputModeButton(selectedTank)))
-                .bounds(leftPos + 136, topPos + 69, 35, 14).build());
-        if (menu.type().hasItemInput()) {
-            addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.fluid_processor.item_input"),
-                            ignored -> selectedTank = ITEM_INPUT)
-                    .bounds(leftPos + 136, topPos + 12, 35, 14)
-                    .tooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.fluid_processor.item_sides")))
-                    .build());
-        }
+                .bounds(leftPos + 136, topPos + 9, 35, 14).build());
+        addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.fluid_processor.item_input"),
+                        ignored -> selectedTank = ITEM_INPUT)
+                .bounds(leftPos + 95, topPos + 16, 35, 14)
+                .tooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.fluid_processor.item_sides")))
+                .build());
     }
 
     private void send(int button) {
@@ -135,7 +133,6 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             graphics.blit(texture, leftPos + 8, topPos + 80 - compactEnergy, 176, 164 - compactEnergy, 16, compactEnergy);
         } else {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
-            // The legacy texture's upgrade sockets occupy the area behind the face controls.
             graphics.fill(leftPos + 130, topPos + 68, leftPos + 171, topPos + 93, 0xFFC6C6C6);
             graphics.blit(texture, leftPos + 8, topPos + 92 - energyHeight, 176, 176 - energyHeight, 16, energyHeight);
         }
@@ -150,7 +147,8 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
                 graphics.renderOutline(x - 1, y - 1, tank.size + 2, tank.size + 2, 0xFFFFD37C);
             }
         }
-        if (selectedTank == ITEM_INPUT) {
+        ProcessorUpgradeSlots.draw(graphics, menu, menu.type().hasItemInput() ? 1 : 0, leftPos, topPos);
+        if (selectedTank == ITEM_INPUT && menu.type().hasItemInput()) {
             graphics.renderOutline(leftPos + 45, topPos + 34, 18, 18, 0xFFFFD37C);
         }
     }

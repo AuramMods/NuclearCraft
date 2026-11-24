@@ -155,5 +155,15 @@
 	"block.nuclearcraft.tritium_lamp": "氚灯",
 	"advancement.nuclearcraft.portable_ender_chest.name": "欢乐满人间",
 	"advancement.nuclearcraft.portable_ender_chest.desc": "制作一个便携末影箱",
-	"subtitles.nuclearcraft.turbine": "涡轮机：运行"
+	"subtitles.nuclearcraft.turbine": "涡轮机：运行",
+    "item.nuclearcraft.speed_upgrade": "速度升级",
+    "item.nuclearcraft.energy_upgrade": "能量升级",
+    "item.nuclearcraft.speed_upgrade.desc": "加快处理速度并提高每刻能耗。",
+    "item.nuclearcraft.energy_upgrade.desc": "降低能耗，每个速度升级使一个能量升级生效。",
+    "advancement.nuclearcraft.manufactory.name": "工业化进程",
+    "advancement.nuclearcraft.manufactory.desc": "制作一个小制造机",
+    "advancement.nuclearcraft.speed_upgrade.name": "工作超频",
+    "advancement.nuclearcraft.speed_upgrade.desc": "制作一个速度升级",
+    "advancement.nuclearcraft.energy_upgrade.name": "多项抑合",
+    "advancement.nuclearcraft.energy_upgrade.desc": "制作一个能量升级"
 }

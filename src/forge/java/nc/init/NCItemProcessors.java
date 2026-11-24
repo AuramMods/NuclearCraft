@@ -1,6 +1,7 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.item.ProcessorUpgradeItem;
 import nc.processor.ItemProcessorBlockEntity;
 import nc.processor.ItemProcessorMenu;
 import nc.processor.ProcessorBlock;
@@ -21,15 +22,40 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public final class NCItemProcessors {
+    public static final RegistryObject<Item> SPEED_UPGRADE = NCRegistries.ITEMS.register("speed_upgrade",
+            () -> new ProcessorUpgradeItem(0));
+    public static final RegistryObject<Item> ENERGY_UPGRADE = NCRegistries.ITEMS.register("energy_upgrade",
+            () -> new ProcessorUpgradeItem(1));
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPEED_POWERS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPEED_FACTORS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> ENERGY_POWERS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> ENERGY_FACTORS;
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> UPGRADE_LIMITS;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
         MEKANISM_GAS = builder.comment("Allow the Universal Bin to accept Mekanism gases.")
                 .define("enable_mek_gas", true);
+        builder.push("upgrades");
+        String speedOrder = "Order: Processor Time, Processor Power, Generator Time, Generator Power.";
+        String energyOrder = "Order: Processor Power, Generator Time.";
+        SPEED_POWERS = upgradeArray(builder, "speed_upgrade_power_laws_fp", speedOrder,
+                List.of(1D, 2D, 2D, 1D), 1, 15);
+        SPEED_FACTORS = upgradeArray(builder, "speed_upgrade_multipliers_fp", speedOrder,
+                List.of(1D, 1D, 1D, 1D), 0, 15);
+        ENERGY_POWERS = upgradeArray(builder, "energy_upgrade_power_laws_fp", energyOrder, List.of(1D, 1D), 1, 15);
+        ENERGY_FACTORS = upgradeArray(builder, "energy_upgrade_multipliers_fp", energyOrder, List.of(1D, 1D), 0, 15);
+        UPGRADE_LIMITS = builder.comment("Stack limits for Speed Upgrades and Energy Upgrades, from 1 to 64.")
+                .define("upgrade_stack_sizes", List.of(64, 64), candidate -> candidate instanceof List<?> values
+                        && values.size() == 2 && values.stream().allMatch(element ->
+                        element instanceof Integer size && size >= 1 && size <= 64));
+        builder.pop();
         builder.push("rock_crusher");
         ROCK_CRUSHER_ALTERNATE = builder.comment("Use the legacy alternate granite and andesite products.")
                 .define("alternate_outputs", false);
@@ -55,10 +81,42 @@ public final class NCItemProcessors {
         return SPEC.isLoaded() ? MEKANISM_GAS.get() : MEKANISM_GAS.getDefault();
     }
 
+    public static double speedUpgrade(int count) {
+        return upgradeFactor(count, SPEED_POWERS, SPEED_FACTORS, 0);
+    }
+
+    public static double powerUpgrade(int speedCount, int energyCount) {
+        return upgradeFactor(speedCount, SPEED_POWERS, SPEED_FACTORS, 1)
+                / upgradeFactor(Math.min(speedCount, energyCount), ENERGY_POWERS, ENERGY_FACTORS, 0);
+    }
+
+    public static int upgradeLimit(int slot) {
+        return value(UPGRADE_LIMITS, slot).intValue();
+    }
+
+    private static double upgradeFactor(int count, ForgeConfigSpec.ConfigValue<List<? extends Number>> powers,
+                                        ForgeConfigSpec.ConfigValue<List<? extends Number>> factors, int index) {
+        return count == 0 ? 1D : 1D + value(factors, index).doubleValue()
+                * (Math.pow(1D + count, value(powers, index).doubleValue()) - 1D);
+    }
+
+    private static Number value(ForgeConfigSpec.ConfigValue<List<? extends Number>> setting, int index) {
+        return (SPEC.isLoaded() ? setting.get() : setting.getDefault()).get(index);
+    }
+
+    private static ForgeConfigSpec.ConfigValue<List<? extends Number>> upgradeArray(ForgeConfigSpec.Builder builder,
+            String key, String description, List<? extends Number> defaults, int min, int max) {
+        return builder.comment(description).define(key, defaults, candidate -> candidate instanceof List<?> values
+                && values.size() == defaults.size() && values.stream().allMatch(element -> element instanceof Number number
+                && number.doubleValue() >= min && number.doubleValue() <= max));
+    }
+
     static void displayItems(CreativeModeTab.Output output) {
         for (Machine machine : Machine.values()) {
             output.accept(machine.item.get());
         }
+        output.accept(SPEED_UPGRADE.get());
+        output.accept(ENERGY_UPGRADE.get());
     }
 
     public record TankSlot(int x, int y, int size, boolean output) {}

@@ -27,6 +27,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     static final int SIDE_MODE = 2;
     static final int OUTPUT_MODE = 3;
     static final int TANK_DATA_SIZE = 4;
+    public static final int UPGRADE_Y = 69;
 
     private final Machine type;
     private final ContainerData data;
@@ -48,6 +49,8 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             ItemStackHandler input = machine == null ? new ItemStackHandler(1) : machine.inventory();
             addSlot(new SlotItemHandler(input, 0, 46, 35));
         }
+        ProcessorUpgrades upgrades = machine == null ? new ProcessorUpgrades(null) : machine.upgrades;
+        upgrades.addMenuSlots(this::addSlot, UPGRADE_Y);
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 96 + row * 18));
@@ -60,7 +63,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataCount(Machine type) {
-        return itemSidesIndex(type) + (type.hasItemInput() ? 1 : 0);
+        return itemSidesIndex(type) + 1;
     }
 
     static int itemSidesIndex(Machine type) {
@@ -68,7 +71,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     }
 
     public boolean itemSideEnabled(Direction side) {
-        return type.hasItemInput() && (data.get(itemSidesIndex(type)) & FluidProcessorItemInput.sideBit(side)) == 0;
+        return (data.get(itemSidesIndex(type)) & ProcessorItemInput.sideBit(side)) == 0;
     }
 
     public int itemSideButton(Direction side) {
@@ -118,7 +121,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             return true;
         }
         int itemSide = button - outputModeButton(type.tanks());
-        if (type.hasItemInput() && itemSide >= 0 && itemSide < SIDES.length) {
+        if (itemSide >= 0 && itemSide < SIDES.length) {
             machine.toggleItemSide(SIDES[itemSide]);
             return true;
         }
@@ -137,17 +140,18 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        if (!type.hasItemInput()) {
-            return ItemStack.EMPTY;
-        }
         Slot slot = slots.get(index);
         if (!slot.hasItem()) {
             return ItemStack.EMPTY;
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        boolean moved = index == 0 ? moveItemStackTo(stack, 1, slots.size(), true)
-                : moveItemStackTo(stack, 0, 1, false);
+        int inputs = type.hasItemInput() ? 1 : 0;
+        int upgrade = ProcessorUpgrades.slotFor(stack);
+        int machineSlots = inputs + ProcessorUpgrades.SLOTS;
+        boolean moved = index < machineSlots ? moveItemStackTo(stack, machineSlots, slots.size(), true)
+                : upgrade >= 0 ? moveItemStackTo(stack, inputs + upgrade, inputs + upgrade + 1, false)
+                : moveItemStackTo(stack, 0, inputs, false);
         if (!moved) {
             return ItemStack.EMPTY;
         }

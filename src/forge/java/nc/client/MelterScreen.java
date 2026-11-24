@@ -43,5 +43,6 @@ public final class MelterScreen extends AbstractContainerScreen<MelterMenu> {
             int color = IClientFluidTypeExtensions.of(fluid.getFluid()).getTintColor(fluid);
             graphics.fill(leftPos + 112, topPos + 55 - height, leftPos + 136, topPos + 55, 0xFF000000 | color);
         }
+        ProcessorUpgradeSlots.draw(graphics, menu, 1, leftPos, topPos);
     }
 }

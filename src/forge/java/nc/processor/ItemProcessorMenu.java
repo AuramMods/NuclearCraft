@@ -37,13 +37,13 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     private final @Nullable ItemProcessorBlockEntity processor;
 
     public ItemProcessorMenu(int id, Inventory player, Machine machine) {
-        this(id, player, machine, new ItemStackHandler(machine.slots()),
+        this(id, player, machine, new ItemStackHandler(machine.slots()), new ProcessorUpgrades(null),
                 new SimpleContainerData(dataSize(machine)),
                 ContainerLevelAccess.NULL, null);
     }
 
-    ItemProcessorMenu(int id, Inventory player, Machine machine, ItemStackHandler inventory, ContainerData data,
-                      ContainerLevelAccess access, @Nullable ItemProcessorBlockEntity processor) {
+    ItemProcessorMenu(int id, Inventory player, Machine machine, ItemStackHandler inventory, ProcessorUpgrades upgrades,
+                      ContainerData data, ContainerLevelAccess access, @Nullable ItemProcessorBlockEntity processor) {
         super(machine.menu(), id);
         this.machine = machine;
         this.data = data;
@@ -61,6 +61,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             });
         }
         int extraHeight = machine.menuExtension();
+        upgrades.addMenuSlots(this::addSlot, upgradeY());
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + extraHeight + row * 18));
@@ -81,6 +82,10 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
 
     public Machine machine() {
         return machine;
+    }
+
+    public int upgradeY() {
+        return 64 + (machine.hasFluidOutput() ? 0 : machine.menuExtension());
     }
 
     public float progress() {
@@ -145,8 +150,11 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        int machineSlots = machine.slots();
+        int upgrade = ProcessorUpgrades.slotFor(stack);
+        int machineSlots = machine.slots() + ProcessorUpgrades.SLOTS;
         boolean moved = index < machineSlots ? moveItemStackTo(stack, machineSlots, slots.size(), true)
+                : upgrade >= 0
+                ? moveItemStackTo(stack, machine.slots() + upgrade, machine.slots() + upgrade + 1, false)
                 : moveItemStackTo(stack, 0, machine.inputs(), false);
         if (!moved) {
             return ItemStack.EMPTY;

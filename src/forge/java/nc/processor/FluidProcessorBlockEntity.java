@@ -29,7 +29,6 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
@@ -45,27 +44,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public final class FluidProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
+public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ? extends FluidProcessorRecipe> recipes;
     private final ProcessorInputs input;
-    private final @Nullable FluidProcessorItemInput itemInput;
+    private final ProcessorItemInput itemInput;
     private final ProcessorFluidTanks fluids;
-    private final ProcessorEnergy power = new ProcessorEnergy(this, 256_000);
     private final OutputMode[] outputModes;
 
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
-    private double progressHalfTicks;
     private double recipeTicks;
 
     public FluidProcessorBlockEntity(Machine machine, BlockPos pos, BlockState state) {
-        super(machine.entity(), pos, state);
+        super(machine.entity(), pos, state, 256_000);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
-        itemInput = machine.hasItemInput ? new FluidProcessorItemInput(this, this::acceptsItem) : null;
+        itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::acceptsItem);
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, machine.inputs, machine.outputs);
         outputModes = new OutputMode[machine.outputs];
         Arrays.fill(outputModes, OutputMode.HOLD);
@@ -88,7 +85,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     }
 
     public ItemStackHandler inventory() {
-        return Objects.requireNonNull(itemInput);
+        return itemInput;
     }
 
     @Override
@@ -96,15 +93,19 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
         return radiationEmission;
     }
 
-    private boolean process(Level level, boolean halted) {
-        radiationEmission = 0D;
-        if (itemInput != null) {
+    private void refreshInput() {
+        if (machine.hasItemInput) {
             input.setItem(0, itemInput.getStackInSlot(0));
         }
         input.setFluid(fluids.stored(0));
         if (machine.inputs == 2) {
             input.setSecondFluid(fluids.stored(1));
         }
+    }
+
+    private boolean process(Level level, boolean halted) {
+        radiationEmission = 0D;
+        refreshInput();
         FluidProcessorRecipe recipe = input.fluid().isEmpty() ? null : recipes.getRecipeFor(input, level).orElse(null);
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
@@ -113,23 +114,25 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
             setChanged();
         }
         recipeTicks = recipe == null ? 0 : recipe.duration();
+        basePower = recipe == null ? 0 : recipe.energyPerTick();
         if (recipe == null || halted) {
             return false;
         }
         List<FluidStack> outputs = recipe.results();
-        if (!hasOutputSpace(outputs) || !power.spend(recipe.energyPerTick())) {
+        double speed = speed();
+        if (!hasOutputSpace(outputs) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
-                progressHalfTicks = Math.max(0, progressHalfTicks - 3);
+                progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
                 setChanged();
             }
             return false;
         }
-        radiationEmission = recipe.radiation();
-        progressHalfTicks += 2;
+        radiationEmission = recipe.radiation() * speed;
+        progressHalfTicks += 2 * speed;
         double batchHalfTicks = 2 * recipeTicks;
-        if (progressHalfTicks >= batchHalfTicks) {
+        while (progressHalfTicks >= batchHalfTicks) {
             var item = recipe.itemInput();
-            if (item != null && itemInput != null) {
+            if (item != null && machine.hasItemInput) {
                 itemInput.extractItem(0, item.count(), false);
             }
             List<FluidIngredient> ingredients = recipe.inputs();
@@ -144,8 +147,13 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
                     fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random), outputModes[index]);
                 }
             }
-            double remainder = progressHalfTicks - batchHalfTicks;
-            progressHalfTicks = remainder < 2 ? remainder : 0;
+            progressHalfTicks -= batchHalfTicks;
+            if (progressHalfTicks > 0) {
+                refreshInput();
+                if (!recipe.matches(input, level) || !hasOutputSpace(outputs)) {
+                    progressHalfTicks = 0;
+                }
+            }
         }
         setChanged();
         return true;
@@ -170,12 +178,10 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     }
 
     void toggleItemSide(Direction side) {
-        if (itemInput != null) {
-            itemInput.toggle(side);
-            setChanged();
-            if (level != null) {
-                level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-            }
+        itemInput.toggle(side);
+        setChanged();
+        if (level != null) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
     }
 
@@ -194,7 +200,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
                 return fluids.capability(side).cast();
             }
-            if (capability == ForgeCapabilities.ITEM_HANDLER && itemInput != null) {
+            if (capability == ForgeCapabilities.ITEM_HANDLER) {
                 return itemInput.capability(side).cast();
             }
             if (capability == ForgeCapabilities.ENERGY) {
@@ -208,9 +214,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     public void invalidateCaps() {
         super.invalidateCaps();
         fluids.invalidate();
-        if (itemInput != null) {
-            itemInput.invalidate();
-        }
+        itemInput.invalidate();
         energy.invalidate();
     }
 
@@ -218,24 +222,14 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     public void reviveCaps() {
         super.reviveCaps();
         fluids.revive();
-        if (itemInput != null) {
-            itemInput.revive();
-        }
+        itemInput.revive();
         energy = LazyOptional.of(() -> power);
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        if (itemInput != null) {
-            itemInput.save(tag);
-        }
-        tag.putInt("energy", power.getEnergyStored());
-        long wholeTicks = (long) progressHalfTicks;
-        tag.putLong("progress_half_ticks", wholeTicks);
-        if (progressHalfTicks > wholeTicks) {
-            tag.putDouble("progress_fraction", progressHalfTicks - wholeTicks);
-        }
+        itemInput.save(tag);
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -251,12 +245,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
     public void load(CompoundTag tag) {
         super.load(tag);
         radiationEmission = 0D;
-        if (itemInput != null) {
-            itemInput.load(tag);
-        }
-        power.load(tag.getInt("energy"));
-        double fraction = tag.getDouble("progress_fraction");
-        progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks")) + (fraction > 0 && fraction < 1 ? fraction : 0);
+        itemInput.load(tag);
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         for (int tank = 0; tank < machine.tanks(); tank++) {
             fluids.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank);
@@ -283,7 +272,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Mach
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
                 }
-                if (itemInput != null && index == FluidProcessorMenu.itemSidesIndex(machine)) {
+                if (index == FluidProcessorMenu.itemSidesIndex(machine)) {
                     return itemInput.disabledSides();
                 }
                 int tank = (index - FluidProcessorMenu.FIRST_TANK) / FluidProcessorMenu.TANK_DATA_SIZE;

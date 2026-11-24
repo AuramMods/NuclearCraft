@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "OQO",
+        "QPQ",
+        "OQO"
+    ],
+    "key": {
+        "O": {
+            "tag": "forge:dusts/obsidian"
+        },
+        "Q": {
+            "tag": "forge:dusts/quartz"
+        },
+        "P": {
+            "item": "minecraft:light_weighted_pressure_plate"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:energy_upgrade"
+    }
+}

@@ -20,19 +20,23 @@ public final class MelterMenu extends AbstractContainerMenu {
     static final int FLUID_AMOUNT = 2;
     static final int FLUID_ID = 3;
     static final int DATA_COUNT = 4;
+    public static final int UPGRADE_Y = 64;
 
     private final ContainerData data;
     private final ContainerLevelAccess access;
 
     public MelterMenu(int id, Inventory player) {
-        this(id, player, new ItemStackHandler(1), new SimpleContainerData(DATA_COUNT), ContainerLevelAccess.NULL);
+        this(id, player, new ItemStackHandler(1), new ProcessorUpgrades(null), new SimpleContainerData(DATA_COUNT),
+                ContainerLevelAccess.NULL);
     }
 
-    MelterMenu(int id, Inventory player, ItemStackHandler input, ContainerData data, ContainerLevelAccess access) {
+    MelterMenu(int id, Inventory player, ItemStackHandler input, ProcessorUpgrades upgrades, ContainerData data,
+               ContainerLevelAccess access) {
         super(NCRegistries.MELTER_MENU.get(), id);
         this.data = data;
         this.access = access;
         addSlot(new SlotItemHandler(input, 0, 56, 35));
+        upgrades.addMenuSlots(this::addSlot, UPGRADE_Y);
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
                 addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + row * 18));
@@ -73,7 +77,10 @@ public final class MelterMenu extends AbstractContainerMenu {
         }
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        boolean moved = index == 0 ? moveItemStackTo(stack, 1, slots.size(), true)
+        int upgrade = ProcessorUpgrades.slotFor(stack);
+        int machineSlots = 1 + ProcessorUpgrades.SLOTS;
+        boolean moved = index < machineSlots ? moveItemStackTo(stack, machineSlots, slots.size(), true)
+                : upgrade >= 0 ? moveItemStackTo(stack, 1 + upgrade, 2 + upgrade, false)
                 : moveItemStackTo(stack, 0, 1, false);
         if (!moved) {
             return ItemStack.EMPTY;

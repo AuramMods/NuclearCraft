@@ -89,6 +89,9 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
             return InteractionResult.PASS;
         }
         if (!level.isClientSide) {
+            if (menu instanceof UpgradableProcessorBlockEntity processor && processor.installUpgrade(player, hand, hit.getDirection())) {
+                return InteractionResult.CONSUME;
+            }
             if (FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
                 return InteractionResult.CONSUME;
             }
@@ -99,9 +102,12 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
-        if (inventory != null && !level.isClientSide && !state.is(replacement.getBlock())) {
+        if (!level.isClientSide && !state.is(replacement.getBlock())) {
             E entity = entityType.get().getBlockEntity(level, pos);
-            if (entity != null) {
+            if (entity instanceof UpgradableProcessorBlockEntity processor) {
+                processor.dropUpgrades(level, pos);
+            }
+            if (entity != null && inventory != null) {
                 ItemStackHandler slots = inventory.apply(entity);
                 for (int slot = 0; slot < slots.getSlots(); slot++) {
                     Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), slots.getStackInSlot(slot));
