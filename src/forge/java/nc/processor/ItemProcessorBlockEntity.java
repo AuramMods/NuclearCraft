@@ -11,12 +11,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -39,6 +42,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
 
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ItemProcessorRecipe> recipes;
+    private final @Nullable RecipeManager.CachedCheck<Container, SmeltingRecipe> smeltingRecipes;
     private final ProcessorEnergy power = new ProcessorEnergy(this, 512_000);
     private final ProcessorInputs input;
     private final ItemStackHandler inventory;
@@ -49,6 +53,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     private ItemAccess unsided = new ItemAccess(SideMode.BOTH);
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private ResourceLocation activeRecipe;
+    private @Nullable SmeltingRecipe cachedSmeltingSource;
+    private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
     private long progressHalfTicks;
     private int recipeTicks;
 
@@ -56,6 +62,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         super(machine.entityType(), pos, state);
         this.machine = machine;
         recipes = RecipeManager.createCheck(machine.recipes());
+        smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
         input = new ProcessorInputs(machine.inputs());
         fluid = machine.tank() == null ? null : new ProcessorFluidTanks(this, this::acceptsFluid,
                 machine.hasFluidInput() ? 1 : 0, machine.hasFluidOutput() ? 1 : 0);
@@ -69,8 +76,11 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                     return true;
                 }
                 refreshInput();
-                return level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
-                        .anyMatch(recipe -> recipe.canInsert(input, slot, stack));
+                RecipeManager manager = level.getRecipeManager();
+                return manager.getAllRecipesFor(machine.recipes()).stream().anyMatch(recipe -> recipe.canInsert(input, slot, stack))
+                        || (smeltingRecipes != null && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level)
+                        .map(recipe -> electricSmelting(recipe, level).canInsert(input, slot, stack))
+                        .orElse(false));
             }
 
             @Override
@@ -110,9 +120,30 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                 .map(ItemProcessorRecipe::fluidInput).filter(Objects::nonNull).anyMatch(ingredient -> ingredient.accepts(stack));
     }
 
+    private @Nullable ItemProcessorRecipe findRecipe(Level level) {
+        ItemProcessorRecipe recipe = recipes.getRecipeFor(input, level).orElse(null);
+        if (recipe != null || smeltingRecipes == null || input.getItem(0).isEmpty()) {
+            return recipe;
+        }
+        SmeltingRecipe source = smeltingRecipes.getRecipeFor(input, level).orElse(null);
+        if (source == null) {
+            return null;
+        }
+        ItemProcessorRecipe smelting = electricSmelting(source, level);
+        return smelting.matches(input, level) ? smelting : null;
+    }
+
+    private ItemProcessorRecipe electricSmelting(SmeltingRecipe source, Level level) {
+        if (source != cachedSmeltingSource) {
+            cachedSmeltingRecipe = ItemProcessorRecipe.electricSmelting(source, level.registryAccess());
+            cachedSmeltingSource = source;
+        }
+        return cachedSmeltingRecipe;
+    }
+
     private boolean process(Level level, boolean halted) {
         refreshInput();
-        ItemProcessorRecipe recipe = recipes.getRecipeFor(input, level).orElse(null);
+        ItemProcessorRecipe recipe = findRecipe(level);
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
             progressHalfTicks = 0;

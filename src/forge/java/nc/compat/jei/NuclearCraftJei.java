@@ -59,6 +59,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -67,6 +68,7 @@ import java.util.function.Function;
 
 import static mezz.jei.api.recipe.RecipeIngredientRole.INPUT;
 import static mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT;
+import static net.minecraft.world.item.crafting.RecipeType.SMELTING;
 
 @JeiPlugin
 public final class NuclearCraftJei implements IModPlugin {
@@ -205,8 +207,16 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
         registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
         for (Machine machine : Machine.values()) {
-            registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()).stream()
-                    .filter(recipe -> recipe.fluidInput() == null || !recipe.fluidInput().alternatives().isEmpty()).toList());
+            var machineRecipes = new ArrayList<ItemProcessorRecipe>();
+            recipes.getAllRecipesFor(machine.recipes()).stream()
+                    .filter(recipe -> recipe.fluidInput() == null || !recipe.fluidInput().alternatives().isEmpty())
+                    .forEach(machineRecipes::add);
+            if (machine == Machine.ELECTRIC_FURNACE) {
+                recipes.getAllRecipesFor(SMELTING).stream()
+                        .map(recipe -> ItemProcessorRecipe.electricSmelting(recipe, connection.registryAccess()))
+                        .forEach(machineRecipes::add);
+            }
+            registration.addRecipes(itemType(machine), machineRecipes);
         }
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));

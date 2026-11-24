@@ -1,6 +1,7 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorMenu;
 import nc.processor.ProcessorFluidTanks;
 import net.minecraft.client.gui.GuiGraphics;
@@ -73,7 +74,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (menu.machine().menuExtension() == 0 && menu.machine().inputs() > 0) {
+        if (menu.machine().menuExtension() == 0 && !usesCenteredTitle(menu.machine())) {
             super.renderLabels(graphics, mouseX, mouseY);
             return;
         }
@@ -98,7 +99,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             if (machine.menuExtension() > 0) {
                 // The legacy background has upgrade sockets where the face controls now sit.
                 graphics.fill(leftPos + 130, topPos + 74, leftPos + 170, topPos + 94, 0xFFC6C6C6);
-            } else if (machine.inputs() == 0) {
+            } else if (usesCenteredTitle(machine)) {
                 graphics.fill(leftPos + 130, topPos + 62, leftPos + 170, topPos + 81, 0xFFC6C6C6);
             }
         }
@@ -114,5 +115,9 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             FluidTankRenderer.draw(graphics, leftPos + tank.x(), topPos + tank.y(), tank.size(),
                     menu.fluid(), ProcessorFluidTanks.CAPACITY);
         }
+    }
+
+    private static boolean usesCenteredTitle(Machine machine) {
+        return machine.inputs() == 0 || machine == Machine.ELECTRIC_FURNACE;
     }
 }

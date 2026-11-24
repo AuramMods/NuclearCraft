@@ -21,6 +21,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
@@ -42,6 +43,12 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         fluidOutput = fluidOutput.copy();
         results = List.copyOf(results);
         alternateResults = List.copyOf(alternateResults);
+    }
+
+    public static ItemProcessorRecipe electricSmelting(SmeltingRecipe source, RegistryAccess registries) {
+        return new ItemProcessorRecipe(source.getId(), Machine.ELECTRIC_FURNACE,
+                List.of(new Input(source.getIngredients().get(0), 1)), null, FluidStack.EMPTY,
+                List.of(new Product(source.getResultItem(registries), 100, 0)), List.of(), 200, 20);
     }
 
     @Override

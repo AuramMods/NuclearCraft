@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "LIL",
+        "BFB",
+        "LSL"
+    ],
+    "key": {
+        "L": {
+            "tag": "forge:ingots/lead"
+        },
+        "I": {
+            "tag": "forge:ingots/iron"
+        },
+        "B": {
+            "item": "minecraft:brick"
+        },
+        "F": {
+            "item": "minecraft:furnace"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:electric_furnace"
+    }
+}

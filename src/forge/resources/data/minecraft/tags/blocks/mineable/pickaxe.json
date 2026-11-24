@@ -217,6 +217,7 @@
         "nuclearcraft:extractor",
         "nuclearcraft:centrifuge",
         "nuclearcraft:ingot_former",
-        "nuclearcraft:crystallizer"
+        "nuclearcraft:crystallizer",
+        "nuclearcraft:electric_furnace"
     ]
 }
