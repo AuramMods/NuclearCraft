@@ -1,12 +1,14 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.energy.BatteryBlock;
 import nc.energy.BatteryBlock.Mode;
 import nc.energy.BatteryBlockEntity;
 import nc.energy.BatteryItem;
 import nc.init.NCBatteries;
 import nc.init.NCBatteries.Tier;
 import nc.init.NCItemProcessors.Machine;
+import nc.recipe.ChargedCraftingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -20,11 +22,16 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class BatteryGameTests {
+    private static final String SCRIPTED_ID = "battery_qa_scripted";
     private static final BlockPos WEST = new BlockPos(1, 1, 2);
     private static final BlockPos CENTER = WEST.east();
     private static final BlockPos EAST = CENTER.east();
@@ -162,6 +169,55 @@ public final class BatteryGameTests {
                         && result.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new).getEnergyStored() == 320_000
                         && BatteryItem.stored(grid.getItem(1)) == 80_000,
                 "The battery recipe sums four cell charges in its output without draining the live crafting grid");
+        helper.succeed();
+    }
+
+    @SubscribeEvent
+    public static void registerScriptedBattery(RegisterEvent event) {
+        var id = NuclearCraft.id(SCRIPTED_ID);
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> helper.register(id,
+                BatteryBlock.createScriptedBattery(Long.toString(Long.MAX_VALUE), 1_000)));
+        event.register(ForgeRegistries.Keys.ITEMS, helper -> helper.register(id,
+                BatteryBlock.createScriptedBatteryItem(id.toString())));
+    }
+
+    @GameTest(template = "empty")
+    public static void scriptedBatteryCarriesLongChargeThroughCraftingAndPlacement(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var grid = MaterialGameTests.craftingGrid(2, 1);
+        ItemStack first = material(SCRIPTED_ID);
+        ItemStack second = material(SCRIPTED_ID);
+        BatteryItem.store(first, 3_000_000_000L);
+        BatteryItem.store(second, 4_000_000_000L);
+        var energy = first.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+        helper.assertTrue(energy.getEnergyStored() == Integer.MAX_VALUE && energy.getMaxEnergyStored() == Integer.MAX_VALUE
+                        && energy.receiveEnergy(1_500, true) == 1_000 && energy.extractEnergy(1_500, true) == 1_000
+                        && BatteryItem.stored(first) == 3_000_000_000L,
+                "The Forge Energy view saturates while simulation uses the real remaining capacity");
+        helper.assertTrue(energy.receiveEnergy(1_500, false) == 1_000 && energy.extractEnergy(1_500, false) == 1_000
+                        && BatteryItem.stored(first) == 3_000_000_000L,
+                "Forge Energy moves the configured amount above the integer view");
+        grid.setItem(0, first);
+        grid.setItem(1, second);
+        var recipe = (ChargedCraftingRecipe) level.getRecipeManager()
+                .byKey(NuclearCraft.id("test/scripted_battery")).orElseThrow();
+        var result = recipe.assemble(grid, level.registryAccess());
+        helper.assertTrue(recipe.matches(grid, level) && BatteryItem.stored(result) == 7_000_000_000L
+                        && BatteryItem.stored(first) == 3_000_000_000L && BatteryItem.stored(second) == 4_000_000_000L,
+                "Crafting sums long charges and leaves both inputs intact");
+
+        var block = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id(SCRIPTED_ID));
+        helper.setBlock(CENTER, block);
+        block.setPlacedBy(level, helper.absolutePos(CENTER), battery(helper, CENTER).getBlockState(), null, result);
+        helper.assertTrue(battery(helper, CENTER).stored() == 7_000_000_000L
+                        && battery(helper, CENTER).capacity() == Long.MAX_VALUE,
+                "Placement restores the full crafted charge and capacity");
+
+        BatteryItem.store(first, Long.MAX_VALUE);
+        BatteryItem.store(second, 1);
+        helper.assertTrue(!recipe.matches(grid, level) && recipe.assemble(grid, level.registryAccess()).isEmpty()
+                        && BatteryItem.stored(first) == Long.MAX_VALUE && BatteryItem.stored(second) == 1,
+                "Crafting rejects a total over the long capacity without overflowing");
         helper.succeed();
     }
 

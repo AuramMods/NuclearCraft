@@ -1,10 +1,9 @@
 package nc.energy;
 
 import nc.automation.MachineInterfaceTarget;
-
+import nc.energy.BatteryBlock.Definition;
 import nc.energy.BatteryBlock.Mode;
 import nc.init.NCBatteries;
-import nc.init.NCBatteries.Tier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -19,13 +18,17 @@ import org.jetbrains.annotations.NotNull;
 public final class BatteryBlockEntity extends EnergyBankBlockEntity implements MachineInterfaceTarget {
     public static final ModelProperty<Integer> FACE_MODES = new ModelProperty<>();
 
-    private final Tier tier;
+    private final Definition definition;
     private volatile int modes;
     private int lastComparator;
 
-    public BatteryBlockEntity(BlockPos pos, BlockState state, Tier tier) {
-        super(tier.entity(), pos, state);
-        this.tier = tier;
+    public BatteryBlockEntity(BlockPos pos, BlockState state) {
+        this(pos, state, ((BatteryBlock) state.getBlock()).definition());
+    }
+
+    private BatteryBlockEntity(BlockPos pos, BlockState state, Definition definition) {
+        super(definition.entity(), pos, state);
+        this.definition = definition;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, BatteryBlockEntity battery) {
@@ -39,7 +42,7 @@ public final class BatteryBlockEntity extends EnergyBankBlockEntity implements M
 
     @Override
     protected long localCapacity() {
-        return tier.capacity();
+        return definition.capacity();
     }
 
     @Override
@@ -49,7 +52,7 @@ public final class BatteryBlockEntity extends EnergyBankBlockEntity implements M
 
     @Override
     protected long transferLimit() {
-        return tier.transfer();
+        return definition.transfer();
     }
 
     @Override
@@ -67,7 +70,7 @@ public final class BatteryBlockEntity extends EnergyBankBlockEntity implements M
         return mode(face) == Mode.OUT;
     }
 
-    void setPlacedCharge(int amount) {
+    void setPlacedCharge(long amount) {
         addCharge(amount);
     }
 

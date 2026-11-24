@@ -1,6 +1,6 @@
 package nc.energy;
 
-import nc.init.NCBatteries.Tier;
+import nc.energy.BatteryBlock.Definition;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -27,16 +27,16 @@ public final class BatteryItem {
 
     private BatteryItem() {}
 
-    public static int capacity(ItemStack stack) {
+    public static long capacity(ItemStack stack) {
         return stack.getItem() instanceof Chargeable item ? item.capacity() : 0;
     }
 
-    public static int stored(ItemStack stack) {
+    public static long stored(ItemStack stack) {
         var tag = stack.getTag();
-        return tag == null ? 0 : (int) Math.max(0, Math.min(capacity(stack), tag.getCompound(STORAGE).getLong(ENERGY)));
+        return tag == null ? 0 : Math.max(0, Math.min(capacity(stack), tag.getCompound(STORAGE).getLong(ENERGY)));
     }
 
-    public static void store(ItemStack stack, int charge) {
+    public static void store(ItemStack stack, long charge) {
         stack.getOrCreateTagElement(STORAGE).putLong(ENERGY, charge);
     }
 
@@ -49,21 +49,21 @@ public final class BatteryItem {
     }
 
     private interface Chargeable {
-        int capacity();
+        long capacity();
 
         int transfer();
     }
 
     public static final class BlockBattery extends BlockItem implements Chargeable {
-        private final Tier tier;
+        private final Definition definition;
 
-        public BlockBattery(BatteryBlock block, Tier tier) {
+        public BlockBattery(BatteryBlock block) {
             super(block, new Properties().stacksTo(1));
-            this.tier = tier;
+            this.definition = block.definition();
         }
 
-        @Override public int capacity() { return tier.capacity(); }
-        @Override public int transfer() { return tier.transfer(); }
+        @Override public long capacity() { return definition.capacity(); }
+        @Override public int transfer() { return definition.transfer(); }
         @Override public int getBarColor(ItemStack stack) { return BAR_COLOR; }
         @Override public int getBarWidth(ItemStack stack) { return barWidth(stack); }
         @Override public boolean isBarVisible(ItemStack stack) { return stored(stack) > 0; }
@@ -89,7 +89,7 @@ public final class BatteryItem {
             this.transfer = transfer;
         }
 
-        @Override public int capacity() { return capacity.getAsInt(); }
+        @Override public long capacity() { return capacity.getAsInt(); }
         @Override public int transfer() { return transfer.getAsInt(); }
         @Override public int getBarColor(ItemStack stack) { return BAR_COLOR; }
         @Override public int getBarWidth(ItemStack stack) { return barWidth(stack); }
@@ -123,8 +123,8 @@ public final class BatteryItem {
 
         @Override
         public int receiveEnergy(int request, boolean simulate) {
-            int current = getEnergyStored();
-            int received = Math.min(Math.min(request, item.transfer()), getMaxEnergyStored() - current);
+            long current = stored(stack);
+            int received = (int) Math.min(Math.min(request, item.transfer()), item.capacity() - current);
             if (received <= 0 || !canReceive()) {
                 return 0;
             }
@@ -136,8 +136,8 @@ public final class BatteryItem {
 
         @Override
         public int extractEnergy(int request, boolean simulate) {
-            int current = getEnergyStored();
-            int extracted = Math.min(Math.min(request, item.transfer()), current);
+            long current = stored(stack);
+            int extracted = (int) Math.min(Math.min(request, item.transfer()), current);
             if (extracted <= 0 || !canExtract()) {
                 return 0;
             }
@@ -147,8 +147,8 @@ public final class BatteryItem {
             return extracted;
         }
 
-        @Override public int getEnergyStored() { return stored(stack); }
-        @Override public int getMaxEnergyStored() { return item.capacity(); }
+        @Override public int getEnergyStored() { return (int) Math.min(stored(stack), Integer.MAX_VALUE); }
+        @Override public int getMaxEnergyStored() { return (int) Math.min(item.capacity(), Integer.MAX_VALUE); }
         @Override public boolean canReceive() { return stack.getCount() == 1; }
         @Override public boolean canExtract() { return canReceive(); }
     }

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:charged_crafting",
+    "pattern": ["BB"],
+    "key": {
+        "B": {
+            "item": "nuclearcraft:battery_qa_scripted"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:battery_qa_scripted"
+    }
+}

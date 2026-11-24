@@ -14,15 +14,23 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
+import java.util.stream.Collectors;
 
 public final class NCBatteries {
     public static final RegistryObject<RecipeSerializer<ChargedCraftingRecipe>> CHARGED_CRAFTING =
             NCRegistries.RECIPE_SERIALIZERS.register("charged_crafting", ChargedCraftingRecipe.Serializer::new);
     public static final RegistryObject<Item> CELL = NCRegistries.ITEMS.register("lithium_ion_cell",
             () -> new BatteryItem.Cell(NCBatteries::cellCapacity, NCBatteries::cellTransfer));
+
+    public static final RegistryObject<BlockEntityType<BatteryBlockEntity>> SCRIPTED_BATTERY_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("scripted_battery", () -> new BlockEntityType<>(
+                    BatteryBlockEntity::new, ForgeRegistries.BLOCKS.getValues().stream()
+                            .filter(block -> block instanceof BatteryBlock battery && battery.isScriptedBattery())
+                            .collect(Collectors.toUnmodifiableSet()), null));
 
     private static final ForgeConfigSpec SPEC;
     private static final Limits CELL_LIMITS;
@@ -82,7 +90,7 @@ public final class NCBatteries {
 
     private record Limits(ForgeConfigSpec.IntValue capacity, ForgeConfigSpec.IntValue transfer) {}
 
-    public enum Tier {
+    public enum Tier implements BatteryBlock.Definition {
         VOLTAIC_PILE_BASIC("voltaic_pile_basic", 1_600_000, 16_000),
         VOLTAIC_PILE_ADVANCED("voltaic_pile_advanced", 6_400_000, 64_000),
         VOLTAIC_PILE_DU("voltaic_pile_du", 25_600_000, 256_000),
@@ -104,23 +112,26 @@ public final class NCBatteries {
             this.transfer = transfer;
             block = NCRegistries.BLOCKS.register(id, () -> new BatteryBlock(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK), this));
-            NCRegistries.ITEMS.register(id, () -> new BatteryItem.BlockBattery(block.get(), this));
+            NCRegistries.ITEMS.register(id, () -> new BatteryItem.BlockBattery(block.get()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new BatteryBlockEntity(pos, state, this), block.get()).build(null));
+                    BatteryBlockEntity::new, block.get()).build(null));
         }
 
         public BatteryBlock block() {
             return block.get();
         }
 
+        @Override
         public BlockEntityType<BatteryBlockEntity> entity() {
             return entity.get();
         }
 
-        public int capacity() {
+        @Override
+        public long capacity() {
             return get(LIMITS.get(this).capacity());
         }
 
+        @Override
         public int transfer() {
             return get(LIMITS.get(this).transfer());
         }

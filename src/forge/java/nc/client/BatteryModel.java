@@ -1,13 +1,14 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.energy.BatteryBlock;
 import nc.energy.BatteryBlock.Mode;
 import nc.energy.BatteryBlockEntity;
-import nc.init.NCBatteries.Tier;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -23,6 +24,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class BatteryModel extends BakedModelWrapper<BakedModel> {
@@ -37,28 +39,34 @@ public final class BatteryModel extends BakedModelWrapper<BakedModel> {
 
     @SubscribeEvent
     public static void registerModels(ModelEvent.RegisterAdditional event) {
-        for (Tier tier : Tier.values()) {
-            event.register(variant(tier, Mode.OUT));
-            event.register(variant(tier, Mode.OFF));
-        }
+        batteries().forEach(block -> {
+            event.register(variant(block, Mode.OUT));
+            event.register(variant(block, Mode.OFF));
+        });
     }
 
     @SubscribeEvent
     public static void installModels(ModelEvent.ModifyBakingResult event) {
         var models = event.getModels();
-        for (Tier tier : Tier.values()) {
-            var key = BlockModelShaper.stateToModelLocation(tier.block().defaultBlockState());
+        var missing = models.get(ModelBakery.MISSING_MODEL_LOCATION);
+        batteries().forEach(block -> {
+            var key = BlockModelShaper.stateToModelLocation(block.defaultBlockState());
             BakedModel input = models.get(key);
-            if (input != null) {
-                models.put(key, new BatteryModel(input, models.getOrDefault(variant(tier, Mode.OUT), input),
-                        models.getOrDefault(variant(tier, Mode.OFF), input)));
+            if (input != null && input != missing) {
+                var output = models.getOrDefault(variant(block, Mode.OUT), input);
+                var disabled = models.getOrDefault(variant(block, Mode.OFF), input);
+                models.put(key, new BatteryModel(input, output == missing ? input : output, disabled == missing ? input : disabled));
             }
-        }
+        });
     }
 
-    private static ResourceLocation variant(Tier tier, Mode mode) {
-        var id = ForgeRegistries.BLOCKS.getKey(tier.block());
-        return NuclearCraft.id("block/" + id.getPath() + "_" + mode.getSerializedName());
+    private static Stream<BatteryBlock> batteries() {
+        return ForgeRegistries.BLOCKS.getValues().stream().filter(BatteryBlock.class::isInstance).map(BatteryBlock.class::cast);
+    }
+
+    private static ResourceLocation variant(BatteryBlock block, Mode mode) {
+        var id = ForgeRegistries.BLOCKS.getKey(block);
+        return new ResourceLocation(id.getNamespace(), "block/" + id.getPath() + "_" + mode.getSerializedName());
     }
 
     @Override

@@ -23,30 +23,36 @@ public final class ChargedCraftingRecipe extends ShapedRecipe {
 
     @Override
     public boolean matches(CraftingContainer grid, Level level) {
-        return super.matches(grid, level) && charge(grid) <= BatteryItem.capacity(getResultItem(level.registryAccess()));
+        return super.matches(grid, level) && charge(grid, BatteryItem.capacity(getResultItem(level.registryAccess()))) >= 0;
     }
 
     @Override
     public ItemStack assemble(CraftingContainer grid, RegistryAccess registries) {
         ItemStack result = super.assemble(grid, registries);
-        long charge = charge(grid);
-        if (charge > BatteryItem.capacity(result)) {
+        long charge = charge(grid, BatteryItem.capacity(result));
+        if (charge < 0) {
             return ItemStack.EMPTY;
         }
         if (charge > 0) {
-            BatteryItem.store(result, (int) charge);
+            BatteryItem.store(result, charge);
         }
         return result;
     }
 
-    private static long charge(CraftingContainer grid) {
+    private static long charge(CraftingContainer grid, long capacity) {
         long charge = 0;
         for (int slot = 0; slot < grid.getContainerSize(); slot++) {
             ItemStack stack = grid.getItem(slot);
-            if (!stack.isEmpty()) {
-                charge += Math.max(0, stack.copyWithCount(1).getCapability(ForgeCapabilities.ENERGY)
-                        .map(IEnergyStorage::getEnergyStored).orElse(0));
+            if (stack.isEmpty()) {
+                continue;
             }
+            long amount = BatteryItem.capacity(stack) > 0 ? BatteryItem.stored(stack)
+                    : Math.max(0, stack.copyWithCount(1).getCapability(ForgeCapabilities.ENERGY)
+                            .map(IEnergyStorage::getEnergyStored).orElse(0));
+            if (amount > capacity - charge) {
+                return -1;
+            }
+            charge += amount;
         }
         return charge;
     }

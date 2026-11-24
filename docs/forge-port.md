@@ -681,7 +681,34 @@ Recipes of type `nuclearcraft:electric_furnace` use the same schema as an item p
 
 The legacy `battery_block_capacity` and `battery_block_max_transfer` arrays map to the `capacity` and `max_transfer` settings under each named battery tier in `world/serverconfig/nuclearcraft-batteries.toml`. The item settings map to the `lithium_ion_cell` section. Placed batteries enforce the configured rate per block and per tick across all input faces and across all output faces. The bank uses a long for its combined capacity and charge. Forge Energy exposes an integer view that saturates at 2,147,483,647 FE. Legacy EU tier settings applied to IC2 and GregTech. Forge Energy uses the configured FE rate. When reducing capacity in the configuration, charge above the new per-block capacity is discarded as in the original mod.
 
-The `nuclearcraft:charged_crafting` serializer uses the shaped recipe schema. It adds the Forge Energy charge of one item from each occupied input slot to a NuclearCraft battery result. Crafting leaves the ingredients in the grid when the result has insufficient capacity for the input charge. Battery items read their charge from `energyStorage.energy`. Placed batteries save their individual share in `energy` and face settings in `energy_sides`. Moving a 1.12.2 battery bank into a converted world requires distributing the legacy controller's aggregate charge across its converted blocks.
+The `nuclearcraft:charged_crafting` serializer uses the shaped recipe schema. It adds the charge of one item from each occupied input slot to a NuclearCraft battery result. NuclearCraft batteries contribute their full stored charge, and other items contribute the charge they expose through Forge Energy. Crafting leaves the ingredients in the grid when the result has insufficient capacity for the input charge. Battery items read their charge from `energyStorage.energy`. Placed batteries save their individual share in `energy` and face settings in `energy_sides`. Moving a 1.12.2 battery bank into a converted world requires distributing the legacy controller's aggregate charge across its converted blocks.
+
+### Scripted batteries
+
+Replace legacy `Registration.registerBattery` calls with a KubeJS startup script. Use the original `nuclearcraft:battery_<id>` for both the block and item on the client and server. Pass capacity as a decimal string to preserve 64-bit precision. The optional second argument sets the per-block FE transfer limit. When omitted it defaults to the smaller of the capacity and 2,147,483,647 FE. The legacy EU tier belongs to the old energy integration and has no Forge Energy setting.
+
+```js
+const NuclearCraftBattery = Java.loadClass('nc.energy.BatteryBlock')
+const batteryId = 'nuclearcraft:battery_demo'
+
+StartupEvents.registry('block', event => {
+    event.createCustom(batteryId, () => NuclearCraftBattery.createScriptedBattery('8000000000', 50000))
+})
+
+StartupEvents.registry('item', event => {
+    event.createCustom(batteryId, () => NuclearCraftBattery.createScriptedBatteryItem(batteryId))
+})
+```
+
+Supply the blockstate, item model, block models, mining tags, recipe, and loot table through the pack. To reuse the stock Voltaic Pile art, point the blockstate and item model to `nuclearcraft:block/voltaic_pile_basic`. Set the parents of `models/block/battery_demo_out.json` and `models/block/battery_demo_off.json` to the corresponding stock models with `_out` and `_off` suffixes. The client uses these models for output and disabled faces.
+
+Copy the stock Voltaic Pile loot table and change the dropped item ID. Its `copy_nbt` operations map the block's `energy` to the item's `energyStorage.energy` and preserve `energy_sides`. Existing scripted battery stacks can keep their charge at that item path. A converted scripted block uses the `nuclearcraft:scripted_battery` block entity ID. Distribute the old bank's charge across the converted blocks and translate each part's face settings as for stock batteries.
+
+Scripted and stock batteries join the same bank. Banks and items keep long-valued charge, and the Forge Energy view caps its reported values at 2,147,483,647 FE. Charged crafting rejects a sum above the output capacity without consuming the inputs. [Forge capabilities](https://docs.minecraftforge.net/en/1.20.1/datastorage/capabilities/)
+
+All 200 local GameTests passed. The scripted battery test crafted and placed 7,000,000,000 FE, verified that simulation leaves charge unchanged, and rejected a sum above the 64-bit limit. The packaged Forge 47.4.18 server with KubeJS 2001.6.5-build.16 preserved 5,000,000,000 FE and the output face in a mined battery item. A mixed scripted and stock bank crossed a chunk boundary and retained its 600,000 FE through chunk unload and restart. A separate unit retained 9,223,372,036,854,775,807 FE.
+
+In the isolated 539-mod Auram instance, Ender IO 8.2.22-beta conduits and Mekanism 10.4.16.80 Basic Universal Cables powered separate furnaces through mixed scripted and stock battery banks. Each furnace smelted one iron ingot. The client loaded the three face models, received the scripted charged-crafting recipe, and displayed the full 5,000,000,000 out of 8,000,000,000 charge. It ran with master volume zero and OpenAL No Output. The focus monitor recorded zero activations, foreground samples, and visible windows.
 
 ### Molten-salt vessel tanks and ports
 
