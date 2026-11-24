@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:radiation_scrubber",
+    "medium": "borax",
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/borax"
+        },
+        "count": 1
+    },
+    "item_output": {
+        "item": "nuclearcraft:irradiated_borax"
+    }
+}

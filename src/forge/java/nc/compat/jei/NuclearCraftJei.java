@@ -21,6 +21,7 @@ import nc.NuclearCraft;
 import nc.client.FluidProcessorScreen;
 import nc.client.SaltFissionPartScreen;
 import nc.client.ItemProcessorScreen;
+import nc.client.ScrubberScreen;
 import nc.client.MelterScreen;
 import nc.init.NCCollectors.Collector;
 import nc.init.NCHeatExchangers;
@@ -33,6 +34,7 @@ import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
+import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.CentrifugeRecipe;
@@ -53,6 +55,7 @@ import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
+import nc.recipe.ScrubberRecipe;
 import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.SupercoolerRecipe;
@@ -87,6 +90,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create("nuclearcraft", "electrolyzer", ElectrolyzerRecipe.class);
     private static final RecipeType<ChemicalReactorRecipe> CHEMICAL_REACTOR =
             RecipeType.create(NuclearCraft.MOD_ID, "chemical_reactor", ChemicalReactorRecipe.class);
+    private static final RecipeType<ScrubberRecipe> SCRUBBER =
+            RecipeType.create(NuclearCraft.MOD_ID, "radiation_scrubber", ScrubberRecipe.class);
     private static final RecipeType<EnricherRecipe> ENRICHER =
             RecipeType.create(NuclearCraft.MOD_ID, "enricher", EnricherRecipe.class);
     private static final RecipeType<CentrifugeRecipe> CENTRIFUGE =
@@ -203,6 +208,9 @@ public final class NuclearCraftJei implements IModPlugin {
                         fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(results.get(index)));
                     }
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(SCRUBBER, NCRadiation.SCRUBBER.get(), gui, NuclearCraftJei::scrubberRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.scrubber",
+                                recipe.ticks(), recipe.power(), decimal(recipe.efficiency()))),
                 new Category<>(ENRICHER, NCRegistries.ENRICHER.get(), gui, (layout, recipe) -> {
                     ItemProcessorRecipe.Input item = recipe.itemInput();
                     layout.addSlot(INPUT, 18, 12).setStandardSlotBackground().addItemStacks(
@@ -293,6 +301,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
+        registration.addRecipes(SCRUBBER, recipes.getAllRecipesFor(NCRadiation.SCRUBBER_RECIPES.get()));
         registration.addRecipes(ENRICHER, recipes.getAllRecipesFor(NCRegistries.ENRICHING.get()));
         registration.addRecipes(SUPERCOOLER, recipes.getAllRecipesFor(NCRegistries.SUPERCOOLING.get()));
         registration.addRecipes(CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
@@ -327,6 +336,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
         registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
+        registration.addRecipeCatalyst(NCRadiation.SCRUBBER.get(), SCRUBBER);
         registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
         registration.addRecipeCatalyst(NCRegistries.SUPERCOOLER.get(), SUPERCOOLER);
         registration.addRecipeCatalyst(NCRegistries.CENTRIFUGE.get(), CENTRIFUGE);
@@ -363,6 +373,7 @@ public final class NuclearCraftJei implements IModPlugin {
             }
         });
         registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
+        registration.addRecipeClickArea(ScrubberScreen.class, 70, 35, 37, 16, SCRUBBER);
         registration.addGuiContainerHandler(FluidProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(FluidProcessorScreen screen, double x, double y) {
@@ -420,6 +431,25 @@ public final class NuclearCraftJei implements IModPlugin {
                             product.minAmount(), maximum.getAmount())));
                 }
             }
+        }
+    }
+
+    private static void scrubberRecipe(IRecipeLayoutBuilder layout, ScrubberRecipe recipe) {
+        var item = recipe.itemInput();
+        if (item != null) {
+            layout.addSlot(INPUT, 18, 12).setStandardSlotBackground().addItemStacks(
+                    Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+        }
+        if (recipe.fluidInput() != null) {
+            fluidSlot(layout, INPUT, 40, recipe.fluidInput().alternatives());
+        }
+        ItemStack product = recipe.itemOutput();
+        if (!product.isEmpty()) {
+            layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(product);
+        }
+        FluidStack fluid = recipe.fluidOutput();
+        if (!fluid.isEmpty()) {
+            fluidSlot(layout, OUTPUT, 128, List.of(fluid));
         }
     }
 
@@ -567,7 +597,7 @@ public final class NuclearCraftJei implements IModPlugin {
         public int getWidth() {
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator", "multiblock_electrolyzer", "electrolyzer_electrolyte" -> 178;
-                case "rock_crusher", "extractor", "centrifuge" -> 166;
+                case "rock_crusher", "extractor", "centrifuge", "radiation_scrubber" -> 166;
                 default -> 140;
             };
         }

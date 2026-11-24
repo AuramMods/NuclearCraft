@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:radiation_scrubber",
+    "medium": "slow_radaway",
+    "fluid_input": {
+        "fluid": "nuclearcraft:radaway_slow",
+        "amount": 250
+    },
+    "fluid_output": {
+        "fluid": "nuclearcraft:redstone_ethanol",
+        "amount": 250
+    }
+}

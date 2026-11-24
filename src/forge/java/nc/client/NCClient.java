@@ -8,6 +8,7 @@ import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
 import nc.init.NCRegistries;
+import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.fission.SaltFissionPartMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
@@ -25,6 +26,7 @@ public final class NCClient {
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new);
+            MenuScreens.register(NCRadiation.SCRUBBER_MENU.get(), ScrubberScreen::new);
             MenuScreens.register(NCRegistries.ELECTROLYZER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.SALT_MIXER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.CHEMICAL_REACTOR_MENU.get(), FluidProcessorScreen::new);

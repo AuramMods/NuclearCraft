@@ -64,6 +64,19 @@ public final class ProcessorFluidTanks {
         tanks[index].drain(amount, EXECUTE);
     }
 
+    boolean canRestoreInput(FluidStack stack) {
+        FluidStack stored = tanks[0].getFluid();
+        return (stored.isEmpty() || stack.isFluidEqual(stored))
+                && stack.getAmount() <= tanks[0].getCapacity() - stored.getAmount();
+    }
+
+    void restoreInput(FluidStack stack) {
+        FluidStack restored = stack.copy();
+        restored.grow(tanks[0].getFluidAmount());
+        tanks[0].setFluid(restored);
+        owner.setChanged();
+    }
+
     boolean canProduce(int index, FluidStack stack) {
         return tanks[index].fill(stack, SIMULATE) == stack.getAmount();
     }

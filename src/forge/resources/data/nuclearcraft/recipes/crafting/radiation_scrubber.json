@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "PCP",
+        "CEC",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_elite"
+        },
+        "C": {
+            "tag": "forge:dusts/borax"
+        },
+        "E": {
+            "tag": "forge:ingots/extreme"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:radiation_scrubber"
+    }
+}

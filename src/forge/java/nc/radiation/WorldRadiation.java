@@ -3,6 +3,7 @@ package nc.radiation;
 import it.unimi.dsi.fastutil.longs.Long2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import nc.NuclearCraft;
+import nc.processor.RadiationScrubber;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.QuartPos;
@@ -84,7 +85,7 @@ public final class WorldRadiation {
             selected[i] = loaded.chunks.get((start + i) % count);
         }
         for (int i = 0; i < size; i++) {
-            sample(level, selected[i], readings, side, i == 0, loaded.random);
+            sample(level, selected[i], readings, side, i == 0, loaded);
         }
         for (LevelChunk chunk : selected) {
             spread(loaded, chunk, readings);
@@ -104,7 +105,8 @@ public final class WorldRadiation {
     }
 
     private static void sample(ServerLevel level, LevelChunk chunk, Levels readings, Direction side,
-                               boolean checkBlock, RandomSource random) {
+                               boolean checkBlock, LoadedChunks loaded) {
+        RandomSource random = loaded.random;
         var pos = chunk.getPos();
         BlockPos sample = pos.getBlockAt(random.nextInt(16),
                 level.getMinBuildHeight() + random.nextInt(level.getHeight()), random.nextInt(16));
@@ -145,19 +147,50 @@ public final class WorldRadiation {
                 }
             }
         }
-        if (RadiationConfig.MACHINE_SOURCES.get()) {
-            double containers = RadiationConfig.CONTAINER_SOURCES.get();
-            for (BlockEntity entity : chunk.getBlockEntities().values()) {
-                if (!entity.isRemoved()) {
-                    double emission = entity instanceof ChunkRadiationSource source ? source.radiationEmission() : 0;
-                    sources += emission + (containers > 0 ? containerRate(entity, side) * containers : 0);
-                }
+        var scrubbers = new ArrayList<RadiationScrubber>();
+        boolean machineSources = RadiationConfig.MACHINE_SOURCES.get();
+        double containers = RadiationConfig.CONTAINER_SOURCES.get();
+        for (BlockEntity entity : chunk.getBlockEntities().values()) {
+            if (entity.isRemoved()) {
+                continue;
+            }
+            if (entity instanceof RadiationScrubber scrubber && scrubber.contribution() > 0) {
+                scrubbers.add(scrubber);
+            }
+            if (machineSources) {
+                double emission = entity instanceof ChunkRadiationSource source ? source.radiationEmission() : 0;
+                sources += emission + (containers > 0 ? containerRate(entity, side) * containers : 0);
             }
         }
 
         long key = pos.toLong();
         double current = readings.rates.get(key);
-        double speed = current < sources ? RadiationConfig.SPREAD.get() : RadiationConfig.CHUNK_DECAY.get();
+        double spread = RadiationConfig.SPREAD.get();
+        double fraction = 0;
+        if (!scrubbers.isEmpty()) {
+            double total = scrubbers.stream().mapToDouble(RadiationScrubber::contribution).sum();
+            if (ScrubberSettings.nonlinear()) {
+                fraction = ScrubberSettings.nonlinearFraction(total);
+                double removal = fraction * (sources + spread * Math.max(0, current - sources));
+                for (var scrubber : scrubbers) {
+                    scrubber.measuredRemoval(removal * scrubber.contribution() / total);
+                }
+                sources *= 1 - fraction;
+            } else {
+                fraction = Math.min(1D, total);
+                for (var scrubber : scrubbers) {
+                    double part = Math.min(1D, scrubber.contribution());
+                    scrubber.measuredRemoval(part * (sources + spread * Math.max(0, current - sources)));
+                    sources *= 1 - part;
+                }
+            }
+        }
+        if (fraction > 0) {
+            loaded.scrubbing.put(key, fraction);
+        } else {
+            loaded.scrubbing.remove(key);
+        }
+        double speed = current < sources ? spread : RadiationConfig.CHUNK_DECAY.get() * (1 - fraction) + spread * fraction;
         readings.set(key, Math.min(limit, Math.max(0, current + (sources - current) * speed)));
     }
 
@@ -200,7 +233,7 @@ public final class WorldRadiation {
             if (target == 0 || source / target > 1D + RadiationConfig.GRADIENT.get()) {
                 double transfer = (source - target) * RadiationConfig.SPREAD.get();
                 readings.set(key, source - transfer);
-                readings.set(targetKey, target + transfer);
+                readings.set(targetKey, target + transfer * (1 - loaded.scrubbing.get(targetKey)));
             }
         }
     }
@@ -220,6 +253,7 @@ public final class WorldRadiation {
     }
 
     private static final class LoadedChunks {
+        private final Long2DoubleOpenHashMap scrubbing = new Long2DoubleOpenHashMap();
         private final RandomSource random = RandomSource.create();
         private final ArrayList<LevelChunk> chunks = new ArrayList<>();
         private final Long2IntOpenHashMap indices = new Long2IntOpenHashMap();
@@ -238,6 +272,7 @@ public final class WorldRadiation {
         }
 
         void remove(long key) {
+            scrubbing.remove(key);
             int index = indices.remove(key);
             if (index >= 0) {
                 LevelChunk last = chunks.remove(chunks.size() - 1);

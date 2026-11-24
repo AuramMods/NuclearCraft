@@ -50,7 +50,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     private OutputMode fluidOutputMode = OutputMode.HOLD;
     private final EnumMap<Direction, SideMode> sideModes = new EnumMap<>(Direction.class);
     private final EnumMap<Direction, ItemAccess> ports = new EnumMap<>(Direction.class);
-    private ItemAccess unsided = new ItemAccess(SideMode.BOTH);
+    private ItemAccess unsided;
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private ResourceLocation activeRecipe;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
@@ -88,9 +88,10 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
                 setChanged();
             }
         };
+        unsided = itemAccess(SideMode.BOTH);
         for (Direction side : SIDES) {
             sideModes.put(side, SideMode.BOTH);
-            ports.put(side, new ItemAccess(SideMode.BOTH));
+            ports.put(side, itemAccess(SideMode.BOTH));
         }
     }
 
@@ -212,7 +213,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     public void cycleSide(Direction side) {
         SideMode next = sideModes.get(side).next();
         sideModes.put(side, next);
-        ports.put(side, new ItemAccess(next)).invalidate();
+        ports.put(side, itemAccess(next)).invalidate();
         updateConnections();
     }
 
@@ -274,8 +275,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     @Override
     public void reviveCaps() {
         super.reviveCaps();
-        unsided = new ItemAccess(SideMode.BOTH);
-        sideModes.forEach((side, mode) -> ports.put(side, new ItemAccess(mode)));
+        unsided = itemAccess(SideMode.BOTH);
+        sideModes.forEach((side, mode) -> ports.put(side, itemAccess(mode)));
         energy = LazyOptional.of(() -> power);
         if (fluid != null) {
             fluid.revive();
@@ -316,7 +317,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             for (Direction side : SIDES) {
                 SideMode mode = SideMode.byId(modes[side.ordinal()]);
                 sideModes.put(side, mode);
-                ports.put(side, new ItemAccess(mode)).invalidate();
+                ports.put(side, itemAccess(mode)).invalidate();
             }
         }
         if (fluid != null) {
@@ -379,7 +380,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
             return Component.translatable("gui.nuclearcraft.item_side." + id);
         }
 
-        private SideMode next() {
+        SideMode next() {
             return MODES[(ordinal() + 1) % MODES.length];
         }
 
@@ -388,12 +389,22 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         }
     }
 
-    private final class ItemAccess implements IItemHandler {
+    private ItemAccess itemAccess(SideMode mode) {
+        return new ItemAccess(this, inventory, machine.inputs(), mode);
+    }
+
+    static final class ItemAccess implements IItemHandler {
+        private final BlockEntity owner;
+        private final ItemStackHandler inventory;
+        private final int inputs;
         private final SideMode mode;
-        private final LazyOptional<IItemHandler> capability;
+        final LazyOptional<IItemHandler> capability;
         private boolean valid = true;
 
-        ItemAccess(SideMode mode) {
+        ItemAccess(BlockEntity owner, ItemStackHandler inventory, int inputs, SideMode mode) {
+            this.owner = owner;
+            this.inventory = inventory;
+            this.inputs = inputs;
             this.mode = mode;
             capability = mode == SideMode.OFF ? LazyOptional.empty() : LazyOptional.of(() -> this);
         }
@@ -404,8 +415,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
         }
 
         private boolean visible(int slot) {
-            return valid && !isRemoved() && slot >= 0 && slot < machine.slots()
-                    && (slot < machine.inputs() ? mode.input : mode.output);
+            return valid && !owner.isRemoved() && slot >= 0 && slot < inventory.getSlots()
+                    && (slot < inputs ? mode.input : mode.output);
         }
 
         @Override
@@ -420,12 +431,12 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
 
         @Override
         public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-            return visible(slot) && slot < machine.inputs() ? inventory.insertItem(slot, stack, simulate) : stack;
+            return visible(slot) && slot < inputs ? inventory.insertItem(slot, stack, simulate) : stack;
         }
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return visible(slot) && slot >= machine.inputs() && amount > 0
+            return visible(slot) && slot >= inputs && amount > 0
                     ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY;
         }
 

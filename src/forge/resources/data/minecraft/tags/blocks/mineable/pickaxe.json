@@ -1,6 +1,7 @@
 {
     "replace": false,
     "values": [
+        "nuclearcraft:radiation_scrubber",
         "nuclearcraft:geiger_block",
         "nuclearcraft:machine_frame",
         "nuclearcraft:machine_process_port",

@@ -77,7 +77,16 @@ public final class RadiationConfig {
                     name -> name instanceof String id && validId(id));
     static final ForgeConfigSpec.DoubleValue GEIGER_SCALE =
             BUILDER.defineInRange("radiation_geiger_block_redstone", 3D, -127D, 127D);
-    private static final ForgeConfigSpec SPEC = BUILDER.build();
+    private static final ForgeConfigSpec SPEC;
+
+    static {
+        ScrubberSettings.define(BUILDER);
+        SPEC = BUILDER.build();
+    }
+
+    static boolean loaded() {
+        return SPEC.isLoaded();
+    }
 
     private RadiationConfig() {}
 
