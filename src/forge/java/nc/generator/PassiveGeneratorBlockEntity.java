@@ -1,5 +1,7 @@
 package nc.generator;
 
+import nc.automation.MachineInterfaceTarget;
+
 import nc.energy.EnergyBankBlockEntity;
 import nc.init.NCGenerators;
 import nc.init.NCGenerators.PassiveGenerator;
@@ -10,7 +12,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity implements ChunkRadiationSource {
+public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity implements MachineInterfaceTarget, ChunkRadiationSource {
     private final PassiveGenerator generator;
     private long lastGenerationTick = Long.MIN_VALUE;
 

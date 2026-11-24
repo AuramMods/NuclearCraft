@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PZP",
+        "Z Z",
+        "PZP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "Z": {
+            "tag": "forge:ingots/silicon_carbide"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:bin"
+    }
+}

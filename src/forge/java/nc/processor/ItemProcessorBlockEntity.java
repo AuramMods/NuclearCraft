@@ -1,5 +1,8 @@
 package nc.processor;
 
+import nc.automation.MachineInterface;
+import nc.automation.MachineInterfaceTarget;
+
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.recipe.ItemProcessorRecipe;
@@ -37,7 +40,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
-public final class ItemProcessorBlockEntity extends BlockEntity implements MenuProvider {
+public final class ItemProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
     private static final Direction[] SIDES = Direction.values();
 
     private final Machine machine;
@@ -100,7 +103,7 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements MenuP
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {
-        boolean running = processor.process(level, level.hasNeighborSignal(pos));
+        boolean running = processor.process(level, MachineInterface.powered(level, pos, processor));
         ProcessorBlock.setRunning(level, pos, state, running);
         if (processor.fluid != null) {
             processor.fluid.push(level);

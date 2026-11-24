@@ -1,6 +1,8 @@
 {
     "replace": false,
     "values": [
+        "nuclearcraft:bin",
+        "nuclearcraft:machine_interface",
         "nuclearcraft:radiation_scrubber",
         "nuclearcraft:geiger_block",
         "nuclearcraft:machine_frame",

@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " A ",
+        "MCM",
+        " S "
+    ],
+    "key": {
+        "A": {
+            "item": "nuclearcraft:actuator"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:machine_interface"
+    }
+}

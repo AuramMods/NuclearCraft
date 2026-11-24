@@ -1,5 +1,8 @@
 package nc.processor;
 
+import nc.automation.MachineInterface;
+import nc.automation.MachineInterfaceTarget;
+
 import nc.init.NCRegistries;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
@@ -41,7 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public final class FluidProcessorBlockEntity extends BlockEntity implements MenuProvider {
+public final class FluidProcessorBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
     private final Machine machine;
     private final RecipeManager.CachedCheck<Container, ? extends FluidProcessorRecipe> recipes;
     private final ProcessorInputs input;
@@ -67,7 +70,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
-        boolean running = machine.process(level, level.hasNeighborSignal(pos));
+        boolean running = machine.process(level, MachineInterface.powered(level, pos, machine));
         ProcessorBlock.setRunning(level, pos, state, running);
         machine.fluids.push(level);
     }

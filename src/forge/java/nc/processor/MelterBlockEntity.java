@@ -1,5 +1,8 @@
 package nc.processor;
 
+import nc.automation.MachineInterface;
+import nc.automation.MachineInterfaceTarget;
+
 import nc.init.NCRegistries;
 import nc.recipe.MelterRecipe;
 import net.minecraft.core.BlockPos;
@@ -33,7 +36,7 @@ import net.minecraftforge.items.wrapper.RangedWrapper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class MelterBlockEntity extends BlockEntity implements MenuProvider {
+public final class MelterBlockEntity extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
     static final int TANK_CAPACITY = 16_000;
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
@@ -72,7 +75,7 @@ public final class MelterBlockEntity extends BlockEntity implements MenuProvider
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
-        boolean processing = melter.process(level, level.hasNeighborSignal(pos));
+        boolean processing = melter.process(level, MachineInterface.powered(level, pos, melter));
         ProcessorBlock.setRunning(level, pos, state, processing);
     }
 

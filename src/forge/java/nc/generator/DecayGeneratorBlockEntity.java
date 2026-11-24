@@ -1,5 +1,7 @@
 package nc.generator;
 
+import nc.automation.MachineInterfaceTarget;
+
 import nc.init.NCGenerators;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.radiation.ChunkRadiationSource;
@@ -20,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public final class DecayGeneratorBlockEntity extends BlockEntity implements ChunkRadiationSource {
+public final class DecayGeneratorBlockEntity extends BlockEntity implements MachineInterfaceTarget, ChunkRadiationSource {
     private static final Direction[] SIDES = Direction.values();
 
     private LazyOptional<IEnergyStorage> output = LazyOptional.of(Output::new);
@@ -103,6 +105,11 @@ public final class DecayGeneratorBlockEntity extends BlockEntity implements Chun
                 target.getCapability(ForgeCapabilities.ENERGY, side.getOpposite()).ifPresent(this::pushEnergy);
             }
         }
+    }
+
+    @Override
+    public void pushInterfaceEnergy(Direction side, IEnergyStorage recipient) {
+        pushEnergy(recipient);
     }
 
     private void pushEnergy(IEnergyStorage target) {

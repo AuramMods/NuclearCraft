@@ -1,5 +1,8 @@
 package nc.processor;
 
+import nc.automation.MachineInterface;
+import nc.automation.MachineInterfaceTarget;
+
 import nc.init.NCRadiation;
 import nc.processor.ItemProcessorBlockEntity.ItemAccess;
 import nc.processor.ItemProcessorBlockEntity.SideMode;
@@ -33,7 +36,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumMap;
 import java.util.List;
 
-public final class RadiationScrubber extends BlockEntity implements MenuProvider {
+public final class RadiationScrubber extends BlockEntity implements MachineInterfaceTarget, MenuProvider {
     private static final Direction[] SIDES = Direction.values();
     private static final int ENVIRONMENT_INTERVAL = 400;
     private static final int DEFAULT_CAPACITY = 19_200_000;
@@ -80,7 +83,7 @@ public final class RadiationScrubber extends BlockEntity implements MenuProvider
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RadiationScrubber machine) {
-        boolean active = machine.process(level, machine.redstoneControl && level.hasNeighborSignal(pos));
+        boolean active = machine.process(level, machine.redstoneControl && MachineInterface.powered(level, pos, machine));
         ProcessorBlock.setRunning(level, pos, state, active);
         machine.tanks.push(level);
         if (active && level instanceof ServerLevel server && level.getGameTime() >= machine.nextEnvironmentCheck) {

@@ -1,5 +1,7 @@
 package nc.energy;
 
+import nc.automation.MachineInterfaceTarget;
+
 import nc.energy.BatteryBlock.Mode;
 import nc.init.NCBatteries;
 import nc.init.NCBatteries.Tier;
@@ -14,7 +16,7 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.NotNull;
 
-public final class BatteryBlockEntity extends EnergyBankBlockEntity {
+public final class BatteryBlockEntity extends EnergyBankBlockEntity implements MachineInterfaceTarget {
     public static final ModelProperty<Integer> FACE_MODES = new ModelProperty<>();
 
     private final Tier tier;

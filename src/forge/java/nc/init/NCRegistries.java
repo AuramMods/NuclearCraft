@@ -205,6 +205,7 @@ public final class NCRegistries {
                         NCGenerators.displayItems(output);
                         NCBatteries.displayItems(output);
                         NCDistributors.displayItems(output);
+                        NCAutomation.displayItems(output);
                         NCMachines.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
@@ -229,6 +230,7 @@ public final class NCRegistries {
         NCMaterials.register();
         NCItemProcessors.register();
         NCDistributors.register();
+        NCAutomation.register();
         NCFission.register();
         NCTurbine.register();
         NCHeatExchangers.register();

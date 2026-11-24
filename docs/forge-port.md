@@ -247,11 +247,27 @@ The same JAR ran in the isolated 539-mod Auram snapshot on Forge 47.4.18, with A
 
 ### NuclearCraft Guide
 
-With Patchouli installed, `nuclearcraft:guide` has all 20 legacy entries, six categories, original page anchors, and English and Simplified Chinese text. Item and block diagrams use Forge registry IDs. The reactor, heat exchanger, and condenser entries explain how to run the ported machines. The Spaxelhoe, Machine Interface, and Universal Bin entries describe legacy features that are still pending in the Forge port. The Tokamak chapter retains its legacy work-in-progress status.
+With Patchouli installed, `nuclearcraft:guide` has all 20 legacy entries, six categories, original page anchors, and English and Simplified Chinese text. Item and block diagrams use Forge registry IDs. The reactor, heat exchanger, and condenser entries explain how to run the ported machines. The Spaxelhoe is still pending in the Forge port. The Tokamak chapter retains its legacy work-in-progress status.
 
 One book and one ingot from `forge:ingots/uranium` craft the guide. The guide can be crafted back into an ordinary book. The recipe checks the `patchouli:book` tag to identify the NuclearCraft guide. With `give_guidebook` enabled in `world/serverconfig/nuclearcraft-misc.toml`, the server also gives each player one starter copy. The gift retries if their inventory is full. For a converted player save, map the inverse of legacy `giveGuidebook` to Forge's `PlayerPersisted."nuclearcraft:guide_given"`.
 
 All 151 GameTests passed on Forge without Patchouli. A packaged multiplayer test with Patchouli 84.1 verified both recipes and confirmed that the one-time starter grant survives restart and respawn. A full Creative inventory kept the gift pending until a slot opened. A server built the packaged turbine preview block for block, then converted 1,200 mB of high-pressure steam into 4,800 mB of exhaust while generating Forge Energy. The Simplified Chinese pages and turbine preview rendered in multiplayer. The English pages rendered with all 538 installed Auram mod JARs. The clients used OpenAL No Output with zero activation, foreground, and visible-window samples.
+
+### Machine Interface and Universal Bin
+
+The `nuclearcraft:machine_interface` extends one adjacent NuclearCraft processor, generator, battery, or Universal Bin. When several eligible machines touch it, it chooses down, up, north, south, west, then east. A request to one interface face uses the corresponding face on the attached machine. The target supplies its own inventory rules, fluid filters, energy limits, and simulation behavior. A removed interface, replaced target, or changed target face retires the corresponding connection. The interface picks its target again after loading and stores no supplies.
+
+Use the interface to open the attached processor's menu or interact with its tanks using a fluid container. Redstone touching the interface reaches the attached processor. Battery and generator outputs can push through the interface using the host's transfer rules.
+
+The `nuclearcraft:bin` destroys inserted items, fluids, and Forge Energy. It offers input on every face and retains no output. With Mekanism installed, the bin and any interface attached to it also accept gas. The legacy `enable_mek_gas` switch is in `world/serverconfig/nuclearcraft-processors.toml` and defaults to true.
+
+Both blocks retain their original crafting ingredients and textures. All 155 local GameTests passed. On Forge 47.4.18, Auram's Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each sent one ice and 4,000 FE through an interface and collected exactly 1,000 mB of water. Separate routes each disposed of 19 ingots, 2,400 mB of water, and 3,750 FE. A Mekanism pressurized tube delivered 1,200 units of hydrogen through an interface into the bin. Chunk unload and server restart preserved both networks' item, fluid, and energy balances.
+
+Replacing each Melter left the surrounding pipes in place. Both networks reconnected and delivered a second batch, bringing each tank to 2,000 mB. With the gas option disabled, a chemical tank directly attached to the interface retained all 1,200 units of hydrogen.
+
+A packaged multiplayer client filled a bucket through the interface, then opened the attached Melter's menu and received its remaining 1,234 mB and stored energy. The client used OpenAL No Output, and the native watcher recorded zero focus activations or visible window samples.
+
+The same JAR rendered both blocks and passed the bucket and menu checks in a fresh isolated world with all 538 installed Auram mod JARs. The full client saved and exited with sound muted and zero observed focus changes. Two logins to the reused QA save stopped when Psychedelicraft `1.20.1-port.4` reported a missing player drug capability. The fresh world reached the menu with the same mod set.
 
 ## Registry migration references
 

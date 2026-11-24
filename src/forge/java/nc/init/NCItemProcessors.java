@@ -24,9 +24,12 @@ import org.jetbrains.annotations.Nullable;
 public final class NCItemProcessors {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
+    private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
+        MEKANISM_GAS = builder.comment("Allow the Universal Bin to accept Mekanism gases.")
+                .define("enable_mek_gas", true);
         builder.push("rock_crusher");
         ROCK_CRUSHER_ALTERNATE = builder.comment("Use the legacy alternate granite and andesite products.")
                 .define("alternate_outputs", false);
@@ -46,6 +49,10 @@ public final class NCItemProcessors {
 
     public static boolean alternateRockCrusherOutputs() {
         return SPEC.isLoaded() ? ROCK_CRUSHER_ALTERNATE.get() : ROCK_CRUSHER_ALTERNATE.getDefault();
+    }
+
+    public static boolean mekanismGasEnabled() {
+        return SPEC.isLoaded() ? MEKANISM_GAS.get() : MEKANISM_GAS.getDefault();
     }
 
     static void displayItems(CreativeModeTab.Output output) {

@@ -74,6 +74,12 @@ public abstract class EnergyBankBlockEntity extends BlockEntity {
         }
     }
 
+    public final void pushInterfaceEnergy(Direction side, IEnergyStorage recipient) {
+        if (exteriorFace(side) && canExtract(side)) {
+            pushEnergyTo(recipient, Integer.MAX_VALUE);
+        }
+    }
+
     protected final void pushEnergyTo(IEnergyStorage target, int limit) {
         var bank = bank();
         int offered = available(bank, limit, false);
