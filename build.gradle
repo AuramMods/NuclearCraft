@@ -200,6 +200,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/bin.png'
         include 'assets/nuclearcraft/textures/blocks/machine_interface.png'
         include 'assets/nuclearcraft/textures/blocks/fission/glass.png'
+        include 'assets/nuclearcraft/textures/blocks/fission/computer_port.png'
         include 'assets/nuclearcraft/textures/blocks/fission/monitor_*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/power_port_*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/conductor.png'

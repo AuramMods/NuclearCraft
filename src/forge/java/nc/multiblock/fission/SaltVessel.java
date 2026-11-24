@@ -107,6 +107,17 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         return Objects.equals(reservedCircuit, other.reservedCircuit) && reserved.isFluidEqual(other.reserved);
     }
 
+    double computerProgress() {
+        return progress;
+    }
+
+    void clearMaterial() {
+        reserved = FluidStack.EMPTY;
+        reservedCircuit = null;
+        progress = 0D;
+        setChanged();
+    }
+
     void primeWith(double efficiency) {
         if (efficiency > sourceEfficiency) {
             sourceEfficiency = efficiency;

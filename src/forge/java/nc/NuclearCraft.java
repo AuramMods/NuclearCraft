@@ -6,6 +6,7 @@ import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
+import nc.init.NCComputerPorts;
 import nc.init.NCEntities;
 import nc.init.NCEquipment;
 import nc.init.NCFission;
@@ -37,6 +38,7 @@ public final class NuclearCraft {
     public NuclearCraft(FMLJavaModLoadingContext context) {
         NCBatteries.register(context);
         NCCollectors.register(context);
+        NCComputerPorts.register(context);
         NCEntities.register(context);
         NCEquipment.register(context);
         NCGenerators.register(context);

@@ -43,6 +43,15 @@ final class SolidFissionCore {
         static final PartHeat NONE = new PartHeat(0, 0, false);
     }
 
+    record ClusterStats(long heatCapacity, long heatStored, int cooling, long heating, List<BlockPos> positions) {}
+    record HeatStats(long heating, long cooling, double efficiency, double heatMultiplier) {
+        static final HeatStats IDLE = new HeatStats(0, 0, 0D, 0D);
+    }
+    record FuelStats(FissionFuelStats recipe, double ticks, double radiation, int baseHeat, double baseEfficiency,
+                     boolean primed, boolean processing, double heating, double efficiency, int heatMultiplier, long flux) {}
+    record ShieldStats(double heating, long flux) {}
+    record CoolerStats(boolean processing, double speed) {}
+
     private record GasLoad(BlockPos pos, NCGasCoolants gas, double efficiency) {}
     private record SaltLoad(BlockPos pos, NCSaltCoolants coolant, double efficiency) {}
 
@@ -232,6 +241,11 @@ final class SolidFissionCore {
     private Set<BlockPos> heatingSalts = Set.of();
     private Set<BlockPos> runningCells = Set.of();
     private @Nullable Map<BlockPos, Integer> decayPacking;
+    private HeatStats heatStats = HeatStats.IDLE;
+    private List<ClusterStats> clusterStats = List.of();
+    private Map<BlockPos, FuelStats> fuelStats = Map.of();
+    private Map<BlockPos, ShieldStats> shieldStats = Map.of();
+    private Map<BlockPos, CoolerStats> coolerStats = Map.of();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
@@ -262,9 +276,24 @@ final class SolidFissionCore {
         return PartHeat.NONE;
     }
 
+    boolean isCooling(BlockPos pos) { return activeCoolingParts.contains(pos); }
+    HeatStats heatStats() { return heatStats; }
+    List<ClusterStats> clusterStats() { return clusterStats; }
+    @Nullable FuelStats fuelStats(BlockPos pos) { return fuelStats.get(pos); }
+    @Nullable ShieldStats shieldStats(BlockPos pos) { return shieldStats.get(pos); }
+    @Nullable CoolerStats coolerStats(BlockPos pos) { return coolerStats.get(pos); }
+
+    void resetTelemetry() {
+        heatStats = HeatStats.IDLE;
+        clusterStats = List.of();
+        fuelStats = Map.of();
+        shieldStats = Map.of();
+        coolerStats = Map.of();
+    }
+
     Heat tick(ServerLevel level, ItemStackHandler inventory, Map<BlockPos, Long> storedHeat,
               @Nullable PebbleCooling gasCooling, @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling,
-              boolean requested, @Nullable FissionDecaySettings decaySettings) {
+              boolean requested, @Nullable FissionDecaySettings decaySettings, boolean telemetry) {
         boolean fluidCooling = layout.variant() != FissionVariant.SOLID;
         boolean decayEnabled = decaySettings != null;
         Map<BlockPos, FissionFuelDecay> fuelDecay = new HashMap<>();
@@ -387,11 +416,33 @@ final class SolidFissionCore {
         }
         var gasLoads = new ArrayList<GasLoad>();
         var saltLoads = new ArrayList<SaltLoad>();
+        var measuredClusters = telemetry ? new ArrayList<ClusterStats>(clusters.size()) : null;
+        var measuredFuel = telemetry ? new HashMap<BlockPos, FuelStats>() : null;
+        var measuredShields = telemetry ? new HashMap<BlockPos, ShieldStats>() : null;
+        var measuredCoolers = telemetry ? new HashMap<BlockPos, CoolerStats>() : null;
+        long totalCooling = 0;
+        double totalBaseHeating = 0;
         long raw = 0;
         long casing = 0;
         double effective = 0;
         int usefulParts = moderatorPositions.size();
         boolean storedHeatChanged = false;
+        if (measuredFuel != null) {
+            reactions.forEach((pos, reaction) -> {
+                boolean processing = burning.contains(pos);
+                boolean isSalt = reaction instanceof SaltReaction;
+                double ticks = isSalt ? ((SaltFissionRecipe) reaction.recipe).ticks() * NCSaltFission.timeMultiplier()
+                        : ((SolidFissionRecipe) reaction.recipe).ticks();
+                double radiation = isSalt ? ((SaltFissionRecipe) reaction.recipe).radiation()
+                        : ((SolidFissionRecipe) reaction.recipe).radiation();
+                double heat = processing ? reaction.effectiveHeat() : 0D;
+                int base = reaction.baseHeat();
+                boolean primed = sourceTargets.contains(pos) || reaction.recipe.selfPriming() || processing;
+                measuredFuel.put(pos, new FuelStats(reaction.recipe, ticks, radiation, base, reaction.baseEfficiency(),
+                        primed, processing, heat, base > 0 ? heat / base : 0D,
+                        processing ? reaction.lines * reaction.bunch.packing : 0, reaction.bunch.flux));
+            });
+        }
         for (Cluster cluster : clusters) {
             long rawCluster = 0;
             long rawDecay = 0;
@@ -429,6 +480,9 @@ final class SolidFissionCore {
                     long flux = shieldFlux.get(pos).values().stream().mapToLong(Long::longValue).sum();
                     heat = flux * shield.heatPerFlux();
                     efficiency = shield.efficiency();
+                    if (measuredShields != null) {
+                        measuredShields.put(pos, new ShieldStats(heat * efficiency, flux));
+                    }
                 }
                 rawCluster += (long) heat;
                 effectiveCluster += heat * efficiency;
@@ -486,6 +540,18 @@ final class SolidFissionCore {
                 cluster.retainHeat(level, storedHeat, 0);
                 return new Heat(raw, casing, effective, true, cluster.cells());
             }
+            if (measuredClusters != null) {
+                var positions = new ArrayList<BlockPos>(cluster.size());
+                positions.addAll(cluster.cells());
+                positions.addAll(cluster.sinks());
+                positions.addAll(cluster.heatingParts());
+                positions.addAll(cluster.conductors());
+                measuredClusters.add(new ClusterStats(cluster.capacity(), next, cooling, totalHeat, List.copyOf(positions)));
+            }
+            if (cluster.connectedToWall() || fluidCooling) {
+                totalCooling += cooling;
+                totalBaseHeating += baseCluster;
+            }
             if (cluster.connectedToWall()) {
                 raw += totalHeat;
                 casing += !fluidCooling ? totalHeat : Math.max(0, netHeat);
@@ -500,17 +566,34 @@ final class SolidFissionCore {
         double sparsityEfficiency = 0.5D + 0.5D * Math.sin(density * Math.PI / 1.5D);
         if (gasCooling != null) {
             for (GasLoad load : gasLoads) {
-                gasCooling.heatGas(load.pos(), load.gas(), load.efficiency() * sparsityEfficiency);
+                double speed = load.efficiency() * sparsityEfficiency;
+                gasCooling.heatGas(load.pos(), load.gas(), speed);
+                if (measuredCoolers != null) {
+                    measuredCoolers.put(load.pos(), new CoolerStats(speed > 0, speed));
+                }
             }
         }
         if (saltCooling != null) {
             var heating = new HashSet<BlockPos>();
             for (SaltLoad load : saltLoads) {
-                if (saltCooling.heat(load.pos(), load.coolant(), load.efficiency() * sparsityEfficiency)) {
+                double speed = load.efficiency() * sparsityEfficiency;
+                boolean processing = saltCooling.heat(load.pos(), load.coolant(), speed);
+                if (processing) {
                     heating.add(load.pos());
+                }
+                if (measuredCoolers != null) {
+                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed));
                 }
             }
             heatingSalts = heating;
+        }
+        if (measuredClusters != null) {
+            heatStats = new HeatStats(raw, totalCooling, totalBaseHeating > 0 ? effective * sparsityEfficiency / totalBaseHeating : 0D,
+                    totalBaseHeating > 0 ? raw / totalBaseHeating : 0D);
+            clusterStats = measuredClusters;
+            fuelStats = measuredFuel;
+            shieldStats = measuredShields;
+            coolerStats = measuredCoolers;
         }
         return new Heat(raw, casing, effective * sparsityEfficiency, storedHeatChanged, List.of());
     }

@@ -19,12 +19,12 @@ import static nc.multiblock.turbine.TurbinePartBlock.Part;
 
 record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLength, List<Part> stages,
                      Map<BlockPos, Axis> rotor, Set<BlockPos> bearings, List<Port> ports,
-                     List<BlockPos> redstonePorts, Dynamo dynamo) {
+                     List<BlockPos> redstonePorts, List<BlockPos> computers, Dynamo dynamo) {
     record Port(BlockPos pos, Direction side, Part part) {}
 
     record Validation(TurbineLayout layout, Component message) {}
 
-    record Dynamo(Map<BlockPos, Part> parts, int inletCoils, int outletCoils, double conductivity) {}
+    record Dynamo(Map<BlockPos, Part> parts, Map<BlockPos, Part> installed, int inletCoils, int outletCoils, double conductivity) {}
 
     int bladeSets() {
         return (int) stages.stream().filter(stage -> stage.efficiency > 0).count();
@@ -59,6 +59,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
         List<BlockPos> redstone = new ArrayList<>();
         Set<BlockPos> bearings = new HashSet<>();
         Map<BlockPos, Part> coils = new LinkedHashMap<>();
+        List<BlockPos> computers = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             int edge = bounds.boundaryAxes(pos);
             if (edge == 0) {
@@ -83,6 +84,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                 case INLET, OUTLET -> valves.add(new Port(pos.immutable(), bounds.outward(pos), part));
                 case BEARING -> bearings.add(pos.immutable());
                 case REDSTONE -> redstone.add(pos.immutable());
+                case COMPUTER -> computers.add(pos.immutable());
                 default -> {
                     if (part.dynamo()) {
                         coils.put(pos.immutable(), part);
@@ -167,7 +169,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
         List<Port> ports = new ArrayList<>(valves);
         dynamo.parts.forEach((pos, part) -> ports.add(new Port(pos, bounds.outward(pos), part)));
         return new Validation(new TurbineLayout(bounds, flow, shaft, blade, List.copyOf(stages), Map.copyOf(rotor),
-                Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), dynamo),
+                Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), List.copyOf(computers), dynamo),
                 Component.translatable("message.nuclearcraft.turbine.assembled"));
     }
 
@@ -204,7 +206,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             }
         }
         int bearingsPerSide = bearings.size() / 2;
-        return new Dynamo(Map.copyOf(valid), inlet, outlet, 0.5D * (inletConductivity / Math.max(bearingsPerSide, inlet)
+        return new Dynamo(Map.copyOf(valid), Map.copyOf(coils), inlet, outlet, 0.5D * (inletConductivity / Math.max(bearingsPerSide, inlet)
                 + outletConductivity / Math.max(bearingsPerSide, outlet)));
     }
 

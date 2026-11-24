@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import org.jetbrains.annotations.Nullable;
 import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.core.BlockPos;
@@ -33,6 +34,24 @@ final class PebbleCooling {
     FluidTank tank(NCGasCoolants gas, boolean output) {
         Tanks tanks = circuits.computeIfAbsent(gas, Tanks::new);
         return output ? tanks.hot : tanks.cold;
+    }
+
+    void clearMaterial() {
+        for (var circuit : circuits.values()) {
+            circuit.cold.setFluid(FluidStack.EMPTY);
+            circuit.hot.setFluid(FluidStack.EMPTY);
+        }
+        credit.clear();
+        owner.setChanged();
+    }
+
+    @Nullable FluidTank existingTank(NCGasCoolants gas, boolean output) {
+        Tanks tanks = circuits.get(gas);
+        return tanks == null ? null : output ? tanks.hot : tanks.cold;
+    }
+
+    double progress(BlockPos pos) {
+        return credit.getOrDefault(pos, 0D);
     }
 
     void resize(SolidFissionLayout layout) {

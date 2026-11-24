@@ -271,6 +271,11 @@ public final class Infiltrator extends MachineController {
         setChanged();
     }
 
+    @Override
+    ProcessStatus computerProcess() {
+        return new ProcessStatus(processing(), progress, Math.max(1D, duration), energyPerTick);
+    }
+
     boolean processing() { return assembled() && processing; }
     int chambers() { return chambers; }
     double progressFraction() { return duration > 0 ? Math.min(1, progress / duration) : 0; }

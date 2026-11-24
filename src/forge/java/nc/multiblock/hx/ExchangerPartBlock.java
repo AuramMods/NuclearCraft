@@ -1,5 +1,10 @@
 package nc.multiblock.hx;
 
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
@@ -10,12 +15,13 @@ import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import nc.NuclearCraft;
+import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.Cuboid;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class ExchangerPartBlock extends Block {
     public enum Part {
-        CASING, GLASS, REDSTONE, BAFFLE, CONDENSER, CONTROLLER, INLET, OUTLET, COPPER, HARD_CARBON, THERMOCONDUCTING;
+        CASING, GLASS, COMPUTER, REDSTONE, BAFFLE, CONDENSER, CONTROLLER, INLET, OUTLET, COPPER, HARD_CARBON, THERMOCONDUCTING;
 
         boolean controller() {
             return this == CONTROLLER || this == CONDENSER;
@@ -60,6 +66,23 @@ public class ExchangerPartBlock extends Block {
             ChunkPos chunk = event.getChunk().getPos();
             Cuboid.visitNearby(level, chunk, ExchangerLayout.maxLength(), ExchangerController.class,
                     controller -> controller.chunkUnloaded(chunk));
+        }
+    }
+
+    public static final class Computer extends ExchangerPartBlock implements EntityBlock {
+        public Computer(Properties properties) {
+            super(properties, Part.COMPUTER);
+        }
+
+        @Override
+        public ComputerPort newBlockEntity(BlockPos pos, BlockState state) {
+            return new ComputerPort(pos, state);
+        }
+
+        @Override
+        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                     BlockHitResult hit) {
+            return ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

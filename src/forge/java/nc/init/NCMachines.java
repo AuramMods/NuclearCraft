@@ -99,6 +99,7 @@ public final class NCMachines {
                         : BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK);
                 return switch (part) {
                     case FRAME -> new MachinePartBlock.Frame(properties);
+                    case COMPUTER -> new MachinePartBlock.Computer(properties);
                     case REDSTONE -> new MachinePartBlock.Redstone(properties);
                     case REBOILER, INFILTRATOR_HEATER -> new MachinePartBlock.Active(properties, part);
                     case ANODE_TERMINAL, CATHODE_TERMINAL -> new MachinePartBlock.Terminal(properties, part);

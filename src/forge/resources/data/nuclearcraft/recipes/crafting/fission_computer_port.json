@@ -1,0 +1,35 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "computercraft"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "PMP",
+        "CFC",
+        "PBP"
+    ],
+    "key": {
+        "M": {
+            "item": "computercraft:wired_modem"
+        },
+        "C": {
+            "item": "computercraft:cable"
+        },
+        "B": {
+            "item": "computercraft:computer_normal"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_computer_port"
+    }
+}

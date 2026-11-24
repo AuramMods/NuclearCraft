@@ -202,6 +202,7 @@ public final class NCRegistries {
                         output.accept(CENTRIFUGE_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
+                        NCComputerPorts.displayItems(output);
                         NCGenerators.displayItems(output);
                         NCBatteries.displayItems(output);
                         NCDistributors.displayItems(output);

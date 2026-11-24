@@ -1,0 +1,35 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "computercraft"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "HMH",
+        "CFC",
+        "HBH"
+    ],
+    "key": {
+        "M": {
+            "item": "computercraft:wired_modem"
+        },
+        "C": {
+            "item": "computercraft:cable"
+        },
+        "B": {
+            "item": "computercraft:computer_normal"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "H": {
+            "tag": "forge:ingots/hsla_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:turbine_computer_port"
+    }
+}

@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 final class HeatExchange {
-    record Activity(int circuits, int tubes, double heatRate) {
-        static final Activity IDLE = new Activity(0, 0, 0D);
+    record Activity(int circuits, int tubes, double heatRate, double shellSpeed, double temperatureDifference) {
+        static final Activity IDLE = new Activity(0, 0, 0D, 0D, 0D);
     }
 
     private record Batch(Circuit circuit, HeatExchangerRecipe recipe, FluidStack product, double heat, int batches) {
@@ -41,7 +41,7 @@ final class HeatExchange {
     }
 
     private record Proposal(ExchangerLayout.Network network, Batch tube, double shared,
-                            double tubeMultiplier, double shellMultiplier) {}
+                            double tubeMultiplier, double shellMultiplier, double temperatureDifference) {}
 
     private HeatExchange() {}
 
@@ -58,7 +58,9 @@ final class HeatExchange {
             if (tube == null || tube.recipe().heating() == shellBatch.recipe().heating()) {
                 continue;
             }
-            double shared = sharedRate(network, tube.recipe(), shellBatch.recipe());
+            double difference = meanDifference(network, tube.recipe(), shellBatch.recipe());
+            double shared = difference * tube.recipe().flowMultiplier(network.tubeFlow())
+                    * shellBatch.recipe().flowMultiplier(network.shellFlow());
             double tubeMultiplier = tube.recipe().heating() ? network.retainedConductivity() : network.conductivity();
             double shellMultiplier = tube.recipe().heating() ? network.conductivity() : network.retainedConductivity();
             if (shared <= 0D || tubeMultiplier <= 0D || shellMultiplier <= 0D) {
@@ -66,7 +68,7 @@ final class HeatExchange {
             }
             double offered = Math.min(shared, tube.demand() / tubeMultiplier);
             if (offered > 0D) {
-                proposals.add(new Proposal(network, tube, offered, tubeMultiplier, shellMultiplier));
+                proposals.add(new Proposal(network, tube, offered, tubeMultiplier, shellMultiplier, difference));
                 shellDemand += offered * shellMultiplier;
             }
         }
@@ -78,6 +80,7 @@ final class HeatExchange {
         double shellRate = Math.min(1D, shellBatch.demand() / shellDemand);
         double heatRate = 0D;
         double shellExchange = 0D;
+        double totalDifference = 0D;
         int usefulTubes = 0;
         for (Proposal proposal : proposals) {
             double exchanged = proposal.shared() * shellRate;
@@ -85,12 +88,14 @@ final class HeatExchange {
             shellExchange += exchanged * proposal.shellMultiplier();
             heatRate += exchanged * proposal.network().conductivity();
             usefulTubes += proposal.network().usefulTubes();
+            totalDifference += proposal.temperatureDifference() * proposal.network().usefulTubes();
         }
         shellBatch.exchange(shellExchange);
-        return new Activity(proposals.size(), usefulTubes, heatRate);
+        return new Activity(proposals.size(), usefulTubes, heatRate, shellExchange / shellBatch.heat(),
+                usefulTubes == 0 ? 0D : totalDifference / usefulTubes);
     }
 
-    private static double sharedRate(ExchangerLayout.Network network, HeatExchangerRecipe tube, HeatExchangerRecipe shell) {
+    private static double meanDifference(ExchangerLayout.Network network, HeatExchangerRecipe tube, HeatExchangerRecipe shell) {
         int shellStart = network.counterflow() ? shell.outputTemperature() : shell.inputTemperature();
         int shellEnd = network.counterflow() ? shell.inputTemperature() : shell.outputTemperature();
         double start = (double) tube.inputTemperature() - shellStart;
@@ -99,7 +104,6 @@ final class HeatExchange {
         if (sum == 0D || tube.heating() != (sum < 0D) || start * end < 0D) {
             return 0D;
         }
-        return HeatExchangerConfig.meanDifference(start, end) * tube.flowMultiplier(network.tubeFlow())
-                * shell.flowMultiplier(network.shellFlow());
+        return HeatExchangerConfig.meanDifference(start, end);
     }
 }

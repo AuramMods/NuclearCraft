@@ -67,6 +67,16 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         return reservedFuel;
     }
 
+    double computerProgress() {
+        return progress;
+    }
+
+    void clearMaterial() {
+        reservedFuel = ItemStack.EMPTY;
+        progress = 0D;
+        setChanged();
+    }
+
     void primeWith(double efficiency) {
         if (efficiency > sourceEfficiency) {
             sourceEfficiency = efficiency;

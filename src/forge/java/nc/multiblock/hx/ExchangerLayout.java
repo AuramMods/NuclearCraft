@@ -19,7 +19,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 
-record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, List<BlockPos> redstone) {
+record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, List<Tube> tubes,
+                       List<BlockPos> redstone, List<BlockPos> computers) {
     record Port(BlockPos pos, Direction side, boolean outlet, BlockPos circuit) {}
     record Network(BlockPos anchor, int tubeCount, int usefulTubes, double conductivity, double retainedConductivity,
                    Vec3 tubeFlow, Vec3 shellFlow, double flowCosine) {
@@ -27,6 +28,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             return flowCosine < 1D / HeatExchangerConfig.maxSize();
         }
     }
+    record Tube(BlockPos pos, Vec3 tubeFlow, Vec3 shellFlow) {}
     record Validation(ExchangerLayout layout, String error, BlockPos position) {}
     private record TubeNetwork(BlockPos anchor, int tubeCount, Map<BlockPos, Vec3> flow) {}
 
@@ -49,6 +51,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
         Map<BlockPos, Direction> portSides = new LinkedHashMap<>();
         Set<BlockPos> outlets = new HashSet<>();
         List<BlockPos> redstone = new ArrayList<>();
+        List<BlockPos> computers = new ArrayList<>();
         for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(cursor);
             Part part = ExchangerPartBlock.part(state);
@@ -69,6 +72,8 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                 continue;
             } else if (region != 1 || part == null) {
                 return error("wall", cursor);
+            } else if (part == Part.COMPUTER) {
+                computers.add(cursor.immutable());
             } else if (part.controller() && cursor.equals(controller)) {
                 continue;
             } else if (part == Part.INLET || part == Part.OUTLET) {
@@ -164,13 +169,20 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             shellFlow = ExchangerFlow.directions(entries, exits, shellLink);
         }
 
+        Map<BlockPos, Vec3> tubeFlow = new HashMap<>();
         List<Network> networks = new ArrayList<>();
         for (TubeNetwork tube : tubeNetworks) {
+            tubeFlow.putAll(tube.flow());
             networks.add(network(tubes, tube, shellFlow, condenser));
         }
         List<Port> ports = portSides.entrySet().stream().map(port -> new Port(port.getKey(), port.getValue(),
                 outlets.contains(port.getKey()), bindings.get(port.getKey()))).toList();
-        return new Validation(new ExchangerLayout(bounds, ports, List.copyOf(networks), List.copyOf(redstone)), null, null);
+        List<Tube> installed = new ArrayList<>();
+        for (BlockPos pos : tubes.keySet()) {
+            installed.add(new Tube(pos, tubeFlow.getOrDefault(pos, Vec3.ZERO), shellFlow.getOrDefault(pos, Vec3.ZERO)));
+        }
+        return new Validation(new ExchangerLayout(bounds, ports, List.copyOf(networks),
+                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers)), null, null);
     }
 
     private static Network network(Map<BlockPos, BlockState> tubeStates, TubeNetwork tube,
@@ -193,12 +205,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                 totalShellFlow = totalShellFlow.add(shellFlow);
                 flowCosine += tubeFlow.dot(shellFlow);
             }
-            int material = switch (ExchangerPartBlock.part(tubeStates.get(entry.getKey()))) {
-                case COPPER -> 0;
-                case HARD_CARBON -> 1;
-                case THERMOCONDUCTING -> 2;
-                default -> throw new IllegalStateException("Non-tube in heat exchanger");
-            };
+            int material = tubeMaterial(tubeStates.get(entry.getKey()));
             double coefficient = HeatExchangerConfig.conductivity(material);
             conductivity += coefficient;
             retainedConductivity += coefficient * HeatExchangerConfig.retention(material);
@@ -206,6 +213,15 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
         double inverse = usefulTubes == 0 ? 0D : 1D / usefulTubes;
         return new Network(tube.anchor(), tube.tubeCount(), usefulTubes, conductivity, retainedConductivity,
                 totalTubeFlow.scale(inverse), totalShellFlow.scale(inverse), flowCosine * inverse);
+    }
+
+    static int tubeMaterial(BlockState state) {
+        return switch (ExchangerPartBlock.part(state)) {
+            case COPPER -> 0;
+            case HARD_CARBON -> 1;
+            case THERMOCONDUCTING -> 2;
+            default -> throw new IllegalStateException("Non-tube in heat exchanger");
+        };
     }
 
     private static boolean tubeOpen(Map<BlockPos, BlockState> tubes, BlockPos pos, Direction side) {

@@ -78,6 +78,13 @@ final class IrradiatorItems extends ItemStackHandler {
         return !getStackInSlot(0).isEmpty() || !getStackInSlot(1).isEmpty();
     }
 
+    void clearMaterial() {
+        Arrays.fill(overflow, ItemStack.EMPTY);
+        for (int slot = 0; slot < getSlots(); slot++) {
+            setStackInSlot(slot, ItemStack.EMPTY);
+        }
+    }
+
     void dropContents(Level level) {
         var pos = owner.getBlockPos();
         for (int slot = 0; slot < getSlots(); slot++) {

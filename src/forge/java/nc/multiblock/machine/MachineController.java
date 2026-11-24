@@ -2,6 +2,7 @@ package nc.multiblock.machine;
 
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
+import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,9 +23,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class MachineController extends BlockEntity {
+abstract class MachineController extends BlockEntity implements ComputerPort.Controller {
     protected @Nullable Cuboid bounds;
     private final Part controllerPart;
+    private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private List<MachinePort> ports = List.of();
     private List<BlockPos> redstone = List.of();
     private List<BlockPos> frames = List.of();
@@ -54,6 +56,11 @@ abstract class MachineController extends BlockEntity {
         afterTransfers(server);
     }
 
+    @Override
+    public Cuboid computerBounds() {
+        return assembled() && level instanceof ServerLevel server && bounds.isLoaded(server) ? bounds : null;
+    }
+
     public final boolean assembled() { return bounds != null && !isRemoved(); }
     public final boolean halted() { return halted; }
     final long power() { return power; }
@@ -66,9 +73,19 @@ abstract class MachineController extends BlockEntity {
     }
 
     final void toggle() {
-        halted = !halted;
-        setChanged();
+        setHalted(!halted);
     }
+
+    final void setHalted(boolean halt) {
+        if (halted != halt) {
+            halted = halt;
+            setChanged();
+        }
+    }
+
+    record ProcessStatus(boolean processing, double progress, double duration, long power) {}
+
+    abstract ProcessStatus computerProcess();
 
     final boolean blockedByRedstone(ServerLevel server) {
         return halted || server.hasNeighborSignal(worldPosition) || redstone.stream().anyMatch(server::hasNeighborSignal);
@@ -104,6 +121,7 @@ abstract class MachineController extends BlockEntity {
 
         var installedPorts = new ArrayList<MachinePort>();
         var installedRedstone = new ArrayList<BlockPos>();
+        var installedComputers = new ArrayList<BlockPos>();
         var edgeFrames = new ArrayList<BlockPos>();
         for (BlockPos pos : BlockPos.betweenClosed(found.min(), found.max())) {
             int boundary = found.boundaryAxes(pos);
@@ -128,7 +146,11 @@ abstract class MachineController extends BlockEntity {
                     fail("wall");
                     return;
                 }
-            } else if (part == Part.REDSTONE) installedRedstone.add(pos.immutable());
+            } else if (part == Part.REDSTONE) {
+                installedRedstone.add(pos.immutable());
+            } else if (part == Part.COMPUTER) {
+                installedComputers.add(pos.immutable());
+            }
         }
 
         String error = validateLayout(server, found);
@@ -139,6 +161,7 @@ abstract class MachineController extends BlockEntity {
 
         disconnect();
         bounds = found;
+        computerPorts.bind(server, installedComputers);
         ports = List.copyOf(installedPorts);
         redstone = List.copyOf(installedRedstone);
         frames = List.copyOf(edgeFrames);
@@ -171,6 +194,7 @@ abstract class MachineController extends BlockEntity {
     }
 
     private void disconnect() {
+        computerPorts.unbind();
         bounds = null;
         for (var port : ports) port.unbind(this);
         ports = List.of();

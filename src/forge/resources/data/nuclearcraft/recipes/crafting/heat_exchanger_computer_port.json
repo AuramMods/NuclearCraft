@@ -1,0 +1,35 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "computercraft"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "SMS",
+        "CFC",
+        "SBS"
+    ],
+    "key": {
+        "M": {
+            "item": "computercraft:wired_modem"
+        },
+        "C": {
+            "item": "computercraft:cable"
+        },
+        "B": {
+            "item": "computercraft:computer_normal"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:heat_exchanger_computer_port"
+    }
+}

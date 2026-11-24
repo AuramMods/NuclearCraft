@@ -256,6 +256,11 @@ public final class LargeElectrolyzer extends MachineController {
         setChanged();
     }
 
+    @Override
+    ProcessStatus computerProcess() {
+        return new ProcessStatus(processing(), progress, Math.max(1D, duration), energyPerTick);
+    }
+
     boolean processing() { return assembled() && processing; }
     int terminalPairs() { return layout == null || !assembled() ? 0 : layout.terminals().size() / 2; }
     double progressFraction() { return duration > 0 ? Math.min(1, progress / duration) : 0; }

@@ -49,6 +49,15 @@ final class SaltCooling {
         return fraction != null && fraction.coolant() == coolant ? fraction.amount() : 0;
     }
 
+    void clearMaterial() {
+        for (var circuit : circuits.values()) {
+            circuit.cold.setFluid(FluidStack.EMPTY);
+            circuit.hot.setFluid(FluidStack.EMPTY);
+        }
+        credit.clear();
+        owner.setChanged();
+    }
+
     void resize(SolidFissionLayout layout) {
         var counts = new EnumMap<NCSaltCoolants, Integer>(NCSaltCoolants.class);
         for (var port : layout.ports()) {

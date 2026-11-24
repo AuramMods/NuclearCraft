@@ -1,6 +1,9 @@
 package nc.multiblock.fission;
 
+import nc.multiblock.Cuboid;
+import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
+import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
@@ -44,7 +47,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public final class SolidFissionController extends BlockEntity implements MenuProvider {
+public final class SolidFissionController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int BASE_TANK_CAPACITY = 4_000;
     private static final int WATER_HEAT_PER_MB = 64;
     private static final int STEAM_PER_WATER = 4;
@@ -63,6 +66,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final Map<BlockPos, Long> clusterHeat = new HashMap<>();
     private final Map<ResourceLocation, IrradiatorItems> irradiationBanks = new HashMap<>();
 
+    private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private SolidFissionLayout layout;
     private SolidFissionCore core;
     private Component validationMessage = Component.translatable("message.nuclearcraft.fission.checking");
@@ -83,6 +87,11 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         gasCooling = variant == FissionVariant.PEBBLE ? new PebbleCooling(this) : null;
         saltCooling = variant == FissionVariant.SALT ? new SaltCooling(this) : null;
         saltFuel = variant == FissionVariant.SALT ? new SaltFuelBank(this) : null;
+    }
+
+    @Override
+    public Cuboid computerBounds() {
+        return assembled() ? layout.bounds() : null;
     }
 
     public boolean assembled() {
@@ -148,7 +157,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         var decaySettings = layout == null ? null : NCFission.decaySettings();
         if (layout != null && (requested || decaySettings != null)) {
             SolidFissionCore.Heat generated = core.tick(server, inventory, clusterHeat, gasCooling, saltFuel, saltCooling,
-                    requested, decaySettings);
+                    requested, decaySettings, computerPorts.hasPorts());
             if (!generated.overheatedCells().isEmpty()) {
                 melt(server, generated.overheatedCells());
                 return;
@@ -168,6 +177,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             if (active || generated.storedHeatChanged()) {
                 setChanged();
             }
+        }
+        if (layout != null && !requested && decaySettings == null && computerPorts.hasPorts()) {
+            core.resetTelemetry();
         }
         if (layout != null && !requested && variant != FissionVariant.SOLID && casingHeat > 0) {
             coolCasing();
@@ -201,6 +213,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         disassemble();
         layout = found;
+        computerPorts.bind(server, layout.computers());
         core = new SolidFissionCore(layout);
         casingHeat = Math.min(casingHeat, heatCapacity());
         int capacity = BASE_TANK_CAPACITY * layout.bounds().capacityMultiplier();
@@ -247,6 +260,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     private void disassemble() {
+        computerPorts.unbind();
         SolidFissionLayout previous = layout;
         layout = null;
         core = null;
@@ -410,7 +424,61 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
     }
 
-    private long heatCapacity() {
+    SolidFissionLayout computerLayout() { return layout; }
+    SolidFissionCore computerCore() { return core; }
+    long computerHeat() { return casingHeat; }
+
+    double computerTemperature() {
+        BlockPos center = layout.bounds().min().offset(layout.bounds().xLength() / 2,
+                layout.bounds().yLength() / 2, layout.bounds().zLength() / 2);
+        double ambient = 273.15D + 20D * level.getBiome(center).value().getBaseTemperature();
+        return ambient + (2400D - ambient) * (double) casingHeat / heatCapacity();
+    }
+
+    boolean computerOn() {
+        return getBlockState().getValue(FissionWallBlock.ACTIVE);
+    }
+
+    @Nullable FluidTank existingGasTank(NCGasCoolants gas, boolean output) {
+        return gasCooling == null ? null : gasCooling.existingTank(gas, output);
+    }
+
+    double gasProgress(BlockPos pos) {
+        return gasCooling == null ? 0D : gasCooling.progress(pos);
+    }
+
+    void computerClear() {
+        for (int slot = 0; slot < inventory.getSlots(); slot++) {
+            inventory.setStackInSlot(slot, ItemStack.EMPTY);
+        }
+        coolant.setFluid(FluidStack.EMPTY);
+        steam.setFluid(FluidStack.EMPTY);
+        if (gasCooling != null) gasCooling.clearMaterial();
+        if (saltFuel != null) saltFuel.clearMaterial();
+        if (saltCooling != null) saltCooling.clearMaterial();
+        for (BlockPos pos : layout.cells()) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity instanceof FissionFuelCell cell) {
+                cell.clearMaterial();
+            } else if (entity instanceof SaltVessel vessel) {
+                vessel.clearMaterial();
+            }
+        }
+        for (BlockPos pos : layout.irradiators()) {
+            if (level.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
+                irradiator.clearMaterial();
+            }
+        }
+        for (SolidFissionLayout.Port port : layout.ports()) {
+            if (port.role() == Role.IRRADIATOR_PORT
+                    && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
+                entity.localIrradiatorItems().clearMaterial();
+            }
+        }
+        setChanged();
+    }
+
+    long heatCapacity() {
         return layout == null ? 0 : SolidFissionCore.BASE_HEAT_CAPACITY * layout.bounds().capacityMultiplier();
     }
 

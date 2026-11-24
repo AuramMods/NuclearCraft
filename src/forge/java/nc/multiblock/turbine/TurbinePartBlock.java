@@ -1,7 +1,13 @@
 package nc.multiblock.turbine;
 
 import nc.NuclearCraft;
+import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.Cuboid;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -18,7 +24,7 @@ public class TurbinePartBlock extends Block {
     static final int MAX_INTERIOR_LENGTH = 24;
 
     public enum Part {
-        CASING, GLASS, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
+        CASING, GLASS, COMPUTER, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
         STEEL(1.0, 1.4), EXTREME(1.1, 1.6), SIC_SIC_CMC(1.2, 1.8), STATOR(-1, 0.75),
         MAGNESIUM(0.88), BERYLLIUM(0.90), ALUMINUM(1.00), GOLD(1.04), COPPER(1.06), SILVER(1.12),
         CONNECTOR, REDSTONE;
@@ -89,6 +95,23 @@ public class TurbinePartBlock extends Block {
             ChunkPos pos = event.getChunk().getPos();
             Cuboid.visitNearby(level, pos, MAX_INTERIOR_LENGTH + 2, TurbineController.class,
                     controller -> controller.chunkUnloaded(pos));
+        }
+    }
+
+    public static final class Computer extends TurbinePartBlock implements EntityBlock {
+        public Computer(Properties properties) {
+            super(properties, Part.COMPUTER);
+        }
+
+        @Override
+        public ComputerPort newBlockEntity(BlockPos pos, BlockState state) {
+            return new ComputerPort(pos, state);
+        }
+
+        @Override
+        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                     BlockHitResult hit) {
+            return ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

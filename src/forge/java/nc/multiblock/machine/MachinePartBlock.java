@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.NuclearCraft;
+import nc.multiblock.computer.ComputerPort;
 import nc.init.NCHeatExchangers;
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
@@ -38,7 +39,7 @@ import java.util.Locale;
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class MachinePartBlock extends Block {
     public enum Part {
-        FRAME("machine_frame"), GLASS("machine_glass"), PROCESS("machine_process_port"),
+        FRAME("machine_frame"), GLASS("machine_glass"), COMPUTER("machine_computer_port"), PROCESS("machine_process_port"),
         RESERVOIR("machine_reservoir_port"), REDSTONE("machine_redstone_port"), POWER("machine_power_port"),
         DECAY_POOL("decay_pool_controller"), CONTAINER("decay_pool_container"),
         DISTILLER("distiller_controller"), SIEVE_TRAY("distiller_sieve_tray"),
@@ -243,6 +244,23 @@ public class MachinePartBlock extends Block {
             if (setting == null) return InteractionResult.PASS;
             player.displayClientMessage(setting, true);
             return InteractionResult.CONSUME;
+        }
+    }
+
+    public static final class Computer extends MachinePartBlock implements EntityBlock {
+        public Computer(Properties properties) {
+            super(properties, Part.COMPUTER);
+        }
+
+        @Override
+        public ComputerPort newBlockEntity(BlockPos pos, BlockState state) {
+            return new ComputerPort(pos, state);
+        }
+
+        @Override
+        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                     BlockHitResult hit) {
+            return ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

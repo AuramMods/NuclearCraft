@@ -139,5 +139,11 @@
 	"tooltip.nuclearcraft.machine_interface": "扩展相邻核电工艺机器的各面连接。",
 	"nc.guide_book.name": "核电工艺指导手册",
 	"nc.guide_book.edition": "重制版",
-	"nc.guide_book.desc": "核电工艺是一个以核能发电为中心的科技模组。为了游戏体验，这些特性比之现实，有大幅简化与抽象，故和现实有一定差异。"
+	"nc.guide_book.desc": "核电工艺是一个以核能发电为中心的科技模组。为了游戏体验，这些特性比之现实，有大幅简化与抽象，故和现实有一定差异。",
+	"block.nuclearcraft.fission_computer_port": "裂变电脑端口",
+	"block.nuclearcraft.heat_exchanger_computer_port": "热交换器电脑端口",
+	"block.nuclearcraft.turbine_computer_port": "涡轮机电脑端口",
+	"block.nuclearcraft.machine_computer_port": "大型机器电脑端口",
+	"message.nuclearcraft.computer_port.attached": "电脑端口已连接至多方块结构。",
+	"message.nuclearcraft.computer_port.detached": "电脑端口正在等待多方块结构组装。"
 }

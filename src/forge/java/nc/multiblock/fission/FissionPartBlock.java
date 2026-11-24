@@ -1,8 +1,14 @@
 package nc.multiblock.fission;
 
 import nc.NuclearCraft;
+import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
 import nc.multiblock.Cuboid;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.block.EntityBlock;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -30,7 +36,7 @@ public class FissionPartBlock extends Block {
             ResourceKey.create(Registries.DAMAGE_TYPE, NuclearCraft.id("fission_burn"));
 
     public enum Role {
-        CASING, GLASS, MONITOR, POWER_PORT, CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER, VENT, FUEL_PORT, CHAMBER_PORT,
+        CASING, GLASS, COMPUTER, MONITOR, POWER_PORT, CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER, VENT, FUEL_PORT, CHAMBER_PORT,
         COOLER_PORT, VESSEL_PORT, HEATER_PORT, SOURCE, SOURCE_MANAGER, SHIELD_MANAGER, IRRADIATOR_PORT,
         CELL, PEBBLE_CHAMBER, VESSEL, HEAT_SINK, PEBBLE_COOLER, SALT_HEATER, MODERATOR, REFLECTOR, SHIELD, IRRADIATOR, CONDUCTOR
     }
@@ -113,6 +119,23 @@ public class FissionPartBlock extends Block {
             ChunkPos pos = event.getChunk().getPos();
             Cuboid.visitNearby(level, pos, MAX_INTERIOR_LENGTH + 2, SolidFissionController.class,
                     controller -> controller.chunkUnloaded(pos));
+        }
+    }
+
+    public static final class Computer extends FissionPartBlock implements EntityBlock {
+        public Computer(Properties properties) {
+            super(properties, Role.COMPUTER);
+        }
+
+        @Override
+        public ComputerPort newBlockEntity(BlockPos pos, BlockState state) {
+            return new ComputerPort(pos, state);
+        }
+
+        @Override
+        public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                     BlockHitResult hit) {
+            return ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

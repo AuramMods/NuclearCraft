@@ -2857,5 +2857,11 @@
     "item.nuclearcraft.glowing_ghoul_spawn_egg": "Glowing Ghoul Spawn Egg",
     "subtitles.nuclearcraft.feral_ghoul_charge": "Ghoul charges",
     "subtitles.nuclearcraft.feral_ghoul_death": "Ghoul dies",
-    "subtitles.nuclearcraft.wasteland_ambience": "Wasteland ambience"
+    "subtitles.nuclearcraft.wasteland_ambience": "Wasteland ambience",
+    "block.nuclearcraft.fission_computer_port": "Fission Computer Port",
+    "block.nuclearcraft.heat_exchanger_computer_port": "Heat Exchanger Computer Port",
+    "block.nuclearcraft.turbine_computer_port": "Turbine Computer Port",
+    "block.nuclearcraft.machine_computer_port": "Large Machine Computer Port",
+    "message.nuclearcraft.computer_port.attached": "Computer port connected to the multiblock.",
+    "message.nuclearcraft.computer_port.detached": "Computer port is waiting for the multiblock to assemble."
 }

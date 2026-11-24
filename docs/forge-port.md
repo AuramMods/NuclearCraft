@@ -277,6 +277,25 @@ The streaming save change passed all 163 local GameTests. Two packaged Forge 47.
 
 The simulator and decomposition code were ported from the original MIT-licensed source. Neohaul's modern qubit implementation served as a reference for measurement and multitool interactions. [Neohaul Quantum Computer Qubit](https://github.com/nathanrreed/Nuclearcraft-Neohaul/blob/a2b4bb7/src/main/java/com/nred/nuclearcraft/block_entity/quantum/QuantumComputerQubitEntity.java)
 
+### Multiblock computer ports
+
+The four legacy computer port block IDs are unchanged. Map their block entities to `nuclearcraft:computer_port` when converting an older save. Install each port on a face of its matching multiblock. Right-clicking the port reports whether its controller is assembled. The blocks and their textures load on Forge regardless of whether CC: Tweaked is installed. The crafting recipes use CC: Tweaked's wired modem, cable, and basic computer alongside the original NuclearCraft materials.
+
+| Computer port block | CC: Tweaked peripheral type | Supported multiblocks |
+| --- | --- | --- |
+| `nuclearcraft:fission_computer_port` | `nc_salt_fission_reactor` | Solid-fuel, pebble-bed, and molten-salt fission reactors |
+| `nuclearcraft:heat_exchanger_computer_port` | `nc_heat_exchanger` | Heat Exchanger and Condenser |
+| `nuclearcraft:turbine_computer_port` | `nc_turbine` | Steam Turbine |
+| `nuclearcraft:machine_computer_port` | `nc_machine` | Distiller, Infiltrator, Large Electrolyzer, and Decay Pool |
+
+To migrate an OpenComputers script, use `peripheral.find(type)` or `peripheral.wrap(side)` and check `isComplete()` before reading or controlling a multiblock. Dimensions describe the interior. Item and fluid entries return a quantity and a namespaced registry ID. Fission component lists and turbine stage lists return multiple Lua values. Fission cluster IDs are zero-based, and an unavailable cluster returns an empty table. The fission port also exposes pebble-bed chambers and coolers through `getNumberOfChambers`, `getNumberOfCoolers`, `getChamberStats`, and `getCoolerStats`.
+
+`activate` and `deactivate` on exchangers and turbines control a saved computer activation flag. Manual and redstone activation still apply. `haltProcess` and `resumeProcess` share the large machine controller's saved manual halt setting. `clearAllMaterial` empties the controller's material buffers and reserved supplies. Exchanger input rate reports mB consumed on the last server tick. The Decay Pool reports its accumulated and required recipe heat as process progress because its recipes advance using decay heat.
+
+All 163 local GameTests passed. The packaged Forge 47.4.18 JAR launched with CC: Tweaked 1.120.2. Four in-world Lua computers read their respective controllers, including an active fission cluster, heat exchange rates, turbine generation, and the Decay Pool feed. All four ports detached from their controllers when the frame opened and rebound when repaired. A headless restart retained computer activation, stored turbine energy, and the machine halt. Lua then deactivated the exchanger and turbine, resumed the pool, and cleared material buffers. A separate deployment of the same JAR on clean Forge persisted all four blocks across a restart with no computer mod installed.
+
+The packaged JAR also loaded all four assemblies in the isolated 539-mod Auram instance. Its background client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible-window samples. The first implicit world save omitted block entities from two test chunks. An explicit integrated-server save in a fresh Auram world wrote all four ports and their controllers to disk.
+
 ### NuclearCraft Guide
 
 With Patchouli installed, `nuclearcraft:guide` has all 20 legacy entries, six categories, original page anchors, and English and Simplified Chinese text. Item and block diagrams use Forge registry IDs. The reactor, heat exchanger, and condenser entries explain how to run the ported machines. The Spaxelhoe chapter displays all four ported versions. The Tokamak chapter retains its legacy work-in-progress status.

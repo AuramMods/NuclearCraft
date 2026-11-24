@@ -1,10 +1,14 @@
 package nc.multiblock.hx;
 
+import nc.multiblock.Cuboid;
+import nc.multiblock.computer.ComputerPort;
+import nc.multiblock.computer.ComputerValues;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCHeatExchangers;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
@@ -26,28 +30,40 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
+import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public final class ExchangerController extends BlockEntity implements MenuProvider {
+public final class ExchangerController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int SHELL_CAPACITY_PER_BLOCK = 4000;
     private final boolean condenser;
     private final Circuit shell;
     private final Map<BlockPos, Circuit> circuits = new LinkedHashMap<>();
+    private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private ExchangerLayout layout;
     private Component validation = Component.translatable("message.nuclearcraft.exchanger.checking");
     private boolean dirty = true;
     private boolean enabled;
+    private boolean computerActivated;
     private int activeCircuits;
     private int activeTubes;
     private double heatRate;
+    private double shellSpeed;
+    private double temperatureDifference;
+    private int shellInputRate;
 
     public ExchangerController(BlockPos pos, BlockState state) {
         super((state.is(NCHeatExchangers.CONDENSER.get())
                 ? NCHeatExchangers.CONDENSER_ENTITY : NCHeatExchangers.CONTROLLER_ENTITY).get(), pos, state);
         condenser = state.is(NCHeatExchangers.CONDENSER.get());
         shell = new Circuit(stack -> condenser ? !stack.isEmpty() && temperature(stack) <= 300 : exchangeRecipe(stack) != null);
+    }
+
+    @Override
+    public Cuboid computerBounds() {
+        return assembled() ? layout.bounds() : null;
     }
 
     boolean assembled() {
@@ -66,23 +82,30 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             refresh(server);
         }
         activeCircuits = activeTubes = 0;
-        heatRate = 0D;
-        boolean on = layout != null && (enabled || server.hasNeighborSignal(worldPosition)
-                || layout.redstone().stream().anyMatch(server::hasNeighborSignal));
+        heatRate = shellSpeed = temperatureDifference = 0D;
+        shellInputRate = 0;
+        boolean on = computerOn();
         if (layout != null) {
             if (on && !shell.input.isEmpty()) {
+                int before = shell.input.getFluidAmount();
                 if (condenser) {
                     int shellTemperature = temperature(shell.input.getFluid());
                     double shellFraction = Math.min(1D, (double) shell.input.getFluidAmount() / shell.input.getCapacity());
                     for (ExchangerLayout.Network network : layout.networks()) {
                         condense(network, circuits.get(network.anchor()), shellTemperature, shellFraction);
                     }
+                    if (activeTubes > 0) {
+                        temperatureDifference /= activeTubes;
+                    }
                 } else {
                     HeatExchange.Activity activity = HeatExchange.tick(layout.networks(), shell, circuits, this::exchangeRecipe);
                     activeCircuits = activity.circuits();
                     activeTubes = activity.tubes();
                     heatRate = activity.heatRate();
+                    shellSpeed = activity.shellSpeed();
+                    temperatureDifference = activity.temperatureDifference();
                 }
+                shellInputRate = before - shell.input.getFluidAmount();
             }
             pushOutputs(server);
         }
@@ -110,6 +133,8 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             activeCircuits++;
             activeTubes += network.usefulTubes();
             heatRate += rate;
+            shellSpeed += rate / recipe.cooling();
+            temperatureDifference += mean * network.usefulTubes();
             circuit.process(recipe.id(), recipe.input().amount(), product, recipe.cooling(), capacity, rate);
         }
     }
@@ -186,6 +211,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             return;
         }
         layout = result.layout();
+        computerPorts.bind(server, layout.computers());
         var bounds = layout.bounds();
         BlockState state = getBlockState();
         if (state.getValue(ExchangerWallBlock.FACING) != bounds.outward(worldPosition)) {
@@ -231,6 +257,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     }
 
     private void disassemble() {
+        computerPorts.unbind();
         ExchangerLayout old = layout;
         layout = null;
         if (old != null && level instanceof ServerLevel server) {
@@ -282,6 +309,55 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         super.setRemoved();
     }
 
+    boolean computerOn() {
+        return assembled() && (enabled || computerActivated || level.hasNeighborSignal(worldPosition)
+                || layout.redstone().stream().anyMatch(level::hasNeighborSignal));
+    }
+
+    void computerActivate(boolean activated) {
+        if (computerActivated != activated) {
+            computerActivated = activated;
+            setChanged();
+        }
+    }
+
+    int computerActiveCircuits() { return activeCircuits; }
+    int computerActiveTubes() { return activeTubes; }
+    double computerShellSpeed() { return shellSpeed; }
+    int computerShellInputRate() { return shellInputRate; }
+    double computerHeatRate() { return heatRate; }
+    double computerTemperatureDifference() { return temperatureDifference; }
+    int computerNetworkCount() { return layout.networks().size(); }
+    int computerTubeCount() { return layout.tubes().size(); }
+
+    List<List<Object>> computerNetworks() {
+        return layout.networks().stream().map(network -> {
+            Circuit circuit = circuits.get(network.anchor());
+            return List.<Object>of(network.usefulTubes(), ComputerValues.vector(network.tubeFlow()),
+                    ComputerValues.vector(network.shellFlow()), network.flowCosine(), network.retainedConductivity(),
+                    network.conductivity(),
+                    List.of(ComputerValues.fluid(circuit.input.getFluid()), ComputerValues.fluid(circuit.output.getFluid())));
+        }).toList();
+    }
+
+    List<List<Object>> computerTubes() {
+        return layout.tubes().stream().map(tube -> {
+            BlockState state = level.getBlockState(tube.pos());
+            int material = ExchangerLayout.tubeMaterial(state);
+            List<String> settings = Arrays.stream(Direction.values())
+                    .map(side -> ExchangerTubeBlock.setting(state, side).getSerializedName()).toList();
+            return List.<Object>of(ComputerValues.position(tube.pos()), HeatExchangerConfig.conductivity(material),
+                    HeatExchangerConfig.retention(material), settings,
+                    ComputerValues.vector(tube.tubeFlow()), ComputerValues.vector(tube.shellFlow()));
+        }).toList();
+    }
+
+    void computerClear() {
+        shell.clear();
+        circuits.values().forEach(Circuit::clear);
+        setChanged();
+    }
+
     void toggle() {
         enabled = !enabled;
         setChanged();
@@ -291,6 +367,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("enabled", enabled);
+        tag.putBoolean("computerActivated", computerActivated);
         if (condenser) {
             tag.put("coolant", shell.input.writeToNBT(new CompoundTag()));
         } else {
@@ -313,6 +390,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         disassemble();
         dirty = true;
         enabled = tag.getBoolean("enabled");
+        computerActivated = tag.getBoolean("computerActivated");
         if (condenser) {
             shell.input.readFromNBT(tag.getCompound("coolant"));
         } else {
@@ -393,6 +471,13 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                 input.drain(batches * inputAmount, FluidAction.EXECUTE);
             }
             setChanged();
+        }
+
+        void clear() {
+            input.setFluid(FluidStack.EMPTY);
+            output.setFluid(FluidStack.EMPTY);
+            recipe = null;
+            credit = 0D;
         }
 
         CompoundTag save() {

@@ -32,6 +32,7 @@ public final class DecayPool extends MachineController {
     private final DecayReservoir reservoir = new DecayReservoir();
     private int containers;
     private double processHeat;
+    private double processHeatRequired = 1D;
     private @Nullable ResourceLocation heatingRecipe;
     private boolean processing;
     private float processRate;
@@ -147,6 +148,7 @@ public final class DecayPool extends MachineController {
             heatingRecipe = recipe.id();
             setChanged();
         }
+        processHeatRequired = recipe.heat();
         int feed = recipe.fluidInput().amount();
         var product = recipe.fluidResult();
         if (!output.isEmpty() && !output.getFluid().isFluidEqual(product)) return false;
@@ -174,6 +176,11 @@ public final class DecayPool extends MachineController {
     public int fuelCapacity() { return containers * DecayReservoir.ITEM_VOLUME; }
     public double heatingRate() { return reservoir.heatRate(); }
     public double decayRate() { return reservoir.decayRate(); }
+    @Override
+    ProcessStatus computerProcess() {
+        return new ProcessStatus(processing(), processHeat, processHeatRequired, 0L);
+    }
+
     public boolean processing() { return processing && assembled(); }
     @Override
     void clear() {
@@ -181,6 +188,7 @@ public final class DecayPool extends MachineController {
         input.setFluid(FluidStack.EMPTY);
         output.setFluid(FluidStack.EMPTY);
         processHeat = 0;
+        processHeatRequired = 1D;
         heatingRecipe = null;
         setChanged();
     }

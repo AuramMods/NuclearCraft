@@ -1,5 +1,8 @@
 package nc.multiblock.turbine;
 
+import nc.multiblock.Cuboid;
+import nc.multiblock.computer.ComputerPort;
+import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.core.BlockPos;
@@ -26,8 +29,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.stream.IntStream;
 
-public final class TurbineController extends BlockEntity implements MenuProvider {
+public final class TurbineController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int BASE_STEAM = 1000;
     private static final int BASE_EXHAUST = 4000;
     private static final int BASE_ENERGY = 16000;
@@ -41,11 +48,20 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     private boolean processing;
     private boolean dirty = true;
     private boolean enabled;
+    private boolean computerActivated;
+    private int inputRate;
+    private double idealExpansion = 1D;
+    private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private TurbineLayout layout;
     private Component validationMessage = Component.translatable("message.nuclearcraft.turbine.checking");
 
     public TurbineController(BlockPos pos, BlockState state) {
         super(NCTurbine.CONTROLLER_ENTITY.get(), pos, state);
+    }
+
+    @Override
+    public Cuboid computerBounds() {
+        return assembled() ? layout.bounds() : null;
     }
 
     public boolean assembled() {
@@ -63,8 +79,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         if (dirty || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
             refresh(server);
         }
-        boolean active = layout != null && (enabled || server.hasNeighborSignal(worldPosition)
-                || layout.redstonePorts().stream().anyMatch(server::hasNeighborSignal));
+        boolean active = computerOn();
         if (layout != null) {
             if (!runTurbine(server, active)) {
                 return;
@@ -84,6 +99,10 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         double previousTension = drive.tension();
         power = drive.tick(layout, recipe, consumed);
         processing = consumed > 0;
+        inputRate = consumed;
+        if (recipe != null) {
+            idealExpansion = recipe.expansion();
+        }
         if (power > 0) {
             energy += Math.min(Math.max(0, capacity - energy), power);
         }
@@ -253,6 +272,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
         disassemble();
         layout = found;
+        computerPorts.bind(server, layout.computers());
         capacity = (long) BASE_ENERGY * found.exteriorVolume();
         steam.setCapacity(BASE_STEAM * found.exteriorVolume());
         exhaust.setCapacity(BASE_EXHAUST * found.exteriorVolume());
@@ -280,6 +300,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     private void disassemble() {
+        computerPorts.unbind();
         TurbineLayout previous = layout;
         layout = null;
         if (previous == null || !(level instanceof ServerLevel server)) {
@@ -287,6 +308,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         }
         processing = false;
         power = 0;
+        inputRate = 0;
         drive.clearRotation();
         for (TurbineLayout.Port port : previous.ports()) {
             var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
@@ -324,6 +346,67 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         return (int) Math.min(Integer.MAX_VALUE, capacity);
     }
 
+    boolean computerOn() {
+        return assembled() && level instanceof ServerLevel server
+                && (enabled || computerActivated || server.hasNeighborSignal(worldPosition)
+                || layout.redstonePorts().stream().anyMatch(server::hasNeighborSignal));
+    }
+
+    void computerActivate(boolean active) {
+        if (computerActivated != active) {
+            computerActivated = active;
+            setChanged();
+        }
+    }
+
+    void computerClear() {
+        steam.setFluid(FluidStack.EMPTY);
+        exhaust.setFluid(FluidStack.EMPTY);
+        setChanged();
+    }
+
+    boolean computerProcessing() { return processing; }
+    long computerEnergy() { return energy; }
+    long computerCapacity() { return capacity; }
+    long computerPower() { return power; }
+    double computerConductivity() { return layout.dynamo().conductivity(); }
+    String computerFlow() { return layout.flow().getSerializedName(); }
+    int computerInputRate() { return inputRate; }
+    double computerIdealExpansion() { return idealExpansion; }
+    int computerDynamoCount() { return layout.dynamo().installed().size(); }
+
+    double computerTotalExpansion() {
+        double expansion = 1D;
+        for (TurbinePartBlock.Part stage : layout.stages()) expansion *= stage.expansion;
+        return expansion;
+    }
+
+    List<Double> computerExpansionLevels() {
+        var values = new ArrayList<Double>(layout.stages().size());
+        double expansion = 1D;
+        for (TurbinePartBlock.Part stage : layout.stages()) {
+            values.add(expansion * Math.sqrt(stage.expansion));
+            expansion *= stage.expansion;
+        }
+        return values;
+    }
+
+    List<Double> computerIdealLevels() {
+        int stages = layout.stages().size();
+        return IntStream.range(0, stages).mapToObj(stage -> Math.pow(idealExpansion, (stage + 0.5D) / stages)).toList();
+    }
+
+    List<Double> computerBladeEfficiencies() {
+        return layout.stages().stream().map(stage -> stage.efficiency).toList();
+    }
+
+    List<List<Object>> computerDynamoParts() {
+        return layout.dynamo().installed().entrySet().stream().sorted(Map.Entry.comparingByKey())
+                .map(entry -> List.<Object>of(ComputerValues.position(entry.getKey()),
+                        entry.getValue().name().toLowerCase(Locale.ROOT), layout.dynamo().parts().containsKey(entry.getKey())))
+                .toList();
+    }
+
     void toggle() {
         enabled = !enabled;
         setChanged();
@@ -336,6 +419,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         tag.put("exhaust", exhaust.writeToNBT(new CompoundTag()));
         tag.putLong("energy", energy);
         tag.putBoolean("enabled", enabled);
+        tag.putBoolean("computerActivated", computerActivated);
+        tag.putDouble("ideal_expansion", idealExpansion);
         drive.save(tag);
     }
 
@@ -346,6 +431,9 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         exhaust.readFromNBT(tag.getCompound("exhaust"));
         energy = Math.max(0, tag.getLong("energy"));
         enabled = tag.getBoolean("enabled");
+        computerActivated = tag.getBoolean("computerActivated");
+        double savedExpansion = tag.getDouble("ideal_expansion");
+        idealExpansion = Double.isFinite(savedExpansion) && savedExpansion > 0 ? savedExpansion : 1D;
         drive.load(tag);
         dirty = true;
     }

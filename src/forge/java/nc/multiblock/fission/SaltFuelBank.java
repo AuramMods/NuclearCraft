@@ -35,6 +35,14 @@ final class SaltFuelBank {
         return output ? circuit.output : circuit.input;
     }
 
+    void clearMaterial() {
+        for (var circuit : circuits.values()) {
+            circuit.input.setFluid(FluidStack.EMPTY);
+            circuit.output.setFluid(FluidStack.EMPTY);
+        }
+        owner.setChanged();
+    }
+
     @Nullable FluidTank existingTank(@Nullable ResourceLocation filter, boolean output) {
         Circuit circuit = circuits.get(filter);
         return circuit == null ? null : output ? circuit.output : circuit.input;
