@@ -13,12 +13,9 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
@@ -26,7 +23,6 @@ import java.util.List;
 
 final class NCMaterials {
     private static final List<RegistryObject<Item>> MATERIALS = new ArrayList<>();
-    private static final VoxelShape GLOWING_MUSHROOM_SHAPE = Block.box(5, 0, 5, 11, 6, 11);
 
     private static final RegistryObject<Item> SULFUR = item("sulfur_dust");
 
@@ -42,7 +38,8 @@ final class NCMaterials {
         for (String name : List.of("copper", "tin", "lead", "thorium", "uranium", "boron", "lithium", "magnesium")) {
             block(name + "_ore", BlockBehaviour.Properties.copy(Blocks.IRON_ORE));
         }
-        block("glowing_mushroom", BlockBehaviour.Properties.copy(Blocks.BROWN_MUSHROOM).lightLevel(state -> 15));
+        MATERIALS.add(NCWasteland.GLOWING_MUSHROOM_ITEM);
+        MATERIALS.add(NCWasteland.GLOWING_MUSHROOM_BLOCK_ITEM);
         block("soulless_sand", BlockBehaviour.Properties.copy(Blocks.SAND).strength(0.5F));
         block("soulless_sandstone", BlockBehaviour.Properties.copy(Blocks.SANDSTONE).strength(0.8F));
         block("molybdenum_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
@@ -145,17 +142,6 @@ final class NCMaterials {
                 @Override
                 public int getFireSpreadSpeed(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
                     return 5;
-                }
-            };
-            case "glowing_mushroom" -> new BushBlock(properties) {
-                @Override
-                protected boolean mayPlaceOn(BlockState state, BlockGetter level, BlockPos pos) {
-                    return state.isFaceSturdy(level, pos, Direction.UP);
-                }
-
-                @Override
-                public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-                    return GLOWING_MUSHROOM_SHAPE;
                 }
             };
             default -> new Block(properties);

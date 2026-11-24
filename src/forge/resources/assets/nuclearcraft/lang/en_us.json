@@ -2414,6 +2414,7 @@
     "item.nuclearcraft.mysterious_soul_bucket": "Mysterious Souls Bucket",
     "block.nuclearcraft.enricher": "Enricher",
     "block.nuclearcraft.glowing_mushroom": "Glowing Mushroom",
+    "block.nuclearcraft.glowing_mushroom_block": "Glowing Mushroom Block",
     "gui.nuclearcraft.fluid_processor.item_input": "Item",
     "gui.nuclearcraft.fluid_processor.item_sides": "Configure item input sides",
     "block.nuclearcraft.salt_fission_controller": "Molten Salt Fission Controller",

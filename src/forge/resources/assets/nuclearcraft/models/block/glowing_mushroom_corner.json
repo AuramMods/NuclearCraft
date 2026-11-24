@@ -1,0 +1,6 @@
+{
+    "parent": "nuclearcraft:block/glowing_mushroom_edge",
+    "textures": {
+        "west": "#skin"
+    }
+}

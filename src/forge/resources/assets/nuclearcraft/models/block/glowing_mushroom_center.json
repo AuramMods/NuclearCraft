@@ -1,0 +1,14 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "inside": "nuclearcraft:block/glowing_mushroom_block_inside",
+        "skin": "nuclearcraft:block/glowing_mushroom_block_skin",
+        "particle": "#inside",
+        "down": "#inside",
+        "up": "#skin",
+        "north": "#inside",
+        "east": "#inside",
+        "south": "#inside",
+        "west": "#inside"
+    }
+}

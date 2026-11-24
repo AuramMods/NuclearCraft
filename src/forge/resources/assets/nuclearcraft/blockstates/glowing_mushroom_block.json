@@ -1,0 +1,49 @@
+{
+    "variants": {
+        "variant=all_inside": {
+            "model": "nuclearcraft:block/glowing_mushroom_inside"
+        },
+        "variant=north_west": {
+            "model": "nuclearcraft:block/glowing_mushroom_corner"
+        },
+        "variant=north": {
+            "model": "nuclearcraft:block/glowing_mushroom_edge"
+        },
+        "variant=north_east": {
+            "model": "nuclearcraft:block/glowing_mushroom_corner",
+            "y": 90
+        },
+        "variant=west": {
+            "model": "nuclearcraft:block/glowing_mushroom_edge",
+            "y": 270
+        },
+        "variant=center": {
+            "model": "nuclearcraft:block/glowing_mushroom_center"
+        },
+        "variant=east": {
+            "model": "nuclearcraft:block/glowing_mushroom_edge",
+            "y": 90
+        },
+        "variant=south_west": {
+            "model": "nuclearcraft:block/glowing_mushroom_corner",
+            "y": 270
+        },
+        "variant=south": {
+            "model": "nuclearcraft:block/glowing_mushroom_edge",
+            "y": 180
+        },
+        "variant=south_east": {
+            "model": "nuclearcraft:block/glowing_mushroom_corner",
+            "y": 180
+        },
+        "variant=stem": {
+            "model": "nuclearcraft:block/glowing_mushroom_stem"
+        },
+        "variant=all_outside": {
+            "model": "nuclearcraft:block/glowing_mushroom_block"
+        },
+        "variant=all_stem": {
+            "model": "nuclearcraft:block/glowing_mushroom_all_stem"
+        }
+    }
+}

@@ -1,0 +1,6 @@
+{
+    "type": "forge:add_features",
+    "biomes": "#nuclearcraft:glowing_mushroom_biomes",
+    "features": "nuclearcraft:wasteland_glowing_mushroom",
+    "step": "vegetal_decoration"
+}
