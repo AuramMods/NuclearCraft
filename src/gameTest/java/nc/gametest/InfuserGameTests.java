@@ -9,6 +9,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
@@ -109,6 +110,39 @@ public final class InfuserGameTests {
         helper.succeedWhen(() -> helper.assertTrue(targetTank.getFluidInTank(0).getAmount() == ProcessorFluidTanks.CAPACITY
                         && sourceTank.getFluidInTank(0).getAmount() == 1100,
                 "Auto-output sends exactly what the recipient can accept and retains the rest"));
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 720)
+    public static void infusesTritiumLampAndSuppliesLight(GameTestHelper helper) {
+        helper.setBlock(INFUSER, Machine.INFUSER.block());
+        var processor = (ItemProcessorBlockEntity) helper.getBlockEntity(INFUSER);
+        var items = processor.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.UP).orElseThrow(AssertionError::new);
+        var inlet = fluid(processor, Direction.UP);
+        var tritium = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("tritium"));
+        helper.assertTrue(items.insertItem(0, new ItemStack(Blocks.GLASS), false).isEmpty(),
+                "The Infuser accepts glass for the lamp");
+        helper.assertTrue(inlet.fill(new FluidStack(tritium, 1000), FluidAction.EXECUTE) == 1000,
+                "The Infuser accepts a bucket of tritium");
+        helper.assertTrue(power.receiveEnergy(6000, false) == 6000, "The Infuser accepts the full batch charge");
+
+        var lamp = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("tritium_lamp"));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(items.getStackInSlot(1).is(lamp.asItem()), "The Infuser has yet to produce the lamp");
+            helper.assertTrue(items.getStackInSlot(0).isEmpty() && inlet.getFluidInTank(0).isEmpty()
+                    && power.getEnergyStored() == 0, "Production consumed the glass, tritium and 6,000 FE");
+            helper.setBlock(INFUSER.east(), lamp);
+            var state = helper.getBlockState(INFUSER.east());
+            helper.assertTrue(state.getLightEmission(helper.getLevel(), helper.absolutePos(INFUSER.east())) == 15,
+                    "The placed lamp supplies block light level 15");
+            helper.assertTrue(state.is(BlockTags.MINEABLE_WITH_PICKAXE), "A pickaxe can recover the lamp");
+            for (String id : new String[]{"fission_computer_port", "heat_exchanger_computer_port",
+                    "turbine_computer_port", "machine_computer_port", "quantum_computer_port"}) {
+                var block = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id(id));
+                helper.assertTrue(block.defaultBlockState().is(BlockTags.MINEABLE_WITH_PICKAXE),
+                        "A pickaxe can recover " + id);
+            }
+        });
     }
 
     private static IFluidHandler fluid(ItemProcessorBlockEntity processor, Direction side) {

@@ -2,6 +2,12 @@
     "replace": false,
     "values": [
         "nuclearcraft:bin",
+        "nuclearcraft:fission_computer_port",
+        "nuclearcraft:heat_exchanger_computer_port",
+        "nuclearcraft:turbine_computer_port",
+        "nuclearcraft:machine_computer_port",
+        "nuclearcraft:tritium_lamp",
+        "#nuclearcraft:quantum_computer_parts",
         "nuclearcraft:machine_interface",
         "nuclearcraft:radiation_scrubber",
         "nuclearcraft:geiger_block",

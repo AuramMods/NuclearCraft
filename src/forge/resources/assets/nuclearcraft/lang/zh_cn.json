@@ -145,5 +145,14 @@
 	"block.nuclearcraft.turbine_computer_port": "涡轮机电脑端口",
 	"block.nuclearcraft.machine_computer_port": "大型机器电脑端口",
 	"message.nuclearcraft.computer_port.attached": "电脑端口已连接至多方块结构。",
-	"message.nuclearcraft.computer_port.detached": "电脑端口正在等待多方块结构组装。"
+	"message.nuclearcraft.computer_port.detached": "电脑端口正在等待多方块结构组装。",
+	"item.nuclearcraft.portable_ender_chest": "便携末影箱",
+	"item.nuclearcraft.dominos": "达美乐大餐",
+	"item.nuclearcraft.smore": "棉花糖巧克力夹心饼干",
+	"item.nuclearcraft.moresmore": "双层棉花糖巧克力夹心饼干",
+	"item.nuclearcraft.foursmore": "四层棉花糖巧克力夹心饼干",
+	"item.nuclearcraft.fish_a_la_fred": "fish_a_la_fred",
+	"block.nuclearcraft.tritium_lamp": "氚灯",
+	"advancement.nuclearcraft.portable_ender_chest.name": "欢乐满人间",
+	"advancement.nuclearcraft.portable_ender_chest.desc": "制作一个便携末影箱"
 }

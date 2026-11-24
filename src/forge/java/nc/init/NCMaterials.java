@@ -1,5 +1,7 @@
 package nc.init;
 
+import nc.item.PortableEnderChestItem;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -45,6 +47,11 @@ final class NCMaterials {
         block("soulless_sandstone", BlockBehaviour.Properties.copy(Blocks.SANDSTONE).strength(0.8F));
         block("molybdenum_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
         block("copper_oxide_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
+        block("tritium_lamp", BlockBehaviour.Properties.copy(Blocks.GLASS).strength(3F, 15F)
+                .requiresCorrectToolForDrops().lightLevel(state -> 15).noOcclusion());
+        MATERIALS.add(NCRegistries.ITEMS.register("portable_ender_chest",
+                () -> new PortableEnderChestItem(new Item.Properties())));
+        food("dominos", 16, 1.8F, true, 600, 1, true, MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED);
         item("flour");
         item("roasted_cocoa_beans");
         item("ground_cocoa_nibs", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
@@ -64,10 +71,18 @@ final class NCMaterials {
         item("marshmallow", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.4F)
                 .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0, false, false), 1F).build()));
         item("graham_cracker", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
-        food("pikelet", 6, 1.2F, false, 0, MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.WATER_BREATHING);
-        food("congress_tart", 8, 4.4F, false, 1, MobEffects.DAMAGE_BOOST, MobEffects.FIRE_RESISTANCE, MobEffects.ABSORPTION);
-        food("ricecake", 2, 0.2F, false, 0, MobEffects.DAMAGE_RESISTANCE);
-        food("fish_and_ricecake", 10, 2.4F, true, 1, MobEffects.DAMAGE_BOOST, MobEffects.REGENERATION, MobEffects.DAMAGE_RESISTANCE);
+        food("smore", 8, 1.4F, false, 300, 1, true,
+                MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.ABSORPTION);
+        food("moresmore", 20, 3.8F, false, 300, 2, true,
+                MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.ABSORPTION);
+        food("foursmore", 48, 8.6F, false, 300, 3, false,
+                MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.ABSORPTION);
+        food("fish_a_la_fred", 6, 0.8F, false, 300, 1, false,
+                MobEffects.WATER_BREATHING, MobEffects.NIGHT_VISION, MobEffects.HUNGER);
+        food("pikelet", 6, 1.2F, false, 300, 0, true, MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.WATER_BREATHING);
+        food("congress_tart", 8, 4.4F, false, 300, 1, true, MobEffects.DAMAGE_BOOST, MobEffects.FIRE_RESISTANCE, MobEffects.ABSORPTION);
+        food("ricecake", 2, 0.2F, false, 300, 0, true, MobEffects.DAMAGE_RESISTANCE);
+        food("fish_and_ricecake", 10, 2.4F, true, 300, 1, false, MobEffects.DAMAGE_BOOST, MobEffects.REGENERATION, MobEffects.DAMAGE_RESISTANCE);
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);
         }
@@ -115,15 +130,20 @@ final class NCMaterials {
         }
     }
 
-    private static void food(String id, int nutrition, float saturation, boolean meat, int amplifier, MobEffect... effects) {
+    private static void food(String id, int nutrition, float saturation, boolean meat, int ticks, int amplifier,
+                             boolean display, MobEffect... effects) {
         var food = new FoodProperties.Builder().nutrition(nutrition).saturationMod(saturation);
         if (meat) {
             food.meat();
         }
         for (MobEffect effect : effects) {
-            food.effect(() -> new MobEffectInstance(effect, 300, amplifier, false, false), 1F);
+            food.effect(() -> new MobEffectInstance(effect, ticks, amplifier, false, false), 1F);
         }
-        item(id, new Item.Properties().food(food.build()));
+        var properties = new Item.Properties().food(food.build());
+        var item = NCRegistries.ITEMS.register(id, () -> new Item(properties));
+        if (display) {
+            MATERIALS.add(item);
+        }
     }
 
     private static RegistryObject<Item> item(String id) {

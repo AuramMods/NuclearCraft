@@ -1,6 +1,6 @@
 # Forge 1.20.1 port verification
 
-The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds with Java 17, Mojang mappings, and Forge 47.4.10, matching the Forge build installed in Auram. The Forge code currently comes from the legacy NuclearCraft source and uses no Neohaul implementation code.
+The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds with Java 17, Mojang mappings, and Forge 47.4.10. The current installed Auram snapshot runs Forge 47.4.18. The Forge code currently comes from the legacy NuclearCraft source and uses no Neohaul implementation code.
 
 ## Gameplay coverage
 
@@ -277,6 +277,16 @@ The streaming save change passed all 163 local GameTests. Two packaged Forge 47.
 
 The simulator and decomposition code were ported from the original MIT-licensed source. Neohaul's modern qubit implementation served as a reference for measurement and multitool interactions. [Neohaul Quantum Computer Qubit](https://github.com/nathanrreed/Nuclearcraft-Neohaul/blob/a2b4bb7/src/main/java/com/nred/nuclearcraft/block_entity/quantum/QuantumComputerQubitEntity.java)
 
+### Portable Ender Chest, Tritium Lamp, and food
+
+The Portable Ender Chest opens the player's vanilla Ender Chest inventory and increments the vanilla Ender Chest statistic. Both original recipes are available, one with purple wool and one with black wool. The Mary Poppins advancement uses the original item ID and triggers when the player obtains it.
+
+The Tritium Lamp uses the original animated texture and emits block light level 15. The Infuser makes it from glass and 1,000 mB of tritium in 600 ticks at 10 FE/t. The lamp and all multiblock computer parts have pickaxe harvesting tags.
+
+Domino's Special, Fish a la Fred, and all three S'more tiers retain their original IDs and food effects. The crafting recipes use shared Forge ingredient tags for flour, cocoa, silica, chocolate, and marshmallows. All 165 local GameTests passed, including both Portable Ender Chest recipes, the S'more progression, the glass-and-tritium Infuser batch, and the lamp's block light and harvest tag.
+
+The packaged JAR loaded in a copy of the 539-mod Auram instance. A player opened the Portable Ender Chest through the normal item interaction, shift-clicked 13 diamonds from the shared Ender Chest slot, and saved the vanilla Ender Chest opening statistic. The muted background client recorded zero focus activations, foreground samples, or visible-window samples.
+
 ### Multiblock computer ports
 
 The four legacy computer port block IDs are unchanged. Map their block entities to `nuclearcraft:computer_port` when converting an older save. Install each port on a face of its matching multiblock. Right-clicking the port reports whether its controller is assembled. The blocks and their textures load on Forge regardless of whether CC: Tweaked is installed. The crafting recipes use CC: Tweaked's wired modem, cable, and basic computer alongside the original NuclearCraft materials.
@@ -294,7 +304,7 @@ To migrate an OpenComputers script, use `peripheral.find(type)` or `peripheral.w
 
 All 163 local GameTests passed. The packaged Forge 47.4.18 JAR launched with CC: Tweaked 1.120.2. Four in-world Lua computers read their respective controllers, including an active fission cluster, heat exchange rates, turbine generation, and the Decay Pool feed. All four ports detached from their controllers when the frame opened and rebound when repaired. A headless restart retained computer activation, stored turbine energy, and the machine halt. Lua then deactivated the exchanger and turbine, resumed the pool, and cleared material buffers. A separate deployment of the same JAR on clean Forge persisted all four blocks across a restart with no computer mod installed.
 
-The packaged JAR also loaded all four assemblies in the isolated 539-mod Auram instance. Its background client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible-window samples. The first implicit world save omitted block entities from two test chunks. An explicit integrated-server save in a fresh Auram world wrote all four ports and their controllers to disk.
+The packaged JAR also loaded all four assemblies in the isolated 539-mod Auram instance. Its background client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible-window samples. The first implicit world save omitted block entities from two test chunks. An explicit integrated-server save in a fresh Auram world wrote all four ports and their controllers to disk. A fresh run using the ordinary exit path also retained all four ports and the contents of four vanilla chests.
 
 ### NuclearCraft Guide
 

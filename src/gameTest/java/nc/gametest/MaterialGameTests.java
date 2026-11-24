@@ -88,6 +88,49 @@ public final class MaterialGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void craftsLegacyFoodAndPortableEnderChest(GameTestHelper helper) {
+        var grid = craftingGrid(3, 3);
+        var recipes = helper.getLevel().getRecipeManager();
+        for (Item wool : new Item[]{Items.BLACK_WOOL, Items.PURPLE_WOOL}) {
+            fillGrid(grid, Items.AIR, Items.STRING, Items.AIR, wool, Items.ENDER_CHEST, wool,
+                    item("tough_ingot"), wool, item("tough_ingot"));
+            assertCrafts(helper, grid, item("portable_ender_chest"), 1);
+        }
+        grid.setItem(7, Items.BLACK_WOOL.getDefaultInstance());
+        helper.assertTrue(recipes.getRecipeFor(RecipeType.CRAFTING, grid, helper.getLevel()).isEmpty(),
+                "The purple and black wool recipes each use one color");
+        fillGrid(grid, Items.BREAD, Items.BREAD, Items.BREAD, Items.COOKED_PORKCHOP, Items.COOKED_BEEF,
+                Items.COOKED_CHICKEN, Items.COOKED_MUTTON, Items.BROWN_MUSHROOM, Items.BROWN_MUSHROOM);
+        assertCrafts(helper, grid, item("dominos"), 4);
+        fillGrid(grid, Items.COOKED_SALMON, item("silica"));
+        assertCrafts(helper, grid, item("fish_a_la_fred"), 1);
+        fillGrid(grid, item("flour"), item("cocoa_solids"), item("flour"));
+        assertCrafts(helper, grid, Items.COOKIE, 8);
+        Item previous = item("graham_cracker");
+        for (String id : new String[]{"smore", "moresmore", "foursmore"}) {
+            Item next = item(id);
+            fillGrid(grid, previous, item("milk_chocolate"), item("marshmallow"), previous);
+            assertCrafts(helper, grid, next, 1);
+            previous = next;
+        }
+        helper.succeed();
+    }
+
+    private static void fillGrid(TransientCraftingContainer grid, Item... inputs) {
+        grid.clearContent();
+        for (int slot = 0; slot < inputs.length; slot++) {
+            grid.setItem(slot, inputs[slot].getDefaultInstance());
+        }
+    }
+
+    private static void assertCrafts(GameTestHelper helper, TransientCraftingContainer grid, Item output, int count) {
+        var level = helper.getLevel();
+        var recipe = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, level).orElseThrow();
+        var result = recipe.assemble(grid, level.registryAccess());
+        helper.assertTrue(result.is(output) && result.getCount() == count, "Crafting should produce " + count + " " + output);
+    }
+
     static TransientCraftingContainer craftingGrid(int width, int height) {
         return new TransientCraftingContainer(new AbstractContainerMenu(null, 0) {
             @Override

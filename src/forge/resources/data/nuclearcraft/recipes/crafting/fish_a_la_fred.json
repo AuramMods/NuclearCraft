@@ -1,0 +1,16 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "food",
+    "ingredients": [
+        {
+            "tag": "nuclearcraft:cooked_fish"
+        },
+        {
+            "tag": "forge:dusts/silica"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:fish_a_la_fred",
+        "count": 1
+    }
+}

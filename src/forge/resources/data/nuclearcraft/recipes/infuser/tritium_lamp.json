@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:glass"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "fluid": "nuclearcraft:tritium",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:tritium_lamp",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

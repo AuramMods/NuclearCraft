@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "food",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:moresmore"
+        },
+        {
+            "tag": "forge:ingots/chocolate"
+        },
+        {
+            "tag": "forge:ingots/marshmallow"
+        },
+        {
+            "item": "nuclearcraft:moresmore"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:foursmore",
+        "count": 1
+    }
+}

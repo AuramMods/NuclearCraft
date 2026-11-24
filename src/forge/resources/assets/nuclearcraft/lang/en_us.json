@@ -2863,5 +2863,14 @@
     "block.nuclearcraft.turbine_computer_port": "Turbine Computer Port",
     "block.nuclearcraft.machine_computer_port": "Large Machine Computer Port",
     "message.nuclearcraft.computer_port.attached": "Computer port connected to the multiblock.",
-    "message.nuclearcraft.computer_port.detached": "Computer port is waiting for the multiblock to assemble."
+    "message.nuclearcraft.computer_port.detached": "Computer port is waiting for the multiblock to assemble.",
+    "item.nuclearcraft.portable_ender_chest": "Portable Ender Chest",
+    "item.nuclearcraft.dominos": "Domino's Special",
+    "item.nuclearcraft.smore": "S'more S'mingot",
+    "item.nuclearcraft.moresmore": "MoreS'more DoubleS'mingot",
+    "item.nuclearcraft.foursmore": "FourS'more QuadS'mingot",
+    "item.nuclearcraft.fish_a_la_fred": "Fish a la Fred",
+    "block.nuclearcraft.tritium_lamp": "Tritium Lamp",
+    "advancement.nuclearcraft.portable_ender_chest.name": "Mary Poppins",
+    "advancement.nuclearcraft.portable_ender_chest.desc": "Craft a Portable Ender Chest"
 }
