@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:radaway"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:molten_redstone",
+        "amount": 200
+    },
+    "result": {
+        "item": "nuclearcraft:radaway_slow",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 5
+}

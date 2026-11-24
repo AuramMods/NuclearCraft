@@ -10,5 +10,13 @@
     "block.electrolyzer.run": {
         "subtitle": "subtitles.nuclearcraft.large_electrolyzer",
         "sounds": ["nuclearcraft:block/electrolyzer_run"]
+    },
+    "player.radaway": {
+        "subtitle": "subtitles.nuclearcraft.radaway",
+        "sounds": ["nuclearcraft:player/radaway"]
+    },
+    "player.rad_x": {
+        "subtitle": "subtitles.nuclearcraft.rad_x",
+        "sounds": ["nuclearcraft:player/rad_x"]
     }
 }

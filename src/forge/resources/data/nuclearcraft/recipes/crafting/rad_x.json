@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "EPE",
+        "PRP",
+        "PBP"
+    ],
+    "key": {
+        "E": {
+            "item": "nuclearcraft:energetic_blend"
+        },
+        "P": {
+            "item": "nuclearcraft:bioplastic"
+        },
+        "R": {
+            "item": "nuclearcraft:radaway"
+        },
+        "B": {
+            "item": "minecraft:blaze_powder"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:rad_x"
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "SFF",
+        "CRR",
+        "BFF"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "C": {
+            "tag": "forge:ingots/copper"
+        },
+        "R": {
+            "tag": "forge:dusts/redstone"
+        },
+        "B": {
+            "item": "nuclearcraft:bioplastic"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:geiger_counter"
+    }
+}

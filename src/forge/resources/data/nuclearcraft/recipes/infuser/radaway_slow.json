@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:bioplastic"
+            },
+            "count": 2
+        }
+    ],
+    "fluid_input": {
+        "fluid": "nuclearcraft:radaway_slow",
+        "amount": 250
+    },
+    "result": {
+        "item": "nuclearcraft:radaway_slow",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 5
+}
