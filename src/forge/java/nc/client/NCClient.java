@@ -27,6 +27,7 @@ public final class NCClient {
             MenuScreens.register(NCRegistries.SALT_MIXER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.CHEMICAL_REACTOR_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.ENRICHER_MENU.get(), FluidProcessorScreen::new);
+            MenuScreens.register(NCRegistries.SUPERCOOLER_MENU.get(), FluidProcessorScreen::new);
             for (Machine machine : Machine.values()) {
                 MenuScreens.register(machine.menu(), ItemProcessorScreen::new);
             }

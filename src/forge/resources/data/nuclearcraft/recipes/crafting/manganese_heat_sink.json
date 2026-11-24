@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " M ",
+        "MSM",
+        " M "
+    ],
+    "key": {
+        "M": {
+            "tag": "forge:ingots/manganese"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:manganese_heat_sink",
+        "count": 1
+    }
+}

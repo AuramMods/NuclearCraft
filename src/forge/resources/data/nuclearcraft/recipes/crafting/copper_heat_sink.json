@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " C ",
+        "CSC",
+        " C "
+    ],
+    "key": {
+        "C": {
+            "tag": "forge:ingots/copper"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:copper_heat_sink",
+        "count": 1
+    }
+}

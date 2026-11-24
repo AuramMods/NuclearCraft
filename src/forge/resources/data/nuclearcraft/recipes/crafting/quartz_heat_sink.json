@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "QQQ",
+        "QSQ",
+        "QQQ"
+    ],
+    "key": {
+        "Q": {
+            "item": "minecraft:quartz"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:quartz_heat_sink",
+        "count": 1
+    }
+}

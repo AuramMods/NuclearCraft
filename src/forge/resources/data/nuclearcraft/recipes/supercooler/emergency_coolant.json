@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:supercooler",
+    "fluid_input": {
+        "fluid": "nuclearcraft:emergency_coolant_heated",
+        "amount": 250
+    },
+    "result": {
+        "fluid": "nuclearcraft:emergency_coolant",
+        "amount": 250
+    },
+    "ticks": 150,
+    "energy_per_tick": 20
+}

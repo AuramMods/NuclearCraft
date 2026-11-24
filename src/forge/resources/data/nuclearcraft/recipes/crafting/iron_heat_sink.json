@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " I ",
+        "ISI",
+        " I "
+    ],
+    "key": {
+        "I": {
+            "tag": "forge:ingots/iron"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:iron_heat_sink",
+        "count": 1
+    }
+}

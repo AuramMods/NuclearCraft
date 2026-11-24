@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "DED",
+        "ESE",
+        "DED"
+    ],
+    "key": {
+        "E": {
+            "item": "minecraft:end_stone"
+        },
+        "D": {
+            "tag": "forge:dusts/end_stone"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:end_stone_heat_sink",
+        "count": 1
+    }
+}

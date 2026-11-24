@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " M ",
+        "MSM",
+        " M "
+    ],
+    "key": {
+        "M": {
+            "tag": "forge:ingots/magnesium"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:magnesium_heat_sink",
+        "count": 1
+    }
+}

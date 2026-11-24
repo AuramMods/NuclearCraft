@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " A ",
+        "ASA",
+        " A "
+    ],
+    "key": {
+        "A": {
+            "tag": "forge:ingots/aluminum"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:aluminum_heat_sink",
+        "count": 1
+    }
+}

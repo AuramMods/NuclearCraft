@@ -48,7 +48,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             case SALT -> Role.VESSEL;
         };
         Role coolingPart = switch (variant) {
-            case SOLID -> Role.WATER_SINK;
+            case SOLID -> Role.HEAT_SINK;
             case PEBBLE -> Role.PEBBLE_COOLER;
             case SALT -> Role.SALT_HEATER;
         };
@@ -71,7 +71,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                             cells.add(pos.immutable());
                         }
-                        case WATER_SINK, PEBBLE_COOLER, SALT_HEATER -> {
+                        case HEAT_SINK, PEBBLE_COOLER, SALT_HEATER -> {
                             if (role != coolingPart) {
                                 return invalid("interior", pos);
                             }

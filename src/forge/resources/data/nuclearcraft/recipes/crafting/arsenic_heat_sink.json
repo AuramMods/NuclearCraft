@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "AAA",
+        "ASA",
+        "AAA"
+    ],
+    "key": {
+        "A": {
+            "tag": "forge:dusts/arsenic"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:arsenic_heat_sink",
+        "count": 1
+    }
+}

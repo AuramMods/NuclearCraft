@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "FFF",
+        "FSF",
+        "FFF"
+    ],
+    "key": {
+        "F": {
+            "tag": "forge:gems/fluorite"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fluorite_heat_sink",
+        "count": 1
+    }
+}

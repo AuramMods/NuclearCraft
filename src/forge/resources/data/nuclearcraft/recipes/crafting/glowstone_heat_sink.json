@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "GGG",
+        "GSG",
+        "GGG"
+    ],
+    "key": {
+        "G": {
+            "item": "minecraft:glowstone_dust"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:glowstone_heat_sink",
+        "count": 1
+    }
+}

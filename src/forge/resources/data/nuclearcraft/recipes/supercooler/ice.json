@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:supercooler",
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 250
+    },
+    "result": {
+        "fluid": "nuclearcraft:ice",
+        "amount": 250
+    },
+    "ticks": 150,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " D ",
+        "DSD",
+        " D "
+    ],
+    "key": {
+        "D": {
+            "item": "minecraft:diamond"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:diamond_heat_sink",
+        "count": 1
+    }
+}

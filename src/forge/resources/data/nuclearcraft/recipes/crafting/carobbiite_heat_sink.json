@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "CCC",
+        "CSC",
+        "CCC"
+    ],
+    "key": {
+        "C": {
+            "tag": "forge:gems/carobbiite"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:carobbiite_heat_sink",
+        "count": 1
+    }
+}

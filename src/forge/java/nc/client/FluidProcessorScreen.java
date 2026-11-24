@@ -21,14 +21,17 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     private static final int ITEM_INPUT = -1;
     private static final Layout ELECTROLYZER = new Layout(NuclearCraft.id("textures/gui/container/electrolyzer.png"),
             List.of(new Tank(50, 41, 16), new Tank(106, 31, 16), new Tank(126, 31, 16),
-                    new Tank(106, 51, 16), new Tank(126, 51, 16)), 68);
+                    new Tank(106, 51, 16), new Tank(126, 51, 16)), 68, 30, 38);
     private static final Layout SALT_MIXER = new Layout(NuclearCraft.id("textures/gui/container/salt_mixer.png"),
-            List.of(new Tank(46, 35, 16), new Tank(66, 35, 16), new Tank(123, 31, 24)), 84);
+            List.of(new Tank(46, 35, 16), new Tank(66, 35, 16), new Tank(123, 31, 24)), 84, 34, 18);
     private static final Layout CHEMICAL_REACTOR = new Layout(NuclearCraft.id("textures/gui/container/chemical_reactor.png"),
-            List.of(new Tank(32, 35, 16), new Tank(52, 35, 16), new Tank(108, 31, 24), new Tank(136, 31, 24)), 70);
+            List.of(new Tank(32, 35, 16), new Tank(52, 35, 16), new Tank(108, 31, 24), new Tank(136, 31, 24)), 70, 34, 18);
 
     private static final Layout ENRICHER = new Layout(NuclearCraft.id("textures/gui/container/enricher.png"),
-            List.of(new Tank(66, 35, 16), new Tank(122, 31, 24)), 84);
+            List.of(new Tank(66, 35, 16), new Tank(122, 31, 24)), 84, 35, 16);
+
+    private static final Layout SUPERCOOLER = new Layout(NuclearCraft.id("textures/gui/container/supercooler.png"),
+            List.of(new Tank(56, 35, 16), new Tank(112, 31, 24)), 74, 35, 16);
 
     private final EnumMap<Direction, Button> sides = new EnumMap<>(Direction.class);
     private final Layout layout;
@@ -42,6 +45,7 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             case SALT_MIXER -> SALT_MIXER;
             case CHEMICAL_REACTOR -> CHEMICAL_REACTOR;
             case ENRICHER -> ENRICHER;
+            case SUPERCOOLER -> SUPERCOOLER;
         };
         imageHeight = 178;
         inventoryLabelY = 84;
@@ -124,15 +128,12 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             graphics.blit(texture, leftPos, topPos + 94, 0, 82, imageWidth, 84);
             int compactEnergy = (int) (74 * menu.energy());
             graphics.blit(texture, leftPos + 8, topPos + 80 - compactEnergy, 176, 164 - compactEnergy, 16, compactEnergy);
-            int progressY = menu.type().hasItemInput() ? 35 : 34;
-            int progressHeight = menu.type().hasItemInput() ? 16 : 18;
-            graphics.blit(texture, leftPos + layout.progressX, topPos + progressY, 176, 3, progressWidth, progressHeight);
         } else {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
             graphics.blit(texture, leftPos + 8, topPos + 92 - energyHeight, 176, 176 - energyHeight, 16, energyHeight);
-            graphics.blit(texture, leftPos + layout.progressX, topPos + 30, 176, 3, progressWidth, 38);
         }
 
+        graphics.blit(texture, leftPos + layout.progressX, topPos + layout.progressY, 176, 3, progressWidth, layout.progressHeight);
         for (int index = 0; index < layout.tanks.size(); index++) {
             Tank tank = layout.tanks.get(index);
             int x = leftPos + tank.x;
@@ -168,5 +169,5 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     }
 
     private record Tank(int x, int y, int size) {}
-    private record Layout(ResourceLocation texture, List<Tank> tanks, int progressX) {}
+    private record Layout(ResourceLocation texture, List<Tank> tanks, int progressX, int progressY, int progressHeight) {}
 }

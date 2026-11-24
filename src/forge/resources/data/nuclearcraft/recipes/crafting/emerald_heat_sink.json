@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "ESE",
+        " E "
+    ],
+    "key": {
+        "E": {
+            "item": "minecraft:emerald"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:emerald_heat_sink",
+        "count": 1
+    }
+}

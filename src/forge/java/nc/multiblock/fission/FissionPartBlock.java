@@ -19,7 +19,7 @@ public class FissionPartBlock extends Block {
     public enum Role {
         CASING, CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER, VENT, FUEL_PORT, CHAMBER_PORT,
         COOLER_PORT, VESSEL_PORT, HEATER_PORT, SOURCE,
-        CELL, PEBBLE_CHAMBER, VESSEL, WATER_SINK, PEBBLE_COOLER, SALT_HEATER, MODERATOR, REFLECTOR
+        CELL, PEBBLE_CHAMBER, VESSEL, HEAT_SINK, PEBBLE_COOLER, SALT_HEATER, MODERATOR, REFLECTOR
     }
 
     private final Role role;
@@ -44,14 +44,18 @@ public class FissionPartBlock extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
         if (level instanceof ServerLevel server && !state.is(replacement.getBlock())) {
-            geometryChanged(server, pos);
+            geometryChanged(server, pos, true);
         }
         super.onRemove(state, level, pos, replacement, moved);
     }
 
     static void geometryChanged(ServerLevel level, BlockPos pos) {
+        geometryChanged(level, pos, false);
+    }
+
+    private static void geometryChanged(ServerLevel level, BlockPos pos, boolean removed) {
         Cuboid.visitNearby(level, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, SolidFissionController.class,
-                controller -> controller.partChanged(pos));
+                controller -> controller.partChanged(pos, removed));
     }
 
     @SubscribeEvent

@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "BSB",
+        "BBB"
+    ],
+    "key": {
+        "B": {
+            "item": "minecraft:slime_ball"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:slime_heat_sink",
+        "count": 1
+    }
+}

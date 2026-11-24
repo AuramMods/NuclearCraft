@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " T ",
+        "TST",
+        " T "
+    ],
+    "key": {
+        "T": {
+            "tag": "forge:ingots/tin"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:tin_heat_sink",
+        "count": 1
+    }
+}

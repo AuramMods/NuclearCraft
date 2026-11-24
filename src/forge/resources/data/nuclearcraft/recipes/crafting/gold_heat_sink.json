@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " G ",
+        "GSG",
+        " G "
+    ],
+    "key": {
+        "G": {
+            "tag": "forge:ingots/gold"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:gold_heat_sink",
+        "count": 1
+    }
+}

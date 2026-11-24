@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "VVV",
+        "VSV",
+        "VVV"
+    ],
+    "key": {
+        "V": {
+            "tag": "forge:gems/villiaumite"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:villiaumite_heat_sink",
+        "count": 1
+    }
+}

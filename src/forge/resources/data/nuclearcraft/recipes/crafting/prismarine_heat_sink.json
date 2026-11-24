@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " P ",
+        "PSP",
+        " P "
+    ],
+    "key": {
+        "P": {
+            "item": "minecraft:prismarine_crystals"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:prismarine_heat_sink",
+        "count": 1
+    }
+}

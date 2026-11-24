@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "INI",
+        "NSN",
+        "INI"
+    ],
+    "key": {
+        "N": {
+            "item": "minecraft:nether_bricks"
+        },
+        "I": {
+            "item": "minecraft:nether_brick"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:nether_brick_heat_sink",
+        "count": 1
+    }
+}

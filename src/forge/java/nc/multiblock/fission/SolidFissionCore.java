@@ -2,6 +2,7 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.init.NCGasCoolants;
+import nc.init.NCHeatSinks;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
@@ -18,6 +19,7 @@ import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -28,9 +30,9 @@ import java.util.Set;
 final class SolidFissionCore {
     static final long BASE_HEAT_CAPACITY = 32_000;
     private static final int COOLING_LENIENCY = 10;
-    private static final int WATER_SINK_COOLING = 55;
 
-    record Heat(long raw, long casingHeat, double effective, List<BlockPos> overheatedCells) {}
+    record Heat(long raw, long casingHeat, double effective, boolean storedHeatChanged,
+                List<BlockPos> overheatedCells) {}
 
     record PartHeat(long amount, long capacity, boolean processing) {
         static final PartHeat NONE = new PartHeat(0, 0, false);
@@ -53,7 +55,7 @@ final class SolidFissionCore {
         }
     }
 
-    private record Cluster(BlockPos anchor, List<BlockPos> cells, List<BlockPos> sinks, boolean connectedToWall) {
+    private record Cluster(List<BlockPos> cells, List<BlockPos> sinks, boolean connectedToWall) {
         long capacity() {
             return BASE_HEAT_CAPACITY * (cells.size() + sinks.size());
         }
@@ -178,13 +180,13 @@ final class SolidFissionCore {
 
     private final SolidFissionLayout layout;
     private List<Cluster> clusters;
-    private Set<BlockPos> activeCoolers = Set.of();
+    private Set<BlockPos> activeCoolingParts = Set.of();
     private Set<BlockPos> heatingSalts = Set.of();
     private final Set<BlockPos> runningCells = new HashSet<>();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
-        clusters = findClusters(layout, layout.variant() == FissionVariant.SOLID ? null : activeCoolers);
+        clusters = findClusters(layout, activeCoolingParts);
     }
 
     PartHeat partHeat(BlockPos pos, Map<BlockPos, Long> storedHeat, boolean running) {
@@ -237,10 +239,15 @@ final class SolidFissionCore {
                 : gasCooling.available(level, layout, burning, moderatorPositions);
         Map<BlockPos, NCSaltCoolants> heaters = saltCooling == null ? Map.of()
                 : saltCooling.available(level, layout, burning, moderatorPositions);
-        Set<BlockPos> cooledParts = saltCooling == null ? coolers.keySet() : heaters.keySet();
-        if (fluidCooling && !cooledParts.equals(activeCoolers)) {
-            activeCoolers = Set.copyOf(cooledParts);
-            clusters = findClusters(layout, activeCoolers);
+        Map<BlockPos, NCHeatSinks> sinks = fluidCooling ? Map.of() : availableSinks(level, burning, moderatorPositions);
+        Set<BlockPos> cooledParts = switch (layout.variant()) {
+            case SOLID -> sinks.keySet();
+            case PEBBLE -> coolers.keySet();
+            case SALT -> heaters.keySet();
+        };
+        if (!cooledParts.equals(activeCoolingParts)) {
+            activeCoolingParts = Set.copyOf(cooledParts);
+            clusters = findClusters(layout, activeCoolingParts);
         }
         var gasLoads = new ArrayList<GasLoad>();
         var saltLoads = new ArrayList<SaltLoad>();
@@ -249,6 +256,7 @@ final class SolidFissionCore {
         double effective = 0;
         int usefulParts = moderatorPositions.size();
         runningCells.clear();
+        boolean storedHeatChanged = false;
         for (Cluster cluster : clusters) {
             long rawCluster = 0;
             double effectiveCluster = 0;
@@ -269,8 +277,9 @@ final class SolidFissionCore {
             for (BlockPos sink : cluster.sinks()) {
                 NCGasCoolants gas = coolers.get(sink);
                 NCSaltCoolants salt = heaters.get(sink);
+                NCHeatSinks material = sinks.get(sink);
                 int rate = gas != null ? NCPebbleFission.cooling(gas) : salt != null ? NCSaltFission.cooling(salt)
-                        : !fluidCooling && hasActiveNeighbor(sink, reactions) ? WATER_SINK_COOLING : 0;
+                        : material != null ? NCFission.cooling(material) : 0;
                 if (rate > 0) {
                     cooling += rate;
                     if (cluster.connectedToWall()) {
@@ -301,23 +310,17 @@ final class SolidFissionCore {
                 }
             }
 
-            long previous = !fluidCooling ? storedHeat.getOrDefault(cluster.anchor(), 0L)
-                    : cluster.previousHeat(storedHeat);
+            long previous = cluster.previousHeat(storedHeat);
             long netHeat = rawCluster - cooling;
             boolean heatToWall = fluidCooling && netHeat > 0 && cluster.connectedToWall();
             long next = Math.max(0, Math.min(cluster.capacity(), previous + (heatToWall ? 0 : netHeat)));
             if (next != previous) {
-                if (!fluidCooling) {
-                    storedHeat.put(cluster.anchor(), next);
-                } else {
-                    cluster.retainHeat(storedHeat, next);
-                }
+                cluster.retainHeat(storedHeat, next);
+                storedHeatChanged = true;
             }
             if (next >= cluster.capacity() && rawCluster > 0) {
-                if (fluidCooling) {
-                    cluster.retainHeat(storedHeat, 0);
-                }
-                return new Heat(raw, casing, effective, cluster.cells());
+                cluster.retainHeat(storedHeat, 0);
+                return new Heat(raw, casing, effective, true, cluster.cells());
             }
             if (cluster.connectedToWall()) {
                 raw += rawCluster;
@@ -345,17 +348,20 @@ final class SolidFissionCore {
             }
             heatingSalts = heating;
         }
-        return new Heat(raw, casing, effective * sparsityEfficiency, List.of());
+        return new Heat(raw, casing, effective * sparsityEfficiency, storedHeatChanged, List.of());
     }
 
-    private static boolean hasActiveNeighbor(BlockPos pos, Map<BlockPos, Reaction<?>> reactions) {
-        for (Direction side : Direction.values()) {
-            Reaction<?> reaction = reactions.get(pos.relative(side));
-            if (reaction != null && reaction.active()) {
-                return true;
+    private Map<BlockPos, NCHeatSinks> availableSinks(ServerLevel level, Set<BlockPos> burning,
+                                                     Set<BlockPos> moderatorPositions) {
+        var candidates = new EnumMap<NCHeatSinks, List<BlockPos>>(NCHeatSinks.class);
+        for (BlockPos pos : layout.sinks()) {
+            if (level.getBlockState(pos).getBlock() instanceof SolidHeatSinkBlock sink) {
+                candidates.computeIfAbsent(sink.material(), ignored -> new ArrayList<>()).add(pos);
             }
         }
-        return false;
+        return NCFission.placementRules().active(candidates,
+                FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CELL,
+                        burning, moderatorPositions));
     }
 
     private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction<?>> reactions) {
@@ -512,26 +518,9 @@ final class SolidFissionCore {
         }
     }
 
-    private static List<Cluster> findClusters(SolidFissionLayout layout, @Nullable Set<BlockPos> activeCoolers) {
-        Set<BlockPos> cellPositions = Set.copyOf(layout.cells());
-        Set<BlockPos> sinks = activeCoolers == null ? Set.copyOf(layout.sinks()) : activeCoolers;
+    private static List<Cluster> findClusters(SolidFissionLayout layout, Set<BlockPos> sinks) {
         Set<BlockPos> remaining = new LinkedHashSet<>(layout.cells());
-        // A water sink's rule requires an adjacent fuel cell. Off-line sinks provide no cooling.
-        for (BlockPos sink : layout.sinks()) {
-            if (activeCoolers != null && activeCoolers.contains(sink)) {
-                remaining.add(sink);
-                continue;
-            }
-            if (activeCoolers != null) {
-                continue;
-            }
-            for (Direction side : Direction.values()) {
-                if (cellPositions.contains(sink.relative(side))) {
-                    remaining.add(sink);
-                    break;
-                }
-            }
-        }
+        remaining.addAll(sinks);
 
         List<Cluster> clusters = new ArrayList<>();
         Cuboid bounds = layout.bounds();
@@ -561,7 +550,7 @@ final class SolidFissionCore {
                     }
                 }
             }
-            clusters.add(new Cluster(anchor, List.copyOf(groupCells), List.copyOf(groupSinks), wall));
+            clusters.add(new Cluster(List.copyOf(groupCells), List.copyOf(groupSinks), wall));
         }
         return List.copyOf(clusters);
     }

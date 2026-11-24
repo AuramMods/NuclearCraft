@@ -82,11 +82,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return validationMessage;
     }
 
-    void partChanged(BlockPos pos) {
+    void partChanged(BlockPos pos, boolean removed) {
         int reach = FissionPartBlock.MAX_INTERIOR_LENGTH + 2;
         if (Math.abs(pos.getX() - worldPosition.getX()) <= reach && Math.abs(pos.getY() - worldPosition.getY()) <= reach
                 && Math.abs(pos.getZ() - worldPosition.getZ()) <= reach) {
             dirty = true;
+            if (removed && clusterHeat.remove(pos) != null) {
+                setChanged();
+            }
             if (layout != null && layout.bounds().contains(pos)) {
                 disassemble();
             }
@@ -123,10 +126,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 return;
             }
             active = generated.raw() > 0;
-            if (active) {
-                if (variant == FissionVariant.SOLID) {
-                    heatWater(generated.effective() / generated.raw());
-                }
+            if (active && variant == FissionVariant.SOLID) {
+                heatWater(generated.effective() / generated.raw());
+            }
+            if (active || generated.storedHeatChanged()) {
                 setChanged();
             }
         } else if (layout != null && variant != FissionVariant.SOLID && casingHeat > 0) {

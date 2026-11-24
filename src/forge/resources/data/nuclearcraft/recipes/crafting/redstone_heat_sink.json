@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "RRR",
+        "RSR",
+        "RRR"
+    ],
+    "key": {
+        "R": {
+            "item": "minecraft:redstone"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:redstone_heat_sink",
+        "count": 1
+    }
+}

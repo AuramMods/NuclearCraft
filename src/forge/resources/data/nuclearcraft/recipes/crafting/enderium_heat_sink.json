@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " E ",
+        "ESE",
+        " E "
+    ],
+    "key": {
+        "E": {
+            "tag": "forge:ingots/enderium"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:enderium_heat_sink",
+        "count": 1
+    }
+}

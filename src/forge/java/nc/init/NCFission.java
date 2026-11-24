@@ -3,11 +3,13 @@ package nc.init;
 import nc.NuclearCraft;
 import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionFuelCellBlock;
+import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionPartBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionPortBlockEntity;
 import nc.multiblock.fission.FissionSourceBlock;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.SolidHeatSinkBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.SolidFissionRecipe;
@@ -28,17 +30,21 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
 
 public final class NCFission {
+    private static final Map<NCHeatSinks, RegistryObject<SolidHeatSinkBlock>> SINKS = new EnumMap<>(NCHeatSinks.class);
+    private static final Map<NCHeatSinks, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCHeatSinks.class);
+    private static final CoolingPlacementConfig<NCHeatSinks> PLACEMENT;
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue RADIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue POLONIUM_EFFICIENCY;
@@ -74,6 +80,27 @@ public final class NCFission {
         BERYLLIUM_CARBON = reflector(builder, "beryllium_carbon", 1D, 0.5D);
         LEAD_STEEL = reflector(builder, "lead_steel", 0.5D, 0.25D);
         builder.pop();
+        builder.push("cooling_rate");
+        for (NCHeatSinks sink : NCHeatSinks.values()) {
+            COOLING.put(sink, builder.defineInRange(sink.material(), sink.defaultCooling(), 0, 32767));
+            SINKS.put(sink, part(sink.id(), () -> new SolidHeatSinkBlock(
+                    properties().lightLevel(state -> sink.light()), sink)));
+        }
+        builder.pop();
+        PLACEMENT = new CoolingPlacementConfig<>(builder, NCHeatSinks.class, FissionPlacementRules.Part.SINK,
+                NCHeatSinks::material, new String[] {
+                    "one cell", "one moderator", "one cell && one moderator",
+                    "one redstone sink", "two axial glowstone sinks", "one obsidian sink",
+                    "two moderators", "one cell && one casing", "exactly two iron sinks",
+                    "two water sinks", "exactly one water sink && two lead sinks", "one reflector",
+                    "one reflector && one iron sink", "one cell && one gold sink", "one moderator && one prismarine sink",
+                    "one water sink", "two axial lapis sinks", "one iron sink",
+                    "exactly one quartz sink && one casing", "exactly two axial lead sinks && one casing", "exactly one moderator && one casing",
+                    "two cells", "one quartz sink && one lapis sink", "two glowstone sinks && one tin sink",
+                    "one gold sink && one prismarine sink", "one redstone sink && one end_stone sink", "one end_stone sink && one copper sink",
+                    "two axial reflectors", "two copper sinks && one purpur sink", "exactly two redstone sinks",
+                    "three moderators", "three cells"
+                });
         SPEC = builder.build();
     }
 
@@ -83,7 +110,7 @@ public final class NCFission {
     public static final RegistryObject<FissionWallBlock> CELL_PORT = wall("fission_cell_port", Role.FUEL_PORT);
     public static final RegistryObject<FissionFuelCellBlock> CELL = part("solid_fission_cell",
             () -> new FissionFuelCellBlock(properties()));
-    public static final RegistryObject<FissionPartBlock> WATER_SINK = part("water_heat_sink", Role.WATER_SINK);
+    public static final RegistryObject<SolidHeatSinkBlock> WATER_SINK = SINKS.get(NCHeatSinks.WATER);
     public static final RegistryObject<FissionPartBlock> HEAVY_WATER_MODERATOR = part("heavy_water_moderator", Role.MODERATOR);
     public static final RegistryObject<FissionPartBlock> BERYLLIUM_CARBON_REFLECTOR =
             part("beryllium_carbon_reflector", Role.REFLECTOR);
@@ -129,7 +156,9 @@ public final class NCFission {
                         output.accept(CELL.get());
                         output.accept(CELL_PORT.get());
                         output.accept(VENT.get());
-                        output.accept(WATER_SINK.get());
+                        for (NCHeatSinks sink : NCHeatSinks.values()) {
+                            output.accept(heatSink(sink));
+                        }
                         output.accept(HEAVY_WATER_MODERATOR.get());
                         output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
                         output.accept(LEAD_STEEL_REFLECTOR.get());
@@ -156,6 +185,10 @@ public final class NCFission {
         DoubleSupplier multiplier = () -> configured(efficiency);
         return part(id, () -> new FissionSourceBlock(properties(), multiplier));
     }
+
+    public static SolidHeatSinkBlock heatSink(NCHeatSinks material) { return SINKS.get(material).get(); }
+    public static int cooling(NCHeatSinks material) { return configured(COOLING.get(material)); }
+    public static FissionPlacementRules<NCHeatSinks> placementRules() { return PLACEMENT.rules(); }
 
     public static @Nullable Moderator moderator(BlockState state) {
         if (state.is(GRAPHITE_BLOCKS)) {
@@ -243,7 +276,7 @@ public final class NCFission {
         return blocks.toArray(Block[]::new);
     }
 
-    public static void registerConfig(ModLoadingContext context) {
-        context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-fission.toml");
+    public static void registerConfig(FMLJavaModLoadingContext context) {
+        PLACEMENT.register(context, SPEC, "nuclearcraft-fission.toml");
     }
 }

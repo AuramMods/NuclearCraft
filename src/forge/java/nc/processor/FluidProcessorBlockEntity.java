@@ -292,7 +292,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         ELECTROLYZER(1, ElectrolyzerRecipe.OUTPUTS),
         SALT_MIXER(2, 1),
         CHEMICAL_REACTOR(2, ChemicalReactorRecipe.OUTPUTS),
-        ENRICHER(1, 1, true);
+        ENRICHER(1, 1, true),
+        SUPERCOOLER(1, 1);
 
         private final int inputs;
         private final int outputs;
@@ -326,6 +327,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case SALT_MIXER -> NCRegistries.SALT_MIXER.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR.get();
                 case ENRICHER -> NCRegistries.ENRICHER.get();
+                case SUPERCOOLER -> NCRegistries.SUPERCOOLER.get();
             };
         }
 
@@ -335,6 +337,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case SALT_MIXER -> NCRegistries.SALT_MIXER_ENTITY.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get();
                 case ENRICHER -> NCRegistries.ENRICHER_ENTITY.get();
+                case SUPERCOOLER -> NCRegistries.SUPERCOOLER_ENTITY.get();
             };
         }
 
@@ -344,6 +347,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case SALT_MIXER -> NCRegistries.SALT_MIXER_MENU.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_MENU.get();
                 case ENRICHER -> NCRegistries.ENRICHER_MENU.get();
+                case SUPERCOOLER -> NCRegistries.SUPERCOOLER_MENU.get();
             };
         }
 
@@ -353,6 +357,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case SALT_MIXER -> NCRegistries.MIXING.get();
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTIONS.get();
                 case ENRICHER -> NCRegistries.ENRICHING.get();
+                case SUPERCOOLER -> NCRegistries.SUPERCOOLING.get();
             };
         }
     }

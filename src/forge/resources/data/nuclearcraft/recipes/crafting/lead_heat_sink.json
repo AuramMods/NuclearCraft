@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " L ",
+        "LSL",
+        " L "
+    ],
+    "key": {
+        "L": {
+            "tag": "forge:ingots/lead"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lead_heat_sink",
+        "count": 1
+    }
+}

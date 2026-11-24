@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:supercooler",
+    "fluid_input": {
+        "tag": "forge:helium",
+        "amount": 8000
+    },
+    "result": {
+        "fluid": "nuclearcraft:liquid_helium",
+        "amount": 25
+    },
+    "ticks": 600,
+    "energy_per_tick": 20
+}

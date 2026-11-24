@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:supercooler",
+    "fluid_input": {
+        "tag": "forge:nitrogen",
+        "amount": 8000
+    },
+    "result": {
+        "fluid": "nuclearcraft:liquid_nitrogen",
+        "amount": 25
+    },
+    "ticks": 300,
+    "energy_per_tick": 10
+}

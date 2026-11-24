@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " I ",
+        "ISI",
+        " I "
+    ],
+    "key": {
+        "I": {
+            "tag": "forge:ingots/silver"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:silver_heat_sink",
+        "count": 1
+    }
+}

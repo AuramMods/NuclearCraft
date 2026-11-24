@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "DOD",
+        "OSO",
+        "DOD"
+    ],
+    "key": {
+        "O": {
+            "item": "minecraft:obsidian"
+        },
+        "D": {
+            "tag": "forge:dusts/obsidian"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:obsidian_heat_sink",
+        "count": 1
+    }
+}

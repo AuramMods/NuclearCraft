@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " B ",
+        "BSB",
+        " B "
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/boron"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:boron_heat_sink",
+        "count": 1
+    }
+}

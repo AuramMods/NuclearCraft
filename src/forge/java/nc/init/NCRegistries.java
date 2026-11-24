@@ -13,6 +13,7 @@ import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
+import nc.recipe.SupercoolerRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.flag.FeatureFlags;
@@ -127,6 +128,23 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<EnricherRecipe>> ENRICHER_SERIALIZER =
             RECIPE_SERIALIZERS.register("enricher", EnricherRecipe.Serializer::new);
 
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> SUPERCOOLER =
+            BLOCKS.register("supercooler", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.SUPERCOOLER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+    public static final RegistryObject<Item> SUPERCOOLER_ITEM =
+            ITEMS.register("supercooler", () -> new BlockItem(SUPERCOOLER.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> SUPERCOOLER_ENTITY =
+            BLOCK_ENTITIES.register("supercooler", () ->
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.SUPERCOOLER, pos, state),
+                            SUPERCOOLER.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> SUPERCOOLER_MENU =
+            MENUS.register("supercooler", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.SUPERCOOLER), FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<SupercoolerRecipe>> SUPERCOOLING =
+            RECIPE_TYPES.register("supercooler", () -> RecipeType.simple(NuclearCraft.id("supercooler")));
+    public static final RegistryObject<RecipeSerializer<SupercoolerRecipe>> SUPERCOOLER_SERIALIZER =
+            RECIPE_SERIALIZERS.register("supercooler", SupercoolerRecipe.Serializer::new);
+
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
@@ -137,6 +155,7 @@ public final class NCRegistries {
                         output.accept(SALT_MIXER_ITEM.get());
                         output.accept(CHEMICAL_REACTOR_ITEM.get());
                         output.accept(ENRICHER_ITEM.get());
+                        output.accept(SUPERCOOLER_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);

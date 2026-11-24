@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        " L ",
+        "LSL",
+        " L "
+    ],
+    "key": {
+        "L": {
+            "tag": "forge:ingots/lithium"
+        },
+        "S": {
+            "item": "nuclearcraft:empty_sink"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_heat_sink",
+        "count": 1
+    }
+}
