@@ -4,7 +4,7 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
-import nc.init.TurbineVisualConfig;
+import nc.init.TurbineConfig;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -43,16 +43,16 @@ import java.util.stream.IntStream;
 public final class TurbineController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int BASE_STEAM = 1000;
     private static final int BASE_EXHAUST = 4000;
-    private static final int BASE_ENERGY = 16000;
 
     private final FluidTank steam = new TurbineTank(BASE_STEAM, true);
     private final FluidTank exhaust = new TurbineTank(BASE_EXHAUST, false);
     private final TurbineDrive drive = new TurbineDrive();
     private long energy;
-    private long capacity = BASE_ENERGY;
+    private long capacity = TurbineConfig.baseEnergyCapacity();
     private long power;
     private boolean processing;
     private boolean dirty = true;
+    private long configRevision = -1;
     private boolean enabled;
     private boolean computerActivated;
     private int inputRate;
@@ -90,7 +90,9 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         if (layout != null && !layout.bounds().isLoaded(server)) {
             disassemble();
         }
-        if (dirty || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
+        long revision = TurbineConfig.revision();
+        if (dirty || configRevision != revision || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
+            configRevision = revision;
             refresh(server);
         }
         boolean active = computerOn();
@@ -123,7 +125,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
             particleSpeed = recipe.particleSpeed();
         }
         double speed = Mth.clamp(drive.speedRatio(), 0D, 2D);
-        rotorVelocity = speed < 1e-5D ? 0D : 50D * TurbineVisualConfig.rotorSpeed() * speed;
+        rotorVelocity = speed < 1e-5D ? 0D : 50D * TurbineConfig.rotorSpeed() * speed;
         if (layout.glass()) {
             rotorAngle = (rotorAngle + rotorVelocity) % 360D;
         }
@@ -141,10 +143,11 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     private int expandSteam(TurbineRecipe recipe) {
-        int rated = drive.ratedFlow(layout);
-        int throughput = (int) (rated * (1D + (double) steam.getFluidAmount() / steam.getCapacity()));
+        double fill = Math.min(1D, (double) steam.getFluidAmount() / steam.getCapacity());
+        double factor = 1D + (TurbineConfig.tensionThroughputFactor() - 1D) * fill;
+        int throughput = (int) Math.min(steam.getFluidAmount(), drive.ratedFlow(layout) * factor);
         FluidStack product = recipe.output();
-        int batches = Math.min(Math.min(steam.getFluidAmount(), throughput) / recipe.inputAmount(),
+        int batches = Math.min(throughput / recipe.inputAmount(),
                 exhaust.getSpace() / product.getAmount());
         if (batches <= 0) {
             return 0;
@@ -240,7 +243,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
             TurbinePartBlock.Part part = TurbinePartBlock.part(server.getBlockState(pos));
             if (part == TurbinePartBlock.Part.STATOR && server.random.nextFloat() < 0.04F) {
                 server.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
-            } else if (part != null && part.efficiency > 0 && server.random.nextFloat() < 0.18F) {
+            } else if (part != null && part.blade() && server.random.nextFloat() < 0.18F) {
                 server.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
                 server.explode(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 4F,
                         Level.ExplosionInteraction.NONE);
@@ -264,7 +267,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     void partChanged(BlockPos pos) {
-        int reach = TurbinePartBlock.MAX_INTERIOR_LENGTH + 2;
+        int reach = TurbineConfig.searchLength();
         if (Math.abs(pos.getX() - worldPosition.getX()) <= reach && Math.abs(pos.getY() - worldPosition.getY()) <= reach
                 && Math.abs(pos.getZ() - worldPosition.getZ()) <= reach) {
             dirty = true;
@@ -290,16 +293,15 @@ public final class TurbineController extends BlockEntity implements MenuProvider
             disassemble();
             return;
         }
+        capacity = (long) TurbineConfig.baseEnergyCapacity() * found.exteriorVolume();
         if (found.equals(layout)) {
             return;
         }
-
         disassemble();
         layout = found;
         computerPorts.bind(server, layout.computers());
-        capacity = (long) BASE_ENERGY * found.exteriorVolume();
-        steam.setCapacity(BASE_STEAM * found.exteriorVolume());
-        exhaust.setCapacity(BASE_EXHAUST * found.exteriorVolume());
+        steam.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_STEAM * found.exteriorVolume()));
+        exhaust.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_EXHAUST * found.exteriorVolume()));
         faceOutward(server, worldPosition, found.bounds().outward(worldPosition));
         updateRotorBlocks(server, found, found.glass());
         for (TurbineLayout.Port port : found.ports()) {
@@ -473,7 +475,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
     double computerTotalExpansion() {
         double expansion = 1D;
-        for (TurbinePartBlock.Part stage : layout.stages()) expansion *= stage.expansion;
+        for (TurbinePartBlock.Part stage : layout.stages()) expansion *= stage.expansion();
         return expansion;
     }
 
@@ -481,8 +483,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         var values = new ArrayList<Double>(layout.stages().size());
         double expansion = 1D;
         for (TurbinePartBlock.Part stage : layout.stages()) {
-            values.add(expansion * Math.sqrt(stage.expansion));
-            expansion *= stage.expansion;
+            values.add(expansion * Math.sqrt(stage.expansion()));
+            expansion *= stage.expansion();
         }
         return values;
     }
@@ -493,7 +495,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     List<Double> computerBladeEfficiencies() {
-        return layout.stages().stream().map(stage -> stage.efficiency).toList();
+        return layout.stages().stream().map(TurbinePartBlock.Part::efficiency).toList();
     }
 
     List<List<Object>> computerDynamoParts() {
@@ -552,7 +554,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
                     case TurbineMenu.PROCESSING -> processing ? 1 : 0;
                     case TurbineMenu.STEAM -> (int) (1000L * Math.min(steam.getFluidAmount(), steam.getCapacity()) / steam.getCapacity());
                     case TurbineMenu.EXHAUST -> (int) (1000L * Math.min(exhaust.getFluidAmount(), exhaust.getCapacity()) / exhaust.getCapacity());
-                    case TurbineMenu.ENERGY -> (int) (1000L * Math.min(energy, capacity) / capacity);
+                    case TurbineMenu.ENERGY -> (int) (1000D * Math.min(energy, capacity) / capacity);
                     case TurbineMenu.POWER_LOW -> (int) Math.min(Integer.MAX_VALUE, power) & 0xFFFF;
                     case TurbineMenu.POWER_HIGH -> (int) Math.min(Integer.MAX_VALUE, power) >>> 16;
                     default -> 0;

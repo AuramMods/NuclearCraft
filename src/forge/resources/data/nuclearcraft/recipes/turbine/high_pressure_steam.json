@@ -8,7 +8,5 @@
         "fluid": "nuclearcraft:exhaust_steam",
         "amount": 4
     },
-    "power_per_mb": 16,
-    "expansion": 4,
-    "spin_up": 1
+    "legacy_profile": "high_pressure_steam"
 }

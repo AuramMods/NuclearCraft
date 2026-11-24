@@ -277,19 +277,30 @@ The streaming save change passed all 163 local GameTests. Two packaged Forge 47.
 
 The simulator and decomposition code were ported from the original MIT-licensed source. Neohaul's modern qubit implementation served as a reference for measurement and multitool interactions. [Neohaul Quantum Computer Qubit](https://github.com/nathanrreed/Nuclearcraft-Neohaul/blob/a2b4bb7/src/main/java/com/nred/nuclearcraft/block_entity/quantum/QuantumComputerQubitEntity.java)
 
-### Turbine rotor, particles, and sound
+### Turbine mechanics and visual settings
 
 An assembled turbine with a glass wall shows the shaft and blades turning around the shaft axis. The stationary stator stages follow the same depth-dependent taper as the blades. The moving rotor follows recipe throughput and coasts when input stops. Visible exhaust fills the shell above three quarters of its output capacity. The operating sound follows throughput and plays from positions within the turbine, and particles enter through the open areas around the shaft.
 
-Move `turbine_render_blade_width`, `turbine_render_blade_fast`, `turbine_render_rotor_expansion`, `turbine_render_rotor_speed`, `turbine_particles`, and `turbine_sound_volume` into `world/serverconfig/nuclearcraft-turbine.toml` and drop the `turbine_` prefix. In a datapack or KubeJS `nuclearcraft:turbine` recipe, set `particle` to a simple particle registry ID and `particle_speed` to the legacy particle speed multiplier. Legacy `cloud` maps to `minecraft:cloud` and `magicCrit` maps to `minecraft:enchanted_hit`. The packaged steam and hot-gas recipes use those original effects.
+Move the legacy turbine settings into `world/serverconfig/nuclearcraft-turbine.toml` and drop the `turbine_` prefix. Use `defaultconfigs/nuclearcraft-turbine.toml` for new worlds. `min_size` and `max_size` count interior blocks on each axis. `base_energy_capacity` is multiplied by the exterior volume. The existing render, particle, and sound keys stay in the same file.
+
+- `blade_efficiency` and `blade_expansion` use steel, extreme alloy, and SiC-SiC CMC order. Set the single stator coefficient with `stator_expansion`.
+- `coil_conductivity` and `coil_rule` use magnesium, beryllium, aluminum, gold, copper, and silver order. `connector_rule` has one entry. Rules support bearing, wall, coil and connector neighbors, with exact counts, maximum counts, axial pairs, edges, `&&`, and `||`. The search starts with parts whose rules reference a bearing and follows the connected dynamo. The coil and connector tooltips show the effective rules.
+- `power_per_mb`, `expansion_level`, and `spin_up_multiplier` use high-pressure steam, low-pressure steam, steam, and hot gas order. `throughput_leniency_params` contains the minimum efficiency followed by the throughput fraction that reaches full efficiency.
+- `mb_per_blade`, `spin_up_multiplier_global`, `spin_down_multiplier`, `tension_throughput_factor`, `tension_leniency`, and `power_bonus_multiplier` retain their legacy meanings.
+
+In a datapack or KubeJS `nuclearcraft:turbine` recipe, use `legacy_profile` with `high_pressure_steam`, `low_pressure_steam`, `steam`, or `hot_gas` to inherit the corresponding settings. Explicit `power_per_mb`, `expansion`, and `spin_up` override the corresponding profile values. Recipes without a profile continue to use their own values. Set `particle` to a simple particle registry ID and `particle_speed` to the legacy particle speed multiplier. Legacy `cloud` maps to `minecraft:cloud` and `magicCrit` maps to `minecraft:enchanted_hit`. The packaged steam and hot-gas recipes use those original effects.
+
+Forge reapplies settings to assembled turbines when the server config reloads. JEI receives the effective recipe values at recipe sync. Use `/reload` after editing the recipe profiles to refresh the values for connected clients.
 
 Rotor block IDs and their axis property remain stable. Forge restores the static model when a turbine disassembles. Chunk loading also restores the static model before assembly, including shaft blocks loaded without their controller. A save can retain the moving rotor's angle and rated power with the controller. Existing saves open with an initial angle of zero when the field is absent.
 
-All 168 local GameTests passed. A dedicated clean Forge 47.4.18 restart restored a shaft's static model while preserving its axis. The new GameTest also verified the shaft and stator order, interpolation, coasting, hot-gas particle recipe, and clearing of the client render state after a frame break.
+All 169 local GameTests passed. Turbine coverage includes exact-count dynamo rechecks, shaft and stator order, animation interpolation, coasting, hot-gas particles, and clearing the client render state after a frame break. A dedicated clean Forge 47.4.18 restart restored a shaft's static model while preserving its axis.
+
+A clean Forge 47.4.18 server processed 16,000 mB of steam in a 25-stage turbine and disassembled it when the configured maximum dropped to 24. A second packaged server with CC: Tweaked 1.120.2 verified custom blade and stator stats, exact-count dynamo invalidation, the configured 400 mB/t flow, and a datapack recipe with explicit power and expansion. A configuration reload increased the assembled turbine capacity to 268,435,455,875 FE. A dedicated restart preserved the custom capacity, exact coil validity, and the saved energy and fluid buffers.
 
 The same packaged JAR ran both solid-fission-to-turbine-to-condenser chains with Auram's Ender IO 8.2.22-beta conduit and Mekanism 10.4.16.80 pipe networks on Forge 47.4.18. Each route collected 1,000 mB of condensate and one depleted LECf-251 oxide item.
 
-In the isolated 539-mod Auram client, captured frames showed different blade positions through the windows as an east-flowing turbine spun up through a stationary stator stage. The client displayed 475,000 mB of exhaust and returned to static rotor models when the shell broke. Repair restored the render and retained the exhaust. OpenAL used No Output and the focus observer recorded zero activations, foreground samples, and visible-window samples.
+The isolated 539-mod Auram client loaded JEI and opened a world with custom blade expansion, a higher ideal steam expansion, and fast blade rendering. Captured frames showed different blade positions through the windows as an east-flowing turbine spun up through a stationary stator stage. The client displayed 475,000 mB of exhaust and returned to static rotor models when the shell broke. Repair restored the render and retained the exhaust. OpenAL used No Output and the focus observer recorded zero activations, foreground samples, and visible-window samples.
 
 ### Portable Ender Chest, Tritium Lamp, and food
 

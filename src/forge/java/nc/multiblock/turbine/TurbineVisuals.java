@@ -1,5 +1,6 @@
 package nc.multiblock.turbine;
 
+import nc.init.TurbineConfig;
 import nc.multiblock.turbine.TurbinePartBlock.Part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -57,7 +58,7 @@ public record TurbineVisuals(BlockPos origin, Direction flow, int shaftWidth, in
         Direction flow = Direction.byName(tag.getString("flow"));
         int shaft = tag.getInt("shaft");
         int blades = tag.getInt("blades");
-        int max = TurbinePartBlock.MAX_INTERIOR_LENGTH;
+        int max = TurbineConfig.MAX_INTERIOR_SIZE;
         int[] ids = tag.getIntArray("stages");
         if (flow == null || shaft < 1 || shaft > max || blades < 1 || blades > max
                 || shaft + 2 * blades > max || ids.length == 0 || ids.length > max) {
@@ -66,7 +67,7 @@ public record TurbineVisuals(BlockPos origin, Direction flow, int shaftWidth, in
         Part[] all = Part.values();
         var stages = new ArrayList<Part>(ids.length);
         for (int id : ids) {
-            if (id < 0 || id >= all.length || all[id].expansion <= 0) {
+            if (id < 0 || id >= all.length || !all[id].stage()) {
                 return null;
             }
             stages.add(all[id]);

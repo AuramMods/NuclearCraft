@@ -8,9 +8,7 @@
         "fluid": "nuclearcraft:oxygen_exhaust",
         "amount": 2
     },
-    "power_per_mb": 32,
-    "expansion": 2,
-    "spin_up": 1,
     "particle": "minecraft:enchanted_hit",
-    "particle_speed": 0.7
+    "particle_speed": 0.7,
+    "legacy_profile": "hot_gas"
 }

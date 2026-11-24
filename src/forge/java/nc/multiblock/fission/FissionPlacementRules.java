@@ -2,8 +2,9 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.multiblock.Cuboid;
+import nc.multiblock.PlacementAdjacency;
+import nc.multiblock.PlacementAdjacency.Limit;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,29 +20,11 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 public final class FissionPlacementRules<C extends Enum<C>> {
     public enum Part {
         CASING, CONDUCTOR, MODERATOR, REFLECTOR, IRRADIATOR, SHIELD, CELL, SINK, CHAMBER, COOLER, VESSEL, HEATER
     }
-
-    private enum Limit {
-        AT_LEAST, EXACTLY, AT_MOST
-    }
-
-    private enum Geometry {
-        SIDES, AXIAL, EDGE, VERTEX
-    }
-
-    private static final Direction[] FACES = Direction.values();
-    private static final List<Direction> AXES = List.of(Direction.UP, Direction.NORTH, Direction.EAST);
-    private static final List<String> NUMBERS = List.of("zero", "one", "two", "three", "four", "five", "six");
-    private static final Pattern AMOUNT = Pattern.compile("^([a-z]+|[0-9]+)\\s+(.+)$");
-    private static final Pattern LIMIT = Pattern.compile("\\b(at least|at most|exactly|exact)\\b");
-    private static final Pattern GEOMETRY = Pattern.compile("\\b(axial(?:ly)?|edge|vertex)\\b");
-    private static final Pattern GEOMETRY_PHRASE = Pattern.compile(
-            "\\b(?:(?:at|along) (?:exactly )?(?:(?:one|a|an) )?)?(?:axial(?:ly)?|edge|vertex)\\b");
 
     private final Map<C, Rule<C>> rules;
     private final List<Group<C>> order;
@@ -182,7 +165,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
                         dependencies.addAll(types);
                     } else {
                         dependencies.add(clause.material());
-                        if (clause.limit() != Limit.AT_LEAST) {
+                        if (clause.adjacency().limit() != Limit.AT_LEAST) {
                             inhibitory.add(clause.material());
                         }
                     }
@@ -195,46 +178,8 @@ public final class FissionPlacementRules<C extends Enum<C>> {
     }
 
     private static <C extends Enum<C>> Clause<C> parseClause(String text, Part coolingPart, Map<String, C> names) {
-        text = text.replaceAll("\\s+", " ").replace("at exactly one vertex", "vertex");
-        var limitMatcher = LIMIT.matcher(text);
-        Limit limit = Limit.AT_LEAST;
-        if (limitMatcher.find()) {
-            limit = switch (limitMatcher.group()) {
-                case "exact", "exactly" -> Limit.EXACTLY;
-                case "at most" -> Limit.AT_MOST;
-                default -> Limit.AT_LEAST;
-            };
-            if (limitMatcher.find()) {
-                throw new IllegalArgumentException("multiple count modifiers in \"" + text + "\"");
-            }
-        }
-        var shapeMatcher = GEOMETRY.matcher(text);
-        Geometry geometry = Geometry.SIDES;
-        if (shapeMatcher.find()) {
-            geometry = switch (shapeMatcher.group()) {
-                case "edge" -> Geometry.EDGE;
-                case "vertex" -> Geometry.VERTEX;
-                default -> Geometry.AXIAL;
-            };
-            if (shapeMatcher.find()) {
-                throw new IllegalArgumentException("multiple adjacency shapes in \"" + text + "\"");
-            }
-        }
-        var term = AMOUNT.matcher(GEOMETRY_PHRASE.matcher(LIMIT.matcher(text).replaceAll(""))
-                .replaceAll("").strip());
-        if (!term.matches()) {
-            throw new IllegalArgumentException("expected a numbered adjacency in \"" + text + "\"");
-        }
-        String count = term.group(1);
-        int amount = count.length() == 1 && Character.isDigit(count.charAt(0)) ? count.charAt(0) - '0' : NUMBERS.indexOf(count);
-        if (amount < 0 || amount > 6 || (amount == 0 && limit != Limit.EXACTLY)
-                || (geometry == Geometry.AXIAL && amount % 2 != 0)
-                || (geometry == Geometry.EDGE && (amount != 2 || limit == Limit.AT_MOST))
-                || (geometry == Geometry.VERTEX && (amount != 3 || limit == Limit.AT_MOST))) {
-            throw new IllegalArgumentException("invalid adjacency count for \"" + text + "\"");
-        }
-
-        String description = term.group(2).strip();
+        PlacementAdjacency adjacency = PlacementAdjacency.parse(text);
+        String description = adjacency.target();
         int boundary = description.lastIndexOf(' ');
         String noun = description.substring(boundary + 1);
         if (noun.endsWith("s")) {
@@ -253,7 +198,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
                 .replaceAll("[\\s-]+", "_");
         C material = null;
         if (part == Part.HEATER || part == Part.COOLER || part == Part.SINK) {
-            if (modifier.isEmpty() || (modifier.equals("any") && limit != Limit.AT_LEAST)) {
+            if (modifier.isEmpty() || (modifier.equals("any") && adjacency.limit() != Limit.AT_LEAST)) {
                 throw new IllegalArgumentException("expected a named coolant, or an at-least count of any coolant, in \"" + text + "\"");
             }
             if (part == coolingPart && !modifier.equals("any")) {
@@ -265,7 +210,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         } else if (!modifier.isEmpty()) {
             throw new IllegalArgumentException("unexpected material in \"" + text + "\"");
         }
-        return new Clause<>(part, amount, limit, geometry, part == coolingPart, material);
+        return new Clause<>(part, adjacency, part == coolingPart, material);
     }
 
     private record Group<C>(Set<C> coolants, boolean recursive) {}
@@ -289,44 +234,13 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         }
     }
 
-    private record Clause<C extends Enum<C>>(Part part, int amount, Limit limit, Geometry geometry, boolean cooling,
+    private record Clause<C extends Enum<C>>(Part part, PlacementAdjacency adjacency, boolean cooling,
                                              @Nullable C material) {
         boolean matches(BlockPos pos, BiPredicate<Part, BlockPos> neighbors, Map<BlockPos, C> active) {
-            int mask = 0;
-            int count = 0;
-            for (Direction direction : FACES) {
+            return adjacency.matches(direction -> {
                 BlockPos neighbor = pos.relative(direction);
-                boolean found = cooling ? hasCoolant(neighbor, active) : neighbors.test(part, neighbor);
-                if (found) {
-                    count++;
-                    if (geometry == Geometry.SIDES && limit == Limit.AT_LEAST && count == amount) {
-                        return true;
-                    }
-                    if (limit == Limit.EXACTLY && count > amount) {
-                        return false;
-                    }
-                    mask |= 1 << direction.ordinal();
-                }
-            }
-            if (geometry == Geometry.SIDES) {
-                return limit(count);
-            }
-            if (limit == Limit.EXACTLY && count != amount) {
-                return false;
-            }
-            int axes = 0;
-            int pairs = 0;
-            for (Direction direction : AXES) {
-                int axis = (1 << direction.ordinal()) | (1 << direction.getOpposite().ordinal());
-                if ((mask & axis) != 0) axes++;
-                if ((mask & axis) == axis) pairs++;
-            }
-            return switch (geometry) {
-                case AXIAL -> limit(pairs * 2);
-                case EDGE -> axes >= 2;
-                case VERTEX -> axes == 3;
-                default -> throw new IllegalStateException("Unexpected adjacency geometry");
-            };
+                return cooling ? hasCoolant(neighbor, active) : neighbors.test(part, neighbor);
+            });
         }
 
         private boolean hasCoolant(BlockPos neighbor, Map<BlockPos, C> active) {
@@ -334,12 +248,5 @@ public final class FissionPlacementRules<C extends Enum<C>> {
             return found != null && (material == null || material == found);
         }
 
-        private boolean limit(int count) {
-            return switch (limit) {
-                case AT_LEAST -> count >= amount;
-                case EXACTLY -> count == amount;
-                case AT_MOST -> count <= amount;
-            };
-        }
     }
 }

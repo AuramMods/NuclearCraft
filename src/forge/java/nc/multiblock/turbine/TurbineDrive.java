@@ -1,21 +1,19 @@
 package nc.multiblock.turbine;
 
+import nc.init.TurbineConfig;
 import nc.recipe.TurbineRecipe;
 import nc.util.ValueTracker;
 import net.minecraft.nbt.CompoundTag;
 
 final class TurbineDrive {
-    private static final int MB_PER_BLADE = 100;
-    private static final double TENSION_LENIENCY = 0.05D;
-
     private final ValueTracker rateTracker = new ValueTracker();
     private double rawPower;
     private double ratedPower;
     private double throughput;
     private double tension;
 
-    int ratedFlow(TurbineLayout layout) {
-        return MB_PER_BLADE * layout.bladeArea() * layout.bladeSets();
+    long ratedFlow(TurbineLayout layout) {
+        return (long) TurbineConfig.mbPerBlade() * layout.bladeArea() * layout.bladeSets();
     }
 
     long tick(TurbineLayout layout, TurbineRecipe recipe, int inputRate) {
@@ -23,21 +21,28 @@ final class TurbineDrive {
                 + Math.min(1D, (1D + 2D * layout.dynamo().outletCoils()) / layout.bearings().size()));
         if (inputRate > 0) {
             double inertia = layout.inertia() * Math.sqrt(driveBalance);
-            rawPower = (inertia * rawPower + inputRate * recipe.powerPerMb() * recipe.spinUp()) / (inertia + recipe.spinUp());
+            double spinUp = Math.min(Double.MAX_VALUE, recipe.spinUp() * TurbineConfig.globalSpinUp());
+            double targetPower = Math.min(Double.MAX_VALUE, inputRate * recipe.powerPerMb());
+            double weight = spinUp / (inertia + spinUp);
+            rawPower = Math.min(Double.MAX_VALUE, rawPower * (1D - weight) + targetPower * weight);
         } else {
             double inertia = layout.inertia() / Math.sqrt(driveBalance);
-            rawPower = inertia * rawPower / (inertia + Math.log1p(inertia) + 1D);
+            double coast = inertia / (TurbineConfig.spinDown() * (inertia + Math.log1p(inertia) + 1D));
+            rawPower = Math.min(Double.MAX_VALUE, rawPower * coast);
         }
 
-        int rated = ratedFlow(layout);
+        long rated = ratedFlow(layout);
         if (recipe != null) {
-            ratedPower = finitePositive(rated * recipe.powerPerMb());
+            ratedPower = Math.min(Double.MAX_VALUE, rated * recipe.powerPerMb());
         }
-        double tensionChange = inputRate <= 0 ? 0D : (double) inputRate / rated - 1D - TENSION_LENIENCY;
-        tension += (tensionChange < 0D ? -Math.sqrt(-tensionChange) : Math.min(1D, tensionChange))
+        double tensionChange = inputRate <= 0 ? 0D : (double) inputRate / rated - 1D - TurbineConfig.tensionLeniency();
+        tensionChange = tensionChange < 0D ? -Math.sqrt(-tensionChange)
+                : tensionChange / Math.max(1D, TurbineConfig.tensionThroughputFactor() - 1D);
+        tension += Math.min(1D, tensionChange)
                 / (1200D * layout.bearings().size());
         tension = Math.max(0D, tension);
 
+        double previousThroughput = throughput;
         throughput = rateTracker.update(inputRate);
         if (recipe == null) {
             return 0;
@@ -48,37 +53,45 @@ final class TurbineDrive {
         double minBlade = Double.POSITIVE_INFINITY;
         double maxBlade = 1D;
         double minStator = 1D;
+        double idealExpansion = recipe.expansion();
         for (int depth = 0; depth < stageCount; depth++) {
             TurbinePartBlock.Part stage = layout.stages().get(depth);
-            double intermediate = expansion * Math.sqrt(stage.expansion);
-            expansion *= stage.expansion;
-            if (stage.efficiency > 0) {
-                double ideal = Math.pow(recipe.expansion(), (depth + 0.5D) / stageCount);
-                efficiency += stage.efficiency * expansionFactor(ideal, intermediate);
-                minBlade = Math.min(minBlade, stage.expansion);
-                maxBlade = Math.max(maxBlade, stage.expansion);
+            double coefficient = stage.expansion();
+            double intermediate = expansion * Math.sqrt(coefficient);
+            expansion *= coefficient;
+            if (stage.blade()) {
+                double ideal = Math.pow(idealExpansion, (depth + 0.5D) / stageCount);
+                efficiency += stage.efficiency() * expansionFactor(ideal, intermediate);
+                minBlade = Math.min(minBlade, coefficient);
+                maxBlade = Math.max(maxBlade, coefficient);
             } else {
-                minStator = Math.min(minStator, stage.expansion);
+                minStator = Math.min(minStator, coefficient);
             }
         }
         efficiency /= layout.bladeSets();
-        int maxLength = TurbinePartBlock.MAX_INTERIOR_LENGTH;
-        double idealLength = recipe.expansion() <= 1D ? maxLength
-                : Math.ceil(Math.log(recipe.expansion()) / Math.log(maxBlade));
-        double fill = Math.min(0.75D, (throughput + idealLength * 4 * MB_PER_BLADE) / rated);
-        double throughput = 0.5D + 0.5D * Math.sin(fill * Math.PI / 1.5D);
+        int maxLength = TurbineConfig.maxSize();
+        int mbPerBlade = TurbineConfig.mbPerBlade();
+        int minimumBladeArea = 4 * Math.max(1, TurbineConfig.minSize() - 2);
+        double idealLength = idealExpansion <= 1D || maxBlade <= 1D ? maxLength
+                : Math.ceil(Math.log(idealExpansion) / Math.log(maxBlade));
+        double throughputRatio = Math.min(1D, (previousThroughput + idealLength * minimumBladeArea * mbPerBlade) / rated);
+        double threshold = TurbineConfig.throughputThreshold();
+        double floor = TurbineConfig.throughputFloor();
+        double throughputEfficiency = throughputRatio >= threshold ? 1D
+                : floor + (1D - floor) * Math.sin(throughputRatio * Math.PI / (2D * threshold));
 
         double effectiveMax = maxLength;
-        if (minStator < 1D) {
-            effectiveMax = Math.ceil(Math.max(1D, Math.min(maxLength, (Math.log(recipe.expansion())
+        if (minBlade > 1D && minStator < 1D) {
+            effectiveMax = Math.ceil(Math.max(1D, Math.min(maxLength, (Math.log(idealExpansion)
                     - maxLength * Math.log(minStator)) / (Math.log(minBlade) - Math.log(minStator)))));
         }
         double rate = Math.min(inputRate, rated);
-        double lengthBonus = rate / (MB_PER_BLADE * layout.bladeArea() * effectiveMax);
-        double areaBonus = Math.sqrt(2D * rate / (MB_PER_BLADE * stageCount * maxLength * effectiveMax));
-        double bonus = 1D + Math.pow(lengthBonus * areaBonus, 2D / 3D);
-        return (long) (rawPower * layout.dynamo().conductivity() * efficiency
-                * expansionFactor(recipe.expansion(), expansion) * throughput * bonus);
+        double lengthBonus = rate / ((double) mbPerBlade * layout.bladeArea() * effectiveMax);
+        double areaBonus = Math.sqrt(2D * rate / ((double) mbPerBlade * stageCount * maxLength * effectiveMax));
+        double bonus = 1D + TurbineConfig.powerBonus() * Math.pow(lengthBonus * areaBonus, 2D / 3D);
+        double multiplier = layout.dynamo().conductivity() * efficiency * expansionFactor(idealExpansion, expansion)
+                * throughputEfficiency * bonus;
+        return (long) (rawPower * multiplier);
     }
 
     private static double expansionFactor(double ideal, double actual) {

@@ -1,5 +1,6 @@
 package nc.multiblock.turbine;
 
+import nc.init.TurbineConfig;
 import nc.multiblock.Cuboid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,10 +25,24 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
 
     record Validation(TurbineLayout layout, Component message) {}
 
-    record Dynamo(Map<BlockPos, Part> parts, Map<BlockPos, Part> installed, int inletCoils, int outletCoils, double conductivity) {}
+    record Dynamo(Map<BlockPos, Part> parts, Map<BlockPos, Part> installed,
+                  Map<Part, Integer> inlet, Map<Part, Integer> outlet, int inletCoils, int outletCoils, int bearingsPerSide) {
+        double conductivity() {
+            return 0.5D * (conductivity(inlet) / Math.max(bearingsPerSide, inletCoils)
+                    + conductivity(outlet) / Math.max(bearingsPerSide, outletCoils));
+        }
+
+        private static double conductivity(Map<Part, Integer> coils) {
+            double total = 0D;
+            for (var entry : coils.entrySet()) {
+                total += entry.getKey().conductivity() * entry.getValue();
+            }
+            return total;
+        }
+    }
 
     int bladeSets() {
-        return (int) stages.stream().filter(stage -> stage.efficiency > 0).count();
+        return (int) stages.stream().filter(Part::blade).count();
     }
 
     int bladeArea() {
@@ -43,12 +58,13 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
     }
 
     static Validation find(ServerLevel level, BlockPos origin) {
-        Cuboid bounds = Cuboid.findConnected(level, origin, TurbinePartBlock.MAX_INTERIOR_LENGTH + 2,
+        Cuboid bounds = Cuboid.findConnected(level, origin, TurbineConfig.searchLength(),
                 state -> TurbinePartBlock.part(state) != null);
         if (bounds == null) {
             return invalid("too_large", origin);
         }
-        if (bounds.xLength() < 3 || bounds.yLength() < 3 || bounds.zLength() < 3) {
+        int minimumLength = TurbineConfig.minSize() + 2;
+        if (bounds.xLength() < minimumLength || bounds.yLength() < minimumLength || bounds.zLength() < minimumLength) {
             return invalid("too_small", origin);
         }
         if (!bounds.isLoaded(level)) {
@@ -151,7 +167,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                         }
                         rotor.put(pos, axis);
                     } else if (centerU || centerV) {
-                        if (part == null || part.expansion <= 0 || (stage != null && stage != part)) {
+                        if (part == null || !part.stage() || (stage != null && stage != part)) {
                             return invalid("blades", pos);
                         }
                         stage = part;
@@ -163,78 +179,44 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             }
             stages.add(stage);
         }
-        if (stages.stream().noneMatch(stage -> stage.efficiency > 0)) {
+        if (stages.stream().noneMatch(Part::blade)) {
             return invalid("blades", origin);
         }
 
         Dynamo dynamo = solveDynamo(bounds, flow, bearings, coils);
         List<Port> ports = new ArrayList<>(valves);
-        dynamo.parts.forEach((pos, part) -> ports.add(new Port(pos, bounds.outward(pos), part)));
+        dynamo.parts.forEach((pos, part) -> {
+            Direction side = bounds.outward(pos);
+            if (side.getAxis() == axis) {
+                ports.add(new Port(pos, side, part));
+            }
+        });
         return new Validation(new TurbineLayout(bounds, flow, shaft, blade, List.copyOf(stages), Map.copyOf(rotor),
                 Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), List.copyOf(computers), dynamo, glass),
                 Component.translatable("message.nuclearcraft.turbine.assembled"));
     }
 
     private static Dynamo solveDynamo(Cuboid bounds, Direction flow, Set<BlockPos> bearings, Map<BlockPos, Part> coils) {
-        Map<BlockPos, Part> valid = new LinkedHashMap<>();
-        boolean changed;
-        do {
-            changed = false;
-            for (Map.Entry<BlockPos, Part> coil : coils.entrySet()) {
-                BlockPos pos = coil.getKey();
-                if (bounds.outward(pos).getAxis() == flow.getAxis() && !valid.containsKey(pos)
-                        && connects(pos, coil.getValue(), valid, bearings)) {
-                    valid.put(pos, coil.getValue());
-                    changed = true;
-                }
-            }
-        } while (changed);
-
-        int inlet = 0;
-        int outlet = 0;
-        double inletConductivity = 0;
-        double outletConductivity = 0;
-        for (Map.Entry<BlockPos, Part> coil : valid.entrySet()) {
-            double conductivity = coil.getValue().conductivity;
-            if (conductivity <= 0) {
+        Map<BlockPos, Part> valid = TurbineConfig.dynamoRules().active(bounds, bearings, coils);
+        var inlet = new EnumMap<Part, Integer>(Part.class);
+        var outlet = new EnumMap<Part, Integer>(Part.class);
+        int inletCount = 0;
+        int outletCount = 0;
+        for (var entry : valid.entrySet()) {
+            Part part = entry.getValue();
+            if (!part.coil()) {
                 continue;
             }
-            if (bounds.outward(coil.getKey()) == flow) {
-                outlet++;
-                outletConductivity += conductivity;
+            if (bounds.outward(entry.getKey()) == flow) {
+                outlet.merge(part, 1, Integer::sum);
+                outletCount++;
             } else {
-                inlet++;
-                inletConductivity += conductivity;
+                inlet.merge(part, 1, Integer::sum);
+                inletCount++;
             }
         }
-        int bearingsPerSide = bearings.size() / 2;
-        return new Dynamo(Map.copyOf(valid), Map.copyOf(coils), inlet, outlet, 0.5D * (inletConductivity / Math.max(bearingsPerSide, inlet)
-                + outletConductivity / Math.max(bearingsPerSide, outlet)));
-    }
-
-    private static boolean connects(BlockPos pos, Part type, Map<BlockPos, Part> valid, Set<BlockPos> bearings) {
-        Map<Part, Integer> adjacent = new EnumMap<>(Part.class);
-        boolean besideBearing = false;
-        boolean besideCoil = false;
-        for (Direction side : Direction.values()) {
-            BlockPos offset = pos.relative(side);
-            besideBearing |= bearings.contains(offset);
-            Part neighbor = valid.get(offset);
-            if (neighbor != null) {
-                adjacent.merge(neighbor, 1, Integer::sum);
-                besideCoil |= neighbor.conductivity > 0;
-            }
-        }
-        return switch (type) {
-            case MAGNESIUM -> besideBearing || adjacent.containsKey(Part.CONNECTOR);
-            case BERYLLIUM -> adjacent.containsKey(Part.MAGNESIUM);
-            case ALUMINUM -> adjacent.getOrDefault(Part.MAGNESIUM, 0) >= 2;
-            case GOLD -> adjacent.containsKey(Part.ALUMINUM);
-            case COPPER -> adjacent.containsKey(Part.BERYLLIUM);
-            case SILVER -> adjacent.containsKey(Part.GOLD) && adjacent.containsKey(Part.COPPER);
-            case CONNECTOR -> besideCoil;
-            default -> false;
-        };
+        return new Dynamo(Map.copyOf(valid), Map.copyOf(coils), Map.copyOf(inlet), Map.copyOf(outlet),
+                inletCount, outletCount, bearings.size() / 2);
     }
 
     private static Validation invalid(String reason, BlockPos pos) {

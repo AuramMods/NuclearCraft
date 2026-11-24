@@ -8,7 +8,5 @@
         "fluid": "nuclearcraft:low_quality_steam",
         "amount": 2
     },
-    "power_per_mb": 4,
-    "expansion": 2,
-    "spin_up": 1
+    "legacy_profile": "low_pressure_steam"
 }

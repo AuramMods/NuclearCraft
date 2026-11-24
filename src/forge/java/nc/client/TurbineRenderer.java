@@ -3,7 +3,7 @@ package nc.client;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import nc.init.NCTurbine;
-import nc.init.TurbineVisualConfig;
+import nc.init.TurbineConfig;
 import nc.multiblock.turbine.TurbineController;
 import nc.multiblock.turbine.TurbinePartBlock.Part;
 import nc.multiblock.turbine.TurbineVisuals;
@@ -39,7 +39,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
             turbine -> {
                 var visual = turbine.visuals();
                 return visual != null && visual.processing()
-                        ? (1D + 2D * visual.speedRatio()) * TurbineVisualConfig.soundVolume() / 32D : 0D;
+                        ? (1D + 2D * visual.speedRatio()) * TurbineConfig.soundVolume() / 32D : 0D;
             }, turbine -> Math.pow(2D, (4D * turbine.visuals().speedRatio() - 2D) / 12D));
 
     public TurbineRenderer(BlockEntityRendererProvider.Context context) {
@@ -80,7 +80,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
             Part material = visual.stages().get(stage);
             double longitudinal = flow.getAxisDirection() == Direction.AxisDirection.POSITIVE
                     ? stage + 0.5D : length - stage - 0.5D;
-            double taper = Math.pow(TurbineVisualConfig.expansion(), (1D + stage - length) / length);
+            double taper = Math.pow(TurbineConfig.expansion(), (1D + stage - length) / length);
             pose.pushPose();
             pose.translate(origin.getX() + (axis == Direction.Axis.X ? longitudinal : radius),
                     origin.getY() + (axis == Direction.Axis.Y ? longitudinal : radius),
@@ -114,10 +114,10 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
         Vector3f lateral = radius.cross(flow, new Vector3f());
         Quaternionf frame = new Quaternionf().setFromNormalized(new Matrix3f().setColumn(0, lateral)
                 .setColumn(1, radius).setColumn(2, flow));
-        boolean fast = TurbineVisualConfig.fastBlades();
+        boolean fast = TurbineConfig.fastBlades();
         int strips = fast ? 1 : visual.shaftWidth();
         double distance = (visual.shaftWidth() + visual.bladeLength()) / 2D;
-        float bladeWidth = (float) TurbineVisualConfig.bladeWidth() * (fast ? visual.shaftWidth() : 1);
+        float bladeWidth = (float) TurbineConfig.bladeWidth() * (fast ? visual.shaftWidth() : 1);
         for (int strip = 0; strip < strips; strip++) {
             double offset = strip - (strips - 1) / 2D;
             pose.pushPose();
@@ -207,7 +207,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
     }
 
     private void emitParticles(TurbineController turbine, Level level, TurbineVisuals visual, BlockPos min) {
-        if (!visual.processing() || visual.particle() == null || TurbineVisualConfig.particles() == 0D
+        if (!visual.processing() || visual.particle() == null || TurbineConfig.particles() == 0D
                 || !(BuiltInRegistries.PARTICLE_TYPE.get(visual.particle()) instanceof SimpleParticleType type)) {
             return;
         }
@@ -225,7 +225,7 @@ public final class TurbineRenderer implements BlockEntityRenderer<TurbineControl
         double inlet = flow.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 0.02D : length - 0.02D;
         double spread = 1D / (4D * Math.sqrt(length));
         double velocity = (flow.getAxisDirection() == Direction.AxisDirection.POSITIVE ? 1D : -1D) * length * visual.particleSpeed();
-        double chance = Math.min(1D, TurbineVisualConfig.particles() * visual.particleRate());
+        double chance = Math.min(1D, TurbineConfig.particles() * visual.particleRate());
         var random = level.random;
         for (int first = 0; first < width; first++) {
             if (first >= rim && first < width - rim) {

@@ -1,6 +1,7 @@
 package nc.multiblock.turbine;
 
 import nc.NuclearCraft;
+import nc.init.TurbineConfig;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.Cuboid;
 import net.minecraft.world.InteractionHand;
@@ -8,9 +9,14 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -20,44 +26,49 @@ import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
+
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class TurbinePartBlock extends Block {
-    static final int MAX_INTERIOR_LENGTH = 24;
-
     public enum Part {
         CASING, GLASS, COMPUTER, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
-        STEEL(1.0, 1.4), EXTREME(1.1, 1.6), SIC_SIC_CMC(1.2, 1.8), STATOR(-1, 0.75),
-        MAGNESIUM(0.88), BERYLLIUM(0.90), ALUMINUM(1.00), GOLD(1.04), COPPER(1.06), SILVER(1.12),
+        STEEL, EXTREME, SIC_SIC_CMC, STATOR,
+        MAGNESIUM, BERYLLIUM, ALUMINUM, GOLD, COPPER, SILVER,
         CONNECTOR, REDSTONE;
 
-        final double conductivity;
-        final double efficiency;
-        final double expansion;
-
-        Part() {
-            this(0, 0, 0);
+        boolean blade() {
+            return this == STEEL || this == EXTREME || this == SIC_SIC_CMC;
         }
 
-        Part(double conductivity) {
-            this(conductivity, 0, 0);
+        boolean stage() {
+            return blade() || this == STATOR;
         }
 
-        Part(double efficiency, double expansion) {
-            this(0, efficiency, expansion);
-        }
-
-        Part(double conductivity, double efficiency, double expansion) {
-            this.conductivity = conductivity;
-            this.efficiency = efficiency;
-            this.expansion = expansion;
+        boolean coil() {
+            return ordinal() >= MAGNESIUM.ordinal() && ordinal() <= SILVER.ordinal();
         }
 
         boolean dynamo() {
-            return conductivity > 0 || this == CONNECTOR;
+            return coil() || this == CONNECTOR;
         }
 
         boolean rotor() {
-            return expansion > 0 || this == SHAFT;
+            return stage() || this == SHAFT;
+        }
+
+        double conductivity() {
+            return TurbineConfig.coilConductivity(ordinal() - MAGNESIUM.ordinal());
+        }
+
+        double efficiency() {
+            return this == STATOR ? -1D : TurbineConfig.bladeEfficiency(ordinal() - STEEL.ordinal());
+        }
+
+        double expansion() {
+            return this == STATOR ? TurbineConfig.statorExpansion()
+                    : TurbineConfig.bladeExpansion(ordinal() - STEEL.ordinal());
         }
     }
 
@@ -68,6 +79,15 @@ public class TurbinePartBlock extends Block {
         this.part = part;
     }
 
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        if (part.dynamo()) {
+            tooltip.add(Component.translatable("tooltip.nuclearcraft.turbine.placement_rule",
+                    TurbineConfig.dynamoRules().text(part)).withStyle(ChatFormatting.GRAY));
+        }
+    }
+
     static Part part(BlockState state) {
         return state.getBlock() instanceof TurbinePartBlock block ? block.part : null;
     }
@@ -76,7 +96,7 @@ public class TurbinePartBlock extends Block {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moved) {
         super.onPlace(state, level, pos, previous, moved);
         if (level instanceof ServerLevel server && !state.is(previous.getBlock())) {
-            Cuboid.visitNearby(server, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+            Cuboid.visitNearby(server, new ChunkPos(pos), TurbineConfig.searchLength(), TurbineController.class,
                     controller -> controller.partChanged(pos));
         }
     }
@@ -84,7 +104,7 @@ public class TurbinePartBlock extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
         if (level instanceof ServerLevel server && !state.is(replacement.getBlock())) {
-            Cuboid.visitNearby(server, new ChunkPos(pos), MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+            Cuboid.visitNearby(server, new ChunkPos(pos), TurbineConfig.searchLength(), TurbineController.class,
                     controller -> controller.partChanged(pos));
         }
         super.onRemove(state, level, pos, replacement, moved);
@@ -119,7 +139,7 @@ public class TurbinePartBlock extends Block {
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel level) {
             ChunkPos pos = event.getChunk().getPos();
-            Cuboid.visitNearby(level, pos, MAX_INTERIOR_LENGTH + 2, TurbineController.class,
+            Cuboid.visitNearby(level, pos, TurbineConfig.searchLength(), TurbineController.class,
                     controller -> controller.chunkUnloaded(pos));
         }
     }
