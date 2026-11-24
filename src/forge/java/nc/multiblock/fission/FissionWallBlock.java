@@ -88,8 +88,8 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         if (level instanceof ServerLevel && role == Role.IRRADIATOR_PORT && type == NCFission.IRRADIATOR_PORT_ENTITY.get()) {
             return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportIrradiation((ServerLevel) world);
         }
-        if (level instanceof ServerLevel && (role == Role.FUEL_PORT || role == Role.CHAMBER_PORT || role == Role.COOLER_PORT || role == Role.HEATER_PORT)
-                && type == NCFission.PORT_ENTITY.get()) {
+        if (level instanceof ServerLevel && (role == Role.FUEL_PORT || role == Role.CHAMBER_PORT || role == Role.COOLER_PORT
+                || role == Role.HEATER_PORT || role == Role.VESSEL_PORT) && type == NCFission.PORT_ENTITY.get()) {
             return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportFuelOrCoolant((ServerLevel) world);
         }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
@@ -193,7 +193,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         }
         if (sneaking) {
             if (role == Role.VESSEL_PORT) {
-                return SaltVesselBlock.selectFilter(player, hand, level, pos, port::fuelFilter).consumesAction();
+                return SaltVesselBlock.selectFilter(player, hand, level, port::selectVesselFilter).consumesAction();
             }
             if (role == Role.HEATER_PORT || role == Role.POWER_PORT) {
                 return false;

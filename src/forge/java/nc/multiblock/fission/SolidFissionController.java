@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
+import java.util.Objects;
 
 public final class SolidFissionController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
     private static final int BASE_TANK_CAPACITY = 4_000;
@@ -238,7 +239,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         if (saltCooling != null && saltFuel != null) {
             saltCooling.resize(server, layout);
-            saltFuel.resize(layout);
+            saltFuel.resize(server, layout);
         }
 
         BlockState state = getBlockState();
@@ -258,6 +259,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             var entity = server.getBlockEntity(pos);
             if (entity instanceof FissionFuelCell cell) {
                 cell.bind(this);
+            } else if (entity instanceof SaltVessel vessel) {
+                vessel.bind(this);
             }
             var decay = FissionFuelDecay.of(entity);
             if (decay != null) {
@@ -303,6 +306,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             var entity = chunk == null ? null : chunk.getBlockEntity(pos);
             if (entity instanceof FissionFuelCell cell) {
                 cell.bind(null);
+            } else if (entity instanceof SaltVessel vessel) {
+                vessel.bind(null);
             }
             var decay = FissionFuelDecay.of(entity);
             if (decay != null) {
@@ -569,6 +574,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 entity.localPebbleGas().clear();
             } else if (port.role() == Role.HEATER_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.localSaltCoolant().clear();
+            } else if (port.role() == Role.VESSEL_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
+                entity.localVesselFuel().clear();
             }
         }
         setChanged();
@@ -594,18 +601,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return saltCooling.tank(port.salt(), port.output());
         }
         if (port.role() == FissionPartBlock.Role.VESSEL_PORT && saltFuel != null) {
-            return saltFuel.tank(port.fuelFilter(), port.output());
+            return saltFuel.circuit(port.fuelFilter()).tank(port.output());
         }
         return port.output() ? steam : coolant;
     }
 
-    boolean containsSaltComponent(BlockPos pos, SaltFissionPartMenu.Kind kind) {
-        return variant == FissionVariant.SALT && assembled() && layout.bounds().contains(pos)
-                && (kind == SaltFissionPartMenu.Kind.VESSEL ? layout.cells() : layout.sinks()).contains(pos);
-    }
-
-    @Nullable FluidTank existingSaltFuelTank(@Nullable ResourceLocation filter, boolean output) {
-        return saltFuel == null ? null : saltFuel.existingTank(filter, output);
+    SaltFuelBank saltFuelBank() {
+        return Objects.requireNonNull(saltFuel);
     }
 
     @Nullable SaltCooling.Tanks connectedSaltCoolant(NCSaltCoolants coolant) {

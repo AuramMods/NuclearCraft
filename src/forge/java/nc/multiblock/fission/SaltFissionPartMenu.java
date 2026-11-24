@@ -1,9 +1,7 @@
 package nc.multiblock.fission;
 
-import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
-import nc.multiblock.Cuboid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +15,6 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
@@ -46,8 +43,9 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private static final int CONNECTED = 1;
     private static final int PROCESSING = 2;
     private static final int OUTPUT_PORT = 4;
-    private static final int LINKED_COOLANT = 8;
+    private static final int LINKED = 8;
     private static final int LOCAL_VIEW = 16;
+    private static final int CAN_CLEAR_FILTER = 32;
 
     private final Kind kind;
     private final SimpleContainerData data = new SimpleContainerData(DATA_SIZE);
@@ -55,8 +53,6 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private final BlockPos pos;
     private final @Nullable Block expected;
     private final @Nullable BlockEntity expectedEntity;
-    private @Nullable SolidFissionController controller;
-    private long nextSearch;
     private boolean viewLocal;
 
     public SaltFissionPartMenu(int id, Inventory player, Kind kind) {
@@ -135,11 +131,15 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     }
 
     public boolean linked() {
-        return (get(STATUS) & LINKED_COOLANT) != 0;
+        return (get(STATUS) & LINKED) != 0;
     }
 
     public boolean local() {
         return (get(STATUS) & LOCAL_VIEW) != 0;
+    }
+
+    public boolean canClearFilter() {
+        return (get(STATUS) & CAN_CLEAR_FILTER) != 0;
     }
 
     public boolean outputPort() {
@@ -187,7 +187,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         if (part == null) {
             return false;
         }
-        if (id == SWITCH_BUFFER && part.sharedCoolant() != null) {
+        if (id == SWITCH_BUFFER && part.linked()) {
             viewLocal = !viewLocal;
             broadcastChanges();
             return true;
@@ -196,8 +196,8 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
             return false;
         }
         boolean output = id == CLEAR_OUTPUT;
-        var tank = tank(part, output);
-        if (tank != null && !tank.isEmpty()) {
+        var tank = part.tank(viewLocal, output);
+        if (!tank.isEmpty()) {
             tank.drain(tank.getFluidAmount(), EXECUTE);
             return true;
         }
@@ -212,10 +212,10 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         if (part == null) {
             return;
         }
-        boolean linked = part.sharedCoolant() != null;
+        boolean linked = part.linked();
         viewLocal &= linked;
-        setTank(INPUT, tank(part, false));
-        setTank(OUTPUT, tank(part, true));
+        setTank(INPUT, part.tank(viewLocal, false));
+        setTank(OUTPUT, part.tank(viewLocal, true));
         ResourceLocation filter = part.filter();
         set(FILTER, fluidId(part.coolant != null ? part.coolant.cold() : filter == null ? null : ForgeRegistries.FLUIDS.getValue(filter)));
         FluidStack reserved = part.vessel == null ? FluidStack.EMPTY : part.vessel.reservedForInspection();
@@ -231,7 +231,8 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         set(HEAT_CAPACITY, (int) Math.min(Integer.MAX_VALUE, heat.capacity()));
         set(STATUS, (part.controller != null ? CONNECTED : 0)
                 | (heat.processing() ? PROCESSING : 0) | (part.outputPort ? OUTPUT_PORT : 0)
-                | (linked ? LINKED_COOLANT : 0) | (viewLocal ? LOCAL_VIEW : 0));
+                | (linked ? LINKED : 0) | (viewLocal ? LOCAL_VIEW : 0)
+                | (part.controller == null && filter != null ? CAN_CLEAR_FILTER : 0));
     }
 
     private static int fluidId(@Nullable Fluid fluid) {
@@ -242,14 +243,6 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         set(index, tank == null ? 0 : fluidId(tank.getFluid().getFluid()));
         set(index + 1, tank == null ? 0 : tank.getFluidAmount());
         set(index + 2, tank == null ? 0 : tank.getCapacity());
-    }
-
-    private @Nullable FluidTank tank(Part part, boolean output) {
-        if (part.coolant != null) {
-            var shared = part.sharedCoolant();
-            return (shared == null || viewLocal ? part.localCoolant() : shared).tank(output);
-        }
-        return part.controller == null ? null : part.controller.existingSaltFuelTank(part.circuit(output), output);
     }
 
     private @Nullable Part part() {
@@ -265,29 +258,12 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
             return new Part(port.saltController(), null, port, null, wall.saltCoolant(), state.getValue(FissionWallBlock.ACTIVE));
         }
         if (entity instanceof SaltVessel vessel) {
-            return new Part(interiorController(), vessel, null, null, null, false);
+            return new Part(vessel.controller(), vessel, null, null, null, false);
         }
         if (entity instanceof SaltHeater heater) {
             return new Part(heater.controller(), null, null, heater, heater.coolant(), false);
         }
         return null;
-    }
-
-    private @Nullable SolidFissionController interiorController() {
-        if (controller != null && !controller.containsSaltComponent(pos, kind)) {
-            controller = null;
-            nextSearch = 0;
-        }
-        if (controller == null && level != null && level.getGameTime() >= nextSearch) {
-            nextSearch = level.getGameTime() + 20;
-            Cuboid.visitNearby(level, new ChunkPos(pos), NCFission.searchLength(),
-                    SolidFissionController.class, candidate -> {
-                        if (controller == null && candidate.containsSaltComponent(pos, kind)) {
-                            controller = candidate;
-                        }
-                    });
-        }
-        return controller;
     }
 
     private record Part(@Nullable SolidFissionController controller, @Nullable SaltVessel vessel,
@@ -305,22 +281,34 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
             return vessel != null ? vessel.filter() : port != null ? port.fuelFilter() : null;
         }
 
-        @Nullable ResourceLocation circuit(boolean output) {
-            return output && vessel != null ? vessel.outputCircuit() : filter();
+        FluidTank tank(boolean local, boolean output) {
+            if (coolant != null) {
+                var shared = local ? null : sharedCoolant();
+                return (shared == null ? localCoolant() : shared).tank(output);
+            }
+            if (vessel != null) {
+                return local ? vessel.localTanks().tank(output) : vessel.fuelTank(output);
+            }
+            return (local || controller == null ? port.localVesselFuel()
+                    : controller.saltFuelBank().circuit(port.fuelFilter())).tank(output);
+        }
+
+        boolean linked() {
+            if (controller == null) {
+                return false;
+            }
+            if (coolant != null) {
+                return sharedCoolant() != null;
+            }
+            return vessel == null || vessel.fuelTank(false) != vessel.localTanks().tank(false)
+                    || vessel.fuelTank(true) != vessel.localTanks().tank(true);
         }
 
         boolean clearFilter() {
-            if (coolant != null || filter() == null) {
+            if (coolant != null) {
                 return false;
             }
-            if (vessel != null) {
-                vessel.filter(null);
-                FissionPartBlock.geometryChanged((ServerLevel) vessel.getLevel(), vessel.getBlockPos());
-            } else if (port != null) {
-                port.fuelFilter(null);
-                FissionPartBlock.geometryChanged((ServerLevel) port.getLevel(), port.getBlockPos());
-            }
-            return true;
+            return vessel == null ? port.selectVesselFilter(null) : vessel.selectFilter(null);
         }
     }
 

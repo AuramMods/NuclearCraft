@@ -162,10 +162,10 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         if (entity instanceof SaltVessel vessel) {
             var fuel = vessel.reservedForInspection();
             if (fuel.isEmpty()) {
-                fuel = fluid(controller.existingSaltFuelTank(vessel.filter(), false));
+                fuel = fluid(vessel.fuelTank(false));
             }
             return fuelStats(core.fuelStats(pos), ComputerValues.fluid(fuel),
-                    ComputerValues.fluid(fluid(controller.existingSaltFuelTank(vessel.outputCircuit(), true))),
+                    ComputerValues.fluid(fluid(vessel.fuelTank(true))),
                     vessel.computerProgress());
         }
         if (entity instanceof FissionIrradiator irradiator) {

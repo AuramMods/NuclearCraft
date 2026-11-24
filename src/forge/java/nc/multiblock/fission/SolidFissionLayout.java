@@ -151,7 +151,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                 }
             }
         }
-        if (variant == FissionVariant.SALT) {
+        if (variant == FissionVariant.SALT && !cells.isEmpty()) {
             var filters = new HashSet<ResourceLocation>();
             for (Port port : ports) {
                 if (port.role() == Role.VESSEL_PORT) {

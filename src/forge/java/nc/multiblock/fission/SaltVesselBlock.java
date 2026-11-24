@@ -17,6 +17,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Predicate;
 
 public final class SaltVesselBlock extends FissionPartBlock implements EntityBlock {
     public SaltVesselBlock(Properties properties) {
@@ -48,29 +51,32 @@ public final class SaltVesselBlock extends FissionPartBlock implements EntityBlo
         }
         if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof SaltVessel vessel) {
             if (player.isShiftKeyDown()) {
-                return selectFilter(player, hand, server, pos, vessel::filter);
+                return selectFilter(player, hand, server, vessel::selectFilter);
             }
-            SaltFissionPartMenu.open(player, server, pos, SaltFissionPartMenu.Kind.VESSEL);
+            boolean output = FluidUtil.getFluidContained(player.getItemInHand(hand)).isEmpty();
+            if (!FluidUtil.interactWithFluidHandler(player, hand, vessel.fuelTank(output))) {
+                SaltFissionPartMenu.open(player, server, pos, SaltFissionPartMenu.Kind.VESSEL);
+            }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
-    static InteractionResult selectFilter(Player player, InteractionHand hand, ServerLevel level, BlockPos pos,
-                                          java.util.function.Consumer<ResourceLocation> update) {
+    static InteractionResult selectFilter(Player player, InteractionHand hand, ServerLevel level,
+                                          Predicate<@Nullable ResourceLocation> update) {
         var held = player.getItemInHand(hand);
         if (held.is(Items.BUCKET)) {
-            update.accept(null);
-            geometryChanged(level, pos);
-            player.displayClientMessage(Component.translatable("message.nuclearcraft.fission.fuel_filter_cleared"), true);
+            if (update.test(null)) {
+                player.displayClientMessage(Component.translatable("message.nuclearcraft.fission.fuel_filter_cleared"), true);
+            }
             return InteractionResult.CONSUME;
         }
         var candidate = FluidUtil.getFluidContained(held).orElse(null);
         if (candidate == null || !SaltFuelBank.acceptsFuel(level, candidate)) {
             return InteractionResult.PASS;
         }
-        update.accept(ForgeRegistries.FLUIDS.getKey(candidate.getFluid()));
-        geometryChanged(level, pos);
-        player.displayClientMessage(Component.translatable("message.nuclearcraft.fission.fuel_filter", candidate.getDisplayName()), true);
+        if (update.test(ForgeRegistries.FLUIDS.getKey(candidate.getFluid()))) {
+            player.displayClientMessage(Component.translatable("message.nuclearcraft.fission.fuel_filter", candidate.getDisplayName()), true);
+        }
         return InteractionResult.CONSUME;
     }
 }

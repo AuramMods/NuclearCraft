@@ -15,6 +15,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
@@ -78,7 +79,7 @@ public final class SaltFissionGameTests {
         ListTag fuel = new ListTag();
         CompoundTag circuit = new CompoundTag();
         circuit.putString("fuel_filter", NuclearCraft.id(FUEL).toString());
-        circuit.put("output", stack(DEPLETED, 72_000).writeToNBT(new CompoundTag()));
+        circuit.put("output", stack(DEPLETED, 1_296).writeToNBT(new CompoundTag()));
         fuel.add(circuit);
         state.put("salt_fuel", fuel);
         controller.load(state);
@@ -125,7 +126,7 @@ public final class SaltFissionGameTests {
                 var depleted = fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0);
                 var cold = fluids(helper, NAK_IN, Direction.DOWN).getFluidInTank(0);
                 var hot = fluids(helper, NAK_OUT, Direction.UP).getFluidInTank(0);
-                helper.assertTrue(depleted.isFluidStackIdentical(stack(DEPLETED, 72_000)) && input.getFluidInTank(0).isEmpty()
+                helper.assertTrue(depleted.isFluidStackIdentical(stack(DEPLETED, 1_296)) && input.getFluidInTank(0).isEmpty()
                                 && hot.isFluidEqual(stack("nak_hot", 1)) && hot.getAmount() + cold.getAmount() == 300,
                         "All 12 reserved-and-fed fuel doses finish once and the heater conserves coolant across reload");
             });
@@ -185,14 +186,23 @@ public final class SaltFissionGameTests {
             var player = saltInspector(helper);
             BlockPos absolutePort = helper.absolutePos(FUEL_IN);
             player.moveTo(absolutePort.getX() + 0.5, absolutePort.getY(), absolutePort.getZ() - 1.0);
+            var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+            var saved = controller.saveWithoutMetadata();
+            var circuits = new ListTag();
+            var circuit = new CompoundTag();
+            circuit.putString("fuel_filter", NuclearCraft.id(FUEL).toString());
+            circuit.put("input", stack(FUEL, 50_001).writeToNBT(new CompoundTag()));
+            circuits.add(circuit);
+            saved.put("salt_fuel", circuits);
+            controller.load(saved);
             var initial = fluids(helper, FUEL_IN, Direction.NORTH);
-            helper.assertTrue(initial.fill(stack(FUEL, 50_001), EXECUTE) == 50_001,
-                    "Seed more than a signed short can represent through the input port");
+            helper.assertTrue(initial.getFluidInTank(0).getAmount() == 50_001 && initial.fill(stack(FUEL, 1), SIMULATE) == 0,
+                    "An older tank retains every mB and cannot exceed its current amount");
             helper.useBlock(FUEL_IN, player);
             helper.assertTrue(player.containerMenu instanceof SaltFissionPartMenu, "Use the port to open the real inspection menu");
             var menu = (SaltFissionPartMenu) player.containerMenu;
             helper.assertTrue(menu.kind() == SaltFissionPartMenu.Kind.VESSEL_PORT && menu.connected()
-                            && menu.fluid(false).getAmount() == 50_001 && menu.capacity(false) == 72_000,
+                            && menu.fluid(false).getAmount() == 50_001 && menu.capacity(false) == 50_001,
                     "The menu reads the exact input, its capacity, and its current assembly");
             player.moveTo(absolutePort.getX() + 20, absolutePort.getY(), absolutePort.getZ());
             helper.assertTrue(!menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT)
@@ -219,6 +229,145 @@ public final class SaltFissionGameTests {
                     })
                     .thenSucceed();
         });
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 320)
+    public static void saltVesselKeepsReservedFuelInItsOriginalTanks(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        helper.setBlock(CASE, Blocks.AIR);
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var portState = NCSaltFission.VESSEL_PORT.get().defaultBlockState().setValue(FissionWallBlock.FACING, Direction.NORTH);
+        var outputState = portState.setValue(FissionWallBlock.FACING, Direction.SOUTH).setValue(FissionWallBlock.ACTIVE, true);
+        helper.setBlock(FUEL_IN, portState);
+        var unfiltered = helper.getBlockEntity(FUEL_IN).saveWithoutMetadata();
+        unfiltered.remove("fuel_filter");
+        helper.getBlockEntity(FUEL_IN).load(unfiltered);
+        var player = saltInspector(helper);
+        var portPos = helper.absolutePos(FUEL_IN);
+        player.moveTo(portPos.getX() + 0.5, portPos.getY(), portPos.getZ() - 1);
+        var fuelBucket = new ItemStack(stack(FUEL, 1).getFluid().getBucket());
+        player.setShiftKeyDown(true);
+        player.setItemInHand(InteractionHand.MAIN_HAND, fuelBucket);
+        helper.useBlock(FUEL_IN, player);
+        helper.assertTrue(player.getMainHandItem().is(fuelBucket.getItem())
+                        && helper.getBlockEntity(FUEL_IN).saveWithoutMetadata().getString("fuel_filter").equals(NuclearCraft.id(FUEL).toString()),
+                "Using a sample on the unassembled fuel port sets its filter and preserves the bucket");
+        player.setShiftKeyDown(false);
+        var detached = helper.getBlockEntity(FUEL_IN).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH);
+        var localPort = detached.orElseThrow(AssertionError::new);
+        helper.assertTrue(!helper.getBlockEntity(FUEL_IN).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.SOUTH).isPresent()
+                        && localPort.fill(stack("hecf_251_fluoride_flibe", 4), EXECUTE) == 0
+                        && localPort.fill(stack(FUEL, 81), SIMULATE) == 81 && localPort.getFluidInTank(0).isEmpty()
+                        && localPort.fill(stack(FUEL, 81), EXECUTE) == 81 && localPort.drain(1, EXECUTE).isEmpty(),
+                "Detached pipes use the local tank, its exact fuel filter, and its configured side");
+        helper.useBlock(FIRST_VESSEL, player);
+        helper.assertTrue(player.getMainHandItem().is(Items.BUCKET)
+                        && vesselStock(helper, false).isFluidStackIdentical(stack(FUEL, 1000)),
+                "A bucket supplies the independent vessel tank while unassembled");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        var savedPort = helper.getBlockEntity(FUEL_IN).saveWithoutMetadata();
+        var power = CONTROLLER.west();
+        helper.setBlock(CASE, NCFission.CASING.get());
+        int[] sharedStock = new int[2];
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "Both filtered ports are paired"))
+                .thenExecute(() -> {
+                    var input = fluids(helper, FUEL_IN, Direction.NORTH);
+                    helper.assertTrue(!detached.isPresent() && localPort.fill(stack(FUEL, 1), EXECUTE) == 0
+                                    && input.getTankCapacity(0) == 1296 && input.getFluidInTank(0).isEmpty(),
+                            "Shared fuel and detached buffers are independent and old local pipe handles are revoked");
+                    helper.useBlock(FUEL_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.linked() && menu.clickMenuButton(player, SaltFissionPartMenu.SWITCH_BUFFER)
+                                    && menu.fluid(false).isFluidStackIdentical(stack(FUEL, 81)),
+                            "The linked fuel port can inspect its independent local contents");
+                    helper.assertTrue(input.fill(stack(FUEL, 20), EXECUTE) == 20, "Supply the shared circuit");
+                    fluids(helper, NAK_IN, Direction.DOWN).fill(stack("nak", 300), EXECUTE);
+                    helper.setBlock(power, Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(vesselTag(helper).getDouble("progress") > 0
+                                && !vesselTag(helper).getBoolean("reserved_local"),
+                        "Wait for a live dose reserved from shared storage"))
+                .thenExecute(() -> {
+                    helper.setBlock(power, Blocks.AIR);
+                    sharedStock[0] = circuitAmount(controller, "input");
+                    sharedStock[1] = circuitAmount(controller, "output");
+                    helper.assertTrue(sharedStock[0] > 0 && vesselStock(helper, false).getAmount() == 1000,
+                            "The active circuit has fuel left and the local dose count is unchanged");
+                    helper.setBlock(FUEL_IN, NCFission.CASING.get());
+                    helper.setBlock(FUEL_OUT, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "A vessel can operate without a port"))
+                .thenExecute(() -> helper.setBlock(power, Blocks.REDSTONE_BLOCK))
+                .thenWaitUntil(() -> helper.assertTrue(circuitAmount(controller, "output") == sharedStock[1] + 1,
+                        "The reserved shared dose discharges to its original output after port removal"))
+                .thenExecute(() -> helper.assertTrue(circuitAmount(controller, "input") == sharedStock[0]
+                                && vesselStock(helper, false).getAmount() == 1000 && vesselStock(helper, true).isEmpty(),
+                        "Discharging the old dose does not consume the parked shared feed or touch local storage"))
+                .thenWaitUntil(() -> helper.assertTrue(vesselTag(helper).getBoolean("reserved_local")
+                                && vesselTag(helper).getDouble("progress") > 0,
+                        "The next dose comes from the local fuel supply"))
+                .thenExecute(() -> {
+                    helper.setBlock(power, Blocks.AIR);
+                    var saved = vesselTag(helper);
+                    helper.setBlock(FIRST_VESSEL, Blocks.AIR);
+                    helper.setBlock(FIRST_VESSEL, NCSaltFission.VESSEL.get());
+                    helper.getBlockEntity(FIRST_VESSEL).load(saved);
+                    helper.setBlock(FUEL_IN, portState);
+                    helper.getBlockEntity(FUEL_IN).load(savedPort);
+                })
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    helper.assertTrue(!controller.assembled(), "A lone fuel port still needs a matching output");
+                    helper.setBlock(FUEL_OUT, outputState);
+                    var data = helper.getBlockEntity(FUEL_OUT).saveWithoutMetadata();
+                    data.putString("fuel_filter", NuclearCraft.id(FUEL).toString());
+                    helper.getBlockEntity(FUEL_OUT).load(data);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "Reattach the original shared circuit"))
+                .thenExecute(() -> {
+                    helper.useBlock(FIRST_VESSEL, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.linked() && menu.reserved().isFluidStackIdentical(stack(FUEL, 1))
+                                    && menu.fluid(false).getAmount() == sharedStock[0] && menu.fluid(true).isEmpty(),
+                            "The rebuilt vessel reports the new shared feed and the reserved dose's local output");
+                    helper.setBlock(power, Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(vesselStock(helper, true).isFluidStackIdentical(stack(DEPLETED, 1)),
+                        "Reloaded local fuel completes in the original local output"))
+                .thenExecute(() -> {
+                    helper.setBlock(power, Blocks.AIR);
+                    int producedShared = sharedStock[1] + 1;
+                    helper.assertTrue(vesselStock(helper, false).getAmount() == 999
+                                    && circuitAmount(controller, "input") == sharedStock[0]
+                                    && fluids(helper, FUEL_OUT, Direction.SOUTH).drain(producedShared, EXECUTE)
+                                        .isFluidStackIdentical(stack(DEPLETED, producedShared))
+                                    && circuitAmount(controller, "output") == 0,
+                            "The shared output returns once and the local dose stays in local storage");
+                })
+                .thenSucceed();
+    }
+
+    private static CompoundTag vesselTag(GameTestHelper helper) {
+        return helper.getBlockEntity(FIRST_VESSEL).saveWithoutMetadata();
+    }
+
+    private static FluidStack vesselStock(GameTestHelper helper, boolean output) {
+        return FluidStack.loadFluidStackFromNBT(vesselTag(helper).getCompound("fuel_tanks")
+                .getCompound(output ? "output" : "input"));
+    }
+
+    private static int circuitAmount(SolidFissionController controller, String tank) {
+        ListTag circuits = controller.saveWithoutMetadata().getList("salt_fuel", Tag.TAG_COMPOUND);
+        for (int index = 0; index < circuits.size(); index++) {
+            CompoundTag circuit = circuits.getCompound(index);
+            if (circuit.getString("fuel_filter").equals(NuclearCraft.id(FUEL).toString())) {
+                return circuit.getCompound(tank).getInt("Amount");
+            }
+        }
+        return 0;
     }
 
     @GameTest(template = "fission", timeoutTicks = 240)

@@ -93,7 +93,7 @@ public final class SaltFissionPartScreen extends AbstractContainerScreen<SaltFis
                 lines.add(Component.translatable("gui.nuclearcraft.salt_part.reserved", reserved.getDisplayName(), reserved.getAmount()));
             }
         }
-        if (!fluid.isEmpty() || (!output && menu.kind().fuel() && !menu.filter().isEmpty())) {
+        if (!fluid.isEmpty() || (!output && menu.canClearFilter())) {
             lines.add(Component.translatable("gui.nuclearcraft.salt_part.clear"));
         }
         return lines;

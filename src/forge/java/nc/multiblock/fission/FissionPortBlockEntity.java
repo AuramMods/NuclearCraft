@@ -32,7 +32,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
     private final @Nullable FissionFuelItems localFuelItems;
     private final @Nullable PebbleCooling.Tanks localPebbleGas;
     private final @Nullable SaltCooling.Tanks localSaltCoolant;
-    private @Nullable VentHandler detachedHeater;
+    private final @Nullable SaltFuelBank.Tanks localVesselFuel;
+    private @Nullable VentHandler detachedHandler;
     private LazyOptional<IFluidHandler> detachedFluid = LazyOptional.empty();
     private @Nullable Binding binding;
     private boolean detachedCapabilities = true;
@@ -52,6 +53,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, this::gasFilter) : null;
         localSaltCoolant = FissionPartBlock.role(state) == Role.HEATER_PORT
                 ? new SaltCooling.Tanks(((FissionWallBlock) state.getBlock()).saltCoolant(), this) : null;
+        localVesselFuel = FissionPartBlock.role(state) == Role.VESSEL_PORT
+                ? new SaltFuelBank.Tanks(this, this::fuelFilter) : null;
         localFuelItems = switch (FissionPartBlock.role(state)) {
             case FUEL_PORT -> new FissionFuelItems(this, FissionVariant.SOLID, null);
             case CHAMBER_PORT -> new FissionFuelItems(this, FissionVariant.PEBBLE, null);
@@ -96,7 +99,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
     private void invalidateDetachedFluid() {
         var previous = detachedFluid;
-        detachedHeater = null;
+        detachedHandler = null;
         detachedFluid = LazyOptional.empty();
         previous.invalidate();
     }
@@ -105,16 +108,25 @@ public final class FissionPortBlockEntity extends BlockEntity {
     public void setBlockState(BlockState state) {
         BlockState previous = getBlockState();
         super.setBlockState(state);
-        if (localSaltCoolant != null && state != previous) {
+        if (hasLocalFluid() && state != previous) {
             invalidateDetachedFluid();
         }
     }
 
-    private LazyOptional<IFluidHandler> detachedCoolant() {
-        if (detachedHeater == null) {
+    private boolean hasLocalFluid() {
+        return localSaltCoolant != null || localVesselFuel != null;
+    }
+
+    SaltFuelBank.Tanks localVesselFuel() {
+        return Objects.requireNonNull(localVesselFuel);
+    }
+
+    private LazyOptional<IFluidHandler> detachedFluidHandler() {
+        if (detachedHandler == null) {
             boolean output = getBlockState().getValue(FissionWallBlock.ACTIVE);
-            VentHandler handler = new VentHandler(output, localSaltCoolant().tank(output));
-            detachedHeater = handler;
+            FluidTank tank = localVesselFuel == null ? localSaltCoolant().tank(output) : localVesselFuel.tank(output);
+            VentHandler handler = new VentHandler(output, tank);
+            detachedHandler = handler;
             detachedFluid = LazyOptional.of(() -> handler);
         }
         return detachedFluid;
@@ -147,10 +159,10 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 return power.cast();
             }
         }
-        if (localSaltCoolant != null && current == null && detachedCapabilities && !isRemoved()
+        if (hasLocalFluid() && current == null && detachedCapabilities && !isRemoved()
                 && capability == ForgeCapabilities.FLUID_HANDLER
                 && (side == null || side == getBlockState().getValue(FissionWallBlock.FACING))) {
-            return detachedCoolant().cast();
+            return detachedFluidHandler().cast();
         }
         return super.getCapability(capability, side);
     }
@@ -278,8 +290,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         Role role = current.port.role();
         var fuel = current.port.itemFuel() ? current.controller.fuelItems(current.port.fuelFilter()) : null;
-        var coolant = role == Role.COOLER_PORT || role == Role.HEATER_PORT ? current.controller.fluidTank(current.port) : null;
-        if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (coolant == null || coolant.isEmpty())) {
+        var output = role == Role.COOLER_PORT || role == Role.HEATER_PORT || role == Role.VESSEL_PORT
+                ? current.controller.fluidTank(current.port) : null;
+        if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (output == null || output.isEmpty())) {
             return;
         }
         Direction outward = current.port.side();
@@ -292,8 +305,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
         Direction side = outward.getOpposite();
         if (fuel != null) {
             target.getCapability(ForgeCapabilities.ITEM_HANDLER, side).ifPresent(destination -> pushFuel(fuel, destination));
-        } else if (coolant != null) {
-            target.getCapability(ForgeCapabilities.FLUID_HANDLER, side).ifPresent(destination -> pushFluid(coolant, destination));
+        } else if (output != null) {
+            target.getCapability(ForgeCapabilities.FLUID_HANDLER, side).ifPresent(destination -> pushFluid(output, destination));
         }
     }
 
@@ -326,7 +339,14 @@ public final class FissionPortBlockEntity extends BlockEntity {
         } finally {
             if (sent < reserved.getAmount()) {
                 reserved.shrink(sent);
-                source.fill(reserved, FluidAction.EXECUTE);
+                // Restoring a transfer can exceed the nominal capacity of a migrated tank.
+                FluidStack remaining = source.getFluid().copy();
+                if (remaining.isEmpty()) {
+                    source.setFluid(reserved);
+                } else {
+                    remaining.grow(reserved.getAmount());
+                    source.setFluid(remaining);
+                }
             }
         }
     }
@@ -335,9 +355,17 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return localFuelItems == null ? fuelFilter : localFuelItems.filter();
     }
 
-    void fuelFilter(@Nullable ResourceLocation next) {
+    boolean selectVesselFilter(@Nullable ResourceLocation next) {
+        if (localVesselFuel == null || assembled() || !localVesselFuel.tank(false).isEmpty() || Objects.equals(fuelFilter, next)) {
+            return false;
+        }
         fuelFilter = next;
+        invalidateDetachedFluid();
         setChanged();
+        if (level instanceof ServerLevel server) {
+            FissionPartBlock.geometryChanged(server, worldPosition);
+        }
+        return true;
     }
 
     @Override
@@ -357,6 +385,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
         if (irradiationItems != null) {
             irradiationItems.save(tag);
+        }
+        if (localVesselFuel != null) {
+            tag.put("vessel_fuel", localVesselFuel.save());
         }
         if (fuelFilter != null) {
             tag.putString("fuel_filter", fuelFilter.toString());
@@ -396,9 +427,15 @@ public final class FissionPortBlockEntity extends BlockEntity {
             }
             return;
         }
+        if (localVesselFuel != null) {
+            localVesselFuel.load(tag.getCompound("vessel_fuel"));
+        }
         var next = tag.contains("fuel_filter") ? ResourceLocation.tryParse(tag.getString("fuel_filter")) : null;
         if (!Objects.equals(fuelFilter, next)) {
             fuelFilter = next;
+            if (localVesselFuel != null) {
+                invalidateDetachedFluid();
+            }
             if (level instanceof ServerLevel server) {
                 FissionPartBlock.geometryChanged(server, worldPosition);
             }
@@ -441,7 +478,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
 
         private boolean valid() {
-            return connection == null ? !isRemoved() && binding == null && detachedHeater == this : connected(connection);
+            return connection == null ? !isRemoved() && binding == null && detachedHandler == this : connected(connection);
         }
 
         @Override
