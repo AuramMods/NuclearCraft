@@ -1,10 +1,12 @@
 package nc.multiblock.quantum;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.storage.LevelResource;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.Arrays;
@@ -12,6 +14,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 final class QuantumComputer {
+    private static final int RETRY_TICKS = 200;
     private final QuantumPartEntity controller;
     private final QuantumCircuit circuit = new QuantumCircuit(this::measured);
     private final ArrayDeque<QuantumOperationWrapper> queue = new ArrayDeque<>();
@@ -20,6 +23,8 @@ final class QuantumComputer {
     private QuantumPartEntity[] qubits = {};
     private QuantumNetworks.Network assembled;
     private QuantumCode recording;
+    private long retryLoadAt = Long.MIN_VALUE;
+    private long retrySaveAt = Long.MAX_VALUE;
 
     QuantumComputer(QuantumPartEntity controller) {
         this.controller = controller;
@@ -75,8 +80,9 @@ final class QuantumComputer {
         long[] positions = Arrays.stream(ids).mapToLong(qubit -> qubit.getBlockPos().asLong()).toArray();
         if (circuit.getQubitCount() != ids.length
                 || (qubitLayout.length != 0 && !Arrays.equals(positions, qubitLayout))) {
-            circuit.resize(ids.length);
-            circuit.reset();
+            circuit.reshape(ids.length);
+            retryLoadAt = Long.MIN_VALUE;
+            retrySaveAt = Long.MAX_VALUE;
             queue.clear();
             recording = null;
         }
@@ -97,6 +103,10 @@ final class QuantumComputer {
     }
 
     void tick(ServerLevel level, QuantumNetworks.Network network) {
+        if (level.getGameTime() >= retrySaveAt) {
+            retrySaveAt = level.getGameTime() + RETRY_TICKS;
+            controller.setChanged();
+        }
         if (!assemble(level, network)) {
             return;
         }
@@ -104,12 +114,43 @@ final class QuantumComputer {
         if (next == null) {
             return;
         }
-        if (recording == null) {
-            circuit.apply(next);
-            controller.setChanged();
-        } else {
+        if (recording != null) {
             recording.add(circuit.code(next, recording.type()));
+        } else if (next instanceof QuantumOperationWrapper.Reset || restoreState(level)) {
+            circuit.apply(next);
+            retryLoadAt = Long.MIN_VALUE;
+            controller.setChanged();
         }
+    }
+
+    boolean restoreState(ServerLevel level) {
+        long now = level.getGameTime();
+        if (now < retryLoadAt) {
+            return false;
+        }
+        try {
+            circuit.restore(QuantumStateFiles.folder(level));
+            retryLoadAt = Long.MIN_VALUE;
+            return true;
+        } catch (IOException exception) {
+            if (retryLoadAt == Long.MIN_VALUE) {
+                LogUtils.getLogger().error("Could not read saved quantum state at {}", controller.getBlockPos(), exception);
+            }
+            retryLoadAt = now + RETRY_TICKS;
+            return false;
+        }
+    }
+
+    Component inspect(ServerLevel level, QuantumNetworks.Network network) {
+        String status = status(level, network);
+        if (status.equals("assembled")) {
+            if (retryLoadAt != Long.MIN_VALUE) {
+                status = "state_unavailable";
+            } else if (retrySaveAt != Long.MAX_VALUE) {
+                status = "state_unsaved";
+            }
+        }
+        return Component.translatable("message.nuclearcraft.quantum." + status, network == null ? 0 : network.qubits().size());
     }
 
     Component export(ServerLevel level, QuantumNetworks.Network network, QuantumPart kind) {
@@ -137,7 +178,20 @@ final class QuantumComputer {
     }
 
     CompoundTag save() {
-        CompoundTag tag = circuit.save();
+        var level = controller.getLevel() instanceof ServerLevel server ? server : null;
+        CompoundTag tag;
+        try {
+            tag = circuit.save(level == null ? null : QuantumStateFiles.folder(level));
+            retrySaveAt = Long.MAX_VALUE;
+        } catch (IOException exception) {
+            if (retrySaveAt == Long.MAX_VALUE) {
+                LogUtils.getLogger().error("Could not save quantum state at {}", controller.getBlockPos(), exception);
+            }
+            if (level != null) {
+                retrySaveAt = level.getGameTime() + RETRY_TICKS;
+            }
+            tag = circuit.savedHeader();
+        }
         tag.putLongArray("qubits", qubitLayout);
         tag.putLongArray("chunks", knownChunks.stream().mapToLong(Long::longValue).toArray());
         return tag;
@@ -145,6 +199,8 @@ final class QuantumComputer {
 
     void load(CompoundTag tag) {
         circuit.load(tag);
+        retryLoadAt = Long.MIN_VALUE;
+        retrySaveAt = Long.MAX_VALUE;
         qubitLayout = tag.getLongArray("qubits");
         knownChunks = Arrays.stream(tag.getLongArray("chunks")).boxed().collect(java.util.stream.Collectors.toUnmodifiableSet());
         assembled = null;

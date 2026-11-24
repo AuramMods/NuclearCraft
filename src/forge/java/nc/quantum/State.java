@@ -17,7 +17,6 @@ public class State {
         this.dim = 1 << size;
         this.vector = new double[dim << 1];
         vector[0] = 1.0;
-        this.backup = new double[dim << 1];
     }
 
     public double absSq() {
@@ -38,12 +37,13 @@ public class State {
     }
 
     public double[] probs() {
+        double[] probabilities = new double[dim];
         for (int i = 0; i < dim; ++i) {
             int x = i << 1;
             double re = vector[x], im = vector[x + 1];
-            backup[i] = re * re + im * im;
+            probabilities[i] = re * re + im * im;
         }
-        return Arrays.copyOf(backup, dim);
+        return probabilities;
     }
 
     public double prob(int[] targets, int pattern) {
@@ -158,6 +158,9 @@ public class State {
     }
 
     public void update(Gate gate) {
+        if (backup == null) {
+            backup = new double[vector.length];
+        }
         gate.map(vector, backup, size);
 
         double[] t = vector;

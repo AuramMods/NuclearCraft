@@ -139,8 +139,8 @@ public final class QuantumPartEntity extends BlockEntity {
             return message;
         }
         QuantumComputer active = network == null ? null : network.computer();
-        String status = active == null ? "controllers" : active.status(level, network);
-        return Component.translatable("message.nuclearcraft.quantum." + status, network == null ? 0 : network.qubits().size());
+        return active == null ? Component.translatable("message.nuclearcraft.quantum.controllers")
+                : active.inspect(level, network);
     }
 
     Component configure(ServerLevel level, ServerPlayer player, ItemStack tool) {

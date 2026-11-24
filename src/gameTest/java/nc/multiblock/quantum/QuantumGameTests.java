@@ -24,22 +24,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class QuantumGameTests {
     @GameTest(template = "empty")
-    public static void quantumCircuitPreservesEntanglementAndGatePhases(GameTestHelper helper) {
+    public static void quantumCircuitPreservesEntanglementAndGatePhases(GameTestHelper helper) throws IOException {
         var outcomes = new boolean[2];
         var circuit = new QuantumCircuit((targets, bits) -> System.arraycopy(bits, 0, outcomes, 0, bits.length));
-        circuit.resize(3);
+        circuit.reshape(3);
         circuit.apply(new QuantumOperationWrapper.H(circuit, new int[] {0}));
         circuit.apply(new QuantumOperationWrapper.CX(circuit, new int[] {0}, new int[] {1, 2}));
         close(helper, circuit.probability(new int[] {0, 1, 2}, 0), 0.5, "all-zero GHZ amplitude");
         close(helper, circuit.probability(new int[] {0, 1, 2}, 7), 0.5, "all-one GHZ amplitude");
         close(helper, circuit.probability(new int[] {0, 1, 2}, 1), 0.0, "mixed GHZ amplitude");
         var restored = new QuantumCircuit((targets, bits) -> System.arraycopy(bits, 0, outcomes, 0, bits.length));
-        restored.load(circuit.save());
+        restored.load(circuit.save(null));
         helper.assertTrue(Arrays.equals(circuit.stateVector(), restored.stateVector()), "Saved state keeps complex amplitudes");
         restored.apply(new QuantumOperationWrapper.Measurement(restored, new int[] {2, 0}));
         helper.assertTrue(outcomes[0] == outcomes[1], "Measuring in a different target order preserves correlation");
@@ -58,6 +59,77 @@ public final class QuantumGameTests {
         circuit.apply(new QuantumOperationWrapper.X(circuit, new int[] {30}));
         helper.assertTrue(Arrays.equals(state, circuit.stateVector()), "Removed qubit targets cannot corrupt the state vector");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void quantumStateFilesRetainDurableStateAndRecover(GameTestHelper helper) throws IOException {
+        Path world = helper.getLevel().getServer().getWorldPath(LevelResource.ROOT);
+        Path folder = Files.createTempDirectory(world, "quantum-state-test-");
+        var circuit = new QuantumCircuit((targets, results) -> {});
+        circuit.reshape(20);
+        int[] target = {19};
+        int lane = 1 << 20;
+        circuit.apply(new QuantumOperationWrapper.X(circuit, target));
+        circuit.apply(new QuantumOperationWrapper.P(circuit, 90D, target));
+        var saved = circuit.save(folder);
+        UUID id = saved.getUUID("stateFile");
+        helper.assertTrue(saved.getBoolean("external") && !saved.contains("vector")
+                        && Files.isRegularFile(QuantumStateFiles.file(folder, id)),
+                "A large vector uses a small controller tag referencing its world file");
+
+        var restored = new QuantumCircuit((targets, results) -> {});
+        restored.load(saved);
+        expectIOException(() -> restored.restore(folder.resolve("missing")));
+        helper.assertTrue(restored.save(folder).equals(saved), "A missing file preserves the reference");
+        restored.restore(folder);
+        close(helper, restored.stateVector()[lane + 1], 1D, "Read back the imaginary amplitude");
+
+        var corrupted = saved.copy();
+        UUID corruptId = UUID.randomUUID();
+        corrupted.putUUID("stateFile", corruptId);
+        var copy = QuantumStateFiles.file(folder, corruptId);
+        Files.copy(QuantumStateFiles.file(folder, id), copy);
+        try (var channel = java.nio.channels.FileChannel.open(copy, java.nio.file.StandardOpenOption.WRITE)) {
+            channel.truncate(channel.size() - 3);
+        }
+        var recovery = new QuantumCircuit((targets, results) -> {});
+        recovery.load(corrupted);
+        expectIOException(() -> recovery.restore(folder));
+        helper.assertTrue(recovery.save(folder).equals(corrupted), "A truncated file cannot silently reset the state");
+
+        circuit.apply(new QuantumOperationWrapper.P(circuit, 90D, target));
+        Path unavailable = Files.createTempFile(folder, "unavailable", ".tmp");
+        expectIOException(() -> circuit.save(unavailable));
+        helper.assertTrue(circuit.savedHeader().equals(saved), "A failed write retains the last committed reference");
+        restored.load(circuit.savedHeader());
+        restored.restore(folder);
+        close(helper, restored.stateVector()[lane + 1], 1D, "Previously saved state survives a failed write");
+
+        var updated = circuit.save(folder);
+        helper.assertTrue(id.equals(updated.getUUID("stateFile")), "Subsequent saves replace the same state file");
+        restored.load(updated);
+        restored.restore(folder);
+        close(helper, restored.stateVector()[lane], -1D, "Successful retry persists the updated state");
+        circuit.reset();
+        var reset = circuit.save(folder);
+        helper.assertTrue(!reset.getBoolean("external") && id.equals(reset.getUUID("stateFile")),
+                "Reset clears the state and retains the file identity for later operations");
+        restored.load(reset);
+        close(helper, restored.probability(target, 0), 1D, "Old file amplitudes cannot undo a persisted reset");
+        helper.succeed();
+    }
+
+    private static void expectIOException(CheckedIo operation) throws IOException {
+        try {
+            operation.run();
+        } catch (IOException expected) {
+            return;
+        }
+        throw new AssertionError("Expected a failed state file operation");
+    }
+
+    private interface CheckedIo {
+        void run() throws IOException;
     }
 
     @GameTest(template = "empty")
@@ -124,7 +196,7 @@ public final class QuantumGameTests {
     @GameTest(template = "empty")
     public static void quantumCodeExportsBothCircuitFormats(GameTestHelper helper) throws IOException {
         var circuit = new QuantumCircuit((targets, bits) -> {});
-        circuit.resize(4);
+        circuit.reshape(4);
         var h = new QuantumOperationWrapper.H(circuit, new int[] {0});
         var cx = new QuantumOperationWrapper.CX(circuit, new int[] {0}, new int[] {1});
         var measurement = new QuantumOperationWrapper.Measurement(circuit, new int[] {0, 1});

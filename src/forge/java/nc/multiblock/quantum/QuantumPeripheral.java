@@ -1,6 +1,7 @@
 package nc.multiblock.quantum;
 
 import dan200.computercraft.api.ForgeComputerCraftAPI;
+import dan200.computercraft.api.lua.LuaException;
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.peripheral.IPeripheral;
 import net.minecraft.server.level.ServerLevel;
@@ -59,8 +60,8 @@ public final class QuantumPeripheral implements IPeripheral {
     }
 
     @LuaFunction(mainThread = true)
-    public final Map<Integer, List<Double>> getStateVector() {
-        QuantumCircuit circuit = circuit();
+    public final Map<Integer, List<Double>> getStateVector() throws LuaException {
+        QuantumCircuit circuit = readState();
         if (circuit == null) {
             return Map.of(1, List.of(1D, 0D));
         }
@@ -73,8 +74,8 @@ public final class QuantumPeripheral implements IPeripheral {
     }
 
     @LuaFunction(mainThread = true)
-    public final Map<Integer, Double> getProbs() {
-        QuantumCircuit circuit = circuit();
+    public final Map<Integer, Double> getProbs() throws LuaException {
+        QuantumCircuit circuit = readState();
         if (circuit == null) {
             return Map.of(1, 1D);
         }
@@ -86,12 +87,28 @@ public final class QuantumPeripheral implements IPeripheral {
         return result;
     }
 
+    private QuantumCircuit readState() throws LuaException {
+        QuantumComputer computer = computer();
+        if (computer == null) {
+            return null;
+        }
+        if (!computer.restoreState((ServerLevel) port.getLevel())) {
+            throw new LuaException("Saved quantum state could not be read. See the server log.");
+        }
+        return computer.circuit();
+    }
+
     private QuantumCircuit circuit() {
+        QuantumComputer computer = computer();
+        return computer == null ? null : computer.circuit();
+    }
+
+    private QuantumComputer computer() {
         if (!(port.getLevel() instanceof ServerLevel server) || port.isRemoved()) {
             return null;
         }
         var network = QuantumNetworks.at(server, port.getBlockPos());
         QuantumComputer computer = network == null ? null : network.computer();
-        return computer != null && computer.assemble(server, network) ? computer.circuit() : null;
+        return computer != null && computer.assemble(server, network) ? computer : null;
     }
 }

@@ -1,4 +1,6 @@
 {
+    "message.nuclearcraft.quantum.state_unavailable": "无法读取已保存的量子状态。请查看服务器日志。",
+    "message.nuclearcraft.quantum.state_unsaved": "无法保存量子状态。请查看服务器日志。",
     "itemGroup.nuclearcraft.quantum": "核电工艺量子计算",
     "message.nuclearcraft.quantum.assembled": "量子计算机已组装，共有 %s 个量子位。",
     "message.nuclearcraft.quantum.disabled": "量子计算机已禁用。",
