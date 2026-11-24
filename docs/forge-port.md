@@ -84,7 +84,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes glowing mushroom growth, buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, Wasteland generation, the contact, fire, and dissipation behavior of placed chemical fluids, and the other Overhauled systems.
+- Remaining work includes glowing mushroom growth, buffer migration when changing a heat exchanger or condenser circuit’s anchor inlet, condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, neutron source managers, the polonium production path, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, reactor fuel decay effects, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, Wasteland generation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -388,6 +388,8 @@ The packaged shielding build installed one heavy layer on an Ender IO 8.2.21-rf-
 
 Badges work in the regular inventory on clean Forge. When Curios is installed, wear the badge in a charm slot. The handheld Geiger counter can also occupy that slot and provide readings and clicks. The Curios API is an optional integration.
 
+A muted Forge 47.4.18 Auram copy with Curios 5.14.1 showed the radiation HUD with a Geiger counter equipped only in a charm slot. Its synchronized reading was 1.72 Rad/t. An equipped badge accumulated 69.45 Rad during the observation and later disintegrated. A second badge in the regular inventory stayed at zero. The native observer counted zero visible or foreground samples and zero activation events. PsychedeliCraft 1.20.1-port.4 rejected the initial login over a missing player capability. It was temporarily removed from the disposable copy for this run.
+
 ### Environmental radiation
 
 Forge samples up to `radiation_world_chunks_per_tick` loaded chunks per dimension per tick. Each sampled chunk approaches its current sources at `radiation_spread_rate`. It approaches lower source levels at `radiation_decay_rate` and transfers radiation to a loaded cardinal neighbor when the gradient is large enough. Radiation is saved per dimension in `data/nuclearcraft_radiation.dat`. Moving contamination from a 1.12.2 world requires converting the old chunk capability data to the port's packed chunk positions and rates.
@@ -411,6 +413,16 @@ The player, passive, and hostile effect lists keep their original config keys. E
 Mobs absorb ambient exposure periodically in sampled chunks. Armor applies resistance, and their maximum dose defaults to fifty times maximum health. Entries in `max_entity_rads` override the cap by entity type. Their dose, cap, and last measured rate save under `ForgeData."nuclearcraft:radiation"`. Passive mobs get sickness and hostile mobs get buffs at the configured thresholds. The handheld Geiger counter can measure the accumulated dose and effective rate of another player or mob.
 
 All 109 local GameTests passed, including mob dose persistence, Geiger interaction, and badge wear and disintegration. On packaged Forge, a muted client received exactly 5 Rad/t from the combined item, block, and tag overrides. Its maximum health moved from 30 to 25 to 20 as the configured tiers changed and expired. Saved rates measured 2 Rad/t from a 500 mB water tank and 1.5 Rad/t from a barrel containing a gold block. The excluded lava and diamond-block fixtures registered zero. A generated village start reached 5 Rad/t, and live cows and husks used their configured 50 Rad caps. The native observer recorded zero visible or foreground samples and zero activation events.
+
+### Placed chemical fluids
+
+The Forge liquid blocks apply their own contact and temperature effects, including acid, molten fuel, hot coolant, steam, plasma, and cryogenic liquids. The Hazmat Suit absorbs tagged chemical damage by 20 percent for the helmet, leggings, or boots and 40 percent for the chestplate. Direct damage, status effects, and fire are applied separately. Datapacks can extend the `nuclearcraft:hazmat_protected` damage-type tag.
+
+Water touching the side or top of a hot fluid can cool the local block, while flowing coolant or nuclear fuel can replace water directly below it. Corium can form `nuclearcraft:solidified_corium`, and fission fuel flowing into water below can form `nuclearcraft:wasteland_earth`. Cryotheum freezes water to ice and liquid helium freezes it to `nuclearcraft:supercold_ice`. Corium adds radiation as it ticks. Steam and gases rise and dissipate, and chemical liquids retain Forge buckets and fluid types. Ignition follows the `doFireTick` gamerule.
+
+The `corium_solidification`, `corium_solidification_list_type`, and `fusion_plasma_craziness` options are in `world/serverconfig/nuclearcraft-fluids.toml`. Convert the old numeric dimension list to Forge registry IDs. The default list includes the Overworld, the End, and NuclearCraft's Wasteland ID. Setting `corium_solidification_list_type` to true treats the list as a blacklist.
+
+All 114 local GameTests passed. The checks covered contact and partial or full Hazmat protection, water reactions, corium radiation, rising and dissipating oxygen, and Forge bucket capability. A packaged headless Forge 47.4.18 server verified molten iron forming stone and corium forming solidified corium. During actual acid contact an unprotected cow fell from 10 to 4 health, and a full-suit cow stayed at 10.
 
 ### Radiation Scrubber
 
@@ -440,4 +452,4 @@ A second trace moved the five fixtures to fresh chunks. All four working transfe
 
 At the original fixture coordinates, a 1,000-tick window without force-loading again returned the same chunk instances. A 7,200-tick window let the exact pack finish unloading all five chunks. Every unload save contained the expected block entities, including the two previously affected marker barrels. Reloading the chunks produced five new instances from disk and preserved the four working transfer results and all five markers. The energy-only comparator still never powered. The earlier failure remains intermittent and its trigger is unresolved.
 
-Radiation work still includes terrain mutation, remaining machine emissions, non-player food and poison effects, feral ghoul conversion, and chemical hazards and Hazmat contact protection.
+Radiation work still includes terrain mutation, remaining machine emissions, non-player food and poison effects, and feral ghoul conversion.

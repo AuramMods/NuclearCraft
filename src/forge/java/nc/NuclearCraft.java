@@ -1,5 +1,6 @@
 package nc;
 
+import nc.fluid.FluidConfig;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
@@ -31,6 +32,7 @@ public final class NuclearCraft {
         NCCollectors.register(context);
         NCGenerators.register(context);
         NCRadiation.register(context);
+        FluidConfig.register(context);
         NCFission.registerConfig(context);
         NCPebbleFission.registerConfig(context);
         NCSaltFission.registerConfig(context);

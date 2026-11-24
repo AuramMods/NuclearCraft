@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "nuclearcraft:block/supercold_ice"
+    },
+    "render_type": "minecraft:translucent"
+}

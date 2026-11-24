@@ -1,6 +1,11 @@
 {
     "replace": false,
     "values": [
-        "nuclearcraft:fatal_rads"
+        "nuclearcraft:fatal_rads",
+        "nuclearcraft:superfluid_freeze",
+        "nuclearcraft:plasma_burn",
+        "nuclearcraft:gas_burn",
+        "nuclearcraft:steam_burn",
+        "nuclearcraft:hypothermia"
     ]
 }

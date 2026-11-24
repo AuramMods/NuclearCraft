@@ -1,6 +1,9 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.fluid.FluidHazard.Kind;
+import nc.fluid.NCFlowingFluid;
+import nc.fluid.NCLiquidBlock;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -37,9 +40,7 @@ public final class NCFluids {
     private static final ResourceLocation SOUL = NuclearCraft.id("block/fluids/soul");
 
     public static final RegisteredFluid SULFUR = molten("sulfur", 0xDEDE7A);
-    public static final RegisteredFluid CORIUM = new RegisteredFluid("corium", 10,
-            () -> tintedFluid(FluidType.Properties.create().density(6000).viscosity(10000).temperature(2400).lightLevel(10),
-                    MOLTEN_STILL, MOLTEN_FLOW, 0xFF7C7C6F));
+    public static final RegisteredFluid CORIUM = corium("corium", 0xFF7C7C6F);
     public static final RegisteredFluid HIGH_PRESSURE_STEAM = steam("high_pressure_steam", 600, 0xFFBDBDBD);
     public static final RegisteredFluid EXHAUST_STEAM = steam("exhaust_steam", 400, 0xFF7E7E7E);
     public static final RegisteredFluid LOW_PRESSURE_STEAM = steam("low_pressure_steam", 550, 0xFFA8A8A8);
@@ -51,8 +52,9 @@ public final class NCFluids {
     public static final RegisteredFluid HELIUM_3 = gas("helium_3", 0xFFCBBB67);
     public static final RegisteredFluid DEUTERIUM = gas("deuterium", 0xFF9E6FEF);
     public static final RegisteredFluid FLUORINE = gas("fluorine", 0xFFD3C75D);
-    public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7);
-    public static final RegisteredFluid HEATED_EMERGENCY_COOLANT = liquid("emergency_coolant_heated", "liquid", 2000, 0xCDBEE7);
+    public static final RegisteredFluid EMERGENCY_COOLANT = liquid("emergency_coolant", "liquid", 2000, 0x6DD0E7, 250, 2000);
+    public static final RegisteredFluid HEATED_EMERGENCY_COOLANT =
+            liquid("emergency_coolant_heated", "liquid", 2000, 0xCDBEE7, 400, 1500, 7);
     public static final RegisteredFluid PREHEATED_WATER = liquid("preheated_water", "liquid", 1000, 0x4D85D6, 400);
     public static final RegisteredFluid CONDENSATE_WATER = liquid("condensate_water", "liquid", 1000, 0x4B95DB, 350);
     public static final RegisteredFluid LOW_ENRICHED_WATER = liquid("le_water", "le_water", 1100, 0xFFFFFF);
@@ -77,7 +79,21 @@ public final class NCFluids {
     }
 
     static RegisteredFluid molten(String name, int tint) {
-        return new RegisteredFluid(name, 10, () -> tintedFluid(
+        return molten(name, tint, name.equals("glowstone") ? Kind.GLOWSTONE : Kind.MOLTEN);
+    }
+
+    static RegisteredFluid fission(String name, int tint) {
+        return molten(name, tint, Kind.FISSION);
+    }
+
+    private static RegisteredFluid corium(String name, int color) {
+        return new RegisteredFluid(name, 10, Kind.CORIUM, () -> tintedFluid(
+                FluidType.Properties.create().density(6000).viscosity(10000).temperature(2400).lightLevel(10),
+                MOLTEN_STILL, MOLTEN_FLOW, color));
+    }
+
+    private static RegisteredFluid molten(String name, int tint, Kind kind) {
+        return new RegisteredFluid(name, 10, kind, () -> tintedFluid(
                 FluidType.Properties.create().density(5000).viscosity(8000).temperature(1200).lightLevel(10)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA),
@@ -97,7 +113,18 @@ public final class NCFluids {
     }
 
     static RegisteredFluid liquid(String name, String texture, int density, int tint, int temperature, int viscosity, int light) {
-        return new RegisteredFluid(name, light, () -> tintedFluid(
+        Kind kind = switch (name) {
+            case "hydrofluoric_acid", "boric_acid", "sulfuric_acid", "orthosilicic_acid" -> Kind.ACID;
+            case "ethanol", "methanol", "benzene", "phenol", "fluorobenzene", "difluorobenzene",
+                    "dimethyldifluorosilane" -> Kind.FLAMMABLE;
+            case "chocolate_liquor", "cocoa_butter", "unsweetened_chocolate", "dark_chocolate", "milk_chocolate",
+                    "marshmallow" -> Kind.CHOCOLATE;
+            case "sugar", "gelatin", "hydrated_gelatin" -> Kind.STICKY;
+            case "cryotheum" -> Kind.CRYOTHEUM;
+            case "liquid_helium" -> Kind.SUPERFLUID;
+            default -> Kind.LIQUID;
+        };
+        return new RegisteredFluid(name, light, kind, () -> tintedFluid(
                 FluidType.Properties.create().density(density).viscosity(viscosity).temperature(temperature).lightLevel(light)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY),
@@ -107,7 +134,7 @@ public final class NCFluids {
 
     static RegisteredFluid saltCoolant(String name, int tint, boolean hot) {
         int light = hot ? 7 : 0;
-        return new RegisteredFluid(name, light, () -> tintedFluid(FluidType.Properties.create()
+        return new RegisteredFluid(name, light, hot ? Kind.HOT_COOLANT : Kind.COOLANT, () -> tintedFluid(FluidType.Properties.create()
                 .density(hot ? 4000 : 5000).viscosity(hot ? 10000 : 15000).temperature(hot ? 800 : 400)
                 .lightLevel(light).sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
                 .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA), MOLTEN_STILL, MOLTEN_FLOW,
@@ -115,8 +142,9 @@ public final class NCFluids {
     }
 
     private static RegisteredFluid steam(String name, int temperature, int tint) {
-        return new RegisteredFluid(name, () ->
+        return new RegisteredFluid(name, 0, Kind.STEAM, () ->
                 tintedFluid(FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature)
+                        .canDrown(false).canSwim(false).canPushEntity(false)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), STEAM, STEAM, tint));
     }
@@ -126,14 +154,14 @@ public final class NCFluids {
     }
 
     static RegisteredFluid gas(String name, int tint, int temperature) {
-        return new RegisteredFluid(name, () -> tintedFluid(
+        return new RegisteredFluid(name, 0, temperature > 350 ? Kind.HOT_GAS : Kind.GAS, () -> tintedFluid(
                 FluidType.Properties.create().density(-10).viscosity(40).temperature(temperature).canDrown(false).canSwim(false)
                         .canPushEntity(false).sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), GAS, GAS, tint));
     }
 
     static RegisteredFluid soul(String name, int tint, SoundEvent emptySound, SoundEvent fillSound) {
-        return new RegisteredFluid(name, () -> tintedFluid(
+        return new RegisteredFluid(name, 0, Kind.GAS, () -> tintedFluid(
                 FluidType.Properties.create().density(-10).viscosity(40).canDrown(false).canSwim(false)
                         .canPushEntity(false).sound(SoundActions.BUCKET_FILL, fillSound)
                         .sound(SoundActions.BUCKET_EMPTY, emptySound), SOUL, SOUL, tint));
@@ -142,6 +170,15 @@ public final class NCFluids {
     private NCFluids() {}
 
     public static void register(IEventBus bus) {
+        NCFluidProducts.register();
+        gas("tritium", 0xFF5DBBD6);
+        corium("roentgen_josh", 0xFFCC4B07);
+        ResourceLocation plasma = NuclearCraft.id("block/fluids/plasma");
+        new RegisteredFluid("plasma", 15, Kind.PLASMA, () -> tintedFluid(
+                FluidType.Properties.create().density(50).viscosity(100).temperature(1_000_000).lightLevel(15)
+                        .canDrown(false).canSwim(false).canPushEntity(false)
+                        .sound(SoundActions.BUCKET_FILL, SoundEvents.FIRE_EXTINGUISH)
+                        .sound(SoundActions.BUCKET_EMPTY, SoundEvents.FIRE_EXTINGUISH), plasma, plasma, 0xFFFFFFFF));
         registerElectrolyzerFluids();
         NCGasCoolants.registerFluids();
         NCSaltCoolants.registerFluids();
@@ -183,23 +220,23 @@ public final class NCFluids {
         private final RegistryObject<LiquidBlock> block;
         private final RegistryObject<Item> bucket;
 
-        private RegisteredFluid(String name, Supplier<FluidType> fluidType) {
-            this(name, 0, fluidType);
-        }
-
-        private RegisteredFluid(String name, int light, Supplier<FluidType> fluidType) {
+        private RegisteredFluid(String name, int light, Kind kind, Supplier<FluidType> fluidType) {
             type = TYPES.register(name, fluidType);
-            source = FLUIDS.register(name, () -> new ForgeFlowingFluid.Source(properties()));
-            flowing = FLUIDS.register("flowing_" + name, () -> new ForgeFlowingFluid.Flowing(properties()));
-            block = NCRegistries.BLOCKS.register(name, () -> new LiquidBlock(source,
-                    BlockBehaviour.Properties.copy(light == 0 ? Blocks.WATER : Blocks.LAVA).lightLevel(state -> light)));
+            source = FLUIDS.register(name, () -> new NCFlowingFluid.Source(properties(kind), kind));
+            flowing = FLUIDS.register("flowing_" + name, () -> new NCFlowingFluid.Flowing(properties(kind), kind));
+            block = NCRegistries.BLOCKS.register(name, () -> new NCLiquidBlock(source,
+                    BlockBehaviour.Properties.copy(light == 0 ? Blocks.WATER : Blocks.LAVA).lightLevel(state -> light), kind));
             bucket = NCRegistries.ITEMS.register(name + "_bucket",
                     () -> new BucketItem(source, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
         }
 
-        private ForgeFlowingFluid.Properties properties() {
+        private ForgeFlowingFluid.Properties properties(Kind kind) {
+            int tickRate = switch (kind) {
+                case GAS, HOT_GAS, STEAM, PLASMA, SUPERFLUID -> 5;
+                default -> 30;
+            };
             return new ForgeFlowingFluid.Properties(type, source, flowing)
-                    .block(block).bucket(bucket).slopeFindDistance(2).levelDecreasePerBlock(2).tickRate(30);
+                    .block(block).bucket(bucket).slopeFindDistance(2).levelDecreasePerBlock(2).tickRate(tickRate);
         }
 
         public RegistryObject<FlowingFluid> source() {

@@ -48,7 +48,7 @@ final class NCSaltMixerFluids {
         NCFluids.liquid("marshmallow", "molten", 1325, 0xE1E1E3, 330, 5000);
         NCFluids.liquid("milk", "liquid", 1030, 0xFFF9EA, 300, 1000);
         NCFluids.liquid("milk_chocolate", "molten", 1325, 0x884121, 330, 5000);
-        NCFluids.molten("molybdenum", 0xBCC5E4);
+        NCFluids.fission("molybdenum", 0xBCC5E4);
         NCFluids.molten("nether_brick", 0x271317);
         NCFluids.molten("nichrome", 0x9D9E98);
         NCFluids.molten("nickel", 0xA3A998);

@@ -263,6 +263,8 @@
         "nuclearcraft:electrolyzer_anode_terminal",
         "nuclearcraft:sintered_steel_diaphragm",
         "nuclearcraft:polyethersulfone_diaphragm",
-        "nuclearcraft:zirfon_diaphragm"
+        "nuclearcraft:zirfon_diaphragm",
+        "nuclearcraft:supercold_ice",
+        "nuclearcraft:solidified_corium"
     ]
 }

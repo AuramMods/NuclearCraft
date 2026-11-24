@@ -27,7 +27,7 @@ public final class RadiationSources {
     // Stock NuclearCraft 2o.9.7 rates are in Rad/t per item.
     private static final double FLUID_MULTIPLIER = 125D / 18D;
     private static final double TRITIUM = 0.0115D;
-    private static final double CORIUM = 0.0000165D;
+    public static final double CORIUM = 0.0000165D;
     private static final double THORIUM = 0.0000000000715D;
     private static final double URANIUM = 0.000000000385D;
     private static final double PLUTONIUM = 0.000042D;

@@ -1,0 +1,8 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:acid_burn",
+        "nuclearcraft:corium_burn",
+        "nuclearcraft:hot_coolant_burn"
+    ]
+}
