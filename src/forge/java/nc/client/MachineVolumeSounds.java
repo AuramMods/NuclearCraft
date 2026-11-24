@@ -22,10 +22,16 @@ final class MachineVolumeSounds<T extends BlockEntity> {
     private final Map<T, List<CornerSound<T>>> active = new WeakHashMap<>();
     private final Supplier<SoundEvent> sound;
     private final ToDoubleFunction<T> volume;
+    private final ToDoubleFunction<T> pitch;
 
     MachineVolumeSounds(Supplier<SoundEvent> sound, ToDoubleFunction<T> volume) {
+        this(sound, volume, machine -> 1D);
+    }
+
+    MachineVolumeSounds(Supplier<SoundEvent> sound, ToDoubleFunction<T> volume, ToDoubleFunction<T> pitch) {
         this.sound = sound;
         this.volume = volume;
+        this.pitch = pitch;
     }
 
     void play(T machine, BlockPos min, int width, int height, int depth) {
@@ -36,7 +42,7 @@ final class MachineVolumeSounds<T extends BlockEntity> {
         play(machine, () -> positions);
     }
 
-    private void play(T machine, Supplier<? extends Collection<BlockPos>> locations) {
+    void play(T machine, Supplier<? extends Collection<BlockPos>> locations) {
         var minecraft = Minecraft.getInstance();
         float currentVolume = (float) volume.applyAsDouble(machine);
         if (currentVolume <= 0 || minecraft.options.getSoundSourceVolume(SoundSource.MASTER) == 0
@@ -46,7 +52,7 @@ final class MachineVolumeSounds<T extends BlockEntity> {
         var positions = locations.get();
         var loops = new ArrayList<CornerSound<T>>(positions.size());
         for (var position : positions) {
-            var loop = new CornerSound<>(sound.get(), machine, position, currentVolume, volume);
+            var loop = new CornerSound<>(sound.get(), machine, position, currentVolume, volume, pitch);
             minecraft.getSoundManager().play(loop);
             loops.add(loop);
         }
@@ -65,11 +71,15 @@ final class MachineVolumeSounds<T extends BlockEntity> {
     private static final class CornerSound<T extends BlockEntity> extends AbstractTickableSoundInstance {
         private final WeakReference<T> machine;
         private final ToDoubleFunction<T> volumeSource;
+        private final ToDoubleFunction<T> pitchSource;
 
-        CornerSound(SoundEvent sound, T machine, BlockPos corner, float volume, ToDoubleFunction<T> volumeSource) {
+        CornerSound(SoundEvent sound, T machine, BlockPos corner, float volume,
+                    ToDoubleFunction<T> volumeSource, ToDoubleFunction<T> pitchSource) {
             super(sound, SoundSource.BLOCKS, RandomSource.create());
             this.machine = new WeakReference<>(machine);
             this.volumeSource = volumeSource;
+            this.pitchSource = pitchSource;
+            pitch = (float) pitchSource.applyAsDouble(machine);
             this.volume = volume;
             x = corner.getX() + 0.5;
             y = corner.getY() + 0.5;
@@ -80,8 +90,12 @@ final class MachineVolumeSounds<T extends BlockEntity> {
         @Override public void tick() {
             var owner = machine.get();
             float current = owner == null || owner.isRemoved() ? 0 : (float) volumeSource.applyAsDouble(owner);
-            if (current <= 0) stop();
-            else volume = current;
+            if (current <= 0) {
+                stop();
+            } else {
+                volume = current;
+                pitch = (float) pitchSource.applyAsDouble(owner);
+            }
         }
     }
 }

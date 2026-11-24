@@ -4,6 +4,7 @@ import nc.compat.patchouli.Guidebook;
 import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
+import nc.init.TurbineVisualConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCComputerPorts;
@@ -51,6 +52,7 @@ public final class NuclearCraft {
         NCPebbleFission.registerConfig(context);
         NCSaltFission.registerConfig(context);
         HeatExchangerConfig.register(context);
+        TurbineVisualConfig.register(context);
         NCMachines.registerConfig(context);
         NCItemProcessors.registerConfig(context);
         NCWasteland.register(context);

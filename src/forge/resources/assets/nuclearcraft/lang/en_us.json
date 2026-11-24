@@ -2872,5 +2872,6 @@
     "item.nuclearcraft.fish_a_la_fred": "Fish a la Fred",
     "block.nuclearcraft.tritium_lamp": "Tritium Lamp",
     "advancement.nuclearcraft.portable_ender_chest.name": "Mary Poppins",
-    "advancement.nuclearcraft.portable_ender_chest.desc": "Craft a Portable Ender Chest"
+    "advancement.nuclearcraft.portable_ender_chest.desc": "Craft a Portable Ender Chest",
+    "subtitles.nuclearcraft.turbine": "Turbine Running"
 }

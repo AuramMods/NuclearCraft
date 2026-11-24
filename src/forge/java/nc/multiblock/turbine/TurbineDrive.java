@@ -10,6 +10,8 @@ final class TurbineDrive {
 
     private final ValueTracker rateTracker = new ValueTracker();
     private double rawPower;
+    private double ratedPower;
+    private double throughput;
     private double tension;
 
     int ratedFlow(TurbineLayout layout) {
@@ -28,12 +30,15 @@ final class TurbineDrive {
         }
 
         int rated = ratedFlow(layout);
+        if (recipe != null) {
+            ratedPower = finitePositive(rated * recipe.powerPerMb());
+        }
         double tensionChange = inputRate <= 0 ? 0D : (double) inputRate / rated - 1D - TENSION_LENIENCY;
         tension += (tensionChange < 0D ? -Math.sqrt(-tensionChange) : Math.min(1D, tensionChange))
                 / (1200D * layout.bearings().size());
         tension = Math.max(0D, tension);
 
-        double averageInput = rateTracker.update(inputRate);
+        throughput = rateTracker.update(inputRate);
         if (recipe == null) {
             return 0;
         }
@@ -60,7 +65,7 @@ final class TurbineDrive {
         int maxLength = TurbinePartBlock.MAX_INTERIOR_LENGTH;
         double idealLength = recipe.expansion() <= 1D ? maxLength
                 : Math.ceil(Math.log(recipe.expansion()) / Math.log(maxBlade));
-        double fill = Math.min(0.75D, (averageInput + idealLength * 4 * MB_PER_BLADE) / rated);
+        double fill = Math.min(0.75D, (throughput + idealLength * 4 * MB_PER_BLADE) / rated);
         double throughput = 0.5D + 0.5D * Math.sin(fill * Math.PI / 1.5D);
 
         double effectiveMax = maxLength;
@@ -84,18 +89,28 @@ final class TurbineDrive {
         return tension;
     }
 
+    double speedRatio() {
+        return ratedPower > 0 ? rawPower / ratedPower : 0D;
+    }
+
+    double throughput() {
+        return throughput;
+    }
+
     void clearRotation() {
-        rawPower = 0D;
+        rawPower = ratedPower = throughput = 0D;
         rateTracker.reset();
     }
 
     void save(CompoundTag tag) {
         tag.putDouble("raw_power", rawPower);
+        tag.putDouble("rated_power", ratedPower);
         tag.putDouble("tension", tension);
     }
 
     void load(CompoundTag tag) {
         rawPower = finitePositive(tag.getDouble("raw_power"));
+        ratedPower = finitePositive(tag.getDouble("rated_power"));
         tension = finitePositive(tag.getDouble("tension"));
     }
 

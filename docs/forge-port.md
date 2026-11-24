@@ -85,7 +85,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
+- Remaining work includes cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, radiation, and the other Overhauled systems.
 
 ## Auram targets
 
@@ -276,6 +276,20 @@ The same JAR ran in an isolated Auram snapshot with all 539 installed mod JARs. 
 The streaming save change passed all 163 local GameTests. Two packaged Forge 47.4.18 servers, each with a 14 GiB heap, wrote and reloaded actual 27- and 28-qubit circuits. Their files decoded to complete 2 GiB and 4 GiB amplitude vectors with the expected complex phase. Both circuits produced the expected measurements after a full restart. A separate filesystem test preserved the previous vector through a blocked write and verified the automatic retry. Restoring a temporarily missing file let the original circuit run again. In the isolated 539-mod Auram snapshot, a 20-qubit circuit retained its world file through a force-load cycle and measured one on the highest qubit. The saved controller still referenced that file after the muted background client exited with zero focus activations.
 
 The simulator and decomposition code were ported from the original MIT-licensed source. Neohaul's modern qubit implementation served as a reference for measurement and multitool interactions. [Neohaul Quantum Computer Qubit](https://github.com/nathanrreed/Nuclearcraft-Neohaul/blob/a2b4bb7/src/main/java/com/nred/nuclearcraft/block_entity/quantum/QuantumComputerQubitEntity.java)
+
+### Turbine rotor, particles, and sound
+
+An assembled turbine with a glass wall shows the shaft and blades turning around the shaft axis. The stationary stator stages follow the same depth-dependent taper as the blades. The moving rotor follows recipe throughput and coasts when input stops. Visible exhaust fills the shell above three quarters of its output capacity. The operating sound follows throughput and plays from positions within the turbine, and particles enter through the open areas around the shaft.
+
+Move `turbine_render_blade_width`, `turbine_render_blade_fast`, `turbine_render_rotor_expansion`, `turbine_render_rotor_speed`, `turbine_particles`, and `turbine_sound_volume` into `world/serverconfig/nuclearcraft-turbine.toml` and drop the `turbine_` prefix. In a datapack or KubeJS `nuclearcraft:turbine` recipe, set `particle` to a simple particle registry ID and `particle_speed` to the legacy particle speed multiplier. Legacy `cloud` maps to `minecraft:cloud` and `magicCrit` maps to `minecraft:enchanted_hit`. The packaged steam and hot-gas recipes use those original effects.
+
+Rotor block IDs and their axis property remain stable. Forge restores the static model when a turbine disassembles. Chunk loading also restores the static model before assembly, including shaft blocks loaded without their controller. A save can retain the moving rotor's angle and rated power with the controller. Existing saves open with an initial angle of zero when the field is absent.
+
+All 168 local GameTests passed. A dedicated clean Forge 47.4.18 restart restored a shaft's static model while preserving its axis. The new GameTest also verified the shaft and stator order, interpolation, coasting, hot-gas particle recipe, and clearing of the client render state after a frame break.
+
+The same packaged JAR ran both solid-fission-to-turbine-to-condenser chains with Auram's Ender IO 8.2.22-beta conduit and Mekanism 10.4.16.80 pipe networks on Forge 47.4.18. Each route collected 1,000 mB of condensate and one depleted LECf-251 oxide item.
+
+In the isolated 539-mod Auram client, captured frames showed different blade positions through the windows as an east-flowing turbine spun up through a stationary stator stage. The client displayed 475,000 mB of exhaust and returned to static rotor models when the shell broke. Repair restored the render and retained the exhaust. OpenAL used No Output and the focus observer recorded zero activations, foreground samples, and visible-window samples.
 
 ### Portable Ender Chest, Tritium Lamp, and food
 

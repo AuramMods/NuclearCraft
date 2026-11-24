@@ -154,5 +154,6 @@
 	"item.nuclearcraft.fish_a_la_fred": "fish_a_la_fred",
 	"block.nuclearcraft.tritium_lamp": "氚灯",
 	"advancement.nuclearcraft.portable_ender_chest.name": "欢乐满人间",
-	"advancement.nuclearcraft.portable_ender_chest.desc": "制作一个便携末影箱"
+	"advancement.nuclearcraft.portable_ender_chest.desc": "制作一个便携末影箱",
+	"subtitles.nuclearcraft.turbine": "涡轮机：运行"
 }

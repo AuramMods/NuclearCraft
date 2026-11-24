@@ -10,5 +10,7 @@
     },
     "power_per_mb": 32,
     "expansion": 2,
-    "spin_up": 1
+    "spin_up": 1,
+    "particle": "minecraft:enchanted_hit",
+    "particle_speed": 0.7
 }

@@ -16,6 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -87,6 +88,31 @@ public class TurbinePartBlock extends Block {
                     controller -> controller.partChanged(pos));
         }
         super.onRemove(state, level, pos, replacement, moved);
+    }
+
+    @SubscribeEvent
+    public static void onChunkDataLoad(ChunkDataEvent.Load event) {
+        // A controller may be in another chunk. Restore static models before this chunk is sent to clients.
+        // Only touch the decoded sections, which are still local to this load.
+        for (var section : event.getChunk().getSections()) {
+            if (section == null || !section.maybeHas(TurbinePartBlock::animatedRotor)) {
+                continue;
+            }
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        BlockState state = section.getBlockState(x, y, z);
+                        if (animatedRotor(state)) {
+                            section.setBlockState(x, y, z, state.setValue(TurbineRotorBlock.ANIMATED, false));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean animatedRotor(BlockState state) {
+        return state.getBlock() instanceof TurbineRotorBlock && state.getValue(TurbineRotorBlock.ANIMATED);
     }
 
     @SubscribeEvent

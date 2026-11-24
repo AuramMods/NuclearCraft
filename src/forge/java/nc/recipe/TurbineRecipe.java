@@ -5,6 +5,8 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.NCTurbine;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -21,7 +23,9 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean inputTag, int inputAmount,
-                            FluidStack output, double powerPerMb, double expansion, double spinUp) implements Recipe<Container> {
+                            FluidStack output, double powerPerMb, double expansion, double spinUp,
+                            ResourceLocation particle, double particleSpeed) implements Recipe<Container> {
+    public static final ResourceLocation CLOUD = new ResourceLocation("minecraft", "cloud");
     public boolean accepts(FluidStack stack) {
         return !stack.isEmpty() && (inputTag ? stack.getFluid().is(TagKey.create(Registries.FLUID, input))
                 : stack.getFluid() == ForgeRegistries.FLUIDS.getValue(input));
@@ -86,13 +90,16 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
             double power = GsonHelper.getAsDouble(json, "power_per_mb");
             double expansion = GsonHelper.getAsDouble(json, "expansion");
             double spinUp = GsonHelper.getAsDouble(json, "spin_up", 1D);
+            ResourceLocation particle = json.has("particle") ? location(json, "particle") : CLOUD;
+            double speed = GsonHelper.getAsDouble(json, "particle_speed", 5D / 116D);
             if (input.has("fluid") == tag || (!tag && !ForgeRegistries.FLUIDS.containsKey(source))
                     || product == null || product == Fluids.EMPTY || inputAmount <= 0 || outputAmount <= 0
                     || !Double.isFinite(power) || power < 0 || !Double.isFinite(expansion) || expansion < 1
-                    || !Double.isFinite(spinUp) || spinUp < 0) {
+                    || !Double.isFinite(spinUp) || spinUp < 0 || !Double.isFinite(speed) || speed < 0
+                    || !(BuiltInRegistries.PARTICLE_TYPE.get(particle) instanceof SimpleParticleType)) {
                 throw new JsonSyntaxException("Invalid turbine recipe " + id);
             }
-            return new TurbineRecipe(id, source, tag, inputAmount, new FluidStack(product, outputAmount), power, expansion, spinUp);
+            return new TurbineRecipe(id, source, tag, inputAmount, new FluidStack(product, outputAmount), power, expansion, spinUp, particle, speed);
         }
 
         private static ResourceLocation location(JsonObject json, String key) {
@@ -106,7 +113,8 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
         @Override
         public TurbineRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new TurbineRecipe(id, buffer.readResourceLocation(), buffer.readBoolean(), buffer.readVarInt(),
-                    buffer.readFluidStack(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
+                    buffer.readFluidStack(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
+                    buffer.readResourceLocation(), buffer.readDouble());
         }
 
         @Override
@@ -118,6 +126,8 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
             buffer.writeDouble(recipe.powerPerMb);
             buffer.writeDouble(recipe.expansion);
             buffer.writeDouble(recipe.spinUp);
+            buffer.writeResourceLocation(recipe.particle);
+            buffer.writeDouble(recipe.particleSpeed);
         }
     }
 }

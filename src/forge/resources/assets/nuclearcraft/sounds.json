@@ -1,4 +1,8 @@
 {
+    "block.nc.turbine_run": {
+        "subtitle": "subtitles.nuclearcraft.turbine",
+        "sounds": ["nuclearcraft:block/turbine_run"]
+    },
     "block.distiller.run": {
         "subtitle": "subtitles.nuclearcraft.distiller",
         "sounds": ["nuclearcraft:block/distiller_run"]

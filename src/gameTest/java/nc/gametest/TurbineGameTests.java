@@ -6,6 +6,9 @@ import nc.init.NCFluids;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import nc.multiblock.turbine.TurbineController;
+import nc.multiblock.turbine.TurbineRotorBlock;
+import nc.multiblock.turbine.TurbinePartBlock.Part;
+import nc.init.NCGasCoolants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -216,6 +219,56 @@ public final class TurbineGameTests {
                     FluidStack product = fluid(helper, outlet, Direction.NORTH).getFluidInTank(0);
                     helper.assertTrue(product.getFluid() == NCFluids.LOW_QUALITY_STEAM.source().get()
                             && product.getAmount() == 20, "The low-pressure recipe must use its own exhaust fluid and ratio");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void turbineSyncsRotorMotionAndRestoresBlockModels(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        for (Direction side : new Direction[]{Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN}) {
+            helper.setBlock(SHAFT.south().relative(side), NCTurbine.STATOR.get());
+        }
+        var client = new TurbineController(helper.absolutePos(CONTROLLER), helper.getBlockState(CONTROLLER));
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdatePacket().getTag());
+                    var visual = client.visuals();
+                    helper.assertTrue(visual != null && visual.glass()
+                                    && visual.stages().equals(java.util.List.of(Part.STEEL, Part.STATOR))
+                                    && visual.velocity() == 0D,
+                            "The idle client receives the actual blade and stator order");
+                    helper.assertTrue(helper.getBlockState(SHAFT).getValue(TurbineRotorBlock.ANIMATED),
+                            "The assembled glass turbine replaces the static shaft model");
+                    var steam = fluid(helper, INLET, Direction.NORTH);
+                    var amount = new FluidStack(NCGasCoolants.OXYGEN.hot(), 500);
+                    helper.assertTrue(steam.fill(amount, FluidAction.EXECUTE) == 500,
+                            "The turbine accepts hot coolant through its Forge inlet");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdatePacket().getTag());
+                    var visual = client.visuals();
+                    helper.assertTrue(visual != null && visual.velocity() > 0D
+                                    && visual.angleAt(visual.tick() + 0.5D) != visual.angleAt(visual.tick()),
+                            "Partial ticks interpolate a turning rotor");
+                    helper.assertTrue(visual.particle().toString().equals("minecraft:enchanted_hit")
+                                    && visual.particleSpeed() == 0.7D && visual.exhaust().getAmount() > 0,
+                            "The client receives the coolant recipe's particle and exhaust");
+                })
+                .thenExecuteAfter(3, () -> {
+                    client.handleUpdateTag(controller(helper, CONTROLLER).getUpdatePacket().getTag());
+                    var visual = client.visuals();
+                    helper.assertTrue(visual != null && !visual.processing() && visual.velocity() > 0D,
+                            "The rotor coasts after the inlet empties");
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    var cleared = controller(helper, CONTROLLER).getUpdatePacket().getTag();
+                    helper.assertTrue(cleared != null, "The client receives a render clear on disassembly");
+                    client.handleUpdateTag(cleared);
+                    helper.assertTrue(client.visuals() == null
+                                    && !helper.getBlockState(SHAFT).getValue(TurbineRotorBlock.ANIMATED),
+                            "The old animation disappears and the shaft is visible as a normal block");
                 })
                 .thenSucceed();
     }

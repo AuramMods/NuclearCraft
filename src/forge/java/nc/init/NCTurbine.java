@@ -10,6 +10,7 @@ import nc.multiblock.turbine.TurbineRotorBlock;
 import nc.multiblock.turbine.TurbineWallBlock;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -65,6 +66,9 @@ public final class NCTurbine {
             NCRegistries.RECIPE_TYPES.register("turbine", () -> RecipeType.simple(NuclearCraft.id("turbine")));
     public static final RegistryObject<RecipeSerializer<TurbineRecipe>> SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("turbine", TurbineRecipe.Serializer::new);
+
+    public static final RegistryObject<SoundEvent> RUN_SOUND = NCRegistries.SOUNDS.register("block.nc.turbine_run",
+            () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id("block.nc.turbine_run")));
 
     private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("turbine", () ->
             CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.turbine"))

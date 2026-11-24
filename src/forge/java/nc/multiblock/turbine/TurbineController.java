@@ -4,12 +4,17 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
+import nc.init.TurbineVisualConfig;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -27,6 +32,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.List;
@@ -53,6 +59,14 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     private double idealExpansion = 1D;
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private TurbineLayout layout;
+    private @Nullable TurbineVisuals visuals;
+    private double rotorAngle;
+    private double rotorVelocity;
+    private double lastSentVelocity;
+    private boolean lastSentProcessing;
+    private FluidStack lastSentExhaust = FluidStack.EMPTY;
+    private @Nullable ResourceLocation particle;
+    private double particleSpeed;
     private Component validationMessage = Component.translatable("message.nuclearcraft.turbine.checking");
 
     public TurbineController(BlockPos pos, BlockState state) {
@@ -85,6 +99,9 @@ public final class TurbineController extends BlockEntity implements MenuProvider
                 return;
             }
             pushOutputs(server);
+            if (layout != null && needsVisualUpdate(server.getGameTime())) {
+                syncVisuals(server);
+            }
         }
         BlockState state = getBlockState();
         if (state.getValue(TurbineWallBlock.ACTIVE) != active) {
@@ -102,6 +119,13 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         inputRate = consumed;
         if (recipe != null) {
             idealExpansion = recipe.expansion();
+            particle = recipe.particle();
+            particleSpeed = recipe.particleSpeed();
+        }
+        double speed = Mth.clamp(drive.speedRatio(), 0D, 2D);
+        rotorVelocity = speed < 1e-5D ? 0D : 50D * TurbineVisualConfig.rotorSpeed() * speed;
+        if (layout.glass()) {
+            rotorAngle = (rotorAngle + rotorVelocity) % 360D;
         }
         if (power > 0) {
             energy += Math.min(Math.max(0, capacity - energy), power);
@@ -277,17 +301,28 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         steam.setCapacity(BASE_STEAM * found.exteriorVolume());
         exhaust.setCapacity(BASE_EXHAUST * found.exteriorVolume());
         faceOutward(server, worldPosition, found.bounds().outward(worldPosition));
-        for (Map.Entry<BlockPos, Direction.Axis> entry : found.rotor().entrySet()) {
-            BlockState state = server.getBlockState(entry.getKey());
-            if (state.getValue(TurbineRotorBlock.AXIS) != entry.getValue()) {
-                server.setBlock(entry.getKey(), state.setValue(TurbineRotorBlock.AXIS, entry.getValue()), Block.UPDATE_CLIENTS);
-            }
-        }
+        updateRotorBlocks(server, found, found.glass());
         for (TurbineLayout.Port port : found.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof TurbinePort outlet) {
                 outlet.bind(this, port);
                 faceOutward(server, port.pos(), port.side());
                 server.updateNeighborsAt(port.pos(), outlet.getBlockState().getBlock());
+            }
+        }
+        syncVisuals(server);
+    }
+
+    private static void updateRotorBlocks(ServerLevel server, TurbineLayout found, boolean animated) {
+        for (Map.Entry<BlockPos, Direction.Axis> entry : found.rotor().entrySet()) {
+            BlockPos pos = entry.getKey();
+            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            BlockState old = chunk == null ? Blocks.AIR.defaultBlockState() : chunk.getBlockState(pos);
+            if (old.getBlock() instanceof TurbineRotorBlock) {
+                BlockState state = old.setValue(TurbineRotorBlock.AXIS, entry.getValue())
+                        .setValue(TurbineRotorBlock.ANIMATED, animated);
+                if (old != state) {
+                    server.setBlock(pos, state, Block.UPDATE_CLIENTS);
+                }
             }
         }
     }
@@ -309,7 +344,12 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         processing = false;
         power = 0;
         inputRate = 0;
+        rotorAngle = rotorVelocity = 0D;
         drive.clearRotation();
+        if (previous.glass()) {
+            updateRotorBlocks(server, previous, false);
+        }
+        syncVisuals(server);
         for (TurbineLayout.Port port : previous.ports()) {
             var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
             if (chunk != null && chunk.getBlockEntity(port.pos()) instanceof TurbinePort outlet) {
@@ -318,6 +358,62 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         }
         if (!isRemoved()) {
             setChanged();
+        }
+    }
+
+    private boolean needsVisualUpdate(long tick) {
+        if (processing != lastSentProcessing) {
+            return true;
+        }
+        return tick % 5 == 0 && (processing || layout.glass() && (rotorVelocity != 0D || lastSentVelocity != 0D
+                || !lastSentExhaust.isFluidStackIdentical(exhaust.getFluid())));
+    }
+
+    private void syncVisuals(ServerLevel server) {
+        lastSentVelocity = rotorVelocity;
+        lastSentProcessing = processing;
+        lastSentExhaust = layout != null && layout.glass() ? exhaust.getFluid().copy() : FluidStack.EMPTY;
+        if (!isRemoved() && server.getChunkSource().getChunkNow(worldPosition.getX() >> 4, worldPosition.getZ() >> 4) != null) {
+            BlockState state = getBlockState();
+            server.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
+    public @Nullable TurbineVisuals visuals() {
+        return visuals;
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
+        CompoundTag display = new CompoundTag();
+        if (layout != null) {
+            var origin = layout.bounds().min().offset(1, 1, 1).subtract(worldPosition);
+            double rate = processing ? drive.throughput() / drive.ratedFlow(layout) : 0D;
+            display = new TurbineVisuals(origin, layout.flow(), layout.shaftWidth(), layout.bladeLength(), layout.stages(),
+                    layout.glass(), processing, rotorAngle, rotorVelocity, level.getGameTime(),
+                    Mth.clamp(drive.speedRatio(), 0D, 2D), exhaust.getFluid(), exhaust.getCapacity(),
+                    particle, rate, particleSpeed).write();
+        }
+        // The empty compound is sent as an explicit clear on disassembly.
+        tag.put("visuals", display);
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        visuals = TurbineVisuals.read(tag.getCompound("visuals"));
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
+        if (packet.getTag() != null) {
+            handleUpdateTag(packet.getTag());
         }
     }
 
@@ -421,6 +517,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         tag.putBoolean("enabled", enabled);
         tag.putBoolean("computerActivated", computerActivated);
         tag.putDouble("ideal_expansion", idealExpansion);
+        tag.putDouble("rotor_angle", rotorAngle);
         drive.save(tag);
     }
 
@@ -434,6 +531,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         computerActivated = tag.getBoolean("computerActivated");
         double savedExpansion = tag.getDouble("ideal_expansion");
         idealExpansion = Double.isFinite(savedExpansion) && savedExpansion > 0 ? savedExpansion : 1D;
+        double savedAngle = tag.getDouble("rotor_angle");
+        rotorAngle = Double.isFinite(savedAngle) ? savedAngle % 360D : 0D;
         drive.load(tag);
         dirty = true;
     }
