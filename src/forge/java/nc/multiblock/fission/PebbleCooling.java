@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +8,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
@@ -16,8 +16,6 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -28,14 +26,13 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 final class PebbleCooling {
-    private static final int HOT_PER_COLD = 2;
     private static final int PORT_VOLUME = 1296;
     private final SolidFissionController owner;
     private final Map<Channel, Tanks> circuits = new LinkedHashMap<>();
     private final Map<BlockPos, Channel> coolerRoutes = new HashMap<>();
     private final Map<BlockPos, Double> credit = new HashMap<>();
 
-    record Channel(NCGasCoolants gas, @Nullable ResourceLocation filter) {}
+    record Channel(PebbleCoolant gas, @Nullable ResourceLocation filter) {}
 
     PebbleCooling(SolidFissionController owner) {
         this.owner = owner;
@@ -67,7 +64,7 @@ final class PebbleCooling {
                 portCounts.merge(port.gas(), 1, Integer::sum);
             }
         }
-        var available = new EnumMap<NCGasCoolants, List<Channel>>(NCGasCoolants.class);
+        var available = new HashMap<PebbleCoolant, List<Channel>>();
         portCounts.keySet().forEach(channel -> available.computeIfAbsent(channel.gas(), gas -> new ArrayList<>()).add(channel));
         coolerRoutes.clear();
         var coolerCounts = new HashMap<Channel, Integer>();
@@ -84,8 +81,8 @@ final class PebbleCooling {
             Tanks tanks = circuit(entry.getKey());
             int capacity = Math.max(PORT_VOLUME * entry.getValue(), 36 * coolerCounts.getOrDefault(entry.getKey(), 0));
             // Retain both inputs and products through changes to the shell.
-            resize(tanks.hot, capacity);
-            resize(tanks.cold, capacity);
+            resize(tanks.hot, Math.max(capacity, entry.getKey().gas().outputAmount()));
+            resize(tanks.cold, Math.max(capacity, entry.getKey().gas().inputIngredient().amount()));
         }
         credit.keySet().retainAll(layout.sinks());
     }
@@ -106,23 +103,26 @@ final class PebbleCooling {
         tank.setCapacity(Math.max(minimum, tank.getFluidAmount()));
     }
 
-    Map<BlockPos, NCGasCoolants> available(ServerLevel level, SolidFissionLayout layout, Set<BlockPos> chambers,
+    Map<BlockPos, PebbleCoolant> available(ServerLevel level, SolidFissionLayout layout, Set<BlockPos> chambers,
                                             Set<BlockPos> moderators) {
-        var eligible = new EnumMap<NCGasCoolants, List<BlockPos>>(NCGasCoolants.class);
+        var eligible = new HashMap<String, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
-                NCGasCoolants gas = cooler.gas();
-                if (tanks(cooler).transferable(cooler.filter()) > 0 && NCPebbleFission.cooling(gas) > 0) {
-                    eligible.computeIfAbsent(gas, ignored -> new ArrayList<>()).add(pos);
+                PebbleCoolant gas = cooler.gas();
+                if (tanks(cooler).transferable(cooler.filter()) > 0 && gas.cooling() > 0) {
+                    eligible.computeIfAbsent(gas.id(), ignored -> new ArrayList<>()).add(pos);
                 }
             }
         }
-        return NCPebbleFission.placementRules().active(eligible,
+        var active = NCPebbleFission.placementRules().active(eligible,
                 FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CHAMBER,
                         chambers, moderators));
+        var result = new HashMap<BlockPos, PebbleCoolant>();
+        active.forEach((pos, id) -> result.put(pos, NCPebbleFission.coolants().get(id)));
+        return result;
     }
 
-    void heatGas(BlockPos pos, NCGasCoolants gas, double multiplier) {
+    void heatGas(BlockPos pos, PebbleCoolant gas, double multiplier) {
         if (!(owner.getLevel().getBlockEntity(pos) instanceof PebbleCooler cooler)) {
             return;
         }
@@ -131,12 +131,14 @@ final class PebbleCooling {
         if (transferable <= 0 || multiplier <= 0) {
             return;
         }
-        double progress = credit.getOrDefault(pos, 0D) + multiplier * NCPebbleFission.cooling(gas) / NCPebbleFission.heatPerMb();
+        int inputAmount = gas.inputIngredient().amount();
+        double progress = credit.getOrDefault(pos, 0D)
+                + multiplier * gas.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
         int amount = Math.min(transferable, (int) progress);
         credit.put(pos, progress - Math.floor(progress));
         if (amount > 0) {
-            tanks.hot.fill(new FluidStack(gas.hot(), HOT_PER_COLD * amount), FluidAction.EXECUTE);
-            tanks.cold.drain(amount, FluidAction.EXECUTE);
+            tanks.hot.fill(new FluidStack(gas.hot(), gas.outputAmount() * amount), FluidAction.EXECUTE);
+            tanks.cold.drain(inputAmount * amount, FluidAction.EXECUTE);
         }
         owner.setChanged();
     }
@@ -179,7 +181,7 @@ final class PebbleCooling {
 
     void load(CompoundTag tag) {
         var loaded = new HashSet<Channel>();
-        for (NCGasCoolants gas : NCGasCoolants.values()) {
+        for (PebbleCoolant gas : NCPebbleFission.coolants().values()) {
             if (tag.contains(gas.id(), Tag.TAG_COMPOUND)) {
                 Channel channel = new Channel(gas, null);
                 circuit(channel).load(tag.getCompound(gas.id()));
@@ -188,8 +190,7 @@ final class PebbleCooling {
         }
         for (Tag stored : tag.getList("filtered", Tag.TAG_COMPOUND)) {
             CompoundTag saved = (CompoundTag) stored;
-            var gas = Arrays.stream(NCGasCoolants.values()).filter(value -> value.id().equals(saved.getString("gas")))
-                    .findFirst().orElse(null);
+            var gas = NCPebbleFission.coolants().get(saved.getString("gas"));
             var filter = ResourceLocation.tryParse(saved.getString("filter"));
             if (gas != null && filter != null) {
                 Channel channel = new Channel(gas, filter);
@@ -212,8 +213,8 @@ final class PebbleCooling {
         }
     }
 
-    private static FluidTank createTank(BlockEntity owner, Predicate<FluidStack> accepts) {
-        return new FluidTank(PORT_VOLUME, accepts) {
+    private static FluidTank createTank(BlockEntity owner, int batch, Predicate<FluidStack> accepts) {
+        return new FluidTank(Math.max(PORT_VOLUME, batch), accepts) {
             @Override
             protected void onContentsChanged() {
                 owner.setChanged();
@@ -224,12 +225,15 @@ final class PebbleCooling {
     static final class Tanks {
         final FluidTank cold;
         final FluidTank hot;
+        private final PebbleCoolant gas;
         private final Supplier<@Nullable ResourceLocation> filter;
 
-        Tanks(NCGasCoolants gas, BlockEntity owner, Supplier<@Nullable ResourceLocation> filter) {
+        Tanks(PebbleCoolant gas, BlockEntity owner, Supplier<@Nullable ResourceLocation> filter) {
+            this.gas = gas;
             this.filter = filter;
-            cold = createTank(owner, stack -> stack.getFluid().is(gas.input()) && matches(stack, filter()));
-            hot = createTank(owner, stack -> stack.getFluid() == gas.hot());
+            cold = createTank(owner, gas.inputIngredient().amount(),
+                    stack -> gas.inputIngredient().accepts(stack) && matches(stack, filter()));
+            hot = createTank(owner, gas.outputAmount(), stack -> stack.getFluid() == gas.hot());
         }
 
         @Nullable ResourceLocation filter() {
@@ -247,10 +251,13 @@ final class PebbleCooling {
 
         int transferable(@Nullable ResourceLocation coolerFilter) {
             FluidStack input = cold.getFluid();
-            if (input.isEmpty() || !cold.isFluidValid(input) || !matches(input, coolerFilter)) {
+            var output = gas.hot();
+            if (input.isEmpty() || !cold.isFluidValid(input) || !matches(input, coolerFilter) || output == Fluids.EMPTY
+                    || !hot.isEmpty() && hot.getFluid().getFluid() != output) {
                 return 0;
             }
-            return Math.min(cold.getFluidAmount(), (hot.getCapacity() - hot.getFluidAmount()) / HOT_PER_COLD);
+            return Math.min(cold.getFluidAmount() / gas.inputIngredient().amount(),
+                    (hot.getCapacity() - hot.getFluidAmount()) / gas.outputAmount());
         }
 
         private static boolean matches(FluidStack stack, @Nullable ResourceLocation filter) {

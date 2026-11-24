@@ -1,6 +1,8 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.PebbleCoolant;
+import nc.recipe.FluidIngredient;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
@@ -9,7 +11,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Objects;
 
-public enum NCGasCoolants {
+public enum NCGasCoolants implements PebbleCoolant {
     OXYGEN("oxygen", 0x7E8CC8, 60),
     HYDROGEN("hydrogen", 0xB37AC4, 110),
     HELIUM("helium", 0xC57B81, 125),
@@ -31,21 +33,35 @@ public enum NCGasCoolants {
     private final int tint;
     private final int cooling;
     private final TagKey<Fluid> input;
+    private final FluidIngredient ingredient;
 
     NCGasCoolants(String id, int tint, int cooling) {
         this.id = id;
         this.tint = tint;
         this.cooling = cooling;
         input = TagKey.create(Registries.FLUID, ResourceLocation.tryBuild("forge", id));
+        ingredient = new FluidIngredient(input.location(), true, 1);
     }
 
+    @Override
     public String id() { return id; }
     public int defaultCooling() { return cooling; }
     public String coolerId() { return "pebble_fission_cooler_" + id; }
     public String portId() { return "fission_cooler_port_" + id; }
     public TagKey<Fluid> input() { return input; }
 
+    @Override
+    public FluidIngredient inputIngredient() { return ingredient; }
+
+    @Override
+    public int outputAmount() { return 2; }
+
+    @Override
+    public int cooling() { return NCPebbleFission.cooling(this); }
+
+    @Override
     public Fluid cold() { return fluid(id); }
+    @Override
     public Fluid hot() { return fluid(id + "_hot"); }
     public Fluid exhaust() { return fluid(id + "_exhaust"); }
 

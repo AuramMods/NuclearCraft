@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -25,9 +24,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public final class PebbleCoolerBlock extends FissionPartBlock implements EntityBlock {
-    private final NCGasCoolants gas;
+    private final PebbleCoolant gas;
 
-    public PebbleCoolerBlock(Properties properties, NCGasCoolants gas) {
+    public PebbleCoolerBlock(Properties properties, PebbleCoolant gas) {
         super(properties, Role.PEBBLE_COOLER);
         this.gas = gas;
     }
@@ -63,10 +62,10 @@ public final class PebbleCoolerBlock extends FissionPartBlock implements EntityB
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.translatable("tooltip.nuclearcraft.fission.placement_rule",
-                NCPebbleFission.placementRules().text(gas)).withStyle(ChatFormatting.GRAY));
+                NCPebbleFission.placementRule(gas)).withStyle(ChatFormatting.GRAY));
     }
 
-    public NCGasCoolants gas() {
+    public PebbleCoolant gas() {
         return gas;
     }
 }

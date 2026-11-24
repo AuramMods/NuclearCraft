@@ -36,7 +36,6 @@ import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.init.NCGenerators;
 import nc.init.NCMachines;
-import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
 import nc.init.NCPebbleFission;
@@ -85,6 +84,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -364,7 +364,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));
         registration.addRecipes(FISSION_EMERGENCY_COOLING, recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()));
         registration.addRecipes(SALT_HEATING, List.of(NCSaltCoolants.values()));
-        registration.addRecipes(GasCoolerCategory.TYPE, List.of(NCGasCoolants.values()));
+        registration.addRecipes(GasCoolerCategory.TYPE, NCPebbleFission.coolers().stream()
+                .filter(cooler -> cooler.gas().cold() != Fluids.EMPTY && cooler.gas().hot() != Fluids.EMPTY).toList());
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
         registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
@@ -408,8 +409,8 @@ public final class NuclearCraftJei implements IModPlugin {
         for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
             registration.addRecipeCatalyst(NCSaltFission.heater(coolant), SALT_HEATING);
         }
-        for (NCGasCoolants gas : NCGasCoolants.values()) {
-            registration.addRecipeCatalyst(NCPebbleFission.cooler(gas), GasCoolerCategory.TYPE);
+        for (var cooler : NCPebbleFission.coolers()) {
+            registration.addRecipeCatalyst(cooler, GasCoolerCategory.TYPE);
         }
         for (var moderator : FissionMaterialCategory.moderators()) {
             for (var item : moderator.items()) {

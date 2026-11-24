@@ -756,6 +756,37 @@ All 193 local GameTests passed with the exact gas filters. The new test exercise
 
 The isolated Auram client verified selecting, clearing, and reselecting a filter with buckets and the input-tank control. The two port menus showed their own fluid IDs and shared buffers. The cooler switched from its 500 mB cold and 140 mB hot shared buffer to its 50 mB cold and 25 mB hot local buffer. The client ran at master volume zero on OpenAL No Output. The native observer recorded zero desktop activations, foreground samples, and visible window samples.
 
+### Scripted pebble-bed gas coolers
+
+Migrate `Registration.registerFissionCooler` to a KubeJS startup script. Use the same material name and registry IDs on the server and client. Register the cooler and its reversible wall port from the same definition.
+
+```js
+const NuclearCraftPebble = Java.loadClass('nc.init.NCPebbleFission')
+const demo = NuclearCraftPebble.scriptedCoolant(
+    'demo', '#forge:oxygen', 3, 'nuclearcraft:oxygen_hot', 5, 60, 'one chamber'
+)
+const parts = {
+    'nuclearcraft:pebble_fission_cooler_demo': () => NuclearCraftPebble.createScriptedCooler(demo),
+    'nuclearcraft:fission_cooler_port_demo': () => NuclearCraftPebble.createScriptedCoolerPort(demo)
+}
+
+StartupEvents.registry('block', event => {
+    for (const id in parts) event.createCustom(id, parts[id])
+})
+
+StartupEvents.registry('item', event => {
+    for (const id in parts) event.createCustom(id, () => NuclearCraftPebble.createScriptedCoolerItem(id))
+})
+```
+
+The input takes a source fluid ID or a fluid tag prefixed with `#`. The output takes a source fluid ID. Both batch volumes are positive mB amounts, followed by the cooling rate in H/t and the legacy placement rule. A circuit processes whole batches and waits when there is too little input or output space. Menus show the accepted ID or tag, and JEI shows the configured conversion. Rules can refer to stock and scripted coolers by name, for example `one demo cooler`. Keep each new name unique and use lowercase letters, digits, and underscores.
+
+Supply blockstates, models, mining tags, loot tables, and crafting recipes through the pack. Reuse the stock port model's directional and active variants for equivalent rendering. The scripted blocks use the same exact fluid filters and local and shared storage as stock coolers. For a converted save, keep the material name as the key in `gas_cooling` or as the `gas` value in a filtered circuit. Keep the installed startup definition with saves that use these blocks.
+
+All 203 local GameTests passed, including the scripted input menu, a whole-batch conversion, and controller reassembly. On packaged Forge 47.4.18 with KubeJS 2001.6.5-build.16, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 rejected swapped tag members, then supplied 97 mB of NuclearCraft oxygen and 128 mB of Mekanism oxygen to separate circuits. The same reactor made 160 and 210 mB of hot oxygen, leaving 1 and 2 mB of cold gas. Both networks delivered the full outputs after a dedicated restart, and the products and remainders survived confirmed chunk unload and reload.
+
+The same JAR started on clean Forge 47.4.18 and in the isolated 539-mod Auram instance. In Auram, both circuits held their products while adjacent tanks contained water and delivered the exact outputs after the Ender IO conduit and Mekanism pipe were connected to empty tanks. The client loaded both scripted part models, synchronized the crafting recipe, showed the 3-to-5 mB conversion in JEI, and displayed the pack's custom input tag in the port tooltip. The run exited cleanly with master volume zero, OpenAL No Output, and zero focus activations, foreground samples, or visible window samples.
+
 ### Solid-fuel cell and port controls
 
 Use a valid solid fuel item on an unassembled cell or cell port with an empty input to choose its filter. Use an empty hand to open the menu. The fuel cell shows its input, depleted output, reserved fuel, burn progress, and cluster heat. The port shows its buffers and whether its outward Forge item capability accepts input or extracts output. Shift-click an empty filtered input slot to clear the selection while unassembled. Switch between local and reactor storage from a linked screen.

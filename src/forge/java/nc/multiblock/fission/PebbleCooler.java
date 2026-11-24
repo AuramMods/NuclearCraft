@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -15,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public final class PebbleCooler extends BlockEntity {
-    private final NCGasCoolants gas;
+    private final PebbleCoolant gas;
     private final PebbleCooling.Tanks local;
     private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation filter;
@@ -26,7 +25,7 @@ public final class PebbleCooler extends BlockEntity {
         local = new PebbleCooling.Tanks(gas, this, this::filter);
     }
 
-    NCGasCoolants gas() { return gas; }
+    PebbleCoolant gas() { return gas; }
     @Nullable ResourceLocation filter() { return filter; }
     PebbleCooling.Tanks localTanks() { return local; }
 
@@ -42,7 +41,7 @@ public final class PebbleCooler extends BlockEntity {
     }
 
     boolean selectFilter(FluidStack sample) {
-        if (controller() != null || !local.cold.isEmpty() || (!sample.isEmpty() && !sample.getFluid().is(gas.input()))) {
+        if (controller() != null || !local.cold.isEmpty() || (!sample.isEmpty() && !gas.inputIngredient().accepts(sample))) {
             return false;
         }
         var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());

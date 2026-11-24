@@ -115,12 +115,14 @@ public final class FissionPartScreen extends AbstractContainerScreen<FissionPart
         lines.add(Component.translatable("gui.nuclearcraft.salt_part.capacity", menu.capacity(output)));
         if (!output) {
             var filter = menu.gasFilter();
-            var key = BuiltInRegistries.FLUID.getKey(filter.getFluid());
+            var input = menu.gasInput();
             if (menu.exactGasFilter()) {
                 lines.add(Component.translatable("gui.nuclearcraft.salt_part.filter", filter.getDisplayName()));
+                var key = BuiltInRegistries.FLUID.getKey(filter.getFluid());
                 lines.add(Component.literal(key.toString()).withStyle(ChatFormatting.GRAY));
-            } else {
-                lines.add(Component.translatable("gui.nuclearcraft.fission_part.gas_tag", "#forge:" + key.getPath()));
+            } else if (input != null) {
+                String accepted = (input.tag() ? "#" : "") + input.id();
+                lines.add(Component.translatable("gui.nuclearcraft.fission_part.gas_tag", accepted));
             }
         }
         if (!fluid.isEmpty() || (!output && menu.canClearGasFilter())) {

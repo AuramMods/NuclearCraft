@@ -6,31 +6,46 @@ import nc.multiblock.fission.FissionFuelCell;
 import nc.multiblock.fission.FissionFuelCellBlock;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionWallBlock;
+import nc.multiblock.fission.PebbleCoolant;
 import nc.multiblock.fission.PebbleCooler;
 import nc.multiblock.fission.PebbleCoolerBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.recipe.FluidIngredient;
 import nc.recipe.SolidFissionRecipe;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class NCPebbleFission {
     private static final Map<NCGasCoolants, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCGasCoolants.class);
     private static final Map<NCGasCoolants, RegistryObject<PebbleCoolerBlock>> COOLERS = new EnumMap<>(NCGasCoolants.class);
     private static final Map<NCGasCoolants, RegistryObject<FissionWallBlock>> PORTS = new EnumMap<>(NCGasCoolants.class);
-    private static final CoolingPlacementConfig<NCGasCoolants> PLACEMENT;
+    private static final CoolingPlacementConfig<String> PLACEMENT;
+    private static final Set<String> RESERVED_COOLANT_IDS = Set.of("any", "filtered", "fractions");
+    private static List<PebbleCoolerBlock> registeredCoolers = List.of();
+    private static Map<String, PebbleCoolant> coolantCatalog = Map.of();
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue HEAT_PER_MB;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_EFFICIENCY;
@@ -48,15 +63,15 @@ public final class NCPebbleFission {
             PORTS.put(gas, NCFission.part(gas.portId(), () -> new FissionWallBlock(NCFission.properties(), Role.COOLER_PORT, gas)));
         }
         builder.pop();
-        PLACEMENT = new CoolingPlacementConfig<>(builder, List.of(NCGasCoolants.values()),
-                FissionPlacementRules.Part.COOLER, NCGasCoolants::id, new String[] {
+        PLACEMENT = new CoolingPlacementConfig<>(builder, Arrays.stream(NCGasCoolants.values()).map(NCGasCoolants::id).toList(),
+                FissionPlacementRules.Part.COOLER, name -> name, new String[] {
                     "one chamber", "exactly two chambers", "three chambers",
                     "exactly two oxygen coolers", "one moderator", "two axial moderators",
                     "three moderators", "exactly one oxygen cooler", "exactly one methane cooler",
                     "one ethene cooler && exactly one moderator", "one fluorine cooler", "exactly two nitrogen coolers && one casing",
                     "two hydrogen coolers", "one reflector", "one sulfur_dioxide cooler",
                     "two axial sulfur_trioxide coolers && one casing"
-                });
+                }, NCPebbleFission::scriptedRules);
         SPEC = builder.build();
     }
 
@@ -73,8 +88,7 @@ public final class NCPebbleFission {
                     BlockEntityType.Builder.of(FissionFuelCell::new, CHAMBER.get()).build(null));
     public static final RegistryObject<BlockEntityType<PebbleCooler>> COOLER_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("pebble_fission_cooler", () ->
-                    BlockEntityType.Builder.of(PebbleCooler::new,
-                            COOLERS.values().stream().map(RegistryObject::get).toArray(Block[]::new)).build(null));
+                    BlockEntityType.Builder.of(PebbleCooler::new, registerCoolerCatalog()).build(null));
     public static final RegistryObject<MenuType<SolidFissionMenu>> MENU = NCRegistries.MENUS.register("pebble_fission_controller",
             () -> new MenuType<>((id, inventory) -> new SolidFissionMenu(id, inventory, true), FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<SolidFissionRecipe>> FUEL_TYPE = NCRegistries.RECIPE_TYPES.register("pebble_fission",
@@ -103,7 +117,75 @@ public final class NCPebbleFission {
         output.accept(NCFluids.HEATED_EMERGENCY_COOLANT.bucket().get());
     }
 
-    public static FissionPlacementRules<NCGasCoolants> placementRules() { return PLACEMENT.rules(); }
+    public static PebbleCoolant scriptedCoolant(String id, String input, int inputAmount, String output, int outputAmount,
+                                                int cooling, String placementRule) {
+        if (!id.matches("[a-z0-9_]+") || RESERVED_COOLANT_IDS.contains(id)
+                || Arrays.stream(NCGasCoolants.values()).anyMatch(gas -> gas.id().equals(id))) {
+            throw new IllegalArgumentException("Invalid scripted cooler ID " + id);
+        }
+        if (inputAmount <= 0 || outputAmount <= 0 || cooling < 0) {
+            throw new IllegalArgumentException("A gas cooler requires positive batches and nonnegative cooling");
+        }
+        boolean tag = input.startsWith("#");
+        var ingredient = new FluidIngredient(new ResourceLocation(tag ? input.substring(1) : input), tag, inputAmount);
+        return new ScriptedCoolant(id, ingredient, new ResourceLocation(output), outputAmount, cooling,
+                Objects.requireNonNull(placementRule));
+    }
+
+    public static PebbleCoolerBlock createScriptedCooler(PebbleCoolant gas) {
+        return new PebbleCoolerBlock(NCFission.properties(), gas);
+    }
+
+    public static FissionWallBlock createScriptedCoolerPort(PebbleCoolant gas) {
+        return new FissionWallBlock(NCFission.properties(), Role.COOLER_PORT, gas);
+    }
+
+    public static BlockItem createScriptedCoolerItem(String blockId) {
+        var block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(blockId));
+        if (!(block instanceof PebbleCoolerBlock || block instanceof FissionWallBlock wall && wall.coolant() != null)) {
+            throw new IllegalArgumentException("No NuclearCraft cooler or cooler port with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
+    }
+
+    private static Block[] registerCoolerCatalog() {
+        registeredCoolers = ForgeRegistries.BLOCKS.getValues().stream().filter(PebbleCoolerBlock.class::isInstance)
+                .map(PebbleCoolerBlock.class::cast).toList();
+        coolantCatalog = registeredCoolers.stream().map(PebbleCoolerBlock::gas).distinct()
+                .collect(Collectors.toUnmodifiableMap(PebbleCoolant::id, gas -> gas));
+        return registeredCoolers.toArray(Block[]::new);
+    }
+
+    private static Map<String, String> scriptedRules() {
+        return coolantCatalog.values().stream().filter(ScriptedCoolant.class::isInstance).map(ScriptedCoolant.class::cast)
+                .collect(Collectors.toMap(ScriptedCoolant::id, ScriptedCoolant::placementRule));
+    }
+
+    public static List<PebbleCoolerBlock> coolers() { return registeredCoolers; }
+    public static Map<String, PebbleCoolant> coolants() { return coolantCatalog; }
+
+    public static String placementRule(PebbleCoolant gas) {
+        String rule = PLACEMENT.rules().text(gas.id());
+        return rule == null && gas instanceof ScriptedCoolant scripted ? scripted.placementRule() : Objects.requireNonNullElse(rule, "");
+    }
+
+    private record ScriptedCoolant(String id, FluidIngredient inputIngredient, ResourceLocation output, int outputAmount,
+                                  int cooling, String placementRule) implements PebbleCoolant {
+        @Override
+        public Fluid cold() {
+            if (!inputIngredient.tag()) {
+                return Objects.requireNonNullElse(ForgeRegistries.FLUIDS.getValue(inputIngredient.id()), Fluids.EMPTY);
+            }
+            return inputIngredient.alternatives().stream().map(stack -> stack.getFluid()).findFirst().orElse(Fluids.EMPTY);
+        }
+
+        @Override
+        public Fluid hot() {
+            return Objects.requireNonNullElse(ForgeRegistries.FLUIDS.getValue(output), Fluids.EMPTY);
+        }
+    }
+
+    public static FissionPlacementRules<String> placementRules() { return PLACEMENT.rules(); }
     public static PebbleCoolerBlock cooler(NCGasCoolants gas) { return COOLERS.get(gas).get(); }
     public static FissionWallBlock port(NCGasCoolants gas) { return PORTS.get(gas).get(); }
     public static int cooling(NCGasCoolants gas) { return value(COOLING.get(gas)); }

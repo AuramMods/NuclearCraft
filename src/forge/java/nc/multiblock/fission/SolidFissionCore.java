@@ -1,7 +1,6 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import nc.init.NCRadiation;
 import nc.init.NCSaltCoolants;
@@ -51,7 +50,7 @@ final class SolidFissionCore {
     record ShieldStats(double heating, long flux) {}
     record CoolerStats(boolean processing, double speed) {}
 
-    private record GasLoad(BlockPos pos, NCGasCoolants gas, double efficiency) {}
+    private record GasLoad(BlockPos pos, PebbleCoolant gas, double efficiency) {}
     private record SaltLoad(BlockPos pos, NCSaltCoolants coolant, double efficiency) {}
 
     private static final class Irradiation {
@@ -380,7 +379,7 @@ final class SolidFissionCore {
         if (decayPacking == null && fluidCooling && thermalCells.size() > burning.size()) {
             decayPacking = decayPacking(level);
         }
-        Map<BlockPos, NCGasCoolants> coolers = gasCooling == null ? Map.of()
+        Map<BlockPos, PebbleCoolant> coolers = gasCooling == null ? Map.of()
                 : gasCooling.available(level, layout, thermalCells, moderatorPositions);
         Map<BlockPos, NCSaltCoolants> heaters = saltCooling == null ? Map.of()
                 : saltCooling.available(level, layout, thermalCells, moderatorPositions);
@@ -486,9 +485,9 @@ final class SolidFissionCore {
 
             long cooling = 0;
             for (BlockPos sink : cluster.sinks()) {
-                NCGasCoolants gas = coolers.get(sink);
+                PebbleCoolant gas = coolers.get(sink);
                 NCSaltCoolants salt = heaters.get(sink);
-                int rate = gas != null ? NCPebbleFission.cooling(gas) : salt != null ? NCSaltFission.cooling(salt)
+                int rate = gas != null ? gas.cooling() : salt != null ? NCSaltFission.cooling(salt)
                         : sinks.contains(sink) ? ((SolidHeatSinkBlock) level.getBlockState(sink).getBlock()).cooling() : 0;
                 if (rate > 0) {
                     cooling += rate;
@@ -502,7 +501,7 @@ final class SolidFissionCore {
                 double efficiency = (effectiveCluster + effectiveDecay) / baseCluster
                         * Math.min(1D, (double) totalHeat / cooling);
                 for (BlockPos sink : cluster.sinks()) {
-                    NCGasCoolants gas = coolers.get(sink);
+                    PebbleCoolant gas = coolers.get(sink);
                     if (gas != null) {
                         gasLoads.add(new GasLoad(sink, gas, efficiency));
                     }

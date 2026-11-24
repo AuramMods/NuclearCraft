@@ -1,8 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
-import nc.init.NCPebbleFission;
+import nc.recipe.FluidIngredient;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -32,9 +31,10 @@ public final class FissionPartMenu extends AbstractContainerMenu {
     private static final int FILTER = 0, RESERVED = 1, INPUT = 2, OUTPUT = 5, PROGRESS = 8;
     private static final int HEAT = 9, HEAT_CAPACITY = 10, COOLING = 11, STATUS = 12;
     private static final int FUEL_IN = 13, FUEL_OUT = 14, IN_LIMIT = 15, OUT_LIMIT = 16;
+    private static final int GAS_BLOCK = 17;
     private static final int CONNECTED = 1, LINKED = 2, LOCAL_VIEW = 4, PROCESSING = 8, OUTPUT_PORT = 16, GAS_FILTER = 32;
 
-    private final SimpleContainerData data = new SimpleContainerData(34);
+    private final SimpleContainerData data = new SimpleContainerData(36);
     private final Kind kind;
     private final @Nullable BlockEntity entity;
     private boolean local;
@@ -231,7 +231,7 @@ public final class FissionPartMenu extends AbstractContainerMenu {
                 set(RESERVED, 0);
             }
         } else {
-            NCGasCoolants gas = entity instanceof PebbleCooler cooler ? cooler.gas()
+            PebbleCoolant gas = entity instanceof PebbleCooler cooler ? cooler.gas()
                     : ((FissionWallBlock) entity.getBlockState().getBlock()).coolant();
             var tanks = selectedGas();
             setTank(INPUT, tanks.cold);
@@ -243,7 +243,8 @@ public final class FissionPartMenu extends AbstractContainerMenu {
             gasFilter = filter != null;
             var fluid = filter == null ? gas.cold() : BuiltInRegistries.FLUID.get(filter);
             set(FILTER, BuiltInRegistries.FLUID.getId(fluid));
-            set(COOLING, NCPebbleFission.cooling(gas));
+            set(GAS_BLOCK, BuiltInRegistries.BLOCK.getId(entity.getBlockState().getBlock()));
+            set(COOLING, gas.cooling());
             if (controller != null && !kind.port() && !local) {
                 progress = controller.gasProgress(pos);
                 processing = controller.isCooling(pos);
@@ -289,6 +290,17 @@ public final class FissionPartMenu extends AbstractContainerMenu {
     public ItemStack reserved() { return new ItemStack(BuiltInRegistries.ITEM.byId(get(RESERVED))); }
     public FluidStack gasFilter() { return new FluidStack(BuiltInRegistries.FLUID.byId(get(FILTER)), 1); }
     public int capacity(boolean output) { return get((output ? OUTPUT : INPUT) + 2); }
+
+    public @Nullable FluidIngredient gasInput() {
+        var block = BuiltInRegistries.BLOCK.byId(get(GAS_BLOCK));
+        if (block instanceof PebbleCoolerBlock cooler) {
+            return cooler.gas().inputIngredient();
+        }
+        if (block instanceof FissionWallBlock wall && wall.coolant() != null) {
+            return wall.coolant().inputIngredient();
+        }
+        return null;
+    }
 
     public FluidStack gas(boolean output) {
         int index = output ? OUTPUT : INPUT;

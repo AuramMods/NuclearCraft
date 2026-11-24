@@ -1,7 +1,6 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
 import nc.init.NCHeatExchangers;
 import nc.init.NCSaltCoolants;
 import org.jetbrains.annotations.Nullable;
@@ -36,14 +35,14 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
-    private final @Nullable NCGasCoolants coolant;
+    private final @Nullable PebbleCoolant coolant;
     private final @Nullable NCSaltCoolants saltCoolant;
 
     public FissionWallBlock(Properties properties, Role role) {
         this(properties, role, null);
     }
 
-    public FissionWallBlock(Properties properties, Role role, @Nullable NCGasCoolants coolant) {
+    public FissionWallBlock(Properties properties, Role role, @Nullable PebbleCoolant coolant) {
         this(properties, role, coolant, null);
     }
 
@@ -51,7 +50,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         return new FissionWallBlock(properties, Role.HEATER_PORT, null, coolant);
     }
 
-    private FissionWallBlock(Properties properties, Role role, @Nullable NCGasCoolants coolant,
+    private FissionWallBlock(Properties properties, Role role, @Nullable PebbleCoolant coolant,
                              @Nullable NCSaltCoolants saltCoolant) {
         super(properties, role);
         this.coolant = coolant;
@@ -59,7 +58,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(ACTIVE, false));
     }
 
-    @Nullable NCGasCoolants coolant() {
+    public @Nullable PebbleCoolant coolant() {
         return coolant;
     }
 

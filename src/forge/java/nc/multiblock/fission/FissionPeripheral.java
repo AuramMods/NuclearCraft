@@ -3,7 +3,6 @@ package nc.multiblock.fission;
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.lua.MethodResult;
 import nc.init.NCFission;
-import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
@@ -187,8 +186,8 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         if (entity instanceof PebbleCooler cooler) {
             var gas = cooler.gas();
             var tanks = cooler.tanks();
-            return coolerStats(core.coolerStats(pos), gas.name().toLowerCase(Locale.ROOT), tanks.cold, tanks.hot,
-                    controller.gasProgress(pos), NCPebbleFission.cooling(gas), core.isCooling(pos));
+            return coolerStats(core.coolerStats(pos), gas.id(), tanks.cold, tanks.hot,
+                    controller.gasProgress(pos), gas.cooling(), core.isCooling(pos));
         }
         if (state.getBlock() instanceof FissionShieldBlock) {
             var shield = core.shieldStats(pos);

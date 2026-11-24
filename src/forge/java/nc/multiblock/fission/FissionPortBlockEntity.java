@@ -216,7 +216,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     boolean selectGasFilter(FluidStack sample) {
         var channel = gasChannel();
         if (channel == null || assembled() || !localPebbleGas().cold.isEmpty()
-                || (!sample.isEmpty() && !sample.getFluid().is(channel.gas().input()))) {
+                || (!sample.isEmpty() && !channel.gas().inputIngredient().accepts(sample))) {
             return false;
         }
         var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());

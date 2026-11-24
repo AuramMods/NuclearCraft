@@ -27,14 +27,17 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -42,6 +45,7 @@ import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class PebbleFissionGameTests {
     private static final BlockPos MIN = new BlockPos(1, 1, 1);
     private static final BlockPos MAX = new BlockPos(9, 5, 5);
@@ -54,6 +58,74 @@ public final class PebbleFissionGameTests {
     private static final BlockPos HOT = new BlockPos(3, 3, 5);
     private static final BlockPos COLD_NITROGEN = new BlockPos(4, 3, 1);
     private static final BlockPos HOT_NITROGEN = new BlockPos(4, 3, 5);
+
+    @SubscribeEvent
+    public static void registerScriptedCoolant(RegisterEvent event) {
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> {
+            var gas = NCPebbleFission.scriptedCoolant("qa_oxygen", "#forge:oxygen", 3,
+                    "nuclearcraft:oxygen_hot", 5, 60, "one chamber");
+            helper.register(NuclearCraft.id("pebble_fission_cooler_qa_oxygen"), NCPebbleFission.createScriptedCooler(gas));
+            helper.register(NuclearCraft.id("fission_cooler_port_qa_oxygen"), NCPebbleFission.createScriptedCoolerPort(gas));
+        });
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 200)
+    public static void scriptedPebbleCoolingProcessesWholeBatchesAcrossReload(GameTestHelper helper) {
+        buildReactor(helper);
+        var cooler = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("pebble_fission_cooler_qa_oxygen"));
+        var port = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("fission_cooler_port_qa_oxygen"));
+        helper.setBlock(COLD, port);
+        helper.setBlock(HOT, output(port));
+        for (Direction side : new Direction[]{Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH}) {
+            helper.setBlock(CHAMBER.relative(side), cooler);
+        }
+        var oxygen = NCGasCoolants.OXYGEN.cold();
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var player = inspector(helper);
+                    helper.useBlock(COLD, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.gasInput() != null && menu.gasInput().tag()
+                                    && menu.gasInput().id().toString().equals("forge:oxygen") && menu.gasInput().amount() == 3,
+                            "The shared port menu sends the scripted input definition");
+                    var input = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(input.fill(new FluidStack(NCGasCoolants.NITROGEN.cold(), 60), FluidAction.SIMULATE) == 0,
+                            "A scripted input rejects fluids outside its tag");
+                    helper.assertTrue(input.fill(new FluidStack(oxygen, 2), FluidAction.EXECUTE) == 2,
+                            "The port can buffer a partial batch");
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
+                    runReactor(helper);
+                })
+                .thenExecuteAfter(12, () -> {
+                    helper.assertTrue(amount(helper, COLD, Direction.NORTH) == 2 && amount(helper, HOT, Direction.SOUTH) == 0,
+                            "An incomplete batch produces no gas and preserves its input");
+                    helper.assertTrue(fluids(helper, COLD, Direction.NORTH).fill(new FluidStack(oxygen, 60), FluidAction.EXECUTE) == 60,
+                            "Fill the rest through the scripted port");
+                })
+                .thenWaitUntil(() -> {
+                    var product = fluids(helper, HOT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(product.getFluid() == NCGasCoolants.OXYGEN.hot() && product.getAmount() == 100,
+                            "Twenty batches convert 60 mB of oxygen into 100 mB of hot oxygen");
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    helper.setBlock(MIN, Blocks.AIR);
+                    var saved = controller(helper).saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCPebbleFission.CONTROLLER.get());
+                    controller(helper).load(saved);
+                    helper.setBlock(MIN, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var drained = fluids(helper, HOT, Direction.SOUTH).drain(100, FluidAction.EXECUTE);
+                    helper.assertTrue(drained.getFluid() == NCGasCoolants.OXYGEN.hot() && drained.getAmount() == 100
+                                    && amount(helper, COLD, Direction.NORTH) == 2 && amount(helper, HOT, Direction.SOUTH) == 0,
+                            "Reassembly restores the scripted product and the two-millibucket remainder");
+                })
+                .thenSucceed();
+    }
 
     @GameTest(template = "turbine", timeoutTicks = 1200)
     public static void pebbleReactorSendsHotGasToTurbine(GameTestHelper helper) {
