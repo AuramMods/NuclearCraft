@@ -2,17 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/uranium_233"
-                },
-                {
-                    "tag": "forge:ingots/uranium_233_oxide"
-                },
-                {
-                    "tag": "forge:ingots/uranium_233_nitride"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/uranium_233"
+            },
             "count": 1
         }
     ],

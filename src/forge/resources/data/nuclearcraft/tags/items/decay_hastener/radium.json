@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/radium", "required": false},
+        {"id": "#forge:ingots/radium_oxide", "required": false},
+        {"id": "#forge:ingots/radium_nitride", "required": false},
+        {"id": "#forge:dusts/radium", "required": false},
+        {"id": "#forge:dusts/radium_oxide", "required": false},
+        {"id": "#forge:dusts/radium_nitride", "required": false}
+    ]
+}

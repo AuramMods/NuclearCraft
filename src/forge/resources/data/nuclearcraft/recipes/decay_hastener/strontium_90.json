@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "forge:dusts/strontium_90"
+                "tag": "nuclearcraft:decay_hastener/strontium_90"
             },
             "count": 1
         }

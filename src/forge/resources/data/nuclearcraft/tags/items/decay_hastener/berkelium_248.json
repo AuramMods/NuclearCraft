@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/berkelium_248", "required": false},
+        {"id": "#forge:ingots/berkelium_248_oxide", "required": false},
+        {"id": "#forge:ingots/berkelium_248_nitride", "required": false},
+        {"id": "#forge:dusts/berkelium_248", "required": false},
+        {"id": "#forge:dusts/berkelium_248_oxide", "required": false},
+        {"id": "#forge:dusts/berkelium_248_nitride", "required": false}
+    ]
+}

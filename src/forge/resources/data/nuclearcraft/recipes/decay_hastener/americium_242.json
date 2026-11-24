@@ -2,17 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/americium_242"
-                },
-                {
-                    "tag": "forge:ingots/americium_242_oxide"
-                },
-                {
-                    "tag": "forge:ingots/americium_242_nitride"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/americium_242"
+            },
             "count": 1
         }
     ],

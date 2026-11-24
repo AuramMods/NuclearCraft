@@ -2,17 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/californium_252"
-                },
-                {
-                    "tag": "forge:ingots/californium_252_oxide"
-                },
-                {
-                    "tag": "forge:ingots/californium_252_nitride"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/californium_252"
+            },
             "count": 1
         }
     ],

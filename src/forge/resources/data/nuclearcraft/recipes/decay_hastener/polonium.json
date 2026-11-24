@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "forge:dusts/polonium"
+                "tag": "nuclearcraft:decay_hastener/polonium"
             },
             "count": 1
         }

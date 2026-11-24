@@ -2,14 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/thorium"
-                },
-                {
-                    "tag": "forge:dusts/thorium"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/thorium"
+            },
             "count": 1
         }
     ],

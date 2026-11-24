@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/europium_155", "required": false},
+        {"id": "#forge:ingots/europium_155_oxide", "required": false},
+        {"id": "#forge:ingots/europium_155_nitride", "required": false},
+        {"id": "#forge:dusts/europium_155", "required": false},
+        {"id": "#forge:dusts/europium_155_oxide", "required": false},
+        {"id": "#forge:dusts/europium_155_nitride", "required": false}
+    ]
+}

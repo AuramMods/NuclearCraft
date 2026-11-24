@@ -1,18 +1,67 @@
 {
-    "type": "nuclearcraft:decay_hastener",
-    "ingredients": [
+    "type": "forge:conditional",
+    "recipes": [
         {
-            "ingredient": {
-                "tag": "forge:dusts/tbp"
-            },
-            "count": 1
+            "conditions": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/tbp"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:ingots/tbp"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:tbu_pellet"
+                },
+                "ticks": 60,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 0.08358024698110801
+            }
+        },
+        {
+            "conditions": [
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "forge:ingots/tbp"
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/tbp"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:dusts/tbp"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:tbu_pellet"
+                },
+                "ticks": 60,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 0.08358024698110801
+            }
         }
-    ],
-    "result": {
-        "item": "nuclearcraft:tbu_pellet"
-    },
-    "ticks": 60,
-    "energy_per_tick": 10,
-    "decay_time_from_radiation": true,
-    "radiation": 0.08358024698110801
+    ]
 }

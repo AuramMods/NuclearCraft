@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/uranium_233", "required": false},
+        {"id": "#forge:ingots/uranium_233_oxide", "required": false},
+        {"id": "#forge:ingots/uranium_233_nitride", "required": false},
+        {"id": "#forge:dusts/uranium_233", "required": false},
+        {"id": "#forge:dusts/uranium_233_oxide", "required": false},
+        {"id": "#forge:dusts/uranium_233_nitride", "required": false}
+    ]
+}

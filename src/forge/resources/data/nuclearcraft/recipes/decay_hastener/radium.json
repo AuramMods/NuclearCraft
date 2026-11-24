@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "forge:dusts/radium"
+                "tag": "nuclearcraft:decay_hastener/radium"
             },
             "count": 1
         }

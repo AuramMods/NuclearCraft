@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/californium_252", "required": false},
+        {"id": "#forge:ingots/californium_252_oxide", "required": false},
+        {"id": "#forge:ingots/californium_252_nitride", "required": false},
+        {"id": "#forge:dusts/californium_252", "required": false},
+        {"id": "#forge:dusts/californium_252_oxide", "required": false},
+        {"id": "#forge:dusts/californium_252_nitride", "required": false}
+    ]
+}

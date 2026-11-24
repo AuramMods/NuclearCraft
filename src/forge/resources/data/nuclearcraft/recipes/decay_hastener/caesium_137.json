@@ -1,0 +1,47 @@
+{
+    "type": "nuclearcraft:decay_hastener",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/caesium_137"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "forge:ingots/barium",
+        "preferred_tag": "forge:dusts/barium"
+    },
+    "ticks": 70,
+    "energy_per_tick": 10,
+    "decay_time_from_radiation": true,
+    "radiation": 0.033,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "nuclearcraft:decay_hastener/caesium_137"
+            }
+        },
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/barium"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/barium"
+                    }
+                }
+            ]
+        }
+    ]
+}

@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "forge:dusts/ruthenium_106"
+                "tag": "nuclearcraft:decay_hastener/ruthenium_106"
             },
             "count": 1
         }

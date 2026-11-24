@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/americium_242", "required": false},
+        {"id": "#forge:ingots/americium_242_oxide", "required": false},
+        {"id": "#forge:ingots/americium_242_nitride", "required": false},
+        {"id": "#forge:dusts/americium_242", "required": false},
+        {"id": "#forge:dusts/americium_242_oxide", "required": false},
+        {"id": "#forge:dusts/americium_242_nitride", "required": false}
+    ]
+}

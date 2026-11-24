@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/uranium_238", "required": false},
+        {"id": "#forge:ingots/uranium_238_oxide", "required": false},
+        {"id": "#forge:ingots/uranium_238_nitride", "required": false},
+        {"id": "#forge:dusts/uranium_238", "required": false},
+        {"id": "#forge:dusts/uranium_238_oxide", "required": false},
+        {"id": "#forge:dusts/uranium_238_nitride", "required": false}
+    ]
+}

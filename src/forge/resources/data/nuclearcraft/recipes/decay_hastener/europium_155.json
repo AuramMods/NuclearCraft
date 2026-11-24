@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "forge:dusts/europium_155"
+                "tag": "nuclearcraft:decay_hastener/europium_155"
             },
             "count": 1
         }

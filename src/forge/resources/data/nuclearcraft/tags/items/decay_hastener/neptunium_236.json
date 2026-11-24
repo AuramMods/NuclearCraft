@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/neptunium_236", "required": false},
+        {"id": "#forge:ingots/neptunium_236_oxide", "required": false},
+        {"id": "#forge:ingots/neptunium_236_nitride", "required": false},
+        {"id": "#forge:dusts/neptunium_236", "required": false},
+        {"id": "#forge:dusts/neptunium_236_oxide", "required": false},
+        {"id": "#forge:dusts/neptunium_236_nitride", "required": false}
+    ]
+}

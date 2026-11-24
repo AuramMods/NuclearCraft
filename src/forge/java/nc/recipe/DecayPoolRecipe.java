@@ -3,28 +3,20 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCMachines;
-import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 public record DecayPoolRecipe(ResourceLocation id, boolean source, Ingredient itemInput, int itemCount,
                               @Nullable FluidIngredient fluidInput, ItemStack itemResult, FluidStack fluidResult,
@@ -84,30 +76,11 @@ public record DecayPoolRecipe(ResourceLocation id, boolean source, Ingredient it
         }
 
         private static ItemStack readItem(JsonObject json, ICondition.IContext context) {
-            var preferred = json.has("preferred_tag") ? selectItem(json, "preferred_tag", context) : Optional.<ResourceLocation>empty();
-            if (preferred.isPresent() || json.has("tag")) {
-                var selected = preferred.isPresent() ? preferred : selectItem(json, "tag", context);
-                if (selected.isEmpty()) throw new JsonSyntaxException("Empty Decay Pool output tag in " + json);
-                json = json.deepCopy();
-                json.remove("tag");
-                json.remove("preferred_tag");
-                json.addProperty("item", selected.get().toString());
-            }
-            var stack = CraftingHelper.getItemStack(json, true);
+            var stack = ItemRecipeResult.read(json, context);
             if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize()) {
                 throw new JsonSyntaxException("Invalid Decay Pool item output");
             }
             return stack;
-        }
-
-        private static Optional<ResourceLocation> selectItem(JsonObject json, String name, ICondition.IContext context) {
-            var key = ResourceLocation.tryParse(GsonHelper.getAsString(json, name));
-            if (key == null) throw new JsonSyntaxException("Invalid Decay Pool output tag " + name);
-            var tag = TagKey.create(Registries.ITEM, key);
-            var entries = context == ICondition.IContext.EMPTY
-                    ? BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(set -> set.stream()) : context.getTag(tag).stream();
-            return entries.map(Holder::value).filter(item -> item != Items.AIR)
-                    .map(BuiltInRegistries.ITEM::getKey).findFirst();
         }
 
         @Override

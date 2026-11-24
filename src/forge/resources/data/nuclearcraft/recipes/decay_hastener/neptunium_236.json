@@ -2,17 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/neptunium_236"
-                },
-                {
-                    "tag": "forge:ingots/neptunium_236_oxide"
-                },
-                {
-                    "tag": "forge:ingots/neptunium_236_nitride"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/neptunium_236"
+            },
             "count": 1
         }
     ],

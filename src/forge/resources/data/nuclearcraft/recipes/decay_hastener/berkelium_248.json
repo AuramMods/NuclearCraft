@@ -2,17 +2,9 @@
     "type": "nuclearcraft:decay_hastener",
     "ingredients": [
         {
-            "ingredient": [
-                {
-                    "tag": "forge:ingots/berkelium_248"
-                },
-                {
-                    "tag": "forge:ingots/berkelium_248_oxide"
-                },
-                {
-                    "tag": "forge:ingots/berkelium_248_nitride"
-                }
-            ],
+            "ingredient": {
+                "tag": "nuclearcraft:decay_hastener/berkelium_248"
+            },
             "count": 1
         }
     ],

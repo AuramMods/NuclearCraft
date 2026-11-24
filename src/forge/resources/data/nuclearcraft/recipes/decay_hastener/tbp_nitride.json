@@ -1,0 +1,74 @@
+{
+    "type": "forge:conditional",
+    "recipes": [
+        {
+            "conditions": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/tbp"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/tbp_nitride"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:ingots/tbp_nitride"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:tbu_nitride"
+                },
+                "ticks": 60,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 0.08358024698110801
+            }
+        },
+        {
+            "conditions": [
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "forge:ingots/tbp"
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/tbp_nitride"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:dusts/tbp_nitride"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:tbu_nitride"
+                },
+                "ticks": 60,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 0.08358024698110801
+            }
+        }
+    ]
+}

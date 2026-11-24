@@ -1,0 +1,74 @@
+{
+    "type": "forge:conditional",
+    "recipes": [
+        {
+            "conditions": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/protactinium_233"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/protactinium_233_carbide"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:ingots/protactinium_233_carbide"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:uranium_233_carbide_ingot"
+                },
+                "ticks": 45,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 1.5044444444444443
+            }
+        },
+        {
+            "conditions": [
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "forge:ingots/protactinium_233"
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/protactinium_233_carbide"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:decay_hastener",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:dusts/protactinium_233_carbide"
+                        },
+                        "count": 1
+                    }
+                ],
+                "result": {
+                    "item": "nuclearcraft:uranium_233_carbide_ingot"
+                },
+                "ticks": 45,
+                "energy_per_tick": 10,
+                "decay_time_from_radiation": true,
+                "radiation": 1.5044444444444443
+            }
+        }
+    ]
+}

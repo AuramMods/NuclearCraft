@@ -1,0 +1,17 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/caesium_137", "required": false},
+        {"id": "#forge:ingots/cesium_137", "required": false},
+        {"id": "#forge:ingots/caesium_137_oxide", "required": false},
+        {"id": "#forge:ingots/cesium_137_oxide", "required": false},
+        {"id": "#forge:ingots/caesium_137_nitride", "required": false},
+        {"id": "#forge:ingots/cesium_137_nitride", "required": false},
+        {"id": "#forge:dusts/caesium_137", "required": false},
+        {"id": "#forge:dusts/cesium_137", "required": false},
+        {"id": "#forge:dusts/caesium_137_oxide", "required": false},
+        {"id": "#forge:dusts/cesium_137_oxide", "required": false},
+        {"id": "#forge:dusts/caesium_137_nitride", "required": false},
+        {"id": "#forge:dusts/cesium_137_nitride", "required": false}
+    ]
+}

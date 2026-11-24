@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/ruthenium_106", "required": false},
+        {"id": "#forge:ingots/ruthenium_106_oxide", "required": false},
+        {"id": "#forge:ingots/ruthenium_106_nitride", "required": false},
+        {"id": "#forge:dusts/ruthenium_106", "required": false},
+        {"id": "#forge:dusts/ruthenium_106_oxide", "required": false},
+        {"id": "#forge:dusts/ruthenium_106_nitride", "required": false}
+    ]
+}

@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/plutonium_238", "required": false},
+        {"id": "#forge:ingots/plutonium_238_oxide", "required": false},
+        {"id": "#forge:ingots/plutonium_238_nitride", "required": false},
+        {"id": "#forge:dusts/plutonium_238", "required": false},
+        {"id": "#forge:dusts/plutonium_238_oxide", "required": false},
+        {"id": "#forge:dusts/plutonium_238_nitride", "required": false}
+    ]
+}

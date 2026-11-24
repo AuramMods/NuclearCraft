@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        {"id": "#forge:ingots/thorium", "required": false},
+        {"id": "#forge:ingots/thorium_oxide", "required": false},
+        {"id": "#forge:ingots/thorium_nitride", "required": false},
+        {"id": "#forge:dusts/thorium", "required": false},
+        {"id": "#forge:dusts/thorium_oxide", "required": false},
+        {"id": "#forge:dusts/thorium_nitride", "required": false}
+    ]
+}
