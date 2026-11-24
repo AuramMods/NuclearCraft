@@ -61,6 +61,8 @@ public final class NCClient {
             MenuScreens.register(NCMachines.INFILTRATOR_MENU.get(), InfiltratorScreen::new);
             MenuScreens.register(NCMachines.ELECTROLYZER_MENU.get(), LargeElectrolyzerScreen::new);
             BlockEntityRenderers.register(NCQuantum.PART_ENTITY.get(), context -> new QuantumQubitRenderer());
+            BlockEntityRenderers.register(NCHeatExchangers.CONTROLLER_ENTITY.get(), context -> new ExchangerRenderer());
+            BlockEntityRenderers.register(NCHeatExchangers.CONDENSER_ENTITY.get(), context -> new ExchangerRenderer());
             BlockEntityRenderers.register(NCMachines.POOL.get(), context -> new DecayPoolRenderer());
             BlockEntityRenderers.register(NCMachines.DISTILLER.get(), context -> new DistillerRenderer());
             BlockEntityRenderers.register(NCMachines.INFILTRATOR.get(), context -> new InfiltratorRenderer());

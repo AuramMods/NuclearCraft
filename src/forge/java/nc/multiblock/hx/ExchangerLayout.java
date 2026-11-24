@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 
 record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, List<Tube> tubes,
-                       List<BlockPos> redstone, List<BlockPos> computers) {
+                       List<BlockPos> redstone, List<BlockPos> computers, boolean glass) {
     record Port(BlockPos pos, Direction side, boolean outlet, BlockPos circuit) {}
     record Network(BlockPos inlet, List<BlockPos> tubes, int usefulTubes, double conductivity, double retainedConductivity,
                    Vec3 tubeFlow, Vec3 shellFlow, double flowCosine) {
@@ -60,6 +60,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
         Set<BlockPos> outlets = new HashSet<>();
         List<BlockPos> redstone = new ArrayList<>();
         List<BlockPos> computers = new ArrayList<>();
+        boolean glass = false;
         for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(cursor);
             Part part = ExchangerPartBlock.part(state);
@@ -76,10 +77,12 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                 } else {
                     return error("interior", cursor);
                 }
-            } else if (part == Part.CASING || (region == 1 && part == Part.GLASS)) {
+            } else if (part == Part.CASING) {
                 continue;
             } else if (region != 1 || part == null) {
                 return error("wall", cursor);
+            } else if (part == Part.GLASS) {
+                glass = true;
             } else if (part == Part.COMPUTER) {
                 computers.add(cursor.immutable());
             } else if (part.controller() && cursor.equals(controller)) {
@@ -190,7 +193,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             installed.add(new Tube(pos, tubeFlow.getOrDefault(pos, Vec3.ZERO), shellFlow.getOrDefault(pos, Vec3.ZERO)));
         }
         return new Validation(new ExchangerLayout(bounds, ports, List.copyOf(networks),
-                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers)), null, null);
+                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers), glass), null, null);
     }
 
     private static Network network(Map<BlockPos, BlockState> tubeStates, TubeNetwork tube,

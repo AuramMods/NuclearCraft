@@ -3,6 +3,7 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFluids;
+import nc.multiblock.hx.ExchangerController;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerTubeBlock.Setting;
 import net.minecraft.core.BlockPos;
@@ -238,6 +239,33 @@ public final class CondenserGameTests {
                     helper.assertTrue(saved.getList("circuits", Tag.TAG_COMPOUND).size() == 2
                                     && circuitAt(saved, helper.absolutePos(FIRST_OUT)).getDouble("credit") == 8.5D,
                             "Both circuits persist exactly once and the moved circuit retains its recipe credit");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void condenserClearsTheClientShellWhenDisassembled(GameTestHelper helper) {
+        build(helper);
+        BlockPos glass = new BlockPos(4, 2, 1);
+        helper.setBlock(glass, NCHeatExchangers.GLASS.get());
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, COOLANT, Direction.NORTH))
+                .thenExecute(() -> {
+                    var server = (ExchangerController) helper.getBlockEntity(CONTROLLER);
+                    var client = new ExchangerController(helper.absolutePos(CONTROLLER), server.getBlockState());
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.fill(new FluidStack(Fluids.WATER, 12000), FluidAction.EXECUTE) == 12000,
+                            "The shell accepts 12,000 mB of coolant");
+                    client.handleUpdateTag(server.getUpdatePacket().getTag());
+                    var rendered = client.renderVolume();
+                    helper.assertTrue(rendered != null && rendered.condenser()
+                                    && rendered.input().getAmount() == 12000 && rendered.width() == 3,
+                            "The client packet carries the shell geometry and measured coolant");
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    var cleared = server.getUpdatePacket().getTag();
+                    helper.assertTrue(cleared != null, "The clearing packet must carry an explicit empty shell");
+                    client.handleUpdateTag(cleared);
+                    helper.assertTrue(client.renderVolume() == null, "Disassembly removes the shell fluid from the client");
                 })
                 .thenSucceed();
     }

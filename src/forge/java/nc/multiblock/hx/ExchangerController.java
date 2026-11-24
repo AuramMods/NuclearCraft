@@ -12,7 +12,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
@@ -55,6 +57,12 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     private double shellSpeed;
     private double temperatureDifference;
     private int shellInputRate;
+    private FluidStack renderedInput = FluidStack.EMPTY;
+    private FluidStack renderedOutput = FluidStack.EMPTY;
+    private @Nullable RenderVolume renderVolume;
+
+    public record RenderVolume(BlockPos origin, int width, int height, int depth, boolean condenser,
+                               FluidStack input, FluidStack output, int inputCapacity, int outputCapacity) {}
 
     public ExchangerController(BlockPos pos, BlockState state) {
         super((state.is(NCHeatExchangers.CONDENSER.get())
@@ -110,6 +118,11 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                 shellInputRate = before - shell.input.getFluidAmount();
             }
             pushOutputs(server);
+            if (layout != null && layout.glass() && server.getGameTime() % 5 == 0
+                    && (!renderedInput.isFluidStackIdentical(shell.input.getFluid())
+                    || !renderedOutput.isFluidStackIdentical(shell.output.getFluid()))) {
+                syncRender(server);
+            }
         }
 
         BlockState state = getBlockState();
@@ -252,6 +265,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             notifyPipe(server, port, server.getBlockState(port.pos()).getBlock());
         }
         validation = Component.empty();
+        if (layout != null && layout.glass()) {
+            syncRender(server);
+        }
     }
 
     private Circuit recoverCircuit(ExchangerLayout.Network network) {
@@ -286,6 +302,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         ExchangerLayout old = layout;
         layout = null;
         if (old != null && level instanceof ServerLevel server) {
+            if (old.glass()) {
+                syncRender(server);
+            }
             for (ExchangerLayout.Port port : old.ports()) {
                 var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
                 if (chunk != null && chunk.getBlockEntity(port.pos()) instanceof ExchangerPort entity) {
@@ -293,6 +312,56 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                     notifyPipe(server, port, entity.getBlockState().getBlock());
                 }
             }
+        }
+    }
+
+    private void syncRender(ServerLevel server) {
+        renderedInput = shell.input.getFluid().copy();
+        renderedOutput = shell.output.getFluid().copy();
+        if (!isRemoved() && server.getChunkSource().getChunkNow(worldPosition.getX() >> 4, worldPosition.getZ() >> 4) != null) {
+            BlockState state = getBlockState();
+            server.sendBlockUpdated(worldPosition, state, state, Block.UPDATE_CLIENTS);
+        }
+    }
+
+    public @Nullable RenderVolume renderVolume() {
+        return renderVolume;
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        var tag = new CompoundTag();
+        if (layout != null && layout.glass()) {
+            var bounds = layout.bounds();
+            BlockPos origin = bounds.min().offset(1, 1, 1).subtract(worldPosition);
+            tag.putIntArray("shell_volume", new int[]{origin.getX(), origin.getY(), origin.getZ(),
+                    bounds.xLength() - 2, bounds.yLength() - 2, bounds.zLength() - 2,
+                    shell.input.getCapacity(), shell.output.getCapacity()});
+            tag.put("shell_input", shell.input.getFluid().writeToNBT(new CompoundTag()));
+            tag.put("shell_output", shell.output.getFluid().writeToNBT(new CompoundTag()));
+        } else {
+            tag.putIntArray("shell_volume", new int[0]);
+        }
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        int[] data = tag.getIntArray("shell_volume");
+        renderVolume = data.length == 8 ? new RenderVolume(new BlockPos(data[0], data[1], data[2]),
+                data[3], data[4], data[5], condenser, FluidStack.loadFluidStackFromNBT(tag.getCompound("shell_input")),
+                FluidStack.loadFluidStackFromNBT(tag.getCompound("shell_output")), data[6], data[7]) : null;
+    }
+
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
+        if (packet.getTag() != null) {
+            handleUpdateTag(packet.getTag());
         }
     }
 

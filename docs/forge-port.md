@@ -85,13 +85,13 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- Remaining work includes condenser and exchanger fluid rendering inside glass shells, cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
+- Remaining work includes cold-gas chemical production, per-chamber and per-cooler filter menus, automatic discovery of external plate recipes for the Pressurizer, the single-block Electrolyzer's advanced ingredients, helium sourcing for the Supercooler, the rest of the Melter and reactor catalogs, upgrades and per-slot automation modes, legacy port filters, turbine animated rendering, radiation, and the other Overhauled systems.
 
 ## Auram targets
 
 | Installed mod | Version | Interactions to verify |
 | --- | --- | --- |
-| Ender IO | 8.2.18-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
+| Ender IO | 8.2.22-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
 | Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and chemical interoperability where applicable |
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
 | Applied Energistics 2 | 15.4.10 | Item and fluid import/export and shared material tags |
@@ -386,6 +386,10 @@ Exchanger and condenser circuits preserve their input, output, and accumulated r
 A local GameTest loaded an older condenser save, moved the inlet to the opposite wall, and replaced the controller during disassembly. The relocated ports recovered 16,000 mB of exhaust steam, 1,200 mB of condensate, and the exact saved recipe heat. A second circuit retained 32,000 mB of low-quality steam. All 166 local GameTests passed on rerun. A timing assertion in the existing collector test failed on the initial run.
 
 On the packaged Forge 47.4.18 server, Ender IO 8.2.22-beta conduits and Mekanism 10.4.16.80 Basic Mechanical Pipes each filled a condenser with 8,000 mB of exhaust. Both condensers retained that amount while swapping inlet and outlet positions and restarting. Each pipe system inserted another 8,000 mB at the relocated inlet and collected exactly 1,000 mB of condensate from the relocated outlet.
+
+Glass shell walls show the exchanger's two shell fluids and the condenser's coolant. The exchanger uses the original gas opacity based on tank fill. The condenser shows liquid coolant at its proportional height. The server sends the shell geometry and visible fluids on assembly and clears the display on disassembly.
+
+All 167 local GameTests passed, including the condenser's explicit display-clearing packet. The exact packaged JAR loaded on clean Forge 47.4.18 and in the isolated Auram instance. The muted Auram client showed 360,000 mB of exchanger input and 900,000 mB of shell output, cleared both immediately when the frame broke, and recovered both when repaired. It also rendered the condenser's 340,000 mB of coolant. The focus monitor recorded zero activation, foreground, or visible-window samples.
 
 
 Legacy `ore`, `ingot` and `ingot2`, `dust` and `dust2`, and `ingot_block` and `ingot_block2` variants use per-material IDs such as `nuclearcraft:boron_ore`, `nuclearcraft:zirconia_ingot`, `nuclearcraft:zirconia_dust`, and `nuclearcraft:lithium_block`. The metadata index follows each corresponding legacy enum. Alloy variants use the same `<material>_ingot` pattern.
