@@ -13,6 +13,7 @@ import nc.init.NCItemProcessors;
 import nc.init.NCMachines;
 import nc.init.NCRadiation;
 import nc.init.NCRegistries;
+import nc.init.NCWasteland;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -39,6 +40,7 @@ public final class NuclearCraft {
         HeatExchangerConfig.register(context);
         NCMachines.registerConfig(context);
         NCItemProcessors.registerConfig(context);
+        NCWasteland.register(context);
         NCRegistries.register(context.getModEventBus());
         NCFluids.register(context.getModEventBus());
     }

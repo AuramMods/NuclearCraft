@@ -1,0 +1,21 @@
+{
+    "variants": {
+        "": [
+            {
+                "model": "nuclearcraft:block/wasteland_portal"
+            },
+            {
+                "model": "nuclearcraft:block/wasteland_portal",
+                "y": 90
+            },
+            {
+                "model": "nuclearcraft:block/wasteland_portal",
+                "y": 180
+            },
+            {
+                "model": "nuclearcraft:block/wasteland_portal",
+                "y": 270
+            }
+        ]
+    }
+}

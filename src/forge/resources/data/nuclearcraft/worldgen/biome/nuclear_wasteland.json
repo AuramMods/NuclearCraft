@@ -1,0 +1,34 @@
+{
+    "has_precipitation": false,
+    "temperature": 2.0,
+    "downfall": 0.0,
+    "carvers": {},
+    "spawn_costs": {},
+    "spawners": {},
+    "effects": {
+        "sky_color": 10330225,
+        "fog_color": 12638463,
+        "water_color": 10046464,
+        "water_fog_color": 10046464,
+        "grass_color": 10046464,
+        "foliage_color": 10046464
+    },
+    "features": [
+        [],
+        [
+            "minecraft:lake_lava_surface",
+            "nuclearcraft:wasteland_portal_lake"
+        ],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [
+            "nuclearcraft:wasteland_glowing_mushroom",
+            "nuclearcraft:wasteland_dead_bush"
+        ]
+    ]
+}

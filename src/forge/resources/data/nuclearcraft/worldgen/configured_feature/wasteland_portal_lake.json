@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:lake",
+    "config": {
+        "fluid": {
+            "type": "minecraft:simple_state_provider",
+            "state": {
+                "Name": "nuclearcraft:wasteland_portal"
+            }
+        },
+        "barrier": {
+            "type": "minecraft:simple_state_provider",
+            "state": {
+                "Name": "nuclearcraft:wasteland_earth"
+            }
+        }
+    }
+}

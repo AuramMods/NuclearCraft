@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:wasteland",
+    "generator": {
+        "type": "nuclearcraft:wasteland",
+        "biome_source": {
+            "biomes": [
+                {
+                    "data": "nuclearcraft:nuclear_wasteland",
+                    "weight": 8
+                },
+                {
+                    "data": "minecraft:desert",
+                    "weight": 5
+                },
+                {
+                    "data": "minecraft:savanna",
+                    "weight": 3
+                },
+                {
+                    "data": "minecraft:forest",
+                    "weight": 2
+                },
+                {
+                    "data": "minecraft:swamp",
+                    "weight": 2
+                },
+                {
+                    "data": "minecraft:ocean",
+                    "weight": 2
+                },
+                {
+                    "data": "minecraft:stony_shore",
+                    "weight": 1
+                }
+            ]
+        },
+        "settings": "nuclearcraft:wasteland"
+    }
+}

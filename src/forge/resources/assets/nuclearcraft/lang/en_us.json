@@ -2643,5 +2643,7 @@
     "item.nuclearcraft.tritium_bucket": "Tritium Bucket",
     "block.nuclearcraft.roentgen_josh": "Roentgen Josh",
     "fluid_type.nuclearcraft.roentgen_josh": "Roentgen Josh",
-    "item.nuclearcraft.roentgen_josh_bucket": "Roentgen Josh Bucket"
+    "item.nuclearcraft.roentgen_josh_bucket": "Roentgen Josh Bucket",
+    "block.nuclearcraft.wasteland_portal": "Wasteland Portal",
+    "biome.nuclearcraft.nuclear_wasteland": "Nuclear Wasteland"
 }

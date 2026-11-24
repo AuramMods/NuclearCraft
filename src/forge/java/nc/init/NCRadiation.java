@@ -97,6 +97,7 @@ public final class NCRadiation {
                         output.accept(BADGE.get());
                         output.accept(GEIGER_BLOCK_ITEM.get());
                         output.accept(SCRUBBER_ITEM.get());
+                        output.accept(NCWasteland.PORTAL_ITEM.get());
                         output.accept(RADAWAY.get());
                         output.accept(SLOW_RADAWAY.get());
                         output.accept(RAD_X.get());
