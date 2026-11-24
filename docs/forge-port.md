@@ -374,6 +374,8 @@ When container radiation and `radiation_tile_shielding` are enabled, sneak-use a
 
 All 106 local GameTests passed, including the crafting chain, armor upgrades, and the suit's total resistance. A muted multiplayer client upgraded shielding on a vanilla barrel, recovered the previous layer, and rejected a downgrade without consuming the item. Its measured chunk rate fell from about 0.34 to 0.14 Rad/t during the test. A packaged dedicated server recovered the heavy layer after restart and returned exactly one layer when the barrel was broken. The native observer recorded zero visible or foreground samples and zero activation events.
 
+The packaged shielding build installed one heavy layer on an Ender IO 8.2.21-rf-preview pressurized tank and one on a Mekanism 10.4.16.80 basic fluid tank in the isolated 539-JAR Auram pack. Both standard sneak-use interactions consumed their layer. The saved region had a resistance of 1 on each tank, and the Ender IO tank still held 500 mB of water. JEI loaded, the client exited cleanly, and the observer recorded zero visible or foreground samples and zero activation events.
+
 ### Environmental radiation
 
 Forge samples up to `radiation_world_chunks_per_tick` loaded chunks per dimension per tick. Each sampled chunk approaches its current sources at `radiation_spread_rate`. It approaches lower source levels at `radiation_decay_rate` and transfers radiation to a loaded cardinal neighbor when the gradient is large enough. Radiation is saved per dimension in `data/nuclearcraft_radiation.dat`. Moving contamination from a 1.12.2 world requires converting the old chunk capability data to the port's packed chunk positions and rates.
