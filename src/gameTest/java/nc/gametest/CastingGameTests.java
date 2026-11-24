@@ -12,6 +12,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -65,6 +66,37 @@ public final class CastingGameTests {
                                     && centrifugeTanks.getFluidInTank(2).isFluidStackIdentical(fluid("nak", 144)),
                             "Cast exactly one ingot and retain a full batch of recovered NaK");
                 })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 500)
+    public static void ingotFormerCastsGemsFromDiscoveredFluidTags(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var manager = level.getRecipeManager();
+        var recipeId = NuclearCraft.id("ingot_former/materials/minecraft/water");
+        var generated = manager.byKey(recipeId).orElseThrow();
+        helper.assertTrue(generated.getResultItem(level.registryAccess()).is(Items.AMETHYST_SHARD)
+                        && manager.byKey(NuclearCraft.id("ingot_former/materials/minecraft/flowing_water")).isEmpty()
+                        && manager.byKey(NuclearCraft.id("ingot_former/materials/nuclearcraft/iron")).isEmpty(),
+                "Discover the tagged gem from a source fluid and preserve the declared iron recipe");
+
+        helper.setBlock(PROCESSOR, Machine.INGOT_FORMER.block());
+        var former = (ItemProcessorBlockEntity) helper.getBlockEntity(PROCESSOR);
+        var tank = former.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST).orElseThrow(AssertionError::new);
+        var outlet = former.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.EAST).orElseThrow(AssertionError::new);
+        helper.assertTrue(tank.fill(new FluidStack(Fluids.WATER, 665), EXECUTE) == 665,
+                "Accept automatically discovered fluid through the standard input cap");
+        helper.startSequence()
+                .thenIdle(12)
+                .thenExecute(() -> {
+                    helper.assertTrue(outlet.getStackInSlot(0).isEmpty(), "Wait for a full 666 mB gem batch");
+                    helper.assertTrue(tank.fill(new FluidStack(Fluids.WATER, 1), EXECUTE) == 1, "Complete the batch");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(outlet.getStackInSlot(0).is(Items.AMETHYST_SHARD),
+                        "Complete a cast through the normal recipe manager"))
+                .thenExecute(() -> helper.assertTrue(tank.getFluidInTank(0).isEmpty()
+                                && outlet.extractItem(0, 64, false).getCount() == 1,
+                        "Use 666 mB to make one tagged gem"))
                 .thenSucceed();
     }
 

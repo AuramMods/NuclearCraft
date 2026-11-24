@@ -46,14 +46,19 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
         // Forge loads the world's server config after the initial datapack load.
-        removeDisabledRecipes(event.getServer().getRecipeManager());
+        applyCatalogs(event.getServer().getRecipeManager());
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         if (event.getPlayer() == null) {
-            removeDisabledRecipes(event.getPlayerList().getServer().getRecipeManager());
+            applyCatalogs(event.getPlayerList().getServer().getRecipeManager());
         }
+    }
+
+    private static void applyCatalogs(RecipeManager manager) {
+        removeDisabledRecipes(manager);
+        IngotFormerMaterialRecipes.addDiscoveredRecipes(manager);
     }
 
     private static void removeDisabledRecipes(RecipeManager manager) {
