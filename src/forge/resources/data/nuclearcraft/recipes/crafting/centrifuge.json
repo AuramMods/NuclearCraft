@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PFP",
+        "MCM",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:centrifuge"
+    }
+}

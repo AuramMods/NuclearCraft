@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:depleted_mix_241",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:uranium_238",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:plutonium_241",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:strontium_90",
+            "amount": 32,
+            "chance_percent": 25,
+            "step": 16
+        },
+        {
+            "fluid": "nuclearcraft:plutonium_242",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:americium_243",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:promethium_147",
+            "amount": 32,
+            "chance_percent": 25,
+            "step": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

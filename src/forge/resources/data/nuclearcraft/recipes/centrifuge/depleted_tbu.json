@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:depleted_tbu",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:uranium_233",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:uranium_238",
+            "amount": 80
+        },
+        {
+            "fluid": "nuclearcraft:strontium_90",
+            "amount": 32,
+            "chance_percent": 25,
+            "step": 16
+        },
+        {
+            "fluid": "nuclearcraft:neptunium_236",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:neptunium_237",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:caesium_137",
+            "amount": 32,
+            "chance_percent": 25,
+            "step": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

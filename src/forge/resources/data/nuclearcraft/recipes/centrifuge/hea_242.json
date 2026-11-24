@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:hea_242",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:americium_243",
+            "amount": 96
+        },
+        {
+            "fluid": "nuclearcraft:americium_242",
+            "amount": 48
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

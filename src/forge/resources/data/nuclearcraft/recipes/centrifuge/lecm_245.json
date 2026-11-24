@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:lecm_245",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:curium_246",
+            "amount": 128
+        },
+        {
+            "fluid": "nuclearcraft:curium_245",
+            "amount": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

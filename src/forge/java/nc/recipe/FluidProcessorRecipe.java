@@ -3,6 +3,7 @@ package nc.recipe;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
@@ -18,6 +19,14 @@ public interface FluidProcessorRecipe extends Recipe<Container> {
     List<FluidStack> results();
     int ticks();
     int energyPerTick();
+
+    default double duration() {
+        return ticks();
+    }
+
+    default FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
+        return maximum;
+    }
 
     default @Nullable ItemProcessorRecipe.Input itemInput() {
         return null;

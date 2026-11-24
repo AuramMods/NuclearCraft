@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:depleted_hecm_245",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:curium_246",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:curium_247",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:molybdenum",
+            "amount": 32,
+            "chance_percent": 90,
+            "step": 16
+        },
+        {
+            "fluid": "nuclearcraft:berkelium_247",
+            "amount": 32
+        },
+        {
+            "fluid": "nuclearcraft:californium_249",
+            "amount": 16
+        },
+        {
+            "fluid": "nuclearcraft:europium_155",
+            "amount": 32,
+            "chance_percent": 60,
+            "step": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

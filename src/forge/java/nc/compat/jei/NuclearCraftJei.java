@@ -33,6 +33,7 @@ import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
+import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.ChemicalReactorRecipe;
@@ -76,6 +77,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "chemical_reactor", ChemicalReactorRecipe.class);
     private static final RecipeType<EnricherRecipe> ENRICHER =
             RecipeType.create(NuclearCraft.MOD_ID, "enricher", EnricherRecipe.class);
+    private static final RecipeType<CentrifugeRecipe> CENTRIFUGE =
+            RecipeType.create(NuclearCraft.MOD_ID, "centrifuge", CentrifugeRecipe.class);
     private static final RecipeType<SupercoolerRecipe> SUPERCOOLER =
             RecipeType.create(NuclearCraft.MOD_ID, "supercooler", SupercoolerRecipe.class);
     private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
@@ -156,6 +159,8 @@ public final class NuclearCraftJei implements IModPlugin {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(CENTRIFUGE, NCRegistries.CENTRIFUGE.get(), gui, NuclearCraftJei::centrifugeRecipe,
+                        recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
@@ -208,6 +213,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
         registration.addRecipes(ENRICHER, recipes.getAllRecipesFor(NCRegistries.ENRICHING.get()));
         registration.addRecipes(SUPERCOOLER, recipes.getAllRecipesFor(NCRegistries.SUPERCOOLING.get()));
+        registration.addRecipes(CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
@@ -234,6 +240,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
         registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
         registration.addRecipeCatalyst(NCRegistries.SUPERCOOLER.get(), SUPERCOOLER);
+        registration.addRecipeCatalyst(NCRegistries.CENTRIFUGE.get(), CENTRIFUGE);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), SALT_FISSION);
@@ -276,6 +283,7 @@ public final class NuclearCraftJei implements IModPlugin {
                     case CHEMICAL_REACTOR -> List.of(IGuiClickableArea.createBasic(70, 34, 37, 18, CHEMICAL_REACTOR));
                     case ENRICHER -> List.of(IGuiClickableArea.createBasic(84, 35, 37, 16, ENRICHER));
                     case SUPERCOOLER -> List.of(IGuiClickableArea.createBasic(74, 35, 37, 16, SUPERCOOLER));
+                    case CENTRIFUGE -> List.of(IGuiClickableArea.createBasic(58, 30, 37, 38, CENTRIFUGE));
                 };
             }
         });
@@ -304,6 +312,26 @@ public final class NuclearCraftJei implements IModPlugin {
     private static void fissionFuel(IRecipeLayoutBuilder layout, SolidFissionRecipe recipe) {
         layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.fuel());
         layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.depleted());
+    }
+
+    private static void centrifugeRecipe(IRecipeLayoutBuilder layout, CentrifugeRecipe recipe) {
+        fluidSlot(layout, INPUT, 20, 12, recipe.input().alternatives());
+        for (int index = 0; index < recipe.products().size(); index++) {
+            var product = recipe.products().get(index);
+            FluidStack maximum = product.stack();
+            if (!maximum.isEmpty()) {
+                int x = 98 + (index % 3) * 20;
+                int y = 2 + (index / 3) * 20;
+                var slot = layout.addSlot(OUTPUT, x, y).setOutputSlotBackground()
+                        .setFluidRenderer(maximum.getAmount(), true, 16, 16)
+                        .addIngredient(ForgeTypes.FLUID_STACK, maximum);
+                if (product.chancePercent() < 100) {
+                    slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
+                            "gui.nuclearcraft.jei.fluid_product_chance", product.chancePercent(), product.step(),
+                            product.minAmount(), maximum.getAmount())));
+                }
+            }
+        }
     }
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {
@@ -375,7 +403,7 @@ public final class NuclearCraftJei implements IModPlugin {
         public int getWidth() {
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor" -> 178;
-                case "rock_crusher", "extractor" -> 166;
+                case "rock_crusher", "extractor", "centrifuge" -> 166;
                 default -> 140;
             };
         }
@@ -384,7 +412,7 @@ public final class NuclearCraftJei implements IModPlugin {
         public int getHeight() {
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor", "assembler" -> 70;
-                case "electrolyzer" -> 58;
+                case "electrolyzer", "centrifuge" -> 58;
                 default -> 48;
             };
         }

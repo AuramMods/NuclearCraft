@@ -1,7 +1,6 @@
 package nc.client;
 
 import nc.NuclearCraft;
-import nc.processor.FluidProcessorBlockEntity.Machine;
 import nc.processor.FluidProcessorMenu;
 import nc.processor.ProcessorFluidTanks;
 import net.minecraft.client.gui.GuiGraphics;
@@ -21,17 +20,21 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     private static final int ITEM_INPUT = -1;
     private static final Layout ELECTROLYZER = new Layout(NuclearCraft.id("textures/gui/container/electrolyzer.png"),
             List.of(new Tank(50, 41, 16), new Tank(106, 31, 16), new Tank(126, 31, 16),
-                    new Tank(106, 51, 16), new Tank(126, 51, 16)), 68, 30, 38);
+                    new Tank(106, 51, 16), new Tank(126, 51, 16)), 68, 30, 38, true);
     private static final Layout SALT_MIXER = new Layout(NuclearCraft.id("textures/gui/container/salt_mixer.png"),
-            List.of(new Tank(46, 35, 16), new Tank(66, 35, 16), new Tank(123, 31, 24)), 84, 34, 18);
+            List.of(new Tank(46, 35, 16), new Tank(66, 35, 16), new Tank(123, 31, 24)), 84, 34, 18, false);
     private static final Layout CHEMICAL_REACTOR = new Layout(NuclearCraft.id("textures/gui/container/chemical_reactor.png"),
-            List.of(new Tank(32, 35, 16), new Tank(52, 35, 16), new Tank(108, 31, 24), new Tank(136, 31, 24)), 70, 34, 18);
+            List.of(new Tank(32, 35, 16), new Tank(52, 35, 16), new Tank(108, 31, 24), new Tank(136, 31, 24)), 70, 34, 18, false);
 
     private static final Layout ENRICHER = new Layout(NuclearCraft.id("textures/gui/container/enricher.png"),
-            List.of(new Tank(66, 35, 16), new Tank(122, 31, 24)), 84, 35, 16);
+            List.of(new Tank(66, 35, 16), new Tank(122, 31, 24)), 84, 35, 16, false);
 
     private static final Layout SUPERCOOLER = new Layout(NuclearCraft.id("textures/gui/container/supercooler.png"),
-            List.of(new Tank(56, 35, 16), new Tank(112, 31, 24)), 74, 35, 16);
+            List.of(new Tank(56, 35, 16), new Tank(112, 31, 24)), 74, 35, 16, false);
+
+    private static final Layout CENTRIFUGE = new Layout(NuclearCraft.id("textures/gui/container/centrifuge.png"),
+            List.of(new Tank(40, 41, 16), new Tank(96, 31, 16), new Tank(116, 31, 16), new Tank(136, 31, 16),
+                    new Tank(96, 51, 16), new Tank(116, 51, 16), new Tank(136, 51, 16)), 58, 30, 38, true);
 
     private final EnumMap<Direction, Button> sides = new EnumMap<>(Direction.class);
     private final Layout layout;
@@ -46,9 +49,11 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             case CHEMICAL_REACTOR -> CHEMICAL_REACTOR;
             case ENRICHER -> ENRICHER;
             case SUPERCOOLER -> SUPERCOOLER;
+            case CENTRIFUGE -> CENTRIFUGE;
         };
         imageHeight = 178;
         inventoryLabelY = 84;
+        inventoryLabelX = layout.fullTexture() ? 31 : 8;
         titleLabelX = 29;
     }
 
@@ -119,7 +124,7 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
         int progressWidth = (int) (37 * menu.progress());
         int energyHeight = (int) (86 * menu.energy());
         ResourceLocation texture = layout.texture;
-        if (menu.type() != Machine.ELECTROLYZER) {
+        if (!layout.fullTexture()) {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, 61);
             graphics.blit(texture, leftPos, topPos + 61, imageWidth, 19, 0F, 60F, imageWidth, 1, 256, 256);
             graphics.blit(texture, leftPos, topPos + 80, 0, 80, 130, 1);
@@ -130,6 +135,8 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             graphics.blit(texture, leftPos + 8, topPos + 80 - compactEnergy, 176, 164 - compactEnergy, 16, compactEnergy);
         } else {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+            // The legacy texture's upgrade sockets occupy the area behind the face controls.
+            graphics.fill(leftPos + 130, topPos + 68, leftPos + 171, topPos + 93, 0xFFC6C6C6);
             graphics.blit(texture, leftPos + 8, topPos + 92 - energyHeight, 176, 176 - energyHeight, 16, energyHeight);
         }
 
@@ -169,5 +176,6 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     }
 
     private record Tank(int x, int y, int size) {}
-    private record Layout(ResourceLocation texture, List<Tank> tanks, int progressX, int progressY, int progressHeight) {}
+    private record Layout(ResourceLocation texture, List<Tank> tanks, int progressX, int progressY, int progressHeight,
+                          boolean fullTexture) {}
 }

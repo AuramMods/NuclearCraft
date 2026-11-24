@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:depleted_hep_241_fluoride_flibe",
+        "amount": 72
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:depleted_hep_241_fluoride",
+            "amount": 72
+        },
+        {
+            "fluid": "nuclearcraft:flibe",
+            "amount": 72
+        }
+    ],
+    "ticks": 600,
+    "energy_per_tick": 10
+}

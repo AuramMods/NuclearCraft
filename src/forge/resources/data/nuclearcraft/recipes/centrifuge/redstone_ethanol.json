@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:redstone_ethanol",
+        "amount": 500
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:ethanol",
+            "amount": 500
+        },
+        {
+            "fluid": "nuclearcraft:redstone",
+            "amount": 400
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 5
+}

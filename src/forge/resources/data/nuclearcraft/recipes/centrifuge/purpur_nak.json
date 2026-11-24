@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:purpur_nak",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:purpur",
+            "amount": 360
+        },
+        {
+            "fluid": "nuclearcraft:nak",
+            "amount": 144
+        }
+    ],
+    "ticks": 600,
+    "energy_per_tick": 10
+}

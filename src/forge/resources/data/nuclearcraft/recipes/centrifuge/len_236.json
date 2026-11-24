@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:len_236",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:neptunium_237",
+            "amount": 128
+        },
+        {
+            "fluid": "nuclearcraft:neptunium_236",
+            "amount": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

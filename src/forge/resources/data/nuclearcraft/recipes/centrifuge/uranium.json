@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "tag": "forge:molten_uranium",
+        "amount": 160
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:uranium_238",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:uranium_235",
+            "amount": 16
+        }
+    ],
+    "ticks": 1333.3333333333333,
+    "energy_per_tick": 10
+}

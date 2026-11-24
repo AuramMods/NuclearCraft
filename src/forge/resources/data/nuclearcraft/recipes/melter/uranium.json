@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/uranium"
+        },
+        {
+            "tag": "forge:dusts/uranium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:uranium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -8,6 +8,7 @@ import nc.processor.MelterBlock;
 import nc.processor.MelterBlockEntity;
 import nc.processor.MelterMenu;
 import nc.processor.ProcessorBlock;
+import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -149,6 +150,23 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<SupercoolerRecipe>> SUPERCOOLER_SERIALIZER =
             RECIPE_SERIALIZERS.register("supercooler", SupercoolerRecipe.Serializer::new);
 
+    public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> CENTRIFUGE =
+            BLOCKS.register("centrifuge", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
+                    () -> NCRegistries.CENTRIFUGE_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+    public static final RegistryObject<Item> CENTRIFUGE_ITEM =
+            ITEMS.register("centrifuge", () -> new BlockItem(CENTRIFUGE.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> CENTRIFUGE_ENTITY =
+            BLOCK_ENTITIES.register("centrifuge", () ->
+                    BlockEntityType.Builder.of((pos, state) -> new FluidProcessorBlockEntity(Machine.CENTRIFUGE, pos, state),
+                            CENTRIFUGE.get()).build(null));
+    public static final RegistryObject<MenuType<FluidProcessorMenu>> CENTRIFUGE_MENU =
+            MENUS.register("centrifuge", () -> new MenuType<>(
+                    (id, player) -> new FluidProcessorMenu(id, player, Machine.CENTRIFUGE), FeatureFlags.DEFAULT_FLAGS));
+    public static final RegistryObject<RecipeType<CentrifugeRecipe>> CENTRIFUGING =
+            RECIPE_TYPES.register("centrifuge", () -> RecipeType.simple(NuclearCraft.id("centrifuge")));
+    public static final RegistryObject<RecipeSerializer<CentrifugeRecipe>> CENTRIFUGE_SERIALIZER =
+            RECIPE_SERIALIZERS.register("centrifuge", CentrifugeRecipe.Serializer::new);
+
     private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
             CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
@@ -160,6 +178,7 @@ public final class NCRegistries {
                         output.accept(CHEMICAL_REACTOR_ITEM.get());
                         output.accept(ENRICHER_ITEM.get());
                         output.accept(SUPERCOOLER_ITEM.get());
+                        output.accept(CENTRIFUGE_ITEM.get());
                         NCItemProcessors.displayItems(output);
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);

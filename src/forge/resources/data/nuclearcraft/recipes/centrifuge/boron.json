@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "tag": "forge:molten_boron",
+        "amount": 192
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:boron_11",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:boron_10",
+            "amount": 48
+        }
+    ],
+    "ticks": 1600,
+    "energy_per_tick": 10
+}

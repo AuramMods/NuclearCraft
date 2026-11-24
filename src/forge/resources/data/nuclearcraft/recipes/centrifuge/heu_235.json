@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:heu_235",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:uranium_238",
+            "amount": 96
+        },
+        {
+            "fluid": "nuclearcraft:uranium_235",
+            "amount": 48
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

@@ -214,6 +214,7 @@
         "nuclearcraft:fission_heater_port_enderium",
         "nuclearcraft:fission_heater_port_cryotheum",
         "nuclearcraft:supercooler",
-        "nuclearcraft:extractor"
+        "nuclearcraft:extractor",
+        "nuclearcraft:centrifuge"
     ]
 }

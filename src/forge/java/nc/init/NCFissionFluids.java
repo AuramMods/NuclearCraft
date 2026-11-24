@@ -4,6 +4,13 @@ final class NCFissionFluids {
     private NCFissionFluids() {}
 
     static void registerFuels() {
+        NCFluids.molten("uranium", 0x375437);
+        NCFluids.molten("strontium_90", 0xB8BE88);
+        NCFluids.molten("ruthenium_106", 0xA3A3A3);
+        NCFluids.molten("caesium_137", 0xADADAD);
+        NCFluids.molten("promethium_147", 0x96C199);
+        NCFluids.molten("europium_155", 0x74664A);
+
         fuel("uranium_233", 0x212E20);
         fuel("uranium_235", 0x102D10);
         fuel("uranium_238", 0x333E32);

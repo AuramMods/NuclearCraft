@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:centrifuge",
+    "fluid_input": {
+        "fluid": "nuclearcraft:lecf_251",
+        "amount": 144
+    },
+    "results": [
+        {
+            "fluid": "nuclearcraft:californium_252",
+            "amount": 128
+        },
+        {
+            "fluid": "nuclearcraft:californium_251",
+            "amount": 16
+        }
+    ],
+    "ticks": 1200,
+    "energy_per_tick": 10
+}

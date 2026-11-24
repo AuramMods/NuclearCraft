@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.init.NCRegistries;
+import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.FluidIngredient;
@@ -51,8 +52,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
 
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private ResourceLocation activeRecipe;
-    private long progressHalfTicks;
-    private int recipeTicks;
+    private double progressHalfTicks;
+    private double recipeTicks;
 
     public FluidProcessorBlockEntity(Machine machine, BlockPos pos, BlockState state) {
         super(machine.entity(), pos, state);
@@ -100,7 +101,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             activeRecipe = next;
             setChanged();
         }
-        recipeTicks = recipe == null ? 0 : recipe.ticks();
+        recipeTicks = recipe == null ? 0 : recipe.duration();
         if (recipe == null || halted) {
             return false;
         }
@@ -113,7 +114,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             return false;
         }
         progressHalfTicks += 2;
-        if (progressHalfTicks >= 2L * recipe.ticks()) {
+        double batchHalfTicks = 2 * recipeTicks;
+        if (progressHalfTicks >= batchHalfTicks) {
             var item = recipe.itemInput();
             if (item != null && itemInput != null) {
                 itemInput.extractItem(0, item.count(), false);
@@ -125,9 +127,13 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 fluids.consume(index, ingredients.get(ingredient).amount());
             }
             for (int index = 0; index < outputs.size(); index++) {
-                fluids.produce(index + machine.inputs, outputs.get(index), outputModes[index]);
+                FluidStack product = outputs.get(index);
+                if (!product.isEmpty()) {
+                    fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random), outputModes[index]);
+                }
             }
-            progressHalfTicks = 0;
+            double remainder = progressHalfTicks - batchHalfTicks;
+            progressHalfTicks = remainder < 2 ? remainder : 0;
         }
         setChanged();
         return true;
@@ -135,7 +141,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
 
     private boolean hasOutputSpace(List<FluidStack> outputs) {
         for (int index = 0; index < outputs.size(); index++) {
-            if (!fluids.canProduce(index + machine.inputs, outputs.get(index), outputModes[index])) {
+            FluidStack product = outputs.get(index);
+            if (!product.isEmpty() && !fluids.canProduce(index + machine.inputs, product, outputModes[index])) {
                 return false;
             }
         }
@@ -212,7 +219,11 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             itemInput.save(tag);
         }
         tag.putInt("energy", power.getEnergyStored());
-        tag.putLong("progress_half_ticks", progressHalfTicks);
+        long wholeTicks = (long) progressHalfTicks;
+        tag.putLong("progress_half_ticks", wholeTicks);
+        if (progressHalfTicks > wholeTicks) {
+            tag.putDouble("progress_fraction", progressHalfTicks - wholeTicks);
+        }
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -231,7 +242,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             itemInput.load(tag);
         }
         power.load(tag.getInt("energy"));
-        progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks"));
+        double fraction = tag.getDouble("progress_fraction");
+        progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks")) + (fraction > 0 && fraction < 1 ? fraction : 0);
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         for (int tank = 0; tank < machine.tanks(); tank++) {
             fluids.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank);
@@ -253,7 +265,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
             @Override
             public int get(int index) {
                 if (index == FluidProcessorMenu.PROGRESS) {
-                    return recipeTicks == 0 ? 0 : (int) (1000L * Math.min(progressHalfTicks, 2L * recipeTicks) / (2L * recipeTicks));
+                    return recipeTicks == 0 ? 0 : (int) (1000L * Math.min(progressHalfTicks, 2D * recipeTicks) / (2D * recipeTicks));
                 }
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
@@ -286,7 +298,8 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
         SALT_MIXER(2, 1),
         CHEMICAL_REACTOR(2, ChemicalReactorRecipe.OUTPUTS),
         ENRICHER(1, 1, true),
-        SUPERCOOLER(1, 1);
+        SUPERCOOLER(1, 1),
+        CENTRIFUGE(1, CentrifugeRecipe.OUTPUTS);
 
         private final int inputs;
         private final int outputs;
@@ -321,6 +334,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR.get();
                 case ENRICHER -> NCRegistries.ENRICHER.get();
                 case SUPERCOOLER -> NCRegistries.SUPERCOOLER.get();
+                case CENTRIFUGE -> NCRegistries.CENTRIFUGE.get();
             };
         }
 
@@ -331,6 +345,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get();
                 case ENRICHER -> NCRegistries.ENRICHER_ENTITY.get();
                 case SUPERCOOLER -> NCRegistries.SUPERCOOLER_ENTITY.get();
+                case CENTRIFUGE -> NCRegistries.CENTRIFUGE_ENTITY.get();
             };
         }
 
@@ -341,6 +356,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTOR_MENU.get();
                 case ENRICHER -> NCRegistries.ENRICHER_MENU.get();
                 case SUPERCOOLER -> NCRegistries.SUPERCOOLER_MENU.get();
+                case CENTRIFUGE -> NCRegistries.CENTRIFUGE_MENU.get();
             };
         }
 
@@ -351,6 +367,7 @@ public final class FluidProcessorBlockEntity extends BlockEntity implements Menu
                 case CHEMICAL_REACTOR -> NCRegistries.CHEMICAL_REACTIONS.get();
                 case ENRICHER -> NCRegistries.ENRICHING.get();
                 case SUPERCOOLER -> NCRegistries.SUPERCOOLING.get();
+                case CENTRIFUGE -> NCRegistries.CENTRIFUGING.get();
             };
         }
     }
