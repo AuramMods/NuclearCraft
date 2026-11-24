@@ -8,7 +8,6 @@
         "nuclearcraft:machine_power_port",
         "nuclearcraft:decay_pool_controller",
         "nuclearcraft:decay_pool_container",
-
         "nuclearcraft:melter",
         "nuclearcraft:fission_casing",
         "nuclearcraft:solid_fission_cell",
@@ -245,6 +244,14 @@
         "nuclearcraft:solar_panel_basic",
         "nuclearcraft:solar_panel_advanced",
         "nuclearcraft:solar_panel_du",
-        "nuclearcraft:solar_panel_elite"
+        "nuclearcraft:solar_panel_elite",
+        "nuclearcraft:distiller_controller",
+        "nuclearcraft:distiller_sieve_tray",
+        "nuclearcraft:distiller_reflux_unit",
+        "nuclearcraft:distiller_reboiling_unit",
+        "nuclearcraft:distiller_liquid_distributor",
+        "nuclearcraft:steel_sieve_assembly",
+        "nuclearcraft:polytetrafluoroethene_sieve_assembly",
+        "nuclearcraft:hastelloy_sieve_assembly"
     ]
 }

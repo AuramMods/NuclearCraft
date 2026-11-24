@@ -33,19 +33,20 @@ public final class DecayPoolRenderer implements BlockEntityRenderer<DecayPool> {
         var vertices = buffers.getBuffer(RenderType.entityTranslucentCull(TextureAtlas.LOCATION_BLOCKS));
         float width = volume.width() - 2 * INSET;
         float depth = volume.depth() - 2 * INSET;
-        renderLayer(volume.feed(), pose.last(), vertices, width, depth, 0, feed * scale);
-        renderLayer(volume.product(), pose.last(), vertices, width, depth, feed * scale, total * scale);
+        renderLayer(volume.feed(), pose.last(), vertices, width, depth, 0, feed * scale, 1);
+        renderLayer(volume.product(), pose.last(), vertices, width, depth, feed * scale, total * scale, 1);
         pose.popPose();
     }
 
-    private static void renderLayer(FluidStack fluid, PoseStack.Pose pose, VertexConsumer output,
-                                    float width, float depth, float bottom, float top) {
+    static void renderLayer(FluidStack fluid, PoseStack.Pose pose, VertexConsumer output,
+                            float width, float depth, float bottom, float top, float opacity) {
         if (fluid.isEmpty()) return;
         var extensions = IClientFluidTypeExtensions.of(fluid.getFluid());
         var texture = extensions.getStillTexture(fluid);
         if (texture == null) return;
         var sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS).apply(texture);
         int color = extensions.getTintColor(fluid);
+        color = (color & 0xffffff) | ((int) ((color >>> 24) * opacity) << 24);
         quad(output, pose, sprite, color, 0, 1, 0, 0, top, depth, width, top, depth, width, top, 0, 0, top, 0);
         quad(output, pose, sprite, color, 0, -1, 0, 0, bottom, 0, width, bottom, 0, width, bottom, depth, 0, bottom, depth);
         quad(output, pose, sprite, color, 0, 0, 1, 0, bottom, depth, width, bottom, depth, width, top, depth, 0, top, depth);

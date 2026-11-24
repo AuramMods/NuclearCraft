@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "lit=false": {
+            "model": "nuclearcraft:block/distiller_reboiling_unit_off"
+        },
+        "lit=true": {
+            "model": "nuclearcraft:block/distiller_reboiling_unit_on"
+        }
+    }
+}

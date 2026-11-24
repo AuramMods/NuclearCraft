@@ -1,0 +1,8 @@
+{
+    "parent": "minecraft:block/cube_bottom_top",
+    "textures": {
+        "side": "nuclearcraft:block/machine/distiller/reflux_unit_side",
+        "top": "nuclearcraft:block/machine/distiller/reflux_unit_top",
+        "bottom": "nuclearcraft:block/machine/distiller/reflux_unit_bottom"
+    }
+}

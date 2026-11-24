@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MMM",
+        "OMO",
+        "MMM"
+    ],
+    "key": {
+        "M": {
+            "tag": "forge:ingots/steel"
+        },
+        "O": {
+            "tag": "forge:dusts/obsidian"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:steel_sieve_assembly",
+        "count": 4
+    }
+}

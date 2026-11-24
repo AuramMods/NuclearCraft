@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BFB",
+        "TCT",
+        "BMB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "T": {
+            "tag": "forge:ingots/tin"
+        },
+        "M": {
+            "item": "nuclearcraft:motor"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:distiller_liquid_distributor",
+        "count": 4
+    }
+}

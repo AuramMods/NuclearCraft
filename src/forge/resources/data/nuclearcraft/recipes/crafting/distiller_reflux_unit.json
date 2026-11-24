@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BFB",
+        "TCT",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "S": {
+            "item": "nuclearcraft:sintered_steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:distiller_reflux_unit",
+        "count": 4
+    }
+}

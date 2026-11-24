@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BSB",
+        "RCR",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "R": {
+            "tag": "forge:ingots/boron"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:distiller_sieve_tray",
+        "count": 4
+    }
+}

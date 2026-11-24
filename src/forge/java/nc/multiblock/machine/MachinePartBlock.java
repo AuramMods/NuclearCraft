@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -39,14 +40,22 @@ public class MachinePartBlock extends Block {
     public enum Part {
         FRAME("machine_frame"), GLASS("machine_glass"), PROCESS("machine_process_port"),
         RESERVOIR("machine_reservoir_port"), REDSTONE("machine_redstone_port"), POWER("machine_power_port"),
-        DECAY_POOL("decay_pool_controller"), CONTAINER("decay_pool_container");
+        DECAY_POOL("decay_pool_controller"), CONTAINER("decay_pool_container"),
+        DISTILLER("distiller_controller"), SIEVE_TRAY("distiller_sieve_tray"),
+        STEEL_SIEVE("steel_sieve_assembly"), PTFE_SIEVE("polytetrafluoroethene_sieve_assembly"),
+        HASTELLOY_SIEVE("hastelloy_sieve_assembly"), REFLUX("distiller_reflux_unit"),
+        REBOILER("distiller_reboiling_unit"), LIQUID_DISTRIBUTOR("distiller_liquid_distributor");
 
         private final String id;
 
         Part(String id) { this.id = id; }
         public String id() { return id; }
         boolean port() { return this == PROCESS || this == RESERVOIR || this == POWER; }
-        public boolean wallEntity() { return port() || this == DECAY_POOL; }
+        boolean controller() { return this == DECAY_POOL || this == DISTILLER; }
+        boolean internal() { return this == CONTAINER || this == SIEVE_TRAY || sieve(); }
+        boolean sieve() { return this == STEEL_SIEVE || this == PTFE_SIEVE || this == HASTELLOY_SIEVE; }
+        boolean distillerWall() { return this == REFLUX || this == REBOILER || this == LIQUID_DISTRIBUTOR; }
+        public boolean wallEntity() { return port() || controller(); }
     }
 
     public enum Mode implements StringRepresentable {
@@ -87,15 +96,16 @@ public class MachinePartBlock extends Block {
     }
 
     private static void partChanged(ServerLevel server, BlockPos pos) {
-        Cuboid.visitNearby(server, new ChunkPos(pos), NCMachines.maxSize() + 2, DecayPool.class,
-                pool -> pool.partChanged(pos));
+        Cuboid.visitNearby(server, new ChunkPos(pos), NCMachines.maxSize() + 2, MachineController.class,
+                controller -> controller.partChanged(pos));
     }
 
     @SubscribeEvent
     public static void unload(ChunkEvent.Unload event) {
         if (event.getLevel() instanceof ServerLevel server) {
             ChunkPos pos = event.getChunk().getPos();
-            Cuboid.visitNearby(server, pos, NCMachines.maxSize() + 2, DecayPool.class, pool -> pool.chunkUnloaded(pos));
+            Cuboid.visitNearby(server, pos, NCMachines.maxSize() + 2, MachineController.class,
+                    controller -> controller.chunkUnloaded(pos));
         }
     }
 
@@ -131,6 +141,17 @@ public class MachinePartBlock extends Block {
         }
     }
 
+    public static final class Reboiler extends MachinePartBlock {
+        public Reboiler(Properties properties) {
+            super(properties, Part.REBOILER);
+            registerDefaultState(stateDefinition.any().setValue(BlockStateProperties.LIT, false));
+        }
+
+        @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(BlockStateProperties.LIT);
+        }
+    }
+
     public static final class Wall extends MachinePartBlock implements EntityBlock {
         public Wall(Properties properties, Part part) {
             super(properties, part);
@@ -147,29 +168,31 @@ public class MachinePartBlock extends Block {
         }
 
         @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-            return part(state) == Part.DECAY_POOL ? new DecayPool(pos, state) : new MachinePort(pos, state);
+            return switch (part(state)) {
+                case DECAY_POOL -> new DecayPool(pos, state);
+                case DISTILLER -> new Distiller(pos, state);
+                default -> new MachinePort(pos, state);
+            };
         }
 
         @Override
         public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-            if (level.isClientSide || type != NCMachines.POOL.get()) return null;
-            return (world, pos, block, entity) -> ((DecayPool) entity).tick();
+            if (level.isClientSide || !part(state).controller()) return null;
+            return (world, pos, block, entity) -> ((MachineController) entity).tick();
         }
 
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
-            if (level.getBlockEntity(pos) instanceof DecayPool pool) {
-                if (!level.isClientSide) pool.open(player);
+            if (level.getBlockEntity(pos) instanceof MachineController controller) {
+                if (!level.isClientSide) controller.open(player);
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
 
             if (hand == InteractionHand.MAIN_HAND && level.getBlockEntity(pos) instanceof MachinePort port) {
                 if (player.getItemInHand(hand).is(NCHeatExchangers.MULTITOOL.get()) && !player.isShiftKeyDown()) {
                     if (!level.isClientSide) {
-                        var mode = port.cycleMode();
-                        player.displayClientMessage(Component.translatable("message.nuclearcraft.machine.mode",
-                                Component.translatable("message.nuclearcraft.machine." + mode.getSerializedName())), true);
+                        player.displayClientMessage(port.cycleSetting(false), true);
                     }
                     return InteractionResult.sidedSuccess(level.isClientSide);
                 }
@@ -180,6 +203,19 @@ public class MachinePartBlock extends Block {
                 }
             }
             return InteractionResult.PASS;
+        }
+
+        public InteractionResult reverseProcessPort(UseOnContext context) {
+            var level = context.getLevel();
+            var pos = context.getClickedPos();
+            var player = context.getPlayer();
+            if (player == null || context.getHand() != InteractionHand.MAIN_HAND || part(level.getBlockState(pos)) != Part.PROCESS
+                    || !(level.getBlockEntity(pos) instanceof MachinePort port)) return InteractionResult.PASS;
+            if (level.isClientSide) return InteractionResult.SUCCESS;
+            var setting = port.cycleSetting(true);
+            if (setting == null) return InteractionResult.PASS;
+            player.displayClientMessage(setting, true);
+            return InteractionResult.CONSUME;
         }
     }
 }

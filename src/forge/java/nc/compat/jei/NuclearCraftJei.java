@@ -39,6 +39,7 @@ import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.DecayPoolRecipe;
+import nc.recipe.DistillerRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -109,6 +110,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "multiblock_decay_pool", DecayPoolRecipe.class);
     private static final RecipeType<DecayPoolRecipe> DECAY_POOL_SOURCE =
             RecipeType.create(NuclearCraft.MOD_ID, "decay_pool_heat_source", DecayPoolRecipe.class);
+    private static final RecipeType<DistillerRecipe> DISTILLER =
+            RecipeType.create(NuclearCraft.MOD_ID, "multiblock_distiller", DistillerRecipe.class);
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -134,6 +137,10 @@ public final class NuclearCraftJei implements IModPlugin {
                         decimal(recipe.power()), decimal(recipe.lifetime()))),
                 new Category<>(DECAY_POOL, NCMachines.block(Part.DECAY_POOL), gui, NuclearCraftJei::poolRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool", decimal(recipe.heat()))),
+                new Category<>(DISTILLER, NCMachines.block(Part.DISTILLER), gui, NuclearCraftJei::distillerRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.distiller",
+                                decimal(NCMachines.distillerTime() * recipe.timeMultiplier() / recipe.batchFactor()),
+                                decimal(NCMachines.distillerPower() * recipe.powerMultiplier()), recipe.sieveTrays())),
                 new Category<>(DECAY_POOL_SOURCE, NCMachines.block(Part.CONTAINER), gui, NuclearCraftJei::poolRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool_source",
                                 decimal(recipe.heat()), decimal(recipe.lifetime()))),
@@ -232,6 +239,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(DECAY_POOL, recipes.getAllRecipesFor(NCMachines.POOL_RECIPES.get()));
+        registration.addRecipes(DISTILLER, recipes.getAllRecipesFor(NCMachines.DISTILLER_RECIPES.get()));
         registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
@@ -260,6 +268,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
         registration.addRecipeCatalyst(NCMachines.block(Part.DECAY_POOL), DECAY_POOL, DECAY_POOL_SOURCE);
+        registration.addRecipeCatalyst(NCMachines.block(Part.DISTILLER), DISTILLER);
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
@@ -416,6 +425,21 @@ public final class NuclearCraftJei implements IModPlugin {
         if (!recipe.fluidResult().isEmpty()) fluidSlot(layout, OUTPUT, recipe.itemResult().isEmpty() ? 104 : 126, List.of(recipe.fluidResult()));
     }
 
+    private static void distillerRecipe(IRecipeLayoutBuilder layout, DistillerRecipe recipe) {
+        int factor = recipe.batchFactor();
+        for (int slot = 0; slot < DistillerRecipe.INPUT_COUNT; slot++) {
+            var alternatives = recipe.inputs().get(slot).alternatives();
+            if (factor > 1) alternatives.forEach(stack -> stack.setAmount(stack.getAmount() / factor));
+            fluidSlot(layout, INPUT, 20 + 20 * slot, 22, alternatives);
+        }
+        for (int slot = 0; slot < DistillerRecipe.OUTPUT_COUNT; slot++) {
+            var product = recipe.product(slot);
+            if (!product.isEmpty() && factor > 1) product.setAmount(product.getAmount() / factor);
+            fluidSlot(layout, OUTPUT, 99 + (slot % 4) * 18, 12 + (slot / 4) * 20,
+                    product.isEmpty() ? List.of() : List.of(product));
+        }
+    }
+
     private static final class Category<R> implements IRecipeCategory<R> {
         private final RecipeType<R> type;
         private final Block block;
@@ -440,7 +464,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public int getWidth() {
             return switch (type.getUid().getPath()) {
-                case "fuel_reprocessor" -> 178;
+                case "fuel_reprocessor", "multiblock_distiller" -> 178;
                 case "rock_crusher", "extractor", "centrifuge" -> 166;
                 default -> 140;
             };
@@ -449,7 +473,7 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public int getHeight() {
             return switch (type.getUid().getPath()) {
-                case "fuel_reprocessor", "assembler" -> 70;
+                case "fuel_reprocessor", "assembler", "multiblock_distiller" -> 70;
                 case "electrolyzer", "centrifuge" -> 58;
                 default -> 48;
             };

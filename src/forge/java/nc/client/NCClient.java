@@ -44,7 +44,9 @@ public final class NCClient {
             MenuScreens.register(NCHeatExchangers.CONDENSER_MENU.get(), ExchangerScreen::new);
             MenuScreens.register(NCHeatExchangers.MENU.get(), ExchangerScreen::new);
             MenuScreens.register(NCMachines.MENU.get(), DecayPoolScreen::new);
+            MenuScreens.register(NCMachines.DISTILLER_MENU.get(), DistillerScreen::new);
             BlockEntityRenderers.register(NCMachines.POOL.get(), context -> new DecayPoolRenderer());
+            BlockEntityRenderers.register(NCMachines.DISTILLER.get(), context -> new DistillerRenderer());
         });
     }
 }

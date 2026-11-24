@@ -3,6 +3,14 @@
     "values": [
         "nuclearcraft:copper_ore",
         "nuclearcraft:tin_ore",
-        "nuclearcraft:lead_ore"
+        "nuclearcraft:lead_ore",
+        "nuclearcraft:distiller_controller",
+        "nuclearcraft:distiller_sieve_tray",
+        "nuclearcraft:distiller_reflux_unit",
+        "nuclearcraft:distiller_reboiling_unit",
+        "nuclearcraft:distiller_liquid_distributor",
+        "nuclearcraft:steel_sieve_assembly",
+        "nuclearcraft:polytetrafluoroethene_sieve_assembly",
+        "nuclearcraft:hastelloy_sieve_assembly"
     ]
 }

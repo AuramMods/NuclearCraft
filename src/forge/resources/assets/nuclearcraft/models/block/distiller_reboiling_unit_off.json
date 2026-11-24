@@ -1,0 +1,8 @@
+{
+    "parent": "minecraft:block/cube_bottom_top",
+    "textures": {
+        "side": "nuclearcraft:block/machine/distiller/reboiling_unit_side",
+        "top": "nuclearcraft:block/machine/distiller/reboiling_unit_top_off",
+        "bottom": "nuclearcraft:block/machine/distiller/reboiling_unit_bottom"
+    }
+}

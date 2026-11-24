@@ -8,6 +8,7 @@ import nc.multiblock.hx.ExchangerPartBlock;
 import nc.multiblock.hx.ExchangerPartBlock.Part;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerWallBlock;
+import nc.multiblock.machine.MachinePartBlock;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.network.chat.Component;
@@ -57,8 +58,10 @@ public final class NCHeatExchangers {
                 @Override
                 public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
                     BlockState state = context.getLevel().getBlockState(context.getClickedPos());
-                    return state.getBlock() instanceof ExchangerTubeBlock tube
-                            ? tube.configure(state, context) : InteractionResult.PASS;
+                    if (state.getBlock() instanceof ExchangerTubeBlock tube) return tube.configure(state, context);
+                    if (state.getBlock() instanceof MachinePartBlock.Wall wall && context.getPlayer() != null
+                            && context.getPlayer().isShiftKeyDown()) return wall.reverseProcessPort(context);
+                    return InteractionResult.PASS;
                 }
             });
 

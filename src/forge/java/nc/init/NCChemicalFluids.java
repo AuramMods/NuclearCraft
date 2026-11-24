@@ -22,6 +22,7 @@ final class NCChemicalFluids {
         NCFluids.liquid("boron_nitride_solution", "salt_solution", 1000, 0x4F68A8, 300, 1000);
         NCFluids.liquid("calcium_sulfate_solution", "salt_solution", 1000, 0x7379CD, 300, 1000);
         NCFluids.gas("chlorine", 0xFFD4DB62, 300);
+        NCFluids.gas("depleted_hydrogen_sulfide", 0xFF59514E, 300);
         NCFluids.molten("dfdps", 0xB4B3A7);
         NCFluids.liquid("difluorobenzene", "liquid", 800, 0x8CB57B, 300, 800);
         NCFluids.liquid("dimethyldifluorosilane", "liquid", 800, 0xAEAF80, 300, 800);

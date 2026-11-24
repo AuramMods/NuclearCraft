@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:multiblock_distiller",
+    "fluid_inputs": [
+        {
+            "fluid": "minecraft:water",
+            "amount": 250
+        },
+        {
+            "tag": "forge:depleted_hydrogen_sulfide",
+            "amount": 250
+        }
+    ],
+    "fluid_outputs": [
+        {
+            "fluid": "nuclearcraft:preheated_water",
+            "amount": 250
+        },
+        {
+            "fluid": "nuclearcraft:hydrogen_sulfide",
+            "amount": 250
+        }
+    ],
+    "time_multiplier": 0.5,
+    "power_multiplier": 1
+}

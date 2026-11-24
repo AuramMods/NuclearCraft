@@ -1,0 +1,29 @@
+{
+    "type": "nuclearcraft:multiblock_distiller",
+    "fluid_inputs": [
+        {
+            "fluid": "minecraft:water",
+            "amount": 250
+        },
+        {
+            "fluid": "minecraft:lava",
+            "amount": 250
+        }
+    ],
+    "fluid_outputs": [
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        {
+            "fluid": "nuclearcraft:heavy_water",
+            "amount": 250
+        }
+    ],
+    "time_multiplier": 0.001,
+    "power_multiplier": 0,
+    "sieve_trays": 1
+}

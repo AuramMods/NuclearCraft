@@ -1,0 +1,6 @@
+{
+    "block.distiller.run": {
+        "subtitle": "subtitles.nuclearcraft.distiller",
+        "sounds": ["nuclearcraft:block/distiller_run"]
+    }
+}

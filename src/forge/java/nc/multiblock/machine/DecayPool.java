@@ -15,39 +15,26 @@ import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 
-public final class DecayPool extends BlockEntity {
+public final class DecayPool extends MachineController {
     private final FluidTank input = tank(true);
     private final FluidTank output = tank(false);
     private final DecayReservoir reservoir = new DecayReservoir();
-    private @Nullable Cuboid bounds;
-    private List<MachinePort> ports = List.of();
-    private List<BlockPos> redstone = List.of();
-    private List<BlockPos> frames = List.of();
     private int containers;
-    private boolean dirty = true;
-    private long nextValidationTick;
-    private boolean halted;
     private double processHeat;
     private @Nullable ResourceLocation heatingRecipe;
     private boolean processing;
     private float processRate;
-    private int power;
-    private String validation = "dimensions";
     private @Nullable RenderVolume renderVolume;
     private FluidStack lastRenderFeed = FluidStack.EMPTY;
     private FluidStack lastRenderProduct = FluidStack.EMPTY;
@@ -56,7 +43,7 @@ public final class DecayPool extends BlockEntity {
                                FluidStack feed, FluidStack product) {}
 
     public DecayPool(BlockPos pos, BlockState state) {
-        super(NCMachines.POOL.get(), pos, state);
+        super(NCMachines.POOL.get(), pos, state, Part.DECAY_POOL);
     }
 
     private FluidTank tank(boolean inlet) {
@@ -83,116 +70,29 @@ public final class DecayPool extends BlockEntity {
         return sources().stream().anyMatch(recipe -> recipe.accepts(fluid));
     }
 
-    void tick() {
-        if (!(level instanceof ServerLevel server)) return;
-        long time = server.getGameTime();
-        if (dirty || (bounds == null && time >= nextValidationTick)) {
-            assemble(server);
-            dirty = false;
-            nextValidationTick = time + 20;
-        }
-        if (!assembled()) return;
+    @Override void processTick(ServerLevel server) {
         if (reservoir.tick(sources(), fuelCapacity())) setChanged();
         processing = heatWater(server);
         setLit(processing);
-        for (var port : ports) port.push();
-        if (time % 5 == 0 && (!lastRenderFeed.isFluidStackIdentical(input.getFluid())
+    }
+
+    @Override void afterTransfers(ServerLevel server) {
+        if (server.getGameTime() % 5 == 0 && (!lastRenderFeed.isFluidStackIdentical(input.getFluid())
                 || !lastRenderProduct.isFluidStackIdentical(output.getFluid()))) syncRender();
     }
 
-    public boolean assembled() { return bounds != null && !isRemoved(); }
-
-    private void assemble(ServerLevel server) {
-        var found = Cuboid.findConnected(server, worldPosition, NCMachines.maxSize() + 2,
-                state -> MachinePartBlock.part(state) != null);
-        if (found == null || Math.min(found.xLength(), Math.min(found.yLength(), found.zLength())) < NCMachines.minSize() + 2) {
-            fail("dimensions");
-            return;
-        }
-        if (!found.isLoaded(server)) {
-            fail("unloaded");
-            return;
-        }
-
-        var installedPorts = new ArrayList<MachinePort>();
-        var installedRedstone = new ArrayList<BlockPos>();
-        var edgeFrames = new ArrayList<BlockPos>();
+    @Override @Nullable String validateLayout(ServerLevel server, Cuboid found) {
         int count = 0;
-        for (BlockPos pos : BlockPos.betweenClosed(found.min(), found.max())) {
-            var part = MachinePartBlock.part(server.getBlockState(pos));
-            int boundary = found.boundaryAxes(pos);
-            if (boundary == 0) {
-                if (part == Part.CONTAINER) count++;
-                else if (part != null) {
-                    fail("interior");
-                    return;
-                }
-            } else if (part == Part.FRAME) {
-                if (boundary > 1) edgeFrames.add(pos.immutable());
-                continue;
-            } else if (boundary != 1 || part == null || part == Part.CONTAINER
-                    || (part == Part.DECAY_POOL && !pos.equals(worldPosition))) {
-                fail("wall");
-                return;
-            } else if (part.port()) {
-                if (server.getBlockEntity(pos) instanceof MachinePort port) installedPorts.add(port);
-                else {
-                    fail("wall");
-                    return;
-                }
-            } else if (part == Part.REDSTONE) installedRedstone.add(pos.immutable());
+        for (BlockPos pos : BlockPos.betweenClosed(found.min().offset(1, 1, 1), found.max().offset(-1, -1, -1))) {
+            Part part = MachinePartBlock.part(server.getBlockState(pos));
+            if (part == Part.CONTAINER) count++;
+            else if (part != null) return "interior";
         }
-        if (found.boundaryAxes(worldPosition) != 1) {
-            fail("wall");
-            return;
-        }
-
-        disconnect();
-        bounds = found;
-        ports = List.copyOf(installedPorts);
-        redstone = List.copyOf(installedRedstone);
-        frames = List.copyOf(edgeFrames);
         containers = count;
-        long volume = (long) found.xLength() * found.yLength() * found.zLength();
-        int capacity = (int) Math.min(Integer.MAX_VALUE, volume * 1000);
-        input.setCapacity(capacity);
-        output.setCapacity(capacity);
-        validation = "assembled";
-        var state = getBlockState();
-        level.setBlock(worldPosition, state.setValue(BlockStateProperties.FACING, found.outward(worldPosition)),
-                Block.UPDATE_CLIENTS);
-        for (var port : ports) port.bind(this, found.outward(port.getBlockPos()));
-        setFrames(true);
-        syncRender();
+        return null;
     }
 
-    private void fail(String error) {
-        boolean previouslyAssembled = bounds != null;
-        setFrames(false);
-        disconnect();
-        validation = error;
-        setLit(false);
-        if (previouslyAssembled) syncRender();
-    }
-
-    private void disconnect() {
-        bounds = null;
-        for (var port : ports) port.unbind(this);
-        ports = List.of();
-        frames = List.of();
-    }
-
-    private void setFrames(boolean assembled) {
-        if (!(level instanceof ServerLevel server)) return;
-        for (BlockPos pos : frames) {
-            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
-            if (chunk == null) continue;
-            var state = chunk.getBlockState(pos);
-            if (state.hasProperty(MachinePartBlock.FRAME_EDGE) && state.getValue(MachinePartBlock.FRAME_EDGE) != assembled) {
-                level.setBlock(pos, state.setValue(MachinePartBlock.FRAME_EDGE, assembled), Block.UPDATE_CLIENTS);
-            }
-        }
-    }
+    @Override void assemblyChanged() { syncRender(); }
 
     private void syncRender() {
         lastRenderFeed = input.getFluid().copy();
@@ -234,46 +134,9 @@ public final class DecayPool extends BlockEntity {
         if (packet.getTag() != null) handleUpdateTag(packet.getTag());
     }
 
-    void partChanged(BlockPos pos) {
-        if (bounds != null) {
-            if (!bounds.contains(pos) && !bounds.contains(pos.above()) && !bounds.contains(pos.below())
-                    && !bounds.contains(pos.north()) && !bounds.contains(pos.south())
-                    && !bounds.contains(pos.east()) && !bounds.contains(pos.west())) return;
-            fail("wall");
-        }
-        dirty = true;
-    }
-
-    void chunkUnloaded(ChunkPos chunk) {
-        if (bounds != null && bounds.touchesChunk(chunk)) {
-            validation = "unloaded";
-            disconnect();
-            if (!new ChunkPos(worldPosition).equals(chunk)) {
-                setLit(false);
-                syncRender();
-            }
-            dirty = true;
-        }
-    }
-
-    @Override
-    public void onChunkUnloaded() {
-        disconnect();
-        dirty = true;
-        super.onChunkUnloaded();
-    }
-
-    @Override
-    public void setRemoved() {
-        setFrames(false);
-        disconnect();
-        super.setRemoved();
-    }
-
     private boolean heatWater(ServerLevel server) {
         processRate = 0;
-        if (halted || reservoir.heatRate() <= 0 || server.hasNeighborSignal(worldPosition)
-                || redstone.stream().anyMatch(server::hasNeighborSignal)) return false;
+        if (reservoir.heatRate() <= 0 || blockedByRedstone(server)) return false;
         if (input.isEmpty()) return false;
         var recipe = server.getRecipeManager().getAllRecipesFor(NCMachines.POOL_RECIPES.get()).stream()
                 .filter(candidate -> candidate.accepts(input.getFluid()))
@@ -303,34 +166,16 @@ public final class DecayPool extends BlockEntity {
         return true;
     }
 
-    private void setLit(boolean active) {
-        if (level != null && getBlockState().hasProperty(BlockStateProperties.LIT)
-                && getBlockState().getValue(BlockStateProperties.LIT) != active) {
-            level.setBlock(worldPosition, getBlockState().setValue(BlockStateProperties.LIT, active), Block.UPDATE_CLIENTS);
-        }
-    }
+    @Override int tankCount(boolean product) { return 1; }
+    @Override FluidTank tankFor(boolean product, int index) { return product ? output : input; }
+    @Override long energyCapacity() { return 16; }
 
-    FluidTank tankFor(boolean product) { return product ? output : input; }
     DecayReservoir reservoir() { return reservoir; }
     public int fuelCapacity() { return containers * DecayReservoir.ITEM_VOLUME; }
     public double heatingRate() { return reservoir.heatRate(); }
     public double decayRate() { return reservoir.decayRate(); }
     public boolean processing() { return processing && assembled(); }
-    public boolean halted() { return halted; }
-    int power() { return power; }
-
-    void setPower(int quantity) {
-        if (power != quantity) {
-            power = quantity;
-            setChanged();
-        }
-    }
-
-    void toggle() {
-        halted = !halted;
-        setChanged();
-    }
-
+    @Override
     void clear() {
         reservoir.clear();
         input.setFluid(FluidStack.EMPTY);
@@ -340,18 +185,7 @@ public final class DecayPool extends BlockEntity {
         setChanged();
     }
 
-    void open(Player player) {
-        if (level == null) return;
-        if (dirty || !assembled()) {
-            if (level instanceof ServerLevel server) {
-                assemble(server);
-                dirty = false;
-            }
-        }
-        if (!assembled()) {
-            player.displayClientMessage(Component.translatable("message.nuclearcraft.decay_pool." + validation), true);
-            return;
-        }
+    @Override void openMenu(Player player) {
         player.openMenu(new SimpleMenuProvider(
                 (id, inventory, owner) -> new DecayPoolMenu(id, this, ContainerLevelAccess.create(level, worldPosition)),
                 Component.translatable("block.nuclearcraft.decay_pool_controller")));
@@ -359,7 +193,7 @@ public final class DecayPool extends BlockEntity {
 
     int menuValue(int index) {
         return switch (index) {
-            case 0 -> halted ? 1 : 0;
+            case 0 -> halted() ? 1 : 0;
             case 1 -> containers;
             case 2 -> bounds == null ? 0 : bounds.xLength() - 2;
             case 3 -> bounds == null ? 0 : bounds.yLength() - 2;
@@ -380,10 +214,8 @@ public final class DecayPool extends BlockEntity {
         tag.put("feed", input.writeToNBT(new CompoundTag()));
         tag.put("product", output.writeToNBT(new CompoundTag()));
         tag.put("reservoir", reservoir.save());
-        tag.putBoolean("halted", halted);
         tag.putDouble("process_heat", processHeat);
         if (heatingRecipe != null) tag.putString("heating_recipe", heatingRecipe.toString());
-        tag.putInt("energy", power);
     }
 
     @Override
@@ -392,10 +224,9 @@ public final class DecayPool extends BlockEntity {
         input.readFromNBT(tag.getCompound("feed"));
         output.readFromNBT(tag.getCompound("product"));
         reservoir.load(tag.getCompound("reservoir"));
-        halted = tag.getBoolean("halted");
         double heat = tag.getDouble("process_heat");
         processHeat = Double.isFinite(heat) ? Math.max(0, heat) : 0;
         heatingRecipe = ResourceLocation.tryParse(tag.getString("heating_recipe"));
-        power = Math.max(0, Math.min(16, tag.getInt("energy")));
+        setPower(Math.min(energyCapacity(), power()));
     }
 }

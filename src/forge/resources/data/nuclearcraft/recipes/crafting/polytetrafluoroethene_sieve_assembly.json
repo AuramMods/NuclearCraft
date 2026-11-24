@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "MMM",
+        "OMO",
+        "MMM"
+    ],
+    "key": {
+        "M": {
+            "item": "nuclearcraft:polytetrafluoroethene"
+        },
+        "O": {
+            "tag": "forge:dusts/obsidian"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:polytetrafluoroethene_sieve_assembly",
+        "count": 4
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "parent": "minecraft:block/cube_bottom_top",
+    "textures": {
+        "side": "nuclearcraft:block/machine/distiller/liquid_distributor_side",
+        "top": "nuclearcraft:block/machine/distiller/liquid_distributor_top",
+        "bottom": "nuclearcraft:block/machine/distiller/liquid_distributor_bottom"
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/distiller/controller_front_on",
+        "south": "nuclearcraft:block/machine/distiller/controller_back",
+        "east": "nuclearcraft:block/machine/distiller/controller_side",
+        "west": "nuclearcraft:block/machine/distiller/controller_side",
+        "up": "nuclearcraft:block/machine/distiller/controller_top",
+        "down": "nuclearcraft:block/machine/distiller/controller_bottom",
+        "particle": "nuclearcraft:block/machine/distiller/controller_front_on"
+    }
+}
