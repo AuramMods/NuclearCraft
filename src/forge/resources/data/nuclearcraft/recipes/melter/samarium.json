@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {"tag": "forge:ingots/samarium"},
+    "result": {"fluid": "nuclearcraft:samarium", "amount": 144},
+    "ticks": 800,
+    "energy_per_tick": 40
+}

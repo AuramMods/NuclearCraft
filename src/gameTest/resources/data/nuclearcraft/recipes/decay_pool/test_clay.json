@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "item_input": { "ingredient": { "item": "minecraft:clay_ball" } },
+    "item_result": { "item": "minecraft:brick", "count": 2 },
+    "lifetime": 4,
+    "heat_per_tick": 64
+}

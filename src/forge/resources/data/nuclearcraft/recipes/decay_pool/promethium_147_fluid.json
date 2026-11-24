@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 15620,
+    "heat_per_tick": 305,
+    "fluid_input": {
+        "tag": "forge:molten_promethium_147",
+        "amount": 144
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:samarium",
+        "amount": 144
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "BPB",
+        "RCR",
+        "BPB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "P": {
+            "tag": "forge:ingots/copper"
+        },
+        "R": {
+            "tag": "forge:dusts/redstone"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:machine_power_port",
+        "count": 4
+    }
+}

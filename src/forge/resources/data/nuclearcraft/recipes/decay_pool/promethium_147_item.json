@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 15620,
+    "heat_per_tick": 305,
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/promethium_147"
+        }
+    },
+    "item_result": {
+        "preferred_tag": "forge:dusts/samarium",
+        "item": "nuclearcraft:samarium_ingot"
+    }
+}

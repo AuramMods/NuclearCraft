@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "BLB",
+        "SCS",
+        "BLB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "L": {
+            "tag": "forge:ingots/lead"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:decay_pool_container",
+        "count": 4
+    }
+}

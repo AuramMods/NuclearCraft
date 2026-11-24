@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 14340,
+    "heat_per_tick": 335,
+    "fluid_input": {
+        "tag": "forge:molten_ruthenium_106",
+        "amount": 144
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:palladium",
+        "amount": 144
+    }
+}

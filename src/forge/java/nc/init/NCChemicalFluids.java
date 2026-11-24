@@ -43,6 +43,7 @@ final class NCChemicalFluids {
         NCFluids.molten("nickel_sulfide", 0xCBD3AD);
         NCFluids.liquid("orthosilicic_acid", "liquid", 1000, 0xB8B8B8, 300, 1000);
         NCFluids.molten("palladium", 0x767676);
+        NCFluids.molten("samarium", 0xB0ABB3);
         NCFluids.gas("oxygen_difluoride", 0xFFEA1B01, 300);
         NCFluids.liquid("phenol", "liquid", 800, 0xF2F2F2, 300, 800);
         NCFluids.molten("polydimethylsilylene", 0x774F60);

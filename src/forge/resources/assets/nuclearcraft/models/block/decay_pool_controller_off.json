@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/decay_pool/controller_front_off",
+        "south": "nuclearcraft:block/machine/decay_pool/controller_back",
+        "east": "nuclearcraft:block/machine/decay_pool/controller_side",
+        "west": "nuclearcraft:block/machine/decay_pool/controller_side",
+        "up": "nuclearcraft:block/machine/decay_pool/controller_top",
+        "down": "nuclearcraft:block/machine/decay_pool/controller_bottom",
+        "particle": "nuclearcraft:block/machine/decay_pool/controller_front_off"
+    }
+}

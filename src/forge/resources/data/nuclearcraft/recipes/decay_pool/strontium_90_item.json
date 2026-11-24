@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 20160,
+    "heat_per_tick": 240,
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/strontium_90"
+        }
+    },
+    "item_result": {
+        "tag": "forge:dusts/zirconium"
+    }
+}

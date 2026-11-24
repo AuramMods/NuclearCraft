@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "BHB",
+        "SCS",
+        "BHB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:machine_process_port",
+        "count": 4
+    }
+}

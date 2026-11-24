@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "redstone",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:machine_glass"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:machine_frame"
+    }
+}

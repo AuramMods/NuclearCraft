@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "BTB",
+        "SCS",
+        "BTB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        },
+        "S": {
+            "tag": "forge:ingots/silicon_carbide"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:decay_pool_controller",
+        "count": 1
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:multiblock_decay_pool",
+    "fluid_input": {
+        "fluid": "minecraft:water",
+        "amount": 1
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:preheated_water",
+        "amount": 1
+    },
+    "heat_per_batch": 32
+}

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 20160,
+    "heat_per_tick": 240,
+    "fluid_input": {
+        "tag": "forge:molten_strontium_90",
+        "amount": 144
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:zirconium",
+        "amount": 144
+    }
+}

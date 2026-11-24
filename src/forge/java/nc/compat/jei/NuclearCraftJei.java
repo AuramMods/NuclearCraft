@@ -28,14 +28,17 @@ import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.init.NCGenerators;
+import nc.init.NCMachines;
 import nc.init.NCGasCoolants;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
+import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
+import nc.recipe.DecayPoolRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
@@ -102,6 +105,10 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static final RecipeType<DecayGeneratorRecipe> DECAY =
             RecipeType.create(NuclearCraft.MOD_ID, "decay_generator", DecayGeneratorRecipe.class);
+    private static final RecipeType<DecayPoolRecipe> DECAY_POOL =
+            RecipeType.create(NuclearCraft.MOD_ID, "multiblock_decay_pool", DecayPoolRecipe.class);
+    private static final RecipeType<DecayPoolRecipe> DECAY_POOL_SOURCE =
+            RecipeType.create(NuclearCraft.MOD_ID, "decay_pool_heat_source", DecayPoolRecipe.class);
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -125,6 +132,11 @@ public final class NuclearCraftJei implements IModPlugin {
                     layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(new ItemStack(recipe.resultBlock()));
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.decay_generator",
                         decimal(recipe.power()), decimal(recipe.lifetime()))),
+                new Category<>(DECAY_POOL, NCMachines.block(Part.DECAY_POOL), gui, NuclearCraftJei::poolRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool", decimal(recipe.heat()))),
+                new Category<>(DECAY_POOL_SOURCE, NCMachines.block(Part.CONTAINER), gui, NuclearCraftJei::poolRecipe,
+                        recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool_source",
+                                decimal(recipe.heat()), decimal(recipe.lifetime()))),
                 new Category<>(MELTER, NCRegistries.MELTER.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.input());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
@@ -219,6 +231,8 @@ public final class NuclearCraftJei implements IModPlugin {
             registration.addRecipes(itemType(machine), machineRecipes);
         }
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
+        registration.addRecipes(DECAY_POOL, recipes.getAllRecipesFor(NCMachines.POOL_RECIPES.get()));
+        registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
         registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
         registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
@@ -245,6 +259,7 @@ public final class NuclearCraftJei implements IModPlugin {
             registration.addRecipeCatalyst(machine.block(), itemType(machine));
         }
         registration.addRecipeCatalyst(NCGenerators.DECAY_GENERATOR.get(), DECAY);
+        registration.addRecipeCatalyst(NCMachines.block(Part.DECAY_POOL), DECAY_POOL, DECAY_POOL_SOURCE);
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
@@ -387,6 +402,18 @@ public final class NuclearCraftJei implements IModPlugin {
         long capacity = fluids.stream().mapToInt(FluidStack::getAmount).max().orElse(1);
         layout.addSlot(role, x, y).setStandardSlotBackground()
                 .setFluidRenderer(capacity, true, 16, 16).addIngredients(ForgeTypes.FLUID_STACK, fluids);
+    }
+
+    private static void poolRecipe(IRecipeLayoutBuilder layout, DecayPoolRecipe recipe) {
+        if (recipe.itemCount() > 0) {
+            layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(
+                    Arrays.stream(recipe.itemInput().getItems()).map(stack -> stack.copyWithCount(recipe.itemCount())).toList());
+        }
+        if (recipe.fluidInput() != null) fluidSlot(layout, INPUT, recipe.itemCount() > 0 ? 42 : 20, recipe.fluidInput().alternatives());
+        if (!recipe.itemResult().isEmpty()) {
+            layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.itemResult());
+        }
+        if (!recipe.fluidResult().isEmpty()) fluidSlot(layout, OUTPUT, recipe.itemResult().isEmpty() ? 104 : 126, List.of(recipe.fluidResult()));
     }
 
     private static final class Category<R> implements IRecipeCategory<R> {

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 20260,
+    "heat_per_tick": 235,
+    "fluid_input": {
+        "tag": "nuclearcraft:decay_pool_caesium",
+        "amount": 144
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:barium",
+        "amount": 144
+    }
+}

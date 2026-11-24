@@ -1,0 +1,7 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "fluid_input": { "fluid": "minecraft:lava", "amount": 48 },
+    "fluid_result": { "fluid": "nuclearcraft:gadolinium", "amount": 48 },
+    "lifetime": 4,
+    "heat_per_tick": 128
+}

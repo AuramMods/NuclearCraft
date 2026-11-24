@@ -1,0 +1,10 @@
+{
+    "replace": false,
+    "values": [
+        "#forge:dusts/caesium_137",
+        {
+            "id": "#forge:dusts/cesium_137",
+            "required": false
+        }
+    ]
+}

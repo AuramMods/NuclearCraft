@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/process_port_item_out",
+        "south": "nuclearcraft:block/machine/process_port_item_out",
+        "east": "nuclearcraft:block/machine/process_port_side",
+        "west": "nuclearcraft:block/machine/process_port_side",
+        "up": "nuclearcraft:block/machine/process_port_top",
+        "down": "nuclearcraft:block/machine/process_port_top",
+        "particle": "nuclearcraft:block/machine/process_port_item_out"
+    }
+}

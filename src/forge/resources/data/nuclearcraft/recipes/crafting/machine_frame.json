@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        " B ",
+        "BCB",
+        " B "
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:machine_frame",
+        "count": 8
+    }
+}

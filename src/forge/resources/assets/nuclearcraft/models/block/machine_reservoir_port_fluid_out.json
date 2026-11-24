@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "north": "nuclearcraft:block/machine/reservoir_port_out_output",
+        "south": "nuclearcraft:block/machine/reservoir_port_out_input",
+        "east": "nuclearcraft:block/machine/reservoir_port_side",
+        "west": "nuclearcraft:block/machine/reservoir_port_side",
+        "up": "nuclearcraft:block/machine/reservoir_port_side",
+        "down": "nuclearcraft:block/machine/reservoir_port_side",
+        "particle": "nuclearcraft:block/machine/reservoir_port_out_output"
+    }
+}

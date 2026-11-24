@@ -1,6 +1,14 @@
 {
     "replace": false,
     "values": [
+        "nuclearcraft:machine_frame",
+        "nuclearcraft:machine_process_port",
+        "nuclearcraft:machine_reservoir_port",
+        "nuclearcraft:machine_redstone_port",
+        "nuclearcraft:machine_power_port",
+        "nuclearcraft:decay_pool_controller",
+        "nuclearcraft:decay_pool_container",
+
         "nuclearcraft:melter",
         "nuclearcraft:fission_casing",
         "nuclearcraft:solid_fission_cell",

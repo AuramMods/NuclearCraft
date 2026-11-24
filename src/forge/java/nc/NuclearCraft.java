@@ -9,6 +9,7 @@ import nc.init.NCSaltFission;
 import nc.init.NCFluids;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors;
+import nc.init.NCMachines;
 import nc.init.NCRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
@@ -32,6 +33,7 @@ public final class NuclearCraft {
         NCPebbleFission.registerConfig(context);
         NCSaltFission.registerConfig(context);
         HeatExchangerConfig.register(context);
+        NCMachines.registerConfig(context);
         NCItemProcessors.registerConfig(context);
         NCRegistries.register(context.getModEventBus());
         NCFluids.register(context.getModEventBus());

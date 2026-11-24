@@ -1,0 +1,10 @@
+{
+    "replace": false,
+    "values": [
+        "#forge:molten_caesium_137",
+        {
+            "id": "#forge:molten_cesium_137",
+            "required": false
+        }
+    ]
+}

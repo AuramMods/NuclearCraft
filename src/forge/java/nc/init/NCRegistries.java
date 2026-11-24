@@ -184,6 +184,7 @@ public final class NCRegistries {
                         NCGenerators.displayItems(output);
                         NCBatteries.displayItems(output);
                         NCDistributors.displayItems(output);
+                        NCMachines.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());

@@ -2,6 +2,7 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.init.NCHeatExchangers;
+import nc.init.NCMachines;
 import nc.init.NCFission;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCPebbleFission;
@@ -10,6 +11,7 @@ import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import nc.multiblock.fission.SaltFissionPartMenu;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -41,6 +43,8 @@ public final class NCClient {
             MenuScreens.register(NCTurbine.MENU.get(), TurbineScreen::new);
             MenuScreens.register(NCHeatExchangers.CONDENSER_MENU.get(), ExchangerScreen::new);
             MenuScreens.register(NCHeatExchangers.MENU.get(), ExchangerScreen::new);
+            MenuScreens.register(NCMachines.MENU.get(), DecayPoolScreen::new);
+            BlockEntityRenderers.register(NCMachines.POOL.get(), context -> new DecayPoolRenderer());
         });
     }
 }

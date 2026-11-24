@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 14340,
+    "heat_per_tick": 335,
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/ruthenium_106"
+        }
+    },
+    "item_result": {
+        "tag": "forge:dusts/palladium"
+    }
+}

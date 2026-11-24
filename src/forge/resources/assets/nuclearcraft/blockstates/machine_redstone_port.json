@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "lit=false": {
+            "model": "nuclearcraft:block/machine_redstone_port"
+        },
+        "lit=true": {
+            "model": "nuclearcraft:block/machine_redstone_port_on"
+        }
+    }
+}

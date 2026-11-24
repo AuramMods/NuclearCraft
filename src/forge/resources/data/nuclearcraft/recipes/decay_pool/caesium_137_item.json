@@ -1,0 +1,35 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 20260,
+    "heat_per_tick": 235,
+    "item_input": {
+        "ingredient": {
+            "tag": "nuclearcraft:decay_pool_caesium"
+        }
+    },
+    "item_result": {
+        "tag": "forge:ingots/barium",
+        "preferred_tag": "forge:dusts/barium"
+    },
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/barium"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/barium"
+                    }
+                }
+            ]
+        }
+    ]
+}

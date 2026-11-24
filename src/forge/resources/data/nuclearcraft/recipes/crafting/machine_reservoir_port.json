@@ -1,0 +1,30 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "BHB",
+        "TCT",
+        "BSB"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/bronze"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        },
+        "S": {
+            "item": "nuclearcraft:servo"
+        },
+        "T": {
+            "tag": "forge:ingots/steel"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:machine_reservoir_port",
+        "count": 4
+    }
+}

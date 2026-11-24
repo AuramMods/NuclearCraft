@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 16540,
+    "heat_per_tick": 290,
+    "item_input": {
+        "ingredient": {
+            "tag": "forge:dusts/europium_155"
+        }
+    },
+    "item_result": {
+        "tag": "forge:dusts/gadolinium"
+    }
+}

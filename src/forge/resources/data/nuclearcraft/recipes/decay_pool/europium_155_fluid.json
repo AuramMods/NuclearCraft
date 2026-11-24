@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "lifetime": 16540,
+    "heat_per_tick": 290,
+    "fluid_input": {
+        "tag": "forge:molten_europium_155",
+        "amount": 144
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:gadolinium",
+        "amount": 144
+    }
+}

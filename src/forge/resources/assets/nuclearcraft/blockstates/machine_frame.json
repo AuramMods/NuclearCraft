@@ -1,0 +1,10 @@
+{
+    "variants": {
+        "frame=false": {
+            "model": "nuclearcraft:block/machine_frame"
+        },
+        "frame=true": {
+            "model": "nuclearcraft:block/machine_frame_on"
+        }
+    }
+}
