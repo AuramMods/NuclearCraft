@@ -8,14 +8,16 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
-import java.util.EnumMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
-final class CoolingPlacementConfig<C extends Enum<C>> {
+final class CoolingPlacementConfig<C> {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final Class<C> type;
+    private final Supplier<Map<C, String>> scriptedRules;
     private final FissionPlacementRules.Part coolingPart;
     private final Function<C, String> name;
     private final Map<C, String> defaults;
@@ -23,22 +25,28 @@ final class CoolingPlacementConfig<C extends Enum<C>> {
     private final FissionPlacementRules<C> defaultRules;
     private volatile FissionPlacementRules<C> rules;
 
-    CoolingPlacementConfig(ForgeConfigSpec.Builder builder, Class<C> type, FissionPlacementRules.Part coolingPart,
+    CoolingPlacementConfig(ForgeConfigSpec.Builder builder, List<C> coolants, FissionPlacementRules.Part coolingPart,
                            Function<C, String> name, String[] defaultValues) {
-        this.type = type;
+        this(builder, coolants, coolingPart, name, defaultValues, Map::of);
+    }
+
+    CoolingPlacementConfig(ForgeConfigSpec.Builder builder, List<C> coolants, FissionPlacementRules.Part coolingPart,
+                           Function<C, String> name, String[] defaultValues, Supplier<Map<C, String>> scriptedRules) {
+        this.scriptedRules = scriptedRules;
         this.coolingPart = coolingPart;
         this.name = name;
-        defaults = new EnumMap<>(type);
-        configured = new EnumMap<>(type);
+        defaults = new LinkedHashMap<>();
+        configured = new LinkedHashMap<>();
         builder.comment("Placement conditions for each cooler or heater. These use the legacy fission rule syntax.")
                 .push("placement_rules");
-        for (C coolant : type.getEnumConstants()) {
-            String text = defaultValues[coolant.ordinal()];
+        for (int index = 0; index < coolants.size(); index++) {
+            C coolant = coolants.get(index);
+            String text = defaultValues[index];
             defaults.put(coolant, text);
             configured.put(coolant, builder.define(name.apply(coolant), text));
         }
         builder.pop();
-        defaultRules = FissionPlacementRules.compile(type, coolingPart, name, defaults, Map.of(),
+        defaultRules = FissionPlacementRules.compile(coolingPart, name, defaults, Map.of(),
                 message -> { throw new IllegalArgumentException(message); });
         rules = defaultRules;
     }
@@ -56,7 +64,10 @@ final class CoolingPlacementConfig<C extends Enum<C>> {
 
     private void refresh(ModConfigEvent event, ForgeConfigSpec spec) {
         if (event.getConfig().getSpec() == spec) {
-            var overrides = new EnumMap<C, String>(type);
+            var scripted = scriptedRules.get();
+            var catalog = new LinkedHashMap<>(defaults);
+            scripted.keySet().forEach(coolant -> catalog.put(coolant, ""));
+            var overrides = new LinkedHashMap<>(scripted);
             configured.forEach((coolant, value) -> {
                 String text = value.get();
                 if (!defaults.get(coolant).equals(text)) {
@@ -64,7 +75,7 @@ final class CoolingPlacementConfig<C extends Enum<C>> {
                 }
             });
             rules = overrides.isEmpty() ? defaultRules : FissionPlacementRules.compile(
-                    type, coolingPart, name, defaults, overrides, LOGGER::warn);
+                    coolingPart, name, catalog, overrides, LOGGER::warn);
         }
     }
 

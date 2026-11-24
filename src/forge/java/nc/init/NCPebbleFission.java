@@ -23,6 +23,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 public final class NCPebbleFission {
@@ -47,7 +48,7 @@ public final class NCPebbleFission {
             PORTS.put(gas, NCFission.part(gas.portId(), () -> new FissionWallBlock(NCFission.properties(), Role.COOLER_PORT, gas)));
         }
         builder.pop();
-        PLACEMENT = new CoolingPlacementConfig<>(builder, NCGasCoolants.class,
+        PLACEMENT = new CoolingPlacementConfig<>(builder, List.of(NCGasCoolants.values()),
                 FissionPlacementRules.Part.COOLER, NCGasCoolants::id, new String[] {
                     "one chamber", "exactly two chambers", "three chambers",
                     "exactly two oxygen coolers", "one moderator", "two axial moderators",

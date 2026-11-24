@@ -174,8 +174,8 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         var state = level.getBlockState(pos);
         if (state.getBlock() instanceof SolidHeatSinkBlock sink) {
             boolean valid = core.isCooling(pos);
-            return Map.of("type", sink.material().name().toLowerCase(Locale.ROOT),
-                    "cooling", valid ? NCFission.cooling(sink.material()) : 0, "is_valid", valid);
+            return Map.of("type", sink.material(),
+                    "cooling", valid ? sink.cooling() : 0, "is_valid", valid);
         }
         if (entity instanceof SaltHeater heater) {
             var coolant = heater.coolant();

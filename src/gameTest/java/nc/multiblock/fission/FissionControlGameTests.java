@@ -20,9 +20,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
@@ -33,6 +36,7 @@ import static nc.multiblock.fission.FissionWallBlock.FACING;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class FissionControlGameTests {
     private static final BlockPos CONTROLLER = new BlockPos(3, 3, 1);
     private static final BlockPos SOURCE = new BlockPos(1, 3, 3);
@@ -44,11 +48,41 @@ public final class FissionControlGameTests {
     private static final BlockPos SHIELD = new BlockPos(5, 3, 3);
     private static final BlockPos FUEL = new BlockPos(3, 3, 3);
 
+    private static final BlockPos PRIMARY = FUEL.north();
+    private static final BlockPos SECONDARY = PRIMARY.above();
+
     private FissionControlGameTests() {}
+
+    @SubscribeEvent
+    public static void registerScriptedParts(RegisterEvent event) {
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> {
+            helper.register(NuclearCraft.id("fission_source_qa"), NCFission.createScriptedNeutronSource(0.73D));
+            helper.register(NuclearCraft.id("fission_shield_qa"), NCFission.createScriptedNeutronShield(7D, 0.65D));
+            helper.register(NuclearCraft.id("solid_fission_sink_qa_primary"),
+                    NCFission.createScriptedHeatSink("qa_primary", 71, "one cell"));
+            helper.register(NuclearCraft.id("solid_fission_sink_qa_secondary"),
+                    NCFission.createScriptedHeatSink("qa_secondary", 97, "one qa_primary sink && one water sink"));
+        });
+    }
 
     @GameTest(template = "fission", timeoutTicks = 150)
     public static void controlledShieldsInterruptPrimingAndModeratorHeat(GameTestHelper helper) {
+        controlledShields(helper, false);
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 150)
+    public static void scriptedPartsUseRealFissionControlsAndCooling(GameTestHelper helper) {
+        controlledShields(helper, true);
+    }
+
+    private static void controlledShields(GameTestHelper helper, boolean scripted) {
         build(helper, NCFission.CONTROLLER.get());
+        if (scripted) {
+            helper.setBlock(SOURCE, testPart("fission_source_qa"));
+            helper.setBlock(SHIELD, testPart("fission_shield_qa"));
+            helper.setBlock(PRIMARY, testPart("solid_fission_sink_qa_primary"));
+            helper.setBlock(SECONDARY, testPart("solid_fission_sink_qa_secondary"));
+        }
         helper.setBlock(FUEL, NCFission.CELL.get());
         helper.setBlock(FUEL.above(), NCFission.WATER_SINK.get());
         helper.setBlock(FUEL.east(), NCFission.HEAVY_WATER_MODERATOR.get());
@@ -86,8 +120,15 @@ public final class FissionControlGameTests {
                 .thenWaitUntil(() -> helper.assertTrue(progress(helper) > 0, "The open shield must pass the reflected neutron path"))
                 .thenExecute(() -> {
                     var heat = controller(helper).partHeat(helper.absolutePos(SHIELD));
-                    helper.assertTrue(heat.processing() && heat.amount() > 0 && heat.amount() % 360 == 0,
-                            "The shield must collect 360 heat per tick from reflected heavy water: " + heat);
+                    int shieldHeat = scripted ? 504 : 360;
+                    helper.assertTrue(heat.processing() && heat.amount() > 0 && heat.amount() % shieldHeat == 0,
+                            "The shield must collect " + shieldHeat + " heat per tick from reflected heavy water: " + heat);
+                    if (scripted) {
+                        helper.assertTrue(helper.getBlockEntity(FUEL).saveWithoutMetadata().getDouble("source_efficiency") == 0.73D
+                                        && controller(helper).isCooling(helper.absolutePos(PRIMARY))
+                                        && controller(helper).isCooling(helper.absolutePos(SECONDARY)),
+                                "The scripted source primes the fuel and both dependent sinks become active");
+                    }
                     helper.setBlock(SHIELD_MANAGER.south(), Blocks.REDSTONE_BLOCK);
                 })
                 .thenWaitUntil(() -> helper.assertTrue(!active(helper, CONTROLLER) && active(helper, SHIELD),
@@ -184,6 +225,10 @@ public final class FissionControlGameTests {
         helper.setBlock(SHIELD_MANAGER, NCFission.SHIELD_MANAGER.get());
         helper.setBlock(BEAM_SHIELD, NCFission.GADOLINIUM_SAMARIUM_SHIELD.get());
         helper.setBlock(SHIELD, NCFission.BORON_SILVER_SHIELD.get());
+    }
+
+    private static Block testPart(String path) {
+        return ForgeRegistries.BLOCKS.getValue(NuclearCraft.id(path));
     }
 
     private static FakePlayer player(GameTestHelper helper) {

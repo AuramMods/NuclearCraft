@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -21,7 +21,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-public final class FissionPlacementRules<C extends Enum<C>> {
+public final class FissionPlacementRules<C> {
     public enum Part {
         CASING, CONDUCTOR, MODERATOR, REFLECTOR, IRRADIATOR, SHIELD, CELL, SINK, CHAMBER, COOLER, VESSEL, HEATER
     }
@@ -35,26 +35,27 @@ public final class FissionPlacementRules<C extends Enum<C>> {
                 || group.stream().anyMatch(coolant -> rules.get(coolant).dependencies().contains(coolant)))).toList();
     }
 
-    public static <C extends Enum<C>> FissionPlacementRules<C> compile(
-            Class<C> coolantType, Part coolingPart, Function<C, String> name, Map<C, String> defaults,
-            Map<C, String> overrides, Consumer<String> warning) {
-        var types = EnumSet.allOf(coolantType);
+    public static <C> FissionPlacementRules<C> compile(
+            Part coolingPart, Function<C, String> name, Map<C, String> defaults, Map<C, String> overrides,
+            Consumer<String> warning) {
+        var types = defaults.keySet();
         var names = new HashMap<String, C>();
-        var defaultRules = new EnumMap<C, Rule<C>>(coolantType);
+        var defaultRules = new LinkedHashMap<C, Rule<C>>();
         types.forEach(coolant -> names.put(name.apply(coolant), coolant));
-        types.forEach(coolant -> defaultRules.put(coolant, parse(defaults.get(coolant), coolingPart, names, types)));
-        var chosen = new EnumMap<>(defaultRules);
+        defaults.forEach((coolant, text) -> defaultRules.put(coolant, text.isEmpty()
+                ? new Rule<>(text, List.of(), Set.of(), Set.of()) : parse(text, coolingPart, names, types)));
+        var chosen = new LinkedHashMap<>(defaultRules);
         overrides.forEach((coolant, text) -> {
             try {
                 chosen.put(coolant, parse(text, coolingPart, names, types));
             } catch (IllegalArgumentException error) {
                 warning.accept("Placement rule for " + name.apply(coolant) + ": " + error.getMessage()
-                        + ". Using its default rule.");
+                        + fallback(defaults.get(coolant)));
             }
         });
 
         while (true) {
-            var groups = dependencyOrder(coolantType, chosen);
+            var groups = dependencyOrder(types, chosen);
             boolean replaced = false;
             for (Set<C> group : groups) {
                 boolean ambiguous = group.stream().anyMatch(coolant ->
@@ -65,7 +66,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
                         Rule<C> defaultRule = defaultRules.get(coolant);
                         if (!chosen.get(coolant).text().equals(defaultRule.text())) {
                             warning.accept("Placement rule for " + name.apply(coolant)
-                                    + " is in a recursive exact/maximum-count group. Using its default rule.");
+                                    + " is in a recursive exact/maximum-count group" + fallback(defaultRule.text()));
                             chosen.put(coolant, defaultRule);
                             replaced = true;
                         }
@@ -78,8 +79,13 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         }
     }
 
-    public String text(C coolant) {
-        return rules.get(coolant).text();
+    private static String fallback(String defaultRule) {
+        return defaultRule.isEmpty() ? ". Disabling this component's placement rule." : ". Using its default rule.";
+    }
+
+    public @Nullable String text(C coolant) {
+        var rule = rules.get(coolant);
+        return rule == null ? null : rule.text();
     }
 
     Map<BlockPos, C> active(Map<C, List<BlockPos>> eligible, BiPredicate<Part, BlockPos> neighbors) {
@@ -117,10 +123,11 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         };
     }
 
-    private static <C extends Enum<C>> List<Set<C>> dependencyOrder(Class<C> type, Map<C, Rule<C>> rules) {
-        var reach = new EnumMap<C, Set<C>>(type);
-        for (C coolant : type.getEnumConstants()) {
-            var found = EnumSet.of(coolant);
+    private static <C> List<Set<C>> dependencyOrder(Set<C> types, Map<C, Rule<C>> rules) {
+        var reach = new LinkedHashMap<C, Set<C>>();
+        for (C coolant : types) {
+            var found = new LinkedHashSet<C>();
+            found.add(coolant);
             var pending = new ArrayDeque<C>();
             pending.add(coolant);
             while (!pending.isEmpty()) {
@@ -132,11 +139,11 @@ public final class FissionPlacementRules<C extends Enum<C>> {
             }
             reach.put(coolant, found);
         }
-        var remaining = EnumSet.allOf(type);
+        var remaining = new LinkedHashSet<>(types);
         var groups = new ArrayList<Set<C>>();
         while (!remaining.isEmpty()) {
             for (C coolant : remaining) {
-                var group = EnumSet.noneOf(type);
+                var group = new LinkedHashSet<C>();
                 for (C candidate : reach.get(coolant)) {
                     if (reach.get(candidate).contains(coolant)) {
                         group.add(candidate);
@@ -152,10 +159,10 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         return groups;
     }
 
-    private static <C extends Enum<C>> Rule<C> parse(String text, Part coolingPart, Map<String, C> names, Set<C> types) {
+    private static <C> Rule<C> parse(String text, Part coolingPart, Map<String, C> names, Set<C> types) {
         var alternatives = new ArrayList<List<Clause<C>>>();
-        var dependencies = EnumSet.noneOf(types.iterator().next().getDeclaringClass());
-        var inhibitory = EnumSet.noneOf(types.iterator().next().getDeclaringClass());
+        var dependencies = new LinkedHashSet<C>();
+        var inhibitory = new LinkedHashSet<C>();
         for (String alternative : text.toLowerCase(Locale.ROOT).split("\\|\\|", -1)) {
             var clauses = new ArrayList<Clause<C>>();
             for (String term : alternative.split("&&", -1)) {
@@ -177,7 +184,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         return new Rule<>(text, List.copyOf(alternatives), dependencies, inhibitory);
     }
 
-    private static <C extends Enum<C>> Clause<C> parseClause(String text, Part coolingPart, Map<String, C> names) {
+    private static <C> Clause<C> parseClause(String text, Part coolingPart, Map<String, C> names) {
         PlacementAdjacency adjacency = PlacementAdjacency.parse(text);
         String description = adjacency.target();
         int boundary = description.lastIndexOf(' ');
@@ -215,7 +222,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
 
     private record Group<C>(Set<C> coolants, boolean recursive) {}
 
-    private record Rule<C extends Enum<C>>(String text, List<List<Clause<C>>> alternatives, Set<C> dependencies,
+    private record Rule<C>(String text, List<List<Clause<C>>> alternatives, Set<C> dependencies,
                                            Set<C> inhibitory) {
         boolean matches(BlockPos pos, BiPredicate<Part, BlockPos> neighbors, Map<BlockPos, C> active) {
             for (var alternative : alternatives) {
@@ -234,7 +241,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
         }
     }
 
-    private record Clause<C extends Enum<C>>(Part part, PlacementAdjacency adjacency, boolean cooling,
+    private record Clause<C>(Part part, PlacementAdjacency adjacency, boolean cooling,
                                              @Nullable C material) {
         boolean matches(BlockPos pos, BiPredicate<Part, BlockPos> neighbors, Map<BlockPos, C> active) {
             return adjacency.matches(direction -> {
@@ -245,7 +252,7 @@ public final class FissionPlacementRules<C extends Enum<C>> {
 
         private boolean hasCoolant(BlockPos neighbor, Map<BlockPos, C> active) {
             C found = active.get(neighbor);
-            return found != null && (material == null || material == found);
+            return found != null && (material == null || material.equals(found));
         }
 
     }

@@ -25,6 +25,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 
 public final class NCSaltFission {
@@ -60,7 +61,7 @@ public final class NCSaltFission {
                     () -> FissionWallBlock.heaterPort(NCFission.properties(), coolant)));
         }
         builder.pop();
-        PLACEMENT = new CoolingPlacementConfig<>(builder, NCSaltCoolants.class,
+        PLACEMENT = new CoolingPlacementConfig<>(builder, List.of(NCSaltCoolants.values()),
                 FissionPlacementRules.Part.HEATER, NCSaltCoolants::material, new String[] {
                     "one vessel", "one moderator", "one vessel && one moderator",
                     "one redstone heater", "two axial glowstone heaters", "one obsidian heater",

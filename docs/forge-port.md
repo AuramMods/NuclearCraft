@@ -788,6 +788,36 @@ Packaged Forge 47.4.18 tests powered both managers with vanilla redstone and wit
 
 A muted multiplayer client used the multitool on the source manager. It received the saved link and drew the linked source's outline through the opaque reactor wall. The native observer recorded zero foreground, activation, and visible window samples. [Forge render stages](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/src/main/java/net/minecraftforge/client/event/RenderLevelStageEvent.java)
 
+### Scripted solid heat sinks, neutron sources, and shields
+
+Migrate `Registration.registerFissionSink`, `registerFissionSource`, and `registerFissionShield` calls to a KubeJS startup script. Keep the original block and item IDs on both sides. Pass the old cooling rate and placement rule for the sink, the priming efficiency for the source, and the heat per flux and efficiency for the shield.
+
+```js
+const NuclearCraftFission = Java.loadClass('nc.init.NCFission')
+const parts = {
+    'nuclearcraft:solid_fission_sink_demo': () =>
+        NuclearCraftFission.createScriptedHeatSink('demo', 97, 'one cell && one water sink'),
+    'nuclearcraft:fission_source_demo': () =>
+        NuclearCraftFission.createScriptedNeutronSource(0.73),
+    'nuclearcraft:fission_shield_demo': () =>
+        NuclearCraftFission.createScriptedNeutronShield(7, 0.65)
+}
+
+StartupEvents.registry('block', event => {
+    for (const id in parts) event.createCustom(id, parts[id])
+})
+
+StartupEvents.registry('item', event => {
+    for (const id in parts) event.createCustom(id, () => NuclearCraftFission.createScriptedPartItem(id))
+})
+```
+
+Give each scripted sink a unique lowercase rule name using letters, digits, and underscores. Rules can refer to stock and scripted sinks by name. For example, `one demo sink` refers to the scripted sink above. Stock `[placement_rules]` entries can refer to the same names. The solver retains its dependency ordering, count limits, and geometry checks. Invalid scripted rules leave their sinks inactive. A cyclic exact or maximum count restores stock entries to their defaults and leaves affected scripted sinks inactive.
+
+Supply the blockstates, models, mining tags, loot tables, and recipes through the pack. Reuse the stock source blockstate's outward-facing and active variants and the stock shield's active variant for equivalent rendering. Scripted sources and shields use the stock `nuclearcraft:fission_source` and `nuclearcraft:fission_shield` block entity IDs and work with the same managers. Solid sinks store their thermal contribution in the controller's cluster data.
+
+All 202 local GameTests passed. The scripted reactor test used the normal manager links to prime a fuel cell and shut it down again, verified heat from the scripted shield, and activated two dependent sinks. The packaged Forge 47.4.18 server with KubeJS 2001.6.5-build.16 verified the 0.73 source efficiency and both shared block entity IDs. A stock copper sink accepted its configured dependency on a scripted sink. An invalid scripted rule stayed inactive. Restored manager links resumed the reaction from the saved fuel progress after restart. In the isolated 539-mod Auram instance, Ender IO 8.2.22-beta redstone conduits controlled the scripted source and shields through the stock managers. Opening the shield let the source prime the cell at 0.73 efficiency, and closing it stopped the reaction. The client loaded the custom block and item models and received the scripted heat sink recipe. The muted run used OpenAL No Output and recorded zero focus activations, foreground samples, and visible windows.
+
 ### Fission irradiation
 
 The interior `nuclearcraft:fission_irradiator` and its wall `nuclearcraft:fission_irradiator_port` work in solid-fuel, pebble-bed, and molten-salt reactors. An irradiator with a valid input and room for the result stops a priming beam and takes direct intrinsic flux or flux carried by moderators. It joins the heat calculation when it receives flux. The recipe's efficiency also applies to the emitting fuel's additional heat line.

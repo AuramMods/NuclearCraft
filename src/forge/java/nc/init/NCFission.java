@@ -47,16 +47,19 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.DoubleSupplier;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public final class NCFission {
     public static final int MAX_CONFIGURED_SIZE = 255;
@@ -78,7 +81,7 @@ public final class NCFission {
     private static final ForgeConfigSpec.DoubleValue SOUND_VOLUME;
     private static final Map<NCHeatSinks, RegistryObject<SolidHeatSinkBlock>> SINKS = new EnumMap<>(NCHeatSinks.class);
     private static final Map<NCHeatSinks, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCHeatSinks.class);
-    private static final CoolingPlacementConfig<NCHeatSinks> PLACEMENT;
+    private static final CoolingPlacementConfig<String> PLACEMENT;
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue RADIUM_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue POLONIUM_EFFICIENCY;
@@ -179,8 +182,8 @@ public final class NCFission {
                     properties().lightLevel(state -> sink.light()), sink)));
         }
         builder.pop();
-        PLACEMENT = new CoolingPlacementConfig<>(builder, NCHeatSinks.class, FissionPlacementRules.Part.SINK,
-                NCHeatSinks::material, new String[] {
+        PLACEMENT = new CoolingPlacementConfig<>(builder, Arrays.stream(NCHeatSinks.values()).map(NCHeatSinks::material).toList(),
+                FissionPlacementRules.Part.SINK, name -> name, new String[] {
                     "one cell", "one moderator", "one cell && one moderator",
                     "one redstone sink", "two axial glowstone sinks", "one obsidian sink",
                     "two moderators", "one cell && one casing", "exactly two iron sinks",
@@ -192,7 +195,7 @@ public final class NCFission {
                     "one gold sink && one prismarine sink", "one redstone sink && one end_stone sink", "one end_stone sink && one copper sink",
                     "two axial reflectors", "two copper sinks && one purpur sink", "exactly two redstone sinks",
                     "three moderators", "three cells"
-                });
+                }, NCFission::scriptedSinkRules);
         SPEC = builder.build();
     }
 
@@ -263,17 +266,20 @@ public final class NCFission {
 
     private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SOURCE_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("fission_source", () -> BlockEntityType.Builder.of(
-                    FissionControlBlockEntity::new, RADIUM_BERYLLIUM_SOURCE.get(), POLONIUM_BERYLLIUM_SOURCE.get(),
-                    CALIFORNIUM_SOURCE.get()).build(null));
+                    FissionControlBlockEntity::new, registeredControls(FissionSourceBlock.class)).build(null));
     private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SHIELD_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("fission_shield", () -> BlockEntityType.Builder.of(
-                    FissionControlBlockEntity::new, BORON_SILVER_SHIELD.get(), GADOLINIUM_SAMARIUM_SHIELD.get()).build(null));
+                    FissionControlBlockEntity::new, registeredControls(FissionShieldBlock.class)).build(null));
     private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SOURCE_MANAGER_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("fission_source_manager", () -> BlockEntityType.Builder.of(
                     FissionControlBlockEntity::new, SOURCE_MANAGER.get()).build(null));
     private static final RegistryObject<BlockEntityType<FissionControlBlockEntity>> SHIELD_MANAGER_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("fission_shield_manager", () -> BlockEntityType.Builder.of(
                     FissionControlBlockEntity::new, SHIELD_MANAGER.get()).build(null));
+
+    private static Block[] registeredControls(Class<? extends FissionPartBlock> type) {
+        return ForgeRegistries.BLOCKS.getValues().stream().filter(type::isInstance).toArray(Block[]::new);
+    }
 
     public static BlockEntityType<FissionControlBlockEntity> controlEntity(Role role) {
         return switch (role) {
@@ -380,9 +386,48 @@ public final class NCFission {
         return part(id, () -> new FissionSourceBlock(properties(), multiplier));
     }
 
+    public static SolidHeatSinkBlock createScriptedHeatSink(String material, int cooling, String rule) {
+        if (!material.matches("[a-z0-9_]+") || material.equals("any")
+                || Arrays.stream(NCHeatSinks.values()).anyMatch(sink -> sink.material().equals(material))) {
+            throw new IllegalArgumentException("Invalid scripted heat sink material " + material);
+        }
+        if (cooling < 0) {
+            throw new IllegalArgumentException("Heat sink cooling must be nonnegative");
+        }
+        return new SolidHeatSinkBlock(properties(), material, cooling, rule);
+    }
+
+    public static FissionSourceBlock createScriptedNeutronSource(double efficiency) {
+        if (!Double.isFinite(efficiency) || efficiency < 0) {
+            throw new IllegalArgumentException("Neutron source efficiency must be finite and nonnegative");
+        }
+        return new FissionSourceBlock(properties(), () -> efficiency);
+    }
+
+    public static FissionShieldBlock createScriptedNeutronShield(double heatPerFlux, double efficiency) {
+        if (!Double.isFinite(heatPerFlux) || heatPerFlux < 0 || !Double.isFinite(efficiency) || efficiency < 0) {
+            throw new IllegalArgumentException("Neutron shield heat and efficiency must be finite and nonnegative");
+        }
+        return new FissionShieldBlock(properties(), () -> heatPerFlux, () -> efficiency);
+    }
+
+    public static BlockItem createScriptedPartItem(String blockId) {
+        var block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(blockId));
+        if (!(block instanceof SolidHeatSinkBlock || block instanceof FissionSourceBlock || block instanceof FissionShieldBlock)) {
+            throw new IllegalArgumentException("No supported NuclearCraft fission part with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
+    }
+
+    private static Map<String, String> scriptedSinkRules() {
+        return ForgeRegistries.BLOCKS.getValues().stream().filter(SolidHeatSinkBlock.class::isInstance)
+                .map(SolidHeatSinkBlock.class::cast).filter(sink -> sink.scriptedRule() != null)
+                .collect(Collectors.toMap(SolidHeatSinkBlock::material, SolidHeatSinkBlock::scriptedRule));
+    }
+
     public static SolidHeatSinkBlock heatSink(NCHeatSinks material) { return SINKS.get(material).get(); }
     public static int cooling(NCHeatSinks material) { return configured(COOLING.get(material)); }
-    public static FissionPlacementRules<NCHeatSinks> placementRules() { return PLACEMENT.rules(); }
+    public static FissionPlacementRules<String> placementRules() { return PLACEMENT.rules(); }
 
     public static @Nullable Moderator moderator(BlockState state) {
         if (state.is(GRAPHITE_BLOCKS)) {

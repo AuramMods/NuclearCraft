@@ -2,7 +2,6 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.init.NCGasCoolants;
-import nc.init.NCHeatSinks;
 import nc.init.NCPebbleFission;
 import nc.init.NCRadiation;
 import nc.init.NCSaltCoolants;
@@ -385,9 +384,9 @@ final class SolidFissionCore {
                 : gasCooling.available(level, layout, thermalCells, moderatorPositions);
         Map<BlockPos, NCSaltCoolants> heaters = saltCooling == null ? Map.of()
                 : saltCooling.available(level, layout, thermalCells, moderatorPositions);
-        Map<BlockPos, NCHeatSinks> sinks = fluidCooling ? Map.of() : availableSinks(level, thermalCells, moderatorPositions);
+        Set<BlockPos> sinks = fluidCooling ? Set.of() : availableSinks(level, thermalCells, moderatorPositions);
         Set<BlockPos> cooledParts = switch (layout.variant()) {
-            case SOLID -> sinks.keySet();
+            case SOLID -> sinks;
             case PEBBLE -> coolers.keySet();
             case SALT -> heaters.keySet();
         };
@@ -489,9 +488,8 @@ final class SolidFissionCore {
             for (BlockPos sink : cluster.sinks()) {
                 NCGasCoolants gas = coolers.get(sink);
                 NCSaltCoolants salt = heaters.get(sink);
-                NCHeatSinks material = sinks.get(sink);
                 int rate = gas != null ? NCPebbleFission.cooling(gas) : salt != null ? NCSaltFission.cooling(salt)
-                        : material != null ? NCFission.cooling(material) : 0;
+                        : sinks.contains(sink) ? ((SolidHeatSinkBlock) level.getBlockState(sink).getBlock()).cooling() : 0;
                 if (rate > 0) {
                     cooling += rate;
                     if (cluster.connectedToWall()) {
@@ -616,9 +614,9 @@ final class SolidFissionCore {
         }
     }
 
-    private Map<BlockPos, NCHeatSinks> availableSinks(ServerLevel level, Set<BlockPos> burning,
+    private Set<BlockPos> availableSinks(ServerLevel level, Set<BlockPos> burning,
                                                      Set<BlockPos> moderatorPositions) {
-        var candidates = new EnumMap<NCHeatSinks, List<BlockPos>>(NCHeatSinks.class);
+        var candidates = new HashMap<String, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockState(pos).getBlock() instanceof SolidHeatSinkBlock sink) {
                 candidates.computeIfAbsent(sink.material(), ignored -> new ArrayList<>()).add(pos);
@@ -626,7 +624,7 @@ final class SolidFissionCore {
         }
         return NCFission.placementRules().active(candidates,
                 FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CELL,
-                        burning, moderatorPositions));
+                        burning, moderatorPositions)).keySet();
     }
 
     private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction<?>> reactions) {

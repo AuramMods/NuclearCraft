@@ -23,6 +23,7 @@ import static nc.init.NCSaltCoolants.NAK;
 import static nc.multiblock.fission.FissionPlacementRules.Part.CASING;
 import static nc.multiblock.fission.FissionPlacementRules.Part.HEATER;
 import static nc.multiblock.fission.FissionPlacementRules.Part.MODERATOR;
+import static nc.multiblock.fission.FissionPlacementRules.Part.SINK;
 import static nc.multiblock.fission.FissionPlacementRules.Part.VESSEL;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
@@ -90,12 +91,25 @@ public final class FissionPlacementRuleGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty", batch = "placement_rules")
+    public static void invalidScriptedSinkDoesNotDisableStockCooling(GameTestHelper helper) {
+        var warnings = new ArrayList<String>();
+        var rules = FissionPlacementRules.compile(SINK, name -> name, Map.of("water", "one cell", "scripted", ""),
+                Map.of("water", "one scripted sink", "scripted", "exactly zero water sinks"), warnings::add);
+        var pos = BlockPos.ZERO;
+        var active = rules.active(Map.of("water", List.of(pos), "scripted", List.of(pos.east())),
+                (part, near) -> part == FissionPlacementRules.Part.CELL && near.equals(pos.west()));
+        helper.assertTrue(warnings.size() == 2 && active.equals(Map.of(pos, "water")) && rules.text("scripted").isEmpty(),
+                "An inhibitory cycle falls back to the stock rule and leaves the scripted sink inactive");
+        helper.succeed();
+    }
+
     private static FissionPlacementRules<NCSaltCoolants> compile(Map<NCSaltCoolants, String> overrides, List<String> warnings) {
         var defaults = new EnumMap<NCSaltCoolants, String>(NCSaltCoolants.class);
         for (var coolant : NCSaltCoolants.values()) {
             defaults.put(coolant, NCSaltFission.placementRules().text(coolant));
         }
-        return FissionPlacementRules.compile(NCSaltCoolants.class, HEATER, NCSaltCoolants::material, defaults,
+        return FissionPlacementRules.compile(HEATER, NCSaltCoolants::material, defaults,
                 overrides, warnings::add);
     }
 }
