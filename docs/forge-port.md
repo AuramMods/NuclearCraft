@@ -181,6 +181,8 @@ Forge 47.4.18 ships the upstream handshake correction. The build still targets A
 
 The isolated 539-mod Auram client ran both new machines. A KubeJS override replaced the default cobalt recipe with an eight-tick recipe using Forge tags for the fluid and result. The saved Ingot Former held one `crystalcraft_unlimited_java:cobalt`, which the pack includes in `forge:ingots/cobalt`. The headless test with only Tinkers' Construct as the cobalt supplier selected Tinkers' cobalt. The saved Crystallizer held one borax after using 666 mB of solution and 4,000 FE. This run used the same local Forge 47.4.10 handshake diagnostic patch.
 
+The same Auram snapshot completed the casting and crystallization checks on the official Forge 47.4.18 release without the diagnostic patch. Forge reported a modded login, JEI finished loading, and the server configs remained file-backed. The client saved both machine outputs and exited with code zero. OpenAL used its No Output device, and the watcher observed zero visible windows and focus changes.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
