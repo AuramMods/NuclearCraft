@@ -1,10 +1,9 @@
 package nc.generator;
 
 import nc.automation.MachineInterfaceTarget;
-
 import nc.energy.EnergyBankBlockEntity;
+import nc.generator.PassiveGeneratorBlock.Definition;
 import nc.init.NCGenerators;
-import nc.init.NCGenerators.PassiveGenerator;
 import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,10 +12,14 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity implements MachineInterfaceTarget, ChunkRadiationSource {
-    private final PassiveGenerator generator;
+    private final Definition generator;
     private long lastGenerationTick = Long.MIN_VALUE;
 
-    public PassiveGeneratorBlockEntity(BlockPos pos, BlockState state, PassiveGenerator generator) {
+    public PassiveGeneratorBlockEntity(BlockPos pos, BlockState state) {
+        this(pos, state, ((PassiveGeneratorBlock) state.getBlock()).definition());
+    }
+
+    private PassiveGeneratorBlockEntity(BlockPos pos, BlockState state, Definition generator) {
         super(generator.entity(), pos, state);
         this.generator = generator;
     }
@@ -33,7 +36,8 @@ public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity imp
 
     @Override
     protected long localCapacity() {
-        return 4L * generator.power();
+        long power = generator.power();
+        return power > Long.MAX_VALUE / 4 ? Long.MAX_VALUE : 4 * power;
     }
 
     @Override
@@ -68,7 +72,7 @@ public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity imp
             return 0;
         }
         lastGenerationTick = tick;
-        int power = generator.power();
+        long power = generator.power();
         if (!generator.solar()) {
             return power;
         }

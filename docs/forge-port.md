@@ -590,7 +590,7 @@ The Decay Generator uses `world/serverconfig/nuclearcraft-generators.toml`. Its 
 
 In the same file, the original `solar_power` entries map in order to `power` under `solar_panel_basic`, `solar_panel_advanced`, `solar_panel_du`, and `solar_panel_elite`, with defaults of 5, 20, 80, and 320 FE per tick in full daylight. The original `rtg_power` entries map to `power` under `rtg_uranium`, `rtg_plutonium`, `rtg_americium`, and `rtg_californium`, with defaults of 1, 40, 10, and 200 FE per tick.
 
-The eight shipped RTGs and Solar Panels retain their registry IDs. Solar Panels save their charge as `energy` in the block entity. Each RTG saves its share in the same field. Converting a legacy world requires copying each Solar Panel's `energyStorage.energy` into the new field and distributing each legacy RTG controller's aggregate charge over the converted bank. Legacy CraftTweaker scripts that registered additional RTG blocks still need a port.
+The eight shipped RTGs and Solar Panels retain their registry IDs. Solar Panels save their charge as `energy` in the block entity. Each RTG saves its share in the same field. Converting a legacy world requires copying each Solar Panel's `energyStorage.energy` into the new field and distributing each legacy RTG controller's aggregate charge over the converted bank.
 
 Distributor block and item IDs retain their legacy names. Their shared block entity type is `nuclearcraft:distributor`. Each part saves its share of the network as `energy`, an item stack in `items`, and a Forge fluid stack in `fluid`. Legacy conversion must distribute data from `energyStorage`, `distributorInventory`, and `distributorTank` over the converted parts using the per-block limits. Chunk unload leaves each part's share saved on that part. Breaking a part drops its saved items and removes its share of fluid and charge. When loaded networks with different item stacks or fluids join, both types remain recoverable through the outlet, one type at a time.
 
@@ -607,6 +607,31 @@ The isolated 539-mod Auram client measured the baked tray geometry and verified 
 Distiller recipes use `nuclearcraft:multiblock_distiller`. Supply two shapeless `fluid_inputs`, each with a `fluid` ID or a fluid `tag` and an `amount` in mB. List up to eight entries in `fluid_outputs`, using `null` to leave a slot inactive. Each fluid result has a `fluid` ID and an `amount`. Optional `time_multiplier`, `power_multiplier`, and `sieve_trays` default to 1, 1, and 0. NuclearCraft's hydrogen sulfide and depleted hydrogen sulfide are Forge fluids.
 
 The Distiller's legacy time, power, and sound settings map to `time`, `power`, and `sound_volume` under `distiller` in `nuclearcraft-machines.toml`. The three shipped sieve recipes still read their multipliers under `distiller.sieve_efficiency`. The legacy processor switches apply to the tower through `distiller.smart_input` and `distiller.factor_recipes`. Importing a 1.12.2 tower requires converting its controller's fluid tanks to `input_0`–`input_1` and `output_0`–`output_7`, with Forge fluid IDs and mB amounts. Its power, halt state, and progress are stored on the controller. Port indices are relative to the input or output group in the modern save.
+
+### Scripted RTGs
+
+Replace legacy `Registration.registerRTG` calls with a KubeJS startup script. Keep the full legacy block and item ID on both the client and server. The first argument to `createScriptedRtg` is a decimal string so the script preserves the full integer power value. The second is the placed block's radiation in Rad/t. Use nonnegative power and finite, nonnegative radiation.
+
+```js
+const NuclearCraftRtg = Java.loadClass('nc.generator.PassiveGeneratorBlock')
+const rtgId = 'nuclearcraft:rtg_demo'
+
+StartupEvents.registry('block', event => {
+    event.createCustom(rtgId, () => NuclearCraftRtg.createScriptedRtg('55', 0.25))
+})
+
+StartupEvents.registry('item', event => {
+    event.createCustom(rtgId, () => NuclearCraftRtg.createScriptedRtgItem(rtgId))
+})
+```
+
+For this example, add `kubejs/assets/nuclearcraft/blockstates/rtg_demo.json` with `{"variants":{"":{"model":"nuclearcraft:block/rtg_uranium"}}}` and `kubejs/assets/nuclearcraft/models/item/rtg_demo.json` with `{"parent":"nuclearcraft:block/rtg_uranium"}` to reuse the stock model. Supply a display name in `assets/nuclearcraft/lang/en_us.json` and a self-drop table in `data/nuclearcraft/loot_tables/blocks/rtg_demo.json` within the KubeJS resource and data directories. Use the standard pickaxe mining tag and a recipe for the registered item.
+
+Scripted and stock RTGs form the same bank. Capacity is four ticks of generation, with a 16 FE minimum per bank. Storage saturates at the maximum signed 64-bit value and a Forge Energy call can transfer up to the maximum signed 32-bit value. A converted legacy custom RTG keeps its block and item ID and uses `nuclearcraft:scripted_rtg` for its block entity ID. Distribute its share of the old bank charge into the `energy` field as for a stock RTG.
+
+All 199 local GameTests passed. On packaged Forge 47.4.18 with KubeJS 2001.6.5-build.16, a scripted 55 FE/t unit shared a 224 FE bank with the stock Uranium RTG. The server verified 0.25 and 0.5 Rad/t emissions, simulated and committed energy extraction on an exterior face, and suppressed the connection between bank members. A 3,000,000,000 FE/t unit stored 12,000,000,000 FE and exposed the Forge Energy integer limit. A larger unit saturated at the signed 64-bit limit. The mining loot table returned the scripted item, and a zero-power unit retained 9 FE through chunk unload and restart.
+
+In the isolated 539-mod Auram instance, each 55 FE/t scripted RTG ran beside a stock Uranium RTG. Ender IO 8.2.22-beta energy conduits and Mekanism 10.4.16.80 Basic Universal Cables supplied two Voltaic Piles and then two Electric Furnaces. Each furnace smelted one iron ingot. The client baked both models and received the scripted crafting recipe. Auram displayed the rate as 55 RF per tick. The muted client runs used OpenAL No Output and recorded zero desktop activations, foreground samples, and visible windows.
 
 ### Distiller sieve assembly recipes
 

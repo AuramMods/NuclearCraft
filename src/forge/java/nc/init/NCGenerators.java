@@ -19,10 +19,12 @@ import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.EnumMap;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 public final class NCGenerators {
     private static final ForgeConfigSpec SPEC;
@@ -65,6 +67,12 @@ public final class NCGenerators {
     public static final RegistryObject<RecipeSerializer<DecayGeneratorRecipe>> DECAY_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register(DECAY_ID, DecayGeneratorRecipe.Serializer::new);
 
+    public static final RegistryObject<BlockEntityType<PassiveGeneratorBlockEntity>> SCRIPTED_RTG_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("scripted_rtg", () -> new BlockEntityType<>(
+                    PassiveGeneratorBlockEntity::new, ForgeRegistries.BLOCKS.getValues().stream()
+                            .filter(block -> block instanceof PassiveGeneratorBlock generator && generator.isScriptedRtg())
+                            .collect(Collectors.toUnmodifiableSet()), null));
+
     private NCGenerators() {}
 
     public static void register(FMLJavaModLoadingContext context) {
@@ -93,7 +101,7 @@ public final class NCGenerators {
         return configRevision;
     }
 
-    public enum PassiveGenerator {
+    public enum PassiveGenerator implements PassiveGeneratorBlock.Definition {
         RTG_URANIUM("rtg_uranium", 1, false),
         RTG_PLUTONIUM("rtg_plutonium", 40, false),
         RTG_AMERICIUM("rtg_americium", 10, false),
@@ -120,25 +128,29 @@ public final class NCGenerators {
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK), this));
             NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
-                    (pos, state) -> new PassiveGeneratorBlockEntity(pos, state, this), block.get()).build(null));
+                    PassiveGeneratorBlockEntity::new, block.get()).build(null));
         }
 
         public PassiveGeneratorBlock block() {
             return block.get();
         }
 
+        @Override
         public BlockEntityType<PassiveGeneratorBlockEntity> entity() {
             return entity.get();
         }
 
-        public int power() {
+        @Override
+        public long power() {
             return SPEC.isLoaded() ? POWER.get(this).get() : defaultPower;
         }
 
+        @Override
         public boolean solar() {
             return solar;
         }
 
+        @Override
         public double radiation() {
             return radiation;
         }
