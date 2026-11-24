@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "YBY",
+        "SLS",
+        "W W"
+    ],
+    "key": {
+        "Y": {
+            "item": "minecraft:yellow_dye"
+        },
+        "B": {
+            "item": "nuclearcraft:bioplastic"
+        },
+        "S": {
+            "item": "nuclearcraft:rad_shielding_heavy"
+        },
+        "L": {
+            "item": "minecraft:leather_leggings"
+        },
+        "W": {
+            "tag": "minecraft:wool"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:legs_hazmat"
+    }
+}

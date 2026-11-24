@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "SUS",
+        "UPU",
+        "SUS"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:dusts/sulfur"
+        },
+        "U": {
+            "tag": "forge:ingots/uranium_238"
+        },
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:plate_du"
+    }
+}

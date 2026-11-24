@@ -159,7 +159,10 @@ public final class WorldRadiation {
             }
             if (machineSources) {
                 double emission = entity instanceof ChunkRadiationSource source ? source.radiationEmission() : 0;
-                sources += emission + (containers > 0 ? containerRate(entity, side) * containers : 0);
+                emission += containers > 0 ? containerRate(entity, side) * containers : 0;
+                if (emission > 0) {
+                    sources += RadiationShielding.attenuate(emission, RadiationShielding.containerResistance(entity));
+                }
             }
         }
 

@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "CCC",
+        "LLL"
+    ],
+    "key": {
+        "I": {
+            "tag": "forge:ingots/iron"
+        },
+        "C": {
+            "item": "minecraft:coal"
+        },
+        "L": {
+            "tag": "forge:ingots/lead"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:rad_shielding_light"
+    }
+}

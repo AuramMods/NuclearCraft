@@ -13,6 +13,7 @@ import mezz.jei.api.recipe.IFocusGroup;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
+import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
@@ -37,6 +38,7 @@ import nc.init.NCRegistries;
 import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.machine.MachinePartBlock.Part;
+import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
@@ -269,6 +271,9 @@ public final class NuclearCraftJei implements IModPlugin {
             return;
         }
         RecipeManager recipes = connection.getRecipeManager();
+        registration.addIngredientInfo(Arrays.stream(Tier.values()).map(NCRadiation::shielding)
+                        .map(ItemStack::new).toList(),
+                VanillaTypes.ITEM_STACK, Component.translatable("gui.nuclearcraft.jei.armor_shielding"));
         registration.addRecipes(CollectorCategory.TYPE, List.of(Collector.values()));
         registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
         registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());

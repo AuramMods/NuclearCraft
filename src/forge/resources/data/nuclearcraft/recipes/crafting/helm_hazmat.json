@@ -1,0 +1,32 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "YWY",
+        "SLS",
+        "BIB"
+    ],
+    "key": {
+        "Y": {
+            "item": "minecraft:yellow_dye"
+        },
+        "W": {
+            "tag": "minecraft:wool"
+        },
+        "S": {
+            "item": "nuclearcraft:rad_shielding_heavy"
+        },
+        "L": {
+            "item": "minecraft:leather_helmet"
+        },
+        "B": {
+            "item": "nuclearcraft:bioplastic"
+        },
+        "I": {
+            "tag": "forge:ingots/steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:helm_hazmat"
+    }
+}

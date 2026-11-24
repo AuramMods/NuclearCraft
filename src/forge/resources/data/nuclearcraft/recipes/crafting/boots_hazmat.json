@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "equipment",
+    "pattern": [
+        "SDS",
+        "BLB"
+    ],
+    "key": {
+        "S": {
+            "item": "nuclearcraft:rad_shielding_heavy"
+        },
+        "D": {
+            "item": "minecraft:black_dye"
+        },
+        "B": {
+            "item": "nuclearcraft:bioplastic"
+        },
+        "L": {
+            "item": "minecraft:leather_boots"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:boots_hazmat"
+    }
+}

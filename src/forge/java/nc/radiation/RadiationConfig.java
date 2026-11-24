@@ -89,6 +89,7 @@ public final class RadiationConfig {
 
     static {
         ScrubberSettings.define(BUILDER);
+        ShieldingSettings.define(BUILDER);
         SPEC = BUILDER.build();
     }
 

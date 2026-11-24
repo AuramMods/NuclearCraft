@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "RFR",
+        "PPP"
+    ],
+    "key": {
+        "B": {
+            "item": "nuclearcraft:bioplastic"
+        },
+        "R": {
+            "item": "nuclearcraft:rad_shielding_light"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:rad_shielding_medium"
+    }
+}

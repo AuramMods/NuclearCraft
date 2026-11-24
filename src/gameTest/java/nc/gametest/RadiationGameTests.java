@@ -7,6 +7,8 @@ import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRadiation;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.PlayerRadiation;
+import nc.radiation.RadiationShielding;
+import nc.radiation.ShieldingItem.Tier;
 import nc.radiation.RadiationSources;
 import nc.radiation.WorldRadiation;
 import net.minecraft.core.BlockPos;
@@ -14,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.InteractionHand;
@@ -21,6 +24,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ComparatorBlock;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -38,6 +43,77 @@ import java.util.UUID;
 @PrefixGameTestTemplate(false)
 public final class RadiationGameTests {
     private RadiationGameTests() {}
+
+    @GameTest(template = "empty")
+    public static void shieldingPreservesTheArmorAndCannotDowngradeIt(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var grid = MaterialGameTests.craftingGrid(2, 2);
+        var recipe = level.getRecipeManager().byKey(NuclearCraft.id("crafting/armor_shielding")).orElseThrow();
+        var chest = Items.DIAMOND_CHESTPLATE.getDefaultInstance();
+        chest.setDamageValue(25);
+        chest.setHoverName(Component.literal("Lab chestplate"));
+        chest.enchant(Enchantments.ALL_DAMAGE_PROTECTION, 2);
+        var original = chest.copy();
+        grid.setItem(3, chest);
+        grid.setItem(0, NCRadiation.shielding(Tier.LIGHT).getDefaultInstance());
+        var match = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, level).orElseThrow();
+        helper.assertTrue(match.getId().equals(recipe.getId()), "Crafting selected the shielding recipe");
+        ItemStack upgraded = match.assemble(grid, level.registryAccess());
+        near(helper, RadiationShielding.armorResistance(upgraded), 0.01, "Light shielding installs");
+        helper.assertTrue(ItemStack.matches(chest, original) && upgraded.getDamageValue() == chest.getDamageValue()
+                        && upgraded.getHoverName().equals(chest.getHoverName())
+                        && upgraded.getEnchantmentTags().equals(chest.getEnchantmentTags()),
+                "Preview preserves input, wear, name and enchantments");
+
+        grid.setItem(3, upgraded);
+        helper.assertTrue(!match.matches(grid, level), "A second light layer does not stack");
+        grid.setItem(0, NCRadiation.shielding(Tier.HEAVY).getDefaultInstance());
+        helper.assertTrue(match.matches(grid, level), "A stronger tier can replace it");
+        ItemStack heavy = match.assemble(grid, level.registryAccess());
+        near(helper, RadiationShielding.armorResistance(heavy), 1, "Heavy shielding replaces the light tier");
+        grid.setItem(3, heavy);
+        grid.setItem(0, NCRadiation.shielding(Tier.MEDIUM).getDefaultInstance());
+        helper.assertTrue(!match.matches(grid, level), "The recipe rejects downgrades");
+        grid.setItem(3, stack("chest_hazmat", 1));
+        helper.assertTrue(!match.matches(grid, level), "The legacy blacklist protects Hazmat equipment");
+        grid.setItem(3, Items.STICK.getDefaultInstance());
+        helper.assertTrue(!match.matches(grid, level), "The recipe rejects unrelated items");
+
+        var player = player(helper, "TestHazmat");
+        player.setItemSlot(EquipmentSlot.CHEST, stack("chest_hazmat", 1));
+        player.setItemSlot(EquipmentSlot.HEAD, stack("helm_hazmat", 1));
+        player.setItemSlot(EquipmentSlot.LEGS, stack("legs_hazmat", 1));
+        player.setItemSlot(EquipmentSlot.FEET, stack("boots_hazmat", 1));
+        player.getInventory().setItem(0, stack("californium_252_ingot", 4));
+        PlayerRadiation.tick(player, 5);
+        double raw = 4 * 0.38;
+        near(helper, PlayerRadiation.rate(player), raw * raw / (raw + 9), "Hazmat parts add nine intrinsic resistance");
+        helper.assertTrue(player.getArmorValue() == 0, "The legacy suit has no ordinary armor points");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void shieldingAndHazmatRecipesUseTheirLegacyComponents(GameTestHelper helper) {
+        var level = helper.getLevel();
+        for (String material : new String[]{"plate_du", "rad_shielding_light", "rad_shielding_medium",
+                "rad_shielding_heavy", "helm_hazmat", "chest_hazmat", "legs_hazmat", "boots_hazmat"}) {
+            var recipe = (net.minecraft.world.item.crafting.ShapedRecipe) level.getRecipeManager()
+                    .byKey(NuclearCraft.id("crafting/" + material)).orElseThrow();
+            var grid = MaterialGameTests.craftingGrid(recipe.getWidth(), recipe.getHeight());
+            for (int slot = 0; slot < recipe.getIngredients().size(); slot++) {
+                var ingredient = recipe.getIngredients().get(slot);
+                if (!ingredient.isEmpty()) {
+                    var choices = ingredient.getItems();
+                    helper.assertTrue(choices.length > 0, "A required ingredient resolves for " + material);
+                    grid.setItem(slot, choices[0]);
+                }
+            }
+            helper.assertTrue(recipe.matches(grid, level)
+                            && recipe.assemble(grid, level.registryAccess()).is(stack(material, 1).getItem()),
+                    "The complete recipe crafts " + material);
+        }
+        helper.succeed();
+    }
 
     @GameTest(template = "empty")
     public static void inventoryRadiationAndResistanceSurviveSave(GameTestHelper helper) {

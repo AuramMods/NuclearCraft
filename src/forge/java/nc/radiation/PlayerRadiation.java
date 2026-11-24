@@ -102,22 +102,17 @@ public final class PlayerRadiation {
         double internalResistance = data.getDouble(RESISTANCE);
         double resistance = internalResistance;
         for (ItemStack armor : player.getArmorSlots()) {
-            CompoundTag tag = armor.getTag();
-            if (tag != null) {
-                double shielding = tag.getDouble("ncRadiationResistance");
-                if (Double.isFinite(shielding)) {
-                    resistance += shielding;
-                }
-            }
+            resistance += RadiationShielding.armorResistance(armor);
         }
         double multiplier = player.isInWater() ? RadiationConfig.WATER_MULTIPLIER.get()
                 : player.isInWaterOrRain() ? RadiationConfig.RAIN_MULTIPLIER.get() : 1;
-        double rate = attenuate(WorldRadiation.rate(player.serverLevel(), player.blockPosition()) * multiplier, resistance);
+        double rate = RadiationShielding.attenuate(
+                WorldRadiation.rate(player.serverLevel(), player.blockPosition()) * multiplier, resistance);
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             double raw = RadiationSources.itemRate(inventory.getItem(i)) * multiplier;
             // The legacy resistance curve runs separately for each stack, before rates are added.
-            rate += attenuate(raw, resistance);
+            rate += RadiationShielding.attenuate(raw, resistance);
         }
         if (data.isEmpty() && rate == 0) {
             return;
@@ -164,10 +159,6 @@ public final class PlayerRadiation {
                         0.8F * RadiationConfig.soundVolume(6), 0.7F);
             }
         }
-    }
-
-    private static double attenuate(double raw, double resistance) {
-        return resistance > 0 ? raw * (raw / (raw + resistance)) : raw * (1 - resistance);
     }
 
     private static double rawRate(double effective, double resistance) {

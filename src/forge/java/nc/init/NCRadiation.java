@@ -4,28 +4,39 @@ import nc.NuclearCraft;
 import nc.processor.RadiationScrubber;
 import nc.processor.ScrubberBlock;
 import nc.processor.ScrubberMenu;
+import nc.recipe.ArmorShieldingRecipe;
 import nc.recipe.ScrubberRecipe;
+import nc.radiation.ContainerShieldingLoot;
 import nc.radiation.GeigerCounterItem;
 import nc.radiation.GeigerBlock;
 import nc.radiation.GeigerBlockEntity;
+import nc.radiation.HazmatMaterial;
 import nc.radiation.MedicineItem;
 import nc.radiation.RadiationConfig;
 import nc.radiation.RadiationHudConfig;
 import nc.radiation.RadiationSync;
+import nc.radiation.ShieldingItem;
+import nc.radiation.ShieldingItem.Tier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 public final class NCRadiation {
     public static final RegistryObject<SoundEvent> GEIGER_TICK = sound("player.geiger_tick");
@@ -45,6 +56,19 @@ public final class NCRadiation {
     public static final RegistryObject<Item> RADAWAY = medicine(MedicineItem.Kind.RADAWAY);
     public static final RegistryObject<Item> SLOW_RADAWAY = medicine(MedicineItem.Kind.SLOW_RADAWAY);
     public static final RegistryObject<Item> RAD_X = medicine(MedicineItem.Kind.RAD_X);
+    private static final Map<Tier, RegistryObject<ShieldingItem>> SHIELDING = new EnumMap<>(Tier.class);
+    static {
+        for (Tier tier : Tier.values()) {
+            SHIELDING.put(tier, NCRegistries.ITEMS.register(tier.id(), () -> new ShieldingItem(tier, new Item.Properties())));
+        }
+        NCRegistries.LOOT_MODIFIERS.register("container_shielding", () -> ContainerShieldingLoot.CODEC);
+    }
+    public static final RegistryObject<RecipeSerializer<ArmorShieldingRecipe>> ARMOR_SHIELDING =
+            NCRegistries.RECIPE_SERIALIZERS.register("armor_shielding",
+                    () -> new SimpleCraftingRecipeSerializer<>(ArmorShieldingRecipe::new));
+    private static final List<RegistryObject<ArmorItem>> HAZMAT = List.of(
+            hazmat("helm_hazmat", ArmorItem.Type.HELMET), hazmat("chest_hazmat", ArmorItem.Type.CHESTPLATE),
+            hazmat("legs_hazmat", ArmorItem.Type.LEGGINGS), hazmat("boots_hazmat", ArmorItem.Type.BOOTS));
 
     private static final String SCRUBBER_ID = "radiation_scrubber";
     public static final RegistryObject<ScrubberBlock> SCRUBBER = NCRegistries.BLOCKS.register(SCRUBBER_ID,
@@ -71,6 +95,8 @@ public final class NCRadiation {
                         output.accept(RADAWAY.get());
                         output.accept(SLOW_RADAWAY.get());
                         output.accept(RAD_X.get());
+                        SHIELDING.values().forEach(item -> output.accept(item.get()));
+                        HAZMAT.forEach(item -> output.accept(item.get()));
                     }).build());
 
     private NCRadiation() {}
@@ -87,5 +113,14 @@ public final class NCRadiation {
 
     private static RegistryObject<Item> medicine(MedicineItem.Kind kind) {
         return NCRegistries.ITEMS.register(kind.id(), () -> new MedicineItem(kind, new Item.Properties()));
+    }
+
+    public static ShieldingItem shielding(Tier tier) {
+        return SHIELDING.get(tier).get();
+    }
+
+    private static RegistryObject<ArmorItem> hazmat(String id, ArmorItem.Type type) {
+        return NCRegistries.ITEMS.register(id, () -> new ArmorItem(HazmatMaterial.INSTANCE, type,
+                new Item.Properties().stacksTo(1)));
     }
 }

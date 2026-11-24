@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "BBB",
+        "RHR",
+        "PPP"
+    ],
+    "key": {
+        "B": {
+            "tag": "forge:ingots/beryllium"
+        },
+        "R": {
+            "item": "nuclearcraft:rad_shielding_medium"
+        },
+        "H": {
+            "tag": "forge:ingots/hard_carbon"
+        },
+        "P": {
+            "item": "nuclearcraft:plate_du"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:rad_shielding_heavy"
+    }
+}

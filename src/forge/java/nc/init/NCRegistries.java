@@ -31,6 +31,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraftforge.eventbus.api.IEventBus;
+import com.mojang.serialization.Codec;
+import net.minecraftforge.common.loot.IGlobalLootModifier;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -49,6 +51,8 @@ public final class NCRegistries {
     static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS =
             DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, NuclearCraft.MOD_ID);
     static final DeferredRegister<SoundEvent> SOUNDS = DeferredRegister.create(ForgeRegistries.SOUND_EVENTS, NuclearCraft.MOD_ID);
+    static final DeferredRegister<Codec<? extends IGlobalLootModifier>> LOOT_MODIFIERS =
+            DeferredRegister.create(ForgeRegistries.Keys.GLOBAL_LOOT_MODIFIER_SERIALIZERS, NuclearCraft.MOD_ID);
 
     public static final RegistryObject<RecipeSerializer<FluidContainerRecipe>> FLUID_CONTAINER_CRAFTING =
             RECIPE_SERIALIZERS.register("fluid_container_crafting", FluidContainerRecipe.Serializer::new);
@@ -221,5 +225,6 @@ public final class NCRegistries {
         RECIPE_TYPES.register(bus);
         RECIPE_SERIALIZERS.register(bus);
         SOUNDS.register(bus);
+        LOOT_MODIFIERS.register(bus);
     }
 }
