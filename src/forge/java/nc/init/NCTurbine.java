@@ -29,10 +29,13 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public final class NCTurbine {
     private static final List<RegistryObject<? extends Block>> PARTS = new ArrayList<>();
+    private static Map<String, String> scriptedCoilRules = Map.of();
 
     public static final RegistryObject<TurbinePartBlock> CASING = part("turbine_casing", Part.CASING);
     public static final RegistryObject<TurbinePartBlock> GLASS = block("turbine_glass",
@@ -59,9 +62,8 @@ public final class NCTurbine {
             NCRegistries.BLOCK_ENTITIES.register("turbine_controller", () ->
                     BlockEntityType.Builder.of(TurbineController::new, CONTROLLER.get()).build(null));
     public static final RegistryObject<BlockEntityType<TurbinePort>> PORT_ENTITY =
-            NCRegistries.BLOCK_ENTITIES.register("turbine_port", () -> BlockEntityType.Builder.of(TurbinePort::new,
-                    INLET.get(), OUTLET.get(), MAGNESIUM.get(), BERYLLIUM.get(), ALUMINUM.get(), GOLD.get(),
-                    COPPER.get(), SILVER.get(), CONNECTOR.get(), REDSTONE.get()).build(null));
+            NCRegistries.BLOCK_ENTITIES.register("turbine_port", () ->
+                    BlockEntityType.Builder.of(TurbinePort::new, registeredPorts()).build(null));
     public static final RegistryObject<MenuType<TurbineMenu>> MENU = NCRegistries.MENUS.register("turbine_controller",
             () -> new MenuType<>(TurbineMenu::new, FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<TurbineRecipe>> RECIPES =
@@ -91,6 +93,29 @@ public final class NCTurbine {
 
     private static RegistryObject<TurbineRotorBlock> rotor(String id, Part part) {
         return block(id, () -> new TurbineRotorBlock(properties().noOcclusion(), part));
+    }
+
+    private static Block[] registeredPorts() {
+        var ports = ForgeRegistries.BLOCKS.getValues().stream().filter(TurbineWallBlock.class::isInstance)
+                .map(TurbineWallBlock.class::cast).filter(block -> block != CONTROLLER.get()).toList();
+        scriptedCoilRules = ports.stream().filter(block -> block.scriptedRule() != null)
+                .collect(Collectors.toUnmodifiableMap(TurbineWallBlock::dynamoName, TurbineWallBlock::scriptedRule));
+        return ports.toArray(Block[]::new);
+    }
+
+    public static Map<String, String> scriptedCoilRules() { return scriptedCoilRules; }
+
+    public static TurbineWallBlock createScriptedCoil(String name, double conductivity, String rule) {
+        return TurbineWallBlock.scriptedCoil(properties(), name, conductivity, rule);
+    }
+
+    public static BlockItem createScriptedCoilItem(String blockId) {
+        var id = ResourceLocation.tryParse(blockId);
+        var block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
+        if (!(block instanceof TurbineWallBlock wall) || wall.scriptedRule() == null) {
+            throw new IllegalArgumentException("No scripted NuclearCraft dynamo coil with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
     }
 
     public static TurbineRotorBlock createScriptedBlade(double efficiency, double expansion) {

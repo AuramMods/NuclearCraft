@@ -807,6 +807,7 @@
     "gui.nuclearcraft.jei.fission": "%s ticks, %s heat/t",
     "gui.nuclearcraft.jei.turbine": "%s FE/mB, %s× expansion",
     "tooltip.nuclearcraft.turbine.blade_efficiency": "Blade efficiency %s",
+    "tooltip.nuclearcraft.turbine.coil_conductivity": "Coil conductivity %s",
     "tooltip.nuclearcraft.turbine.stage_expansion": "Expansion coefficient %s",
     "item.nuclearcraft.uranium_233_ingot": "Uranium-233",
     "item.nuclearcraft.uranium_233_carbide_ingot": "Uranium-233 Carbide",

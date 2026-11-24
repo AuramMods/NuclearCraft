@@ -36,11 +36,11 @@ public final class TurbineDynamoGameTests {
         var rules = TurbineDynamoRules.compile(text, "one of any coil", text, "one of any coil",
                 message -> { throw new AssertionError(message); });
 
-        var valid = rules.active(bounds, bearings, installed);
+        var valid = rules.active(bounds, bearings, installed, Part::dynamoName);
         helper.assertTrue(valid.keySet().equals(Set.of(northCoil, southCoil, copper)),
                 "Connected qualifying dynamos should activate from each bearing");
         installed.put(beryllium, Part.BERYLLIUM);
-        helper.assertTrue(rules.active(bounds, bearings, installed).keySet().equals(Set.of(southCoil)),
+        helper.assertTrue(rules.active(bounds, bearings, installed, Part::dynamoName).keySet().equals(Set.of(southCoil)),
                 "An invalidated exact rule must also disconnect its dependents");
         helper.succeed();
     }

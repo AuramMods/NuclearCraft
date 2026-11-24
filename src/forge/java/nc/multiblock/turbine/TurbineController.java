@@ -37,7 +37,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Locale;
 import java.util.stream.IntStream;
 
 public final class TurbineController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
@@ -501,7 +500,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     List<List<Object>> computerDynamoParts() {
         return layout.dynamo().installed().entrySet().stream().sorted(Map.Entry.comparingByKey())
                 .map(entry -> List.<Object>of(ComputerValues.position(entry.getKey()),
-                        entry.getValue().name().toLowerCase(Locale.ROOT), layout.dynamo().parts().containsKey(entry.getKey())))
+                        entry.getValue().dynamoName(), layout.dynamo().parts().containsKey(entry.getKey())))
                 .toList();
     }
 

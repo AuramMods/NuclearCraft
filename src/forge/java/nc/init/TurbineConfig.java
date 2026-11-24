@@ -9,6 +9,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class TurbineConfig {
@@ -47,7 +48,7 @@ public final class TurbineConfig {
     private static final ForgeConfigSpec.DoubleValue PARTICLES;
     private static final ForgeConfigSpec.DoubleValue SOUND_VOLUME;
 
-    private static final TurbineDynamoRules DEFAULT_RULES = compileRules(DEFAULT_COILS, DEFAULT_CONNECTOR);
+    private static final TurbineDynamoRules DEFAULT_RULES = compileRules(DEFAULT_COILS, DEFAULT_CONNECTOR, Map.of());
     private static volatile TurbineDynamoRules rules = DEFAULT_RULES;
 
     static {
@@ -103,13 +104,13 @@ public final class TurbineConfig {
 
     private static void changed(ModConfigEvent event) {
         if (event.getConfig().getSpec() == SPEC) {
-            rules = compileRules(value(COIL_RULE), value(CONNECTOR_RULE));
+            rules = compileRules(value(COIL_RULE), value(CONNECTOR_RULE), NCTurbine.scriptedCoilRules());
             REVISION.incrementAndGet();
         }
     }
 
-    private static TurbineDynamoRules compileRules(List<String> coils, List<String> connector) {
-        return TurbineDynamoRules.compile(coils, connector.get(0), DEFAULT_COILS, DEFAULT_CONNECTOR.get(0), LOGGER::warn);
+    private static TurbineDynamoRules compileRules(List<String> coils, List<String> connector, Map<String, String> scripted) {
+        return TurbineDynamoRules.compile(coils, connector.get(0), DEFAULT_COILS, DEFAULT_CONNECTOR.get(0), scripted, LOGGER::warn);
     }
 
     public static TurbineDynamoRules dynamoRules() { return rules; }

@@ -485,6 +485,38 @@ The packaged JAR started on clean Forge 47.4.18. On the dedicated server, CC: Tw
 
 The isolated 539-mod Auram client verified both fluid and power routes, distinct models for the rotating blade and fixed stator, synchronized recipes, and the configured tooltips. Breaking the shell restored the static scripted models. Repair restored the animated rotor and retained the exhaust. The client used master volume zero and OpenAL No Output and exited normally with zero recorded focus activations, foreground samples, or visible window samples.
 
+### Scripted turbine dynamo coils
+
+Migrate `Registration.registerTurbineCoil` to KubeJS startup registrations. Use the original material name and `nuclearcraft:turbine_dynamo_coil_<id>` block and item IDs on the server and client.
+
+```js
+const NuclearCraftTurbines = Java.loadClass('nc.init.NCTurbine')
+const coils = {
+    'nuclearcraft:turbine_dynamo_coil_demo': () =>
+        NuclearCraftTurbines.createScriptedCoil('demo', 1.25, 'one bearing'),
+    'nuclearcraft:turbine_dynamo_coil_demo_link': () =>
+        NuclearCraftTurbines.createScriptedCoil('demo_link', 1.75, 'one demo coil')
+}
+
+StartupEvents.registry('block', event => {
+    for (const id in coils) event.createCustom(id, coils[id])
+})
+
+StartupEvents.registry('item', event => {
+    for (const id in coils) event.createCustom(id, () => NuclearCraftTurbines.createScriptedCoilItem(id))
+})
+```
+
+The material name uses lowercase letters, digits, or underscores and must be unique among installed coils. Conductivity is a finite nonnegative multiplier, with `1.25` displayed as 125 percent. Rules can refer to stock and scripted coils by name, and the stock `coil_rule` settings can refer to scripted coils. Connectors and `any coil` rules include active scripted coils. An invalid scripted rule leaves that coil inactive and logs the parser error. Reloading the server config reevaluates stock rules and their scripted dependencies.
+
+Supply blockstates, block and item models, mining tags, loot tables, and crafting recipes through the pack. The coil on a turbine end wall exports Forge Energy on its outward face while its rule and connection qualify. Rule and geometry changes invalidate obsolete energy handlers. Keep the original block ID when converting a save and map its block entity to `nuclearcraft:turbine_port`. The controller retains the FE and steam buffers, and CC: Tweaked uses the original material name in the dynamo report.
+
+All 207 local GameTests passed, and the packaged JAR started on clean Forge 47.4.18. The scripted turbine revoked its energy capability when an equally conductive coil with a different name replaced the required coil. It retained the stored charge, then restored sided energy access after repair and saved reassembly.
+
+On a dedicated Forge server with KubeJS 2001.6.5-build.16, the Ender IO 8.2.22-beta Energy Conduit and Mekanism 10.4.16.80 Basic Universal Cable each transferred exactly 512 FE after repair. Each network then powered a Melter that produced 1,000 mB of water and collected 32,000 mB of exhaust from 8,000 mB of steam. The scripted port entities and outputs survived server restart and chunk unload and reload. CC: Tweaked 1.120.2 reported the named scripted coils and their stock copper dependent as active. It reported the scripted coil with an invalid rule as inactive. Reloading the stock rule deactivated only the copper coil.
+
+The isolated 539-mod Auram client verified the same 512 FE transfer through each network. Reopening the saved world verified the scripted block and item models, the placed facing, the conductivity and rule tooltips, and the synchronized crafting recipe. Both networks completed their fluid deliveries and saved the results. The client exited normally with master volume zero, OpenAL No Output, and zero recorded focus activations, foreground samples, or on-screen window samples.
+
 ### Portable Ender Chest, Tritium Lamp, and food
 
 The Portable Ender Chest opens the player's vanilla Ender Chest inventory and increments the vanilla Ender Chest statistic. Both original recipes are available, one with purple wool and one with black wool. The Mary Poppins advancement uses the original item ID and triggers when the player obtains it.

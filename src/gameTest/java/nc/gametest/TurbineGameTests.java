@@ -52,7 +52,76 @@ public final class TurbineGameTests {
             helper.register(NuclearCraft.id("turbine_rotor_blade_qa"), NCTurbine.createScriptedBlade(0.64D, 1.75D));
             helper.register(NuclearCraft.id("turbine_rotor_blade_qa_other"), NCTurbine.createScriptedBlade(0.64D, 1.75D));
             helper.register(NuclearCraft.id("turbine_rotor_stator_qa"), NCTurbine.createScriptedStator(0.8D));
+            helper.register(NuclearCraft.id("turbine_dynamo_coil_qa_root"),
+                    NCTurbine.createScriptedCoil("qa_root", 1.25D, "one bearing"));
+            helper.register(NuclearCraft.id("turbine_dynamo_coil_qa_other"),
+                    NCTurbine.createScriptedCoil("qa_other", 1.25D, "one bearing"));
+            helper.register(NuclearCraft.id("turbine_dynamo_coil_qa_link"),
+                    NCTurbine.createScriptedCoil("qa_link", 1.75D, "one qa_root coil"));
         });
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 155)
+    public static void scriptedDynamoNamesControlLiveEnergyPorts(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        var root = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_dynamo_coil_qa_root"));
+        var other = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_dynamo_coil_qa_other"));
+        var link = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("turbine_dynamo_coil_qa_link"));
+        BlockPos dependent = COIL.above();
+        BlockPos connector = dependent.east();
+        helper.setBlock(COIL, root);
+        helper.setBlock(dependent, link);
+        helper.setBlock(connector, NCTurbine.CONNECTOR.get());
+        int[] remaining = {0};
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    helper.assertTrue(energy(helper, dependent, Direction.SOUTH).canExtract()
+                                    && energy(helper, connector, Direction.SOUTH).canExtract()
+                                    && !helper.getBlockEntity(dependent).getCapability(ForgeCapabilities.ENERGY, Direction.NORTH).isPresent(),
+                            "Named dependencies and any-coil connectors expose their outward energy ports");
+                    int filled = fluid(helper, INLET, Direction.NORTH).fill(
+                            new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 1200), FluidAction.EXECUTE);
+                    helper.assertTrue(filled == 1200, "Feed steam to the scripted dynamo");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 4800
+                                && energy(helper, dependent, Direction.SOUTH).getEnergyStored() > 0,
+                        "The scripted dynamo generates Forge Energy"))
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    var lease = helper.getBlockEntity(dependent).getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH);
+                    var handler = lease.orElseThrow(AssertionError::new);
+                    int stored = handler.getEnergyStored();
+                    int sample = handler.extractEnergy(100, true);
+                    helper.assertTrue(sample > 0 && handler.getEnergyStored() == stored
+                                    && handler.extractEnergy(sample, false) == sample,
+                            "The scripted port supports simulated and exact extraction");
+                    remaining[0] = stored - sample;
+                    helper.setBlock(COIL, other);
+                    helper.assertTrue(!lease.isPresent() && handler.extractEnergy(100, false) == 0,
+                            "Replacing the named coil revokes any existing dependent handler");
+                })
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    helper.assertTrue(energy(helper, COIL, Direction.SOUTH).getEnergyStored() == remaining[0]
+                                    && !helper.getBlockEntity(dependent).getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).isPresent()
+                                    && !helper.getBlockEntity(connector).getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).isPresent(),
+                            "A coil with equal conductivity and a different name cannot satisfy the original rule");
+                    CompoundTag saved = controller(helper, CONTROLLER).saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCTurbine.CONTROLLER.get());
+                    controller(helper, CONTROLLER).load(saved);
+                    helper.setBlock(COIL, root);
+                })
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> helper.assertTrue(
+                        energy(helper, dependent, Direction.SOUTH).getEnergyStored() == remaining[0]
+                                && energy(helper, connector, Direction.SOUTH).canExtract()
+                                && fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 4800,
+                        "Restoring the named root after loading restores access to the same charge and exhaust"))
+                .thenSucceed();
     }
 
     @GameTest(template = "turbine", timeoutTicks = 165)

@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,14 +25,15 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
 
     record Validation(TurbineLayout layout, Component message) {}
 
-    record Dynamo(Map<BlockPos, Part> parts, Map<BlockPos, Part> installed,
-                  Map<Part, Integer> inlet, Map<Part, Integer> outlet, int inletCoils, int outletCoils, int bearingsPerSide) {
+    record Dynamo(Map<BlockPos, TurbineWallBlock> parts, Map<BlockPos, TurbineWallBlock> installed,
+                  Map<TurbineWallBlock, Integer> inlet, Map<TurbineWallBlock, Integer> outlet,
+                  int inletCoils, int outletCoils, int bearingsPerSide) {
         double conductivity() {
             return 0.5D * (conductivity(inlet) / Math.max(bearingsPerSide, inletCoils)
                     + conductivity(outlet) / Math.max(bearingsPerSide, outletCoils));
         }
 
-        private static double conductivity(Map<Part, Integer> coils) {
+        private static double conductivity(Map<TurbineWallBlock, Integer> coils) {
             double total = 0D;
             for (var entry : coils.entrySet()) {
                 total += entry.getKey().conductivity() * entry.getValue();
@@ -74,7 +75,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
         List<Port> valves = new ArrayList<>();
         List<BlockPos> redstone = new ArrayList<>();
         Set<BlockPos> bearings = new HashSet<>();
-        Map<BlockPos, Part> coils = new LinkedHashMap<>();
+        Map<BlockPos, TurbineWallBlock> coils = new LinkedHashMap<>();
         List<BlockPos> computers = new ArrayList<>();
         boolean glass = false;
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
@@ -82,7 +83,8 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             if (edge == 0) {
                 continue;
             }
-            Part part = TurbinePartBlock.part(level.getBlockState(pos));
+            var state = level.getBlockState(pos);
+            Part part = TurbinePartBlock.part(state);
             if (edge > 1) {
                 if (part != Part.CASING) {
                     return invalid("frame", pos);
@@ -104,8 +106,8 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                 case COMPUTER -> computers.add(pos.immutable());
                 case GLASS -> glass = true;
                 default -> {
-                    if (part.dynamo()) {
-                        coils.put(pos.immutable(), part);
+                    if (part.dynamo() && state.getBlock() instanceof TurbineWallBlock wall) {
+                        coils.put(pos.immutable(), wall);
                     }
                 }
             }
@@ -186,10 +188,10 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
 
         Dynamo dynamo = solveDynamo(bounds, flow, bearings, coils);
         List<Port> ports = new ArrayList<>(valves);
-        dynamo.parts.forEach((pos, part) -> {
+        dynamo.parts.forEach((pos, block) -> {
             Direction side = bounds.outward(pos);
             if (side.getAxis() == axis) {
-                ports.add(new Port(pos, side, part));
+                ports.add(new Port(pos, side, block.part()));
             }
         });
         return new Validation(new TurbineLayout(bounds, flow, shaft, blade, List.copyOf(stages), Map.copyOf(rotor),
@@ -197,22 +199,22 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                 Component.translatable("message.nuclearcraft.turbine.assembled"));
     }
 
-    private static Dynamo solveDynamo(Cuboid bounds, Direction flow, Set<BlockPos> bearings, Map<BlockPos, Part> coils) {
-        Map<BlockPos, Part> valid = TurbineConfig.dynamoRules().active(bounds, bearings, coils);
-        var inlet = new EnumMap<Part, Integer>(Part.class);
-        var outlet = new EnumMap<Part, Integer>(Part.class);
+    private static Dynamo solveDynamo(Cuboid bounds, Direction flow, Set<BlockPos> bearings, Map<BlockPos, TurbineWallBlock> coils) {
+        var valid = TurbineConfig.dynamoRules().active(bounds, bearings, coils, TurbineWallBlock::dynamoName);
+        var inlet = new HashMap<TurbineWallBlock, Integer>();
+        var outlet = new HashMap<TurbineWallBlock, Integer>();
         int inletCount = 0;
         int outletCount = 0;
         for (var entry : valid.entrySet()) {
-            Part part = entry.getValue();
-            if (!part.coil()) {
+            var block = entry.getValue();
+            if (!block.part().coil()) {
                 continue;
             }
             if (bounds.outward(entry.getKey()) == flow) {
-                outlet.merge(part, 1, Integer::sum);
+                outlet.merge(block, 1, Integer::sum);
                 outletCount++;
             } else {
-                inlet.merge(part, 1, Integer::sum);
+                inlet.merge(block, 1, Integer::sum);
                 inletCount++;
             }
         }

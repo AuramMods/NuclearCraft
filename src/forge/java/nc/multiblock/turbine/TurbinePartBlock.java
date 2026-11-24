@@ -9,14 +9,9 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -26,9 +21,7 @@ import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
+import java.util.Locale;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class TurbinePartBlock extends Block {
@@ -36,7 +29,7 @@ public class TurbinePartBlock extends Block {
         CASING, GLASS, COMPUTER, CONTROLLER, INLET, OUTLET, BEARING, SHAFT,
         STEEL, EXTREME, SIC_SIC_CMC, STATOR,
         MAGNESIUM, BERYLLIUM, ALUMINUM, GOLD, COPPER, SILVER,
-        CONNECTOR, REDSTONE, SCRIPTED_BLADE, SCRIPTED_STATOR;
+        CONNECTOR, REDSTONE, SCRIPTED_BLADE, SCRIPTED_STATOR, SCRIPTED_COIL;
 
         boolean blade() {
             return this == STEEL || this == EXTREME || this == SIC_SIC_CMC || this == SCRIPTED_BLADE;
@@ -51,7 +44,7 @@ public class TurbinePartBlock extends Block {
         }
 
         boolean coil() {
-            return ordinal() >= MAGNESIUM.ordinal() && ordinal() <= SILVER.ordinal();
+            return this == SCRIPTED_COIL || (ordinal() >= MAGNESIUM.ordinal() && ordinal() <= SILVER.ordinal());
         }
 
         boolean dynamo() {
@@ -62,8 +55,8 @@ public class TurbinePartBlock extends Block {
             return stage() || this == SHAFT;
         }
 
-        double conductivity() {
-            return TurbineConfig.coilConductivity(ordinal() - MAGNESIUM.ordinal());
+        String dynamoName() {
+            return name().toLowerCase(Locale.ROOT);
         }
     }
 
@@ -76,15 +69,6 @@ public class TurbinePartBlock extends Block {
 
     Part part() {
         return part;
-    }
-
-    @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
-        if (part.dynamo()) {
-            tooltip.add(Component.translatable("tooltip.nuclearcraft.turbine.placement_rule",
-                    TurbineConfig.dynamoRules().text(part)).withStyle(ChatFormatting.GRAY));
-        }
     }
 
     static Part part(BlockState state) {
