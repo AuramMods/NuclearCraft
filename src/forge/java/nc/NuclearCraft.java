@@ -1,5 +1,6 @@
 package nc;
 
+import nc.compat.mekanism.GasFluidCapability;
 import nc.compat.patchouli.Guidebook;
 import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
@@ -23,6 +24,7 @@ import nc.init.NCRegistries;
 import nc.init.NCWasteland;
 import nc.init.NCTerrainRecipes;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 
@@ -46,6 +48,9 @@ public final class NuclearCraft {
         NCQuantum.register(context);
         NCRadiation.register(context);
         Guidebook.register(context);
+        if (ModList.get().isLoaded("mekanism")) {
+            GasFluidCapability.register();
+        }
         FluidConfig.register(context);
         NCFission.registerConfig(context);
         FissionHighlights.register();

@@ -50,7 +50,7 @@ public final class NCItemProcessors {
 
     static {
         var builder = new ForgeConfigSpec.Builder();
-        MEKANISM_GAS = builder.comment("Allow the Universal Bin to accept Mekanism gases.")
+        MEKANISM_GAS = builder.comment("Allow Mekanism gas transfer with NuclearCraft fluid tanks and the Universal Bin.")
                 .define("enable_mek_gas", true);
         ORE_PROCESSING = builder.comment("Enable default Melter recipes for ore blocks.")
                 .define("ore_processing", true);

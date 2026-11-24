@@ -215,12 +215,24 @@ Ender IO 8.2.22-beta ran the uranium-235 circuit and Mekanism 10.4.16.80 ran a s
 
 Initial helium supply is external to the stock 2o.9.7 processing chain. The installed Auram fluid registry exposes NuclearCraft's helium fluids. The Supercooler and pebble-bed cooler accept compatible helium through `forge:helium`, and heat exchangers recover it from hot helium and helium exhaust.
 
+### Mekanism Pressurized Tubes
+
+With Mekanism installed, Pressurized Tubes can insert and extract gas through the same NuclearCraft processor and port faces used for fluid automation. Set the tube connection at a machine outlet to pull when extracting. The Machine Interface relays gas access to its host.
+
+The bridge uses the active Mekanism Rotary Condensentrator recipes to identify reversible one-to-one fluid and gas pairs. Each unit of gas corresponds to one mB in the machine's existing tank. An empty tank tries the recipe's condensed fluid and then compatible tagged variants. A partially filled tank retains its exact fluid ID. A filtered port still requires its selected fluid. Fluids such as hot oxygen use Forge fluid pipes. The legacy `enable_mek_gas` option in `world/serverconfig/nuclearcraft-processors.toml` controls this bridge and the Universal Bin's gas inlet. It defaults to true.
+
+All 196 local GameTests passed without Mekanism, including exact tank access, simulated transfer, and sided invalidation. On packaged Forge 47.4.18 with Auram's Mekanism 10.4.16.80, the Electrolyzer delivered 500 hydrogen and 250 oxygen through separate Pressurized Tubes. A Chemical Reactor received 250 each of hydrogen and chlorine through tubes and delivered 250 hydrogen chloride. Both machines emptied their tanks, and the products survived a dedicated restart.
+
+Two independent Pressurized Tube networks supplied 96 mB and 128 mB of oxygen to a pebble-bed reactor's exact NuclearCraft and Mekanism filtered circuits. Mechanical Pipes carried the resulting 192 mB and 256 mB of hot oxygen to Ender IO 8.2.22-beta tanks. The measured outputs survived a confirmed chunk unload and reload. Disabling the bridge kept all 80 units of a test feed in Mekanism storage. A Mechanical Pipe on the same port then accepted 80 mB of fluid oxygen.
+
+The isolated Auram client loaded all 539 installed mod JARs and ran the same Chemical Reactor circuit. Its saved world contained exactly 250 hydrogen chloride in the destination and empty input tanks. Audio used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, and visible window samples.
+
 ## Auram targets
 
 | Installed mod | Version | Interactions to verify |
 | --- | --- | --- |
 | Ender IO | 8.2.22-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
-| Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and chemical interoperability where applicable |
+| Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and Pressurized Tubes |
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
 | Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
 | Applied Energistics 2 | 15.4.10 | Item and fluid import/export and shared material tags |
@@ -474,7 +486,7 @@ The `nuclearcraft:machine_interface` extends one adjacent NuclearCraft processor
 
 Use the interface to open the attached processor's menu or interact with its tanks using a fluid container. Redstone touching the interface reaches the attached processor. Battery and generator outputs can push through the interface using the host's transfer rules.
 
-The `nuclearcraft:bin` destroys inserted items, fluids, and Forge Energy. It offers input on every face and retains no output. With Mekanism installed, the bin and any interface attached to it also accept gas. The legacy `enable_mek_gas` switch is in `world/serverconfig/nuclearcraft-processors.toml` and defaults to true.
+The `nuclearcraft:bin` destroys inserted items, fluids, and Forge Energy. It offers input on every face and retains no output. With Mekanism installed, the bin and any interface attached to it also accept gas.
 
 Both blocks retain their original crafting ingredients and textures. All 155 local GameTests passed. On Forge 47.4.18, Auram's Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each sent one ice and 4,000 FE through an interface and collected exactly 1,000 mB of water. Separate routes each disposed of 19 ingots, 2,400 mB of water, and 3,750 FE. A Mekanism pressurized tube delivered 1,200 units of hydrogen through an interface into the bin. Chunk unload and server restart preserved both networks' item, fluid, and energy balances.
 

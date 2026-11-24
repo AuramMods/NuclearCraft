@@ -1,6 +1,7 @@
 package nc.processor;
 
 import nc.NuclearCraft;
+import nc.fluid.IndexedFluidHandler;
 import nc.init.NCItemProcessors;
 import nc.init.NCRegistries;
 import nc.processor.ProcessorFluidTanks.Mode;
@@ -92,6 +93,32 @@ public final class ProcessorFluidControlsGameTests {
         helper.assertTrue(!reactor.fluidTanks().separatesInputs() && restored.drain(250, EXECUTE).getAmount() == 250
                         && restored.fill(water(250), EXECUTE) == 250 && restored.getFluidInTank(1).getAmount() == 100,
                 "After reload, bidirectional access and the shared input policy are both preserved");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void phaseAdapterAccessRespectsEachTank(GameTestHelper helper) {
+        helper.setBlock(MACHINE, NCRegistries.CHEMICAL_REACTOR.get());
+        var reactor = (FluidProcessorBlockEntity) helper.getBlockEntity(MACHINE);
+        var west = (IndexedFluidHandler) fluids(reactor, Direction.WEST);
+        helper.assertTrue(west.fillTank(1, water(100), SIMULATE) == 100
+                        && west.getFluidInTank(1).isEmpty() && west.fillTank(1, water(100), EXECUTE) == 100
+                        && west.fillTank(0, water(100), EXECUTE) == 0
+                        && west.getFluidInTank(0).isEmpty(),
+                "Indexed insertion honors simulation, the chosen tank, and input separation");
+        helper.assertTrue(west.drainTank(1, water(50), EXECUTE).isEmpty(),
+                "An indexed drain cannot extract through an input-only face");
+
+        reactor.fluidTanks().cycle(1, Direction.WEST);
+        helper.assertTrue(west.drainTank(1, water(50), EXECUTE).isEmpty(),
+                "A retained handler honors face invalidation");
+        var current = (IndexedFluidHandler) fluids(reactor, Direction.WEST);
+        helper.assertTrue(current.drainTank(0, water(50), EXECUTE).isEmpty()
+                        && current.drainTank(1, water(50), SIMULATE).getAmount() == 50
+                        && current.getFluidInTank(1).getAmount() == 100
+                        && current.drainTank(1, water(50), EXECUTE).getAmount() == 50
+                        && current.getFluidInTank(1).getAmount() == 50,
+                "Indexed extraction follows the requested tank and changes storage only on execution");
         helper.succeed();
     }
 

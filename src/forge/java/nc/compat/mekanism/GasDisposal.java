@@ -16,7 +16,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public final class GasDisposal {
-    private static final Capability<IGasHandler> GAS = CapabilityManager.get(new CapabilityToken<>() {});
+    static final Capability<IGasHandler> GAS = CapabilityManager.get(new CapabilityToken<>() {});
     private static final IGasHandler EMPTY = new Sink(() -> false);
 
     private GasDisposal() {}

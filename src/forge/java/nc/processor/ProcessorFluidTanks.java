@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.fluid.IndexedFluidHandler;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -397,7 +398,7 @@ public final class ProcessorFluidTanks {
         }
     }
 
-    private final class Face implements IFluidHandler {
+    private final class Face implements IndexedFluidHandler {
         private final Mode[] modes;
         private final LazyOptional<IFluidHandler> capability;
         private boolean valid = true;
@@ -443,6 +444,27 @@ public final class ProcessorFluidTanks {
         @Override
         public boolean isFluidValid(int index, FluidStack stack) {
             return index >= 0 && index < inputs && active() && modes[index].canFill() && tanks[index].isFluidValid(stack);
+        }
+
+        @Override
+        public int fillTank(int index, FluidStack stack, FluidAction action) {
+            if (stack.isEmpty() || !isFluidValid(index, stack) || !canFill.test(index, stack)) {
+                return 0;
+            }
+            if (separateInputs && tanks[index].isEmpty()) {
+                for (int other = 0; other < inputs; other++) {
+                    if (modes[other].canFill() && stack.isFluidEqual(tanks[other].getFluid())
+                            && canFill.test(other, stack)) {
+                        return 0;
+                    }
+                }
+            }
+            return tanks[index].fill(stack, action);
+        }
+
+        @Override
+        public FluidStack drainTank(int index, FluidStack stack, FluidAction action) {
+            return visible(index) && modes[index].canDrain() ? tanks[index].drain(stack, action) : FluidStack.EMPTY;
         }
 
         @Override
