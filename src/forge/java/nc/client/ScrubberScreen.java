@@ -1,6 +1,7 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.processor.ProcessorFluidActions;
 import nc.processor.ProcessorFluidTanks;
 import nc.processor.ScrubberMenu;
 import net.minecraft.ChatFormatting;
@@ -39,7 +40,8 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
                 .bounds(leftPos + 27, topPos + 56, 16, 14).build());
         for (Direction side : Direction.values()) {
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + side.getName() + ".short"),
-                            ignored -> send(items.button(side, ScrubberMenu.sideButton(selection, side))))
+                            ignored -> send(selection == ScrubberMenu.ITEMS ? items.button(side, ScrubberMenu.sideButton(selection, side))
+                                    : FluidTankControls.faceButton(selection, ScrubberMenu.sideButton(selection, side))))
                     .bounds(leftPos + 46 + side.ordinal() * 19, topPos + 56, 18, 14).build();
             sides.put(side, addRenderableWidget(button));
         }
@@ -53,8 +55,9 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
             selection = ScrubberMenu.ITEMS;
             items.toggle();
         }).bounds(leftPos + 27, topPos + 17, 41, 13).build());
-        outputMode = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
-                        button -> send(items.outputSelected() ? items.overflowButton() : ScrubberMenu.OUTPUT_MODE_BUTTON))
+        outputMode = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.processor_items.overflow"),
+                        button -> send(items.outputSelected() ? items.overflowButton()
+                                : selection == 0 ? ScrubberMenu.INPUT_MODE_BUTTON : ScrubberMenu.OUTPUT_MODE_BUTTON))
                 .bounds(leftPos + 73, topPos + 17, 34, 13).build());
     }
 
@@ -69,6 +72,10 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
         }
         for (int i = 0; i < TANK_X.length; i++) {
             if (button == 0 && isHovering(TANK_X[i], TANK_Y[i], TANK_SIZE[i], TANK_SIZE[i], mouseX, mouseY)) {
+                if (FluidTankControls.clearRequested()) {
+                    send(ProcessorFluidActions.clearButton(i));
+                    return true;
+                }
                 selection = i;
                 items.all();
                 return true;
@@ -83,18 +90,12 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
         redstone.setMessage(Component.literal("R").withStyle(menu.redstoneEnabled() ? ChatFormatting.RED : ChatFormatting.WHITE));
         redstone.setTooltip(Tooltip.create(Component.translatable(menu.redstoneEnabled()
                 ? "gui.nuclearcraft.scrubber.redstone_enabled" : "gui.nuclearcraft.scrubber.redstone_disabled")));
-        sides.forEach((side, button) -> {
-            Component target = Component.translatable(selection == 0 ? "gui.nuclearcraft.scrubber.fluid_input"
-                    : "gui.nuclearcraft.scrubber.fluid_output");
-            button.setTooltip(Tooltip.create(selection == ScrubberMenu.ITEMS ? items.tooltip(side)
-                    : Component.translatable("gui.nuclearcraft.scrubber.side", target,
-                    Component.translatable("gui.nuclearcraft.face." + side.getName()), menu.fluidSide(selection, side).label())));
-        });
-        outputMode.visible = selection == 1 || items.outputSelected();
+        sides.forEach((side, button) -> button.setTooltip(Tooltip.create(selection == ScrubberMenu.ITEMS
+                ? items.tooltip(side) : FluidTankControls.faceTooltip(side, menu.fluidSide(selection, side)))));
+        outputMode.visible = selection != ScrubberMenu.ITEMS || items.outputSelected();
         if (outputMode.visible) {
-            outputMode.setMessage(Component.translatable(items.outputSelected() ? "gui.nuclearcraft.processor_items.overflow"
-                    : "gui.nuclearcraft.electrolyzer.overflow"));
             outputMode.setTooltip(Tooltip.create(items.outputSelected() ? items.overflowTooltip()
+                    : selection == 0 ? FluidTankControls.inputPolicy(menu.discardsInput())
                     : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.outputMode().label())));
         }
         renderBackground(graphics);
@@ -103,11 +104,7 @@ public final class ScrubberScreen extends AbstractContainerScreen<ScrubberMenu> 
         for (int i = 0; i < TANK_X.length; i++) {
             var fluid = menu.fluid(i);
             if (isHovering(TANK_X[i], TANK_Y[i], TANK_SIZE[i], TANK_SIZE[i], x, y)) {
-                Component info = fluid.isEmpty()
-                        ? Component.translatable(i == 0 ? "gui.nuclearcraft.scrubber.fluid_input"
-                        : "gui.nuclearcraft.scrubber.fluid_output")
-                        : Component.translatable("gui.nuclearcraft.fluid_amount", fluid.getDisplayName(), fluid.getAmount());
-                graphics.renderTooltip(font, info, x, y);
+                graphics.renderTooltip(font, FluidTankControls.tankTooltip(fluid), x, y);
             }
         }
     }

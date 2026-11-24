@@ -27,6 +27,9 @@ public final class ProcessorFluidTanks {
     private final FluidTank[] tanks;
     private final int inputs;
     private final int[] sideModes;
+    private final OutputMode[] outputModes;
+    private int voidUnusable;
+    private boolean separateInputs;
     private final EnumMap<Direction, Face> faces = new EnumMap<>(Direction.class);
     private Face unsided;
     private boolean transferring;
@@ -38,8 +41,11 @@ public final class ProcessorFluidTanks {
     ProcessorFluidTanks(BlockEntity owner, Predicate<FluidStack> accepted, int inputs, int outputs) {
         this.owner = owner;
         this.inputs = inputs;
+        separateInputs = inputs > 1;
         tanks = new FluidTank[inputs + outputs];
         sideModes = new int[tanks.length];
+        outputModes = new OutputMode[outputs];
+        Arrays.fill(outputModes, OutputMode.HOLD);
         for (int index = 0; index < tanks.length; index++) {
             tanks[index] = new FluidTank(CAPACITY, index < inputs ? accepted : stack -> true) {
                 @Override
@@ -54,6 +60,10 @@ public final class ProcessorFluidTanks {
 
     FluidStack stored(int index) {
         return tanks[index].getFluid();
+    }
+
+    int size() {
+        return tanks.length;
     }
 
     void consume(int amount) {
@@ -77,24 +87,55 @@ public final class ProcessorFluidTanks {
         owner.setChanged();
     }
 
-    boolean canProduce(int index, FluidStack stack) {
-        return tanks[index].fill(stack, SIMULATE) == stack.getAmount();
+    boolean canProduce(int index, FluidStack product) {
+        OutputMode mode = outputModes[index - inputs];
+        FluidStack stored = stored(index);
+        return mode == OutputMode.VOID || ((stored.isEmpty() || stored.isFluidEqual(product))
+                && (mode == OutputMode.VOID_EXCESS || tanks[index].fill(product, SIMULATE) == product.getAmount()));
     }
 
     void produce(int index, FluidStack stack) {
-        tanks[index].fill(stack, EXECUTE);
-    }
-
-    boolean canProduce(int index, FluidStack product, OutputMode mode) {
-        FluidStack stored = stored(index);
-        return mode == OutputMode.VOID || ((stored.isEmpty() || stored.isFluidEqual(product))
-                && (mode == OutputMode.VOID_EXCESS || canProduce(index, product)));
-    }
-
-    void produce(int index, FluidStack stack, OutputMode mode) {
-        if (mode != OutputMode.VOID) {
-            produce(index, stack);
+        if (outputModes[index - inputs] != OutputMode.VOID) {
+            tanks[index].fill(stack, EXECUTE);
         }
+    }
+
+    int setting(int index) {
+        return index < inputs ? (voidUnusable >>> index) & 1 : outputModes[index - inputs].ordinal();
+    }
+
+    void cycleSetting(int index) {
+        if (index < inputs) {
+            voidUnusable ^= 1 << index;
+        } else {
+            OutputMode next = outputModes[index - inputs].next();
+            outputModes[index - inputs] = next;
+            if (next == OutputMode.VOID) {
+                clear(index);
+            }
+        }
+        owner.setChanged();
+    }
+
+    boolean discardsUnusableInputs() {
+        return voidUnusable != 0;
+    }
+
+    void discardUnusableInputs() {
+        for (int index = 0; index < inputs; index++) {
+            if ((voidUnusable & (1 << index)) != 0) {
+                clear(index);
+            }
+        }
+    }
+
+    boolean separatesInputs() {
+        return separateInputs;
+    }
+
+    void toggleSeparation() {
+        separateInputs = !separateInputs;
+        owner.setChanged();
     }
 
     void clear(int index) {
@@ -109,10 +150,28 @@ public final class ProcessorFluidTanks {
     }
 
     void cycle(int index, Direction side) {
-        int shift = 2 * side.ordinal();
         Mode next = Mode.read(sideModes[index], side).next(index < inputs);
-        sideModes[index] = (sideModes[index] & ~(3 << shift)) | (next.ordinal() << shift);
+        Mode[] modes = new Mode[SIDES.length];
+        for (Direction face : SIDES) {
+            modes[face.ordinal()] = face == side ? next : Mode.read(sideModes[index], face);
+        }
+        sideModes[index] = Mode.pack(modes);
         faces.put(side, new Face(side)).invalidate();
+        connectionsChanged();
+    }
+
+    void reset(int index, boolean defaults) {
+        sideModes[index] = defaults ? defaultModes(index) : 4095;
+        refreshFaces();
+        connectionsChanged();
+    }
+
+    private void connectionsChanged() {
+        owner.setChanged();
+        Level level = owner.getLevel();
+        if (level != null) {
+            level.updateNeighborsAt(owner.getBlockPos(), owner.getBlockState().getBlock());
+        }
     }
 
     LazyOptional<IFluidHandler> capability(@Nullable Direction side) {
@@ -137,14 +196,55 @@ public final class ProcessorFluidTanks {
         }
     }
 
-    void saveTank(int index, CompoundTag saved, String contentKey, String modesKey) {
+    void saveTank(int index, CompoundTag saved, String contentKey, String modesKey, String settingKey) {
         saved.put(contentKey, tanks[index].writeToNBT(new CompoundTag()));
         saved.putInt(modesKey, sideModes[index]);
+        saved.putInt(settingKey, setting(index));
     }
 
-    void loadTank(int index, CompoundTag saved, String contentKey, String modesKey) {
+    void loadTank(int index, CompoundTag saved, String contentKey, String modesKey, String settingKey) {
         tanks[index].readFromNBT(saved.getCompound(contentKey));
-        sideModes[index] = saved.contains(modesKey) ? saved.getInt(modesKey) : defaultModes(index);
+        sideModes[index] = saved.contains(modesKey) ? saved.getInt(modesKey) : legacyModes(index, saved);
+        if (index < inputs) {
+            boolean discard = saved.contains(settingKey) ? saved.getInt(settingKey) == 1
+                    : saved.getBoolean("voidUnusableFluidInput" + index);
+            int bit = 1 << index;
+            voidUnusable = discard ? voidUnusable | bit : voidUnusable & ~bit;
+        } else {
+            int policy = saved.contains(settingKey) ? saved.getInt(settingKey)
+                    : saved.contains("voidExcessFluidOutput" + index) ? (saved.getBoolean("voidExcessFluidOutput" + index) ? 1 : 0)
+                    : saved.getInt("tankOutputSetting" + index);
+            OutputMode mode = OutputMode.byId(policy);
+            outputModes[index - inputs] = mode;
+            if (mode == OutputMode.VOID) {
+                clear(index);
+            }
+        }
+    }
+
+    void saveSeparation(CompoundTag tag) {
+        if (inputs > 1) {
+            tag.putBoolean("input_tanks_separated", separateInputs);
+        }
+    }
+
+    void loadSeparation(CompoundTag tag) {
+        if (inputs > 1) {
+            separateInputs = tag.contains("input_tanks_separated") ? tag.getBoolean("input_tanks_separated")
+                    : !tag.contains("inputTanksSeparated") || tag.getBoolean("inputTanksSeparated");
+        }
+    }
+
+    private int legacyModes(int index, CompoundTag tag) {
+        Mode[] modes = new Mode[SIDES.length];
+        for (Direction side : SIDES) {
+            int face = side.ordinal();
+            CompoundTag connection = tag.getCompound("fluidConnection" + face);
+            String key = "sorption" + index;
+            modes[face] = connection.contains(key) ? Mode.fromLegacy(connection.getInt(key))
+                    : Mode.read(defaultModes(index), side);
+        }
+        return Mode.pack(modes);
     }
 
     private int defaultModes(int index) {
@@ -220,8 +320,11 @@ public final class ProcessorFluidTanks {
     }
 
     public enum Mode {
-        INPUT("input"), OUTPUT("output"), AUTO_OUTPUT("auto_output"), OFF("off");
+        INPUT("input"), OUTPUT("output"), AUTO_OUTPUT("auto_output"), OFF("off"),
+        BOTH("both"), AUTO_INPUT("input");
 
+        private static final int EXTENDED_MODES = 4096;
+        private static final int[] PLACE_VALUES = {1, 6, 36, 216, 1296, 7776};
         private static final Mode[] MODES = values();
         private final String key;
 
@@ -230,15 +333,56 @@ public final class ProcessorFluidTanks {
         }
 
         private Mode next(boolean input) {
-            return this == OFF ? (input ? INPUT : OUTPUT) : MODES[ordinal() + 1];
+            return switch (this) {
+                case INPUT -> OUTPUT;
+                case OUTPUT -> AUTO_OUTPUT;
+                case AUTO_OUTPUT -> OFF;
+                case OFF -> input ? INPUT : OUTPUT;
+                case BOTH, AUTO_INPUT -> input ? INPUT : OUTPUT;
+            };
         }
 
         public static Mode read(int modes, Direction side) {
-            return MODES[(modes >>> (2 * side.ordinal())) & 3];
+            // ContainerData transports a signed short. Retain the old two-bit encoding for ordinary modes.
+            int unsigned = modes & 0xFFFF;
+            if (unsigned >= EXTENDED_MODES + PLACE_VALUES[SIDES.length - 1] * MODES.length) {
+                return OFF;
+            }
+            int face = side.ordinal();
+            return unsigned < EXTENDED_MODES ? MODES[(unsigned >>> (2 * face)) & 3]
+                    : MODES[(unsigned - EXTENDED_MODES) / PLACE_VALUES[face] % MODES.length];
+        }
+
+        private static int pack(Mode[] modes) {
+            int compact = 0;
+            int extended = 0;
+            boolean needsExtended = false;
+            for (int face = 0; face < modes.length; face++) {
+                int id = modes[face].ordinal();
+                compact |= id << (2 * face);
+                extended += id * PLACE_VALUES[face];
+                needsExtended |= id > 3;
+            }
+            return needsExtended ? EXTENDED_MODES + extended : compact;
+        }
+
+        private static Mode fromLegacy(int id) {
+            return switch (id) {
+                case 0 -> INPUT;
+                case 1 -> OUTPUT;
+                case 2 -> BOTH;
+                case 4 -> AUTO_INPUT;
+                case 5 -> AUTO_OUTPUT;
+                default -> OFF;
+            };
+        }
+
+        private boolean canFill() {
+            return this == INPUT || this == BOTH || this == AUTO_INPUT;
         }
 
         private boolean canDrain() {
-            return this == OUTPUT || this == AUTO_OUTPUT;
+            return this == OUTPUT || this == AUTO_OUTPUT || this == BOTH;
         }
 
         public Component label() {
@@ -291,7 +435,7 @@ public final class ProcessorFluidTanks {
 
         @Override
         public boolean isFluidValid(int index, FluidStack stack) {
-            return index >= 0 && index < inputs && active() && modes[index] == Mode.INPUT && tanks[index].isFluidValid(stack);
+            return index >= 0 && index < inputs && active() && modes[index].canFill() && tanks[index].isFluidValid(stack);
         }
 
         @Override
@@ -301,13 +445,19 @@ public final class ProcessorFluidTanks {
             }
             int empty = -1;
             for (int index = 0; index < inputs; index++) {
-                if (modes[index] != Mode.INPUT || !tanks[index].isFluidValid(stack)) {
+                if (!modes[index].canFill() || !tanks[index].isFluidValid(stack)) {
                     continue;
                 }
-                if (tanks[index].getFluid().isFluidEqual(stack)) {
+                FluidStack contents = tanks[index].getFluid();
+                if (!separateInputs && (contents.isEmpty() || contents.isFluidEqual(stack))) {
+                    int filled = tanks[index].fill(stack, action);
+                    if (filled > 0) {
+                        return filled;
+                    }
+                } else if (separateInputs && contents.isFluidEqual(stack)) {
                     return tanks[index].fill(stack, action);
                 }
-                if (empty == -1 && tanks[index].isEmpty()) {
+                if (empty == -1 && contents.isEmpty()) {
                     empty = index;
                 }
             }

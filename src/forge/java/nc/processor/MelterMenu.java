@@ -21,12 +21,16 @@ public final class MelterMenu extends AbstractContainerMenu {
     static final int ENERGY = 1;
     static final int FLUID_AMOUNT = 2;
     static final int FLUID_ID = 3;
-    static final int DATA_COUNT = 4;
+    static final int FLUID_SIDES = 4;
+    static final int FLUID_OUTPUT_MODE = 5;
+    static final int DATA_COUNT = 6;
+    public static final int FIRST_FLUID_SIDE_BUTTON = 6;
+    public static final int FLUID_OUTPUT_BUTTON = 12;
     public static final int UPGRADE_Y = 64;
 
     private final ContainerData data;
     private final ContainerLevelAccess access;
-    private final @Nullable ProcessorItemPorts ports;
+    private final @Nullable MelterBlockEntity melter;
     private final ProcessorItemSettings items;
 
     public MelterMenu(int id, Inventory player) {
@@ -35,13 +39,14 @@ public final class MelterMenu extends AbstractContainerMenu {
     }
 
     MelterMenu(int id, Inventory player, ItemStackHandler input, ProcessorUpgrades upgrades,
-               @Nullable ProcessorItemPorts ports, ContainerData data,
+               @Nullable MelterBlockEntity melter, ContainerData data,
                ContainerLevelAccess access) {
         super(NCRegistries.MELTER_MENU.get(), id);
         this.data = data;
         this.access = access;
-        this.ports = ports;
-        items = new ProcessorItemSettings(1, 0, ProcessorUpgrades.SLOTS, ProcessorItemPorts.SIDES.length, ports);
+        this.melter = melter;
+        items = new ProcessorItemSettings(1, 0, ProcessorUpgrades.SLOTS, FLUID_OUTPUT_BUTTON + 1,
+                melter == null ? null : melter.itemPorts());
         addSlot(new SlotItemHandler(input, 0, 56, 35));
         upgrades.addMenuSlots(this::addSlot, UPGRADE_Y);
         for (int row = 0; row < 3; row++) {
@@ -62,14 +67,22 @@ public final class MelterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean clickMenuButton(Player player, int button) {
-        if (ports == null || button < 0 || !stillValid(player)) {
+        if (melter == null || button < 0 || !stillValid(player)) {
             return false;
         }
         if (button < ProcessorItemPorts.SIDES.length) {
-            ports.cycleGroup(Direction.from3DDataValue(button));
+            melter.itemPorts().cycleGroup(Direction.from3DDataValue(button));
             return true;
         }
-        return items.click(button);
+        if (button < FLUID_OUTPUT_BUTTON) {
+            melter.fluidTanks().cycle(0, Direction.from3DDataValue(button - FIRST_FLUID_SIDE_BUTTON));
+            return true;
+        }
+        if (button == FLUID_OUTPUT_BUTTON) {
+            melter.fluidTanks().cycleSetting(0);
+            return true;
+        }
+        return items.click(button) || ProcessorFluidActions.click(melter.fluidTanks(), button);
     }
 
     public float progress() {
@@ -85,7 +98,15 @@ public final class MelterMenu extends AbstractContainerMenu {
     }
 
     public float fillLevel() {
-        return data.get(FLUID_AMOUNT) / (float) MelterBlockEntity.TANK_CAPACITY;
+        return data.get(FLUID_AMOUNT) / (float) ProcessorFluidTanks.CAPACITY;
+    }
+
+    public ProcessorFluidTanks.Mode sideMode(Direction side) {
+        return ProcessorFluidTanks.Mode.read(data.get(FLUID_SIDES), side);
+    }
+
+    public ProcessorFluidTanks.OutputMode outputMode() {
+        return ProcessorFluidTanks.OutputMode.byId(data.get(FLUID_OUTPUT_MODE));
     }
 
     @Override

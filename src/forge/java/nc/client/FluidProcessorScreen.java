@@ -1,6 +1,7 @@
 package nc.client;
 
 import nc.NuclearCraft;
+import nc.processor.ProcessorFluidActions;
 import nc.processor.FluidProcessorMenu;
 import nc.processor.ProcessorFluidTanks;
 import net.minecraft.client.gui.GuiGraphics;
@@ -11,7 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraftforge.fluids.FluidStack;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -40,6 +40,7 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     private final Layout layout;
     private final ProcessorItemControls items;
     private Button slotConfig;
+    private Button separation;
     private Button overflow;
     private int selectedTank;
 
@@ -66,26 +67,31 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
         for (Direction side : Direction.values()) {
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + side.getName() + ".short"),
                     ignored -> send(selectedTank == ITEM_INPUT ? items.button(side, menu.itemSideButton(side))
-                            : FluidProcessorMenu.sideButton(selectedTank, side)))
+                            : FluidTankControls.faceButton(selectedTank, FluidProcessorMenu.sideButton(selectedTank, side))))
                     .bounds(leftPos + 27 + side.ordinal() * 17, topPos + 69, 16, 14)
                     .build();
             sides.put(side, addRenderableWidget(button));
         }
-        overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
+        overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.processor_items.overflow"),
                         ignored -> send(menu.outputModeButton(selectedTank)))
                 .bounds(leftPos + 136, topPos + 9, 35, 14).build());
+        boolean multipleInputs = menu.type().inputs() > 1;
+        if (multipleInputs) {
+            separation = addRenderableWidget(Button.builder(Component.empty(), ignored -> send(FluidProcessorMenu.SEPARATION_BUTTON))
+                    .bounds(leftPos + 27, topPos + 16, 35, 14).build());
+        }
         addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.fluid_processor.item_input"),
                         ignored -> {
                             selectedTank = ITEM_INPUT;
                             items.all();
                         })
-                .bounds(leftPos + 95, topPos + 16, 35, 14)
+                .bounds(leftPos + (multipleInputs ? 103 : 95), topPos + 16, 32, 14)
                 .tooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.fluid_processor.item_sides")))
                 .build());
         slotConfig = addRenderableWidget(Button.builder(items.label(), ignored -> {
             selectedTank = ITEM_INPUT;
             items.toggle();
-        }).bounds(leftPos + 50, topPos + 16, 40, 14).build());
+        }).bounds(leftPos + (multipleInputs ? 64 : 50), topPos + 16, multipleInputs ? 37 : 40, 14).build());
     }
 
     private void send(int button) {
@@ -95,13 +101,19 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         slotConfig.setMessage(items.label());
+        if (separation != null) {
+            separation.setMessage(Component.translatable(menu.separatesInputs() ? "gui.nuclearcraft.processor_fluids.split"
+                    : "gui.nuclearcraft.processor_fluids.shared"));
+            separation.setTooltip(Tooltip.create(Component.translatable(menu.separatesInputs()
+                    ? "gui.nuclearcraft.processor_fluids.split_help" : "gui.nuclearcraft.processor_fluids.shared_help")));
+        }
         sides.forEach((side, button) -> button.setTooltip(Tooltip.create(selectedTank == ITEM_INPUT
-                ? items.tooltip(side) : Component.translatable("gui.nuclearcraft.electrolyzer.side",
-                Component.translatable("gui.nuclearcraft.face." + side.getName()), menu.sideMode(selectedTank, side).label()))));
-        overflow.visible = selectedTank >= menu.type().inputs();
+                ? items.tooltip(side) : FluidTankControls.faceTooltip(side, menu.sideMode(selectedTank, side)))));
+        overflow.visible = selectedTank >= 0;
         if (overflow.visible) {
-            overflow.setTooltip(Tooltip.create(Component.translatable("gui.nuclearcraft.electrolyzer.output_mode",
-                    menu.outputMode(selectedTank).label())));
+            overflow.setTooltip(Tooltip.create(selectedTank < menu.type().inputs()
+                    ? FluidTankControls.inputPolicy(menu.discardsInput(selectedTank))
+                    : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.outputMode(selectedTank).label())));
         }
 
         renderBackground(graphics);
@@ -109,18 +121,7 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
         renderTooltip(graphics, mouseX, mouseY);
         int hovered = hoveredTank(mouseX, mouseY);
         if (hovered >= 0) {
-            FluidStack fluid = menu.fluid(hovered);
-            Component contents = fluid.isEmpty() ? Component.translatable("gui.nuclearcraft.electrolyzer.empty_tank")
-                    : Component.translatable("gui.nuclearcraft.fluid_amount", fluid.getDisplayName(), fluid.getAmount());
-            Component configure;
-            if (hovered < menu.type().inputs()) {
-                configure = menu.type().inputs() > 1 ? Component.translatable("gui.nuclearcraft.fluid_processor.select_input", hovered + 1)
-                        : Component.translatable("gui.nuclearcraft.electrolyzer.select_input");
-            } else {
-                configure = Component.translatable("gui.nuclearcraft.electrolyzer.select_output",
-                        hovered - menu.type().inputs() + 1);
-            }
-            graphics.renderComponentTooltip(font, List.of(contents, configure), mouseX, mouseY);
+            graphics.renderTooltip(font, FluidTankControls.tankTooltip(menu.fluid(hovered)), mouseX, mouseY);
         }
     }
 
@@ -168,6 +169,10 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
         }
         int tank = hoveredTank(mouseX, mouseY);
         if (button == 0 && tank >= 0) {
+            if (FluidTankControls.clearRequested()) {
+                send(ProcessorFluidActions.clearButton(tank));
+                return true;
+            }
             selectedTank = tank;
             items.all();
             return true;

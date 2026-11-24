@@ -11,7 +11,6 @@ import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.FluidIngredient;
 import nc.recipe.FluidProcessorRecipe;
-import nc.processor.ProcessorFluidTanks.OutputMode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -41,7 +40,6 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,7 +49,6 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     private final ProcessorInputs input;
     private final ProcessorItemInput itemInput;
     private final ProcessorFluidTanks fluids;
-    private final OutputMode[] outputModes;
 
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
@@ -64,8 +61,6 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
         itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::acceptsItem);
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, machine.inputs, machine.outputs);
-        outputModes = new OutputMode[machine.outputs];
-        Arrays.fill(outputModes, OutputMode.HOLD);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
@@ -150,10 +145,20 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             for (int index = 0; index < outputs.size(); index++) {
                 FluidStack product = outputs.get(index);
                 if (!product.isEmpty()) {
-                    fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random), outputModes[index]);
+                    fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random));
                 }
             }
             itemInput.ports.push(level);
+            if (fluids.discardsUnusableInputs()) {
+                fluids.push(level);
+                refreshInput();
+                FluidProcessorRecipe nextBatch = recipes.getRecipeFor(input, level).orElse(null);
+                if (nextBatch == null || !hasOutputSpace(nextBatch.results())) {
+                    fluids.discardUnusableInputs();
+                    progressHalfTicks = 0;
+                    break;
+                }
+            }
             progressHalfTicks -= batchHalfTicks;
             if (progressHalfTicks > 0) {
                 refreshInput();
@@ -169,7 +174,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     private boolean hasOutputSpace(List<FluidStack> outputs) {
         for (int index = 0; index < outputs.size(); index++) {
             FluidStack product = outputs.get(index);
-            if (!product.isEmpty() && !fluids.canProduce(index + machine.inputs, product, outputModes[index])) {
+            if (!product.isEmpty() && !fluids.canProduce(index + machine.inputs, product)) {
                 return false;
             }
         }
@@ -178,23 +183,18 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
 
     void cycleSide(int tank, Direction side) {
         fluids.cycle(tank, side);
-        setChanged();
-        if (level != null) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
+    }
+
+    ProcessorFluidTanks fluidTanks() {
+        return fluids;
     }
 
     ProcessorItemPorts itemPorts() {
         return itemInput.ports;
     }
 
-    void cycleOutputMode(int tank) {
-        OutputMode next = outputModes[tank - machine.inputs].next();
-        outputModes[tank - machine.inputs] = next;
-        if (next == OutputMode.VOID) {
-            fluids.clear(tank);
-        }
-        setChanged();
+    private String fluidSettingKey(int tank) {
+        return (tank < machine.inputs ? "fluid_input_mode_" : "fluid_output_mode_") + tank;
     }
 
     @Override
@@ -237,11 +237,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             tag.putString("recipe", activeRecipe.toString());
         }
         for (int tank = 0; tank < machine.tanks(); tank++) {
-            fluids.saveTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank);
-            if (tank >= machine.inputs) {
-                tag.putInt("fluid_output_mode_" + tank, outputModes[tank - machine.inputs].ordinal());
-            }
+            fluids.saveTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank, fluidSettingKey(tank));
         }
+        fluids.saveSeparation(tag);
     }
 
     @Override
@@ -251,11 +249,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         itemInput.ports.load(tag);
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         for (int tank = 0; tank < machine.tanks(); tank++) {
-            fluids.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank);
-            if (tank >= machine.inputs) {
-                outputModes[tank - machine.inputs] = OutputMode.byId(tag.getInt("fluid_output_mode_" + tank));
-            }
+            fluids.loadTank(tank, tag, "fluid_" + tank, "fluid_sides_" + tank, fluidSettingKey(tank));
         }
+        fluids.loadSeparation(tag);
         fluids.refreshFaces();
     }
 
@@ -275,12 +271,15 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 if (index == FluidProcessorMenu.ENERGY) {
                     return (int) (1000L * power.getEnergyStored() / power.getMaxEnergyStored());
                 }
+                if (index == FluidProcessorMenu.separationIndex(machine)) {
+                    return fluids.separatesInputs() ? 1 : 0;
+                }
                 int tank = (index - FluidProcessorMenu.FIRST_TANK) / FluidProcessorMenu.TANK_DATA_SIZE;
                 return switch ((index - FluidProcessorMenu.FIRST_TANK) % FluidProcessorMenu.TANK_DATA_SIZE) {
                     case FluidProcessorMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(fluids.stored(tank).getFluid());
                     case FluidProcessorMenu.AMOUNT -> fluids.stored(tank).getAmount();
                     case FluidProcessorMenu.SIDE_MODE -> fluids.sideModes(tank);
-                    case FluidProcessorMenu.OUTPUT_MODE -> tank < machine.inputs ? 0 : outputModes[tank - machine.inputs].ordinal();
+                    case FluidProcessorMenu.OUTPUT_MODE -> fluids.setting(tank);
                     default -> 0;
                 };
             }

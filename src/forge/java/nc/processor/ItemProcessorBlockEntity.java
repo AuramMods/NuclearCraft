@@ -47,7 +47,6 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private final ProcessorInputs input;
     private final ItemStackHandler inventory;
     private final @Nullable ProcessorFluidTanks fluid;
-    private OutputMode fluidOutputMode = OutputMode.HOLD;
     private final ProcessorItemPorts itemPorts;
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
     private double radiationEmission;
@@ -204,9 +203,19 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 }
             }
             if (fluid != null && !fluidProduct.isEmpty()) {
-                fluid.produce(0, fluidProduct, fluidOutputMode);
+                fluid.produce(0, fluidProduct);
             }
             itemPorts.push(level);
+            if (fluid != null && fluid.discardsUnusableInputs()) {
+                fluid.push(level);
+                refreshInput();
+                ItemProcessorRecipe nextBatch = findRecipe(level);
+                if (nextBatch == null || !hasOutputSpace(nextBatch.products(), nextBatch.fluidOutput())) {
+                    fluid.discardUnusableInputs();
+                    progressHalfTicks = 0;
+                    break;
+                }
+            }
             progressHalfTicks -= batch;
             if (progressHalfTicks > 0) {
                 refreshInput();
@@ -225,7 +234,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 return false;
             }
         }
-        return fluid == null || fluidProduct.isEmpty() || fluid.canProduce(0, fluidProduct, fluidOutputMode);
+        return fluid == null || fluidProduct.isEmpty() || fluid.canProduce(0, fluidProduct);
     }
 
     public void cycleSide(Direction side) {
@@ -235,29 +244,19 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     public void cycleFluidSide(Direction side) {
         if (fluid != null) {
             fluid.cycle(0, side);
-            updateConnections();
         }
     }
 
-    void cycleFluidOutputMode() {
-        if (fluid != null && machine.hasFluidOutput()) {
-            fluidOutputMode = fluidOutputMode.next();
-            if (fluidOutputMode == OutputMode.VOID) {
-                fluid.clear(0);
-            }
-            setChanged();
-        }
+    @Nullable ProcessorFluidTanks fluidTanks() {
+        return fluid;
     }
 
     private String fluidSaveKey() {
         return machine.hasFluidOutput() ? "output_fluid" : "input_fluid";
     }
 
-    private void updateConnections() {
-        setChanged();
-        if (level != null) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
+    private String fluidSettingKey() {
+        return machine.hasFluidOutput() ? "fluid_output_mode" : "fluid_input_mode";
     }
 
     @Override
@@ -304,10 +303,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         itemPorts.save(tag);
         if (fluid != null) {
-            fluid.saveTank(0, tag, fluidSaveKey(), "fluid_sides");
-            if (machine.hasFluidOutput()) {
-                tag.putInt("fluid_output_mode", fluidOutputMode.ordinal());
-            }
+            fluid.saveTank(0, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
         }
     }
 
@@ -318,8 +314,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         itemPorts.load(tag);
         if (fluid != null) {
-            fluid.loadTank(0, tag, fluidSaveKey(), "fluid_sides");
-            fluidOutputMode = OutputMode.byId(tag.getInt("fluid_output_mode"));
+            fluid.loadTank(0, tag, fluidSaveKey(), "fluid_sides", fluidSettingKey());
             fluid.refreshFaces();
         }
     }
@@ -341,7 +336,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                             : BuiltInRegistries.FLUID.getId(fluid.stored(0).getFluid());
                     case ItemProcessorMenu.FLUID_AMOUNT -> fluid == null ? 0 : fluid.stored(0).getAmount();
                     case ItemProcessorMenu.FLUID_SIDES -> fluid == null ? 0 : fluid.sideModes(0);
-                    case ItemProcessorMenu.FLUID_OUTPUT_MODE -> fluidOutputMode.ordinal();
+                    case ItemProcessorMenu.FLUID_OUTPUT_MODE -> fluid == null ? 0 : fluid.setting(0);
                     default -> 0;
                 };
             }

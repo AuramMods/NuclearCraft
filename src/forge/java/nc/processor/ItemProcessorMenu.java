@@ -77,10 +77,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataSize(Machine machine) {
-        if (machine.hasFluidOutput()) {
-            return FLUID_OUTPUT_MODE + 1;
-        }
-        return machine.tank() == null ? DATA_COUNT : FLUID_DATA_COUNT;
+        return machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
     }
 
     public Machine machine() {
@@ -123,6 +120,10 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
                 ? ProcessorFluidTanks.OutputMode.byId(data.get(FLUID_OUTPUT_MODE)) : ProcessorFluidTanks.OutputMode.HOLD;
     }
 
+    public boolean discardsFluidInput() {
+        return machine.hasFluidInput() && data.get(FLUID_OUTPUT_MODE) != 0;
+    }
+
     @Override
     public boolean clickMenuButton(Player player, int button) {
         if (processor == null || button < 0 || !stillValid(player)) {
@@ -137,11 +138,12 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             processor.cycleFluidSide(SIDES[fluidSide]);
             return true;
         }
-        if (machine.hasFluidOutput() && button == FLUID_OUTPUT_BUTTON) {
-            processor.cycleFluidOutputMode();
+        ProcessorFluidTanks tanks = processor.fluidTanks();
+        if (tanks != null && button == FLUID_OUTPUT_BUTTON) {
+            tanks.cycleSetting(0);
             return true;
         }
-        return items.click(button);
+        return items.click(button) || ProcessorFluidActions.click(tanks, button);
     }
 
     @Override

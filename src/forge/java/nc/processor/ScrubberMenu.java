@@ -24,10 +24,12 @@ public final class ScrubberMenu extends AbstractContainerMenu {
     private static final int REDSTONE = 2;
     private static final int OUTPUT_MODE = 3;
     private static final int FIRST_TANK = 4;
-    private static final int DATA_COUNT = 10;
+    private static final int INPUT_MODE = 10;
+    private static final int DATA_COUNT = 11;
     public static final int ITEMS = 2;
     public static final int OUTPUT_MODE_BUTTON = 18;
     public static final int REDSTONE_BUTTON = 19;
+    public static final int INPUT_MODE_BUTTON = 20;
 
     private final @Nullable RadiationScrubber scrubber;
     private final ContainerLevelAccess access;
@@ -43,7 +45,7 @@ public final class ScrubberMenu extends AbstractContainerMenu {
         this.scrubber = scrubber;
         this.access = access;
         data = scrubber == null ? new SimpleContainerData(DATA_COUNT) : machineData(scrubber);
-        items = new ProcessorItemSettings(1, 1, 0, REDSTONE_BUTTON + 1, scrubber == null ? null : scrubber.itemPorts());
+        items = new ProcessorItemSettings(1, 1, 0, INPUT_MODE_BUTTON + 1, scrubber == null ? null : scrubber.itemPorts());
         ItemStackHandler inventory = scrubber == null ? new ItemStackHandler(2) : scrubber.inventory();
         addSlot(new SlotItemHandler(inventory, 0, 32, 35));
         addSlot(new SlotItemHandler(inventory, 1, 112, 35) {
@@ -70,7 +72,8 @@ public final class ScrubberMenu extends AbstractContainerMenu {
                     case PROGRESS -> machine.progress();
                     case ENERGY -> machine.charge();
                     case REDSTONE -> machine.redstoneControl() ? 1 : 0;
-                    case OUTPUT_MODE -> machine.outputMode().ordinal();
+                    case OUTPUT_MODE -> machine.fluidTanks().setting(1);
+                    case INPUT_MODE -> machine.fluidTanks().setting(0);
                     default -> {
                         int offset = index - FIRST_TANK;
                         var fluid = machine.fluid(offset / 3);
@@ -113,6 +116,10 @@ public final class ScrubberMenu extends AbstractContainerMenu {
         return ProcessorFluidTanks.OutputMode.byId(data.get(OUTPUT_MODE));
     }
 
+    public boolean discardsInput() {
+        return data.get(INPUT_MODE) != 0;
+    }
+
     public static int sideButton(int selected, Direction side) {
         return selected * SIDES.length + side.ordinal();
     }
@@ -133,14 +140,18 @@ public final class ScrubberMenu extends AbstractContainerMenu {
             return true;
         }
         if (button == OUTPUT_MODE_BUTTON) {
-            scrubber.cycleOutput();
+            scrubber.fluidTanks().cycleSetting(1);
             return true;
         }
         if (button == REDSTONE_BUTTON) {
             scrubber.toggleRedstone();
             return true;
         }
-        return items.click(button);
+        if (button == INPUT_MODE_BUTTON) {
+            scrubber.fluidTanks().cycleSetting(0);
+            return true;
+        }
+        return items.click(button) || ProcessorFluidActions.click(scrubber.fluidTanks(), button);
     }
 
     @Override

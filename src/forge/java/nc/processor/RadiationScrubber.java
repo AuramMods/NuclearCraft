@@ -4,7 +4,6 @@ import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 
 import nc.init.NCRadiation;
-import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.radiation.ScrubberEnvironment;
 import nc.radiation.ScrubberSettings;
 import nc.recipe.ScrubberRecipe;
@@ -54,7 +53,6 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     };
     private final ProcessorItemPorts itemPorts = new ProcessorItemPorts(this, inventory, 1, null, false);
     private LazyOptional<IEnergyStorage> energy = LazyOptional.of(() -> power);
-    private OutputMode outputMode = OutputMode.HOLD;
     private boolean redstoneControl;
 
     private @Nullable ResourceLocation reservedRecipe;
@@ -102,10 +100,17 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             itemPorts.produce(1, recipe.itemOutput());
             FluidStack fluid = recipe.fluidOutput();
             if (!fluid.isEmpty()) {
-                tanks.produce(1, fluid, outputMode);
+                tanks.produce(1, fluid);
             }
             clearBatch();
             itemPorts.push(level);
+            if (tanks.discardsUnusableInputs()) {
+                tanks.push(level);
+                ScrubberRecipe nextBatch = findUnreservedRecipe(level);
+                if (nextBatch == null || !canProduce(nextBatch)) {
+                    tanks.discardUnusableInputs();
+                }
+            }
         }
         setChanged();
         return true;
@@ -123,19 +128,12 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             }
         }
 
-        ItemStack items = inventory.getStackInSlot(0);
-        FluidStack fluid = tanks.stored(0);
-        if (items.isEmpty() && fluid.isEmpty()) {
-            return null;
-        }
-        input.setItem(0, items);
-        input.setFluid(fluid);
-        var recipe = level.getRecipeManager().getRecipeFor(NCRadiation.SCRUBBER_RECIPES.get(), input, level).orElse(null);
+        var recipe = findUnreservedRecipe(level);
         if (recipe != null) {
             reservedItem = inventory.extractItem(0, itemAmount(recipe), false);
             int amount = fluidAmount(recipe);
             if (amount > 0) {
-                reservedFluid = fluid.copy();
+                reservedFluid = tanks.stored(0).copy();
                 reservedFluid.setAmount(amount);
                 tanks.consume(amount);
             } else {
@@ -145,6 +143,17 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             setChanged();
         }
         return recipe;
+    }
+
+    private @Nullable ScrubberRecipe findUnreservedRecipe(Level level) {
+        ItemStack items = inventory.getStackInSlot(0);
+        FluidStack fluid = tanks.stored(0);
+        if (items.isEmpty() && fluid.isEmpty()) {
+            return null;
+        }
+        input.setItem(0, items);
+        input.setFluid(fluid);
+        return level.getRecipeManager().getRecipeFor(NCRadiation.SCRUBBER_RECIPES.get(), input, level).orElse(null);
     }
 
     private boolean restoreSupplies() {
@@ -184,7 +193,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     private boolean canProduce(ScrubberRecipe recipe) {
         FluidStack product = recipe.fluidOutput();
         return itemPorts.canProduce(1, recipe.itemOutput())
-                && (product.isEmpty() || tanks.canProduce(1, product, outputMode));
+                && (product.isEmpty() || tanks.canProduce(1, product));
     }
 
     private static boolean hasItemRoom(ItemStack stored, ItemStack offered) {
@@ -238,7 +247,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     ItemStack reservedItem() { return reservedItem; }
     FluidStack fluid(int tank) { return tanks.stored(tank); }
     int tankModes(int tank) { return tanks.sideModes(tank); }
-    OutputMode outputMode() { return outputMode; }
+    ProcessorFluidTanks fluidTanks() { return tanks; }
     boolean redstoneControl() { return redstoneControl; }
 
     int progress() {
@@ -251,27 +260,11 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
 
     void cycleTank(int tank, Direction side) {
         tanks.cycle(tank, side);
-        updateConnections();
-    }
-
-    void cycleOutput() {
-        outputMode = outputMode.next();
-        if (outputMode == OutputMode.VOID) {
-            tanks.clear(1);
-        }
-        setChanged();
     }
 
     void toggleRedstone() {
         redstoneControl = !redstoneControl;
         setChanged();
-    }
-
-    private void updateConnections() {
-        setChanged();
-        if (level != null) {
-            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-        }
     }
 
     @Override
@@ -317,9 +310,8 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             tag.put("reserved_fluid", reservedFluid.writeToNBT(new CompoundTag()));
         }
         itemPorts.save(tag);
-        tanks.saveTank(0, tag, "input_fluid", "input_sides");
-        tanks.saveTank(1, tag, "output_fluid", "output_sides");
-        tag.putInt("fluid_output_mode", outputMode.ordinal());
+        tanks.saveTank(0, tag, "input_fluid", "input_sides", "fluid_input_mode");
+        tanks.saveTank(1, tag, "output_fluid", "output_sides", "fluid_output_mode");
         tag.putBoolean("redstoneControl", redstoneControl);
     }
 
@@ -332,10 +324,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         reservedFluid = FluidStack.loadFluidStackFromNBT(tag.getCompound("reserved_fluid"));
         progress = reservedRecipe == null ? 0 : Math.min(Integer.MAX_VALUE - 1, Math.max(0, tag.getInt("progress")));
         itemPorts.load(tag);
-        tanks.loadTank(0, tag, "input_fluid", "input_sides");
-        tanks.loadTank(1, tag, "output_fluid", "output_sides");
+        tanks.loadTank(0, tag, "input_fluid", "input_sides", "fluid_input_mode");
+        tanks.loadTank(1, tag, "output_fluid", "output_sides", "fluid_output_mode");
         tanks.refreshFaces();
-        outputMode = OutputMode.byId(tag.getInt("fluid_output_mode"));
         redstoneControl = tag.getBoolean("redstoneControl");
         activeEfficiency = 0;
         measuredRemoval = 0;

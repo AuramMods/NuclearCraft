@@ -28,6 +28,7 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     static final int OUTPUT_MODE = 3;
     static final int TANK_DATA_SIZE = 4;
     public static final int UPGRADE_Y = 69;
+    public static final int SEPARATION_BUTTON = 120;
 
     private final Machine type;
     private final ContainerData data;
@@ -68,6 +69,10 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataCount(Machine type) {
+        return separationIndex(type) + 1;
+    }
+
+    static int separationIndex(Machine type) {
         return FIRST_TANK + type.tanks() * TANK_DATA_SIZE;
     }
 
@@ -108,6 +113,14 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
         return ProcessorFluidTanks.OutputMode.byId(data.get(FIRST_TANK + tank * TANK_DATA_SIZE + OUTPUT_MODE));
     }
 
+    public boolean discardsInput(int tank) {
+        return data.get(FIRST_TANK + tank * TANK_DATA_SIZE + OUTPUT_MODE) != 0;
+    }
+
+    public boolean separatesInputs() {
+        return data.get(separationIndex(type)) != 0;
+    }
+
     public static int sideButton(int tank, Direction side) {
         return tank * SIDES.length + side.ordinal();
     }
@@ -127,11 +140,15 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
             return true;
         }
         int tank = button - outputModeButton(0);
-        if (tank >= type.inputs() && tank < type.tanks()) {
-            machine.cycleOutputMode(tank);
+        if (tank >= 0 && tank < type.tanks()) {
+            machine.fluidTanks().cycleSetting(tank);
             return true;
         }
-        return items.click(button);
+        if (button == SEPARATION_BUTTON && type.inputs() > 1) {
+            machine.fluidTanks().toggleSeparation();
+            return true;
+        }
+        return items.click(button) || ProcessorFluidActions.click(machine.fluidTanks(), button);
     }
 
     @Override

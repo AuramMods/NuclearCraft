@@ -29,14 +29,11 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class MelterBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
-    static final int TANK_CAPACITY = 16_000;
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
 
@@ -44,9 +41,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
             RecipeManager.createCheck(NCRegistries.MELTING.get());
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, stack -> true);
-    private final OutputTank tank = new OutputTank();
+    private final ProcessorFluidTanks fluids = new ProcessorFluidTanks(this, stack -> false, 0, 1);
 
-    private LazyOptional<IFluidHandler> fluidCapability = LazyOptional.of(() -> tank);
     private LazyOptional<IEnergyStorage> energyCapability = LazyOptional.of(() -> power);
     private double radiationEmission;
     private ResourceLocation activeRecipe;
@@ -63,9 +59,14 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         return inventory.ports;
     }
 
+    ProcessorFluidTanks fluidTanks() {
+        return fluids;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
         boolean processing = melter.process(level, MachineInterface.powered(level, pos, melter));
         ProcessorBlock.setRunning(level, pos, state, processing);
+        melter.fluids.push(level);
         if (!processing) {
             melter.inventory.ports.push(level);
         }
@@ -97,7 +98,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         }
         FluidStack product = recipe.product();
         double speed = speed();
-        if (!tank.canAccept(product) || !power.spend(energyPerTick())) {
+        if (!fluids.canProduce(0, product) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
                 progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
                 setChanged();
@@ -109,13 +110,13 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         progressHalfTicks += 2 * speed;
         double batch = 2D * batchTicks;
         while (progressHalfTicks >= batch) {
-            tank.produce(product);
+            fluids.produce(0, product);
             inventory.extractItem(0, 1, false);
             inventory.ports.push(level);
             progressHalfTicks -= batch;
             if (progressHalfTicks > 0) {
                 recipeInput.setItem(0, inventory.getStackInSlot(0));
-                if (!recipe.matches(recipeInput, level) || !tank.canAccept(product)) {
+                if (!recipe.matches(recipeInput, level) || !fluids.canProduce(0, product)) {
                     progressHalfTicks = 0;
                 }
             }
@@ -128,7 +129,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         inventory.ports.save(tag);
-        tag.put("output", tank.writeToNBT(new CompoundTag()));
+        fluids.saveTank(0, tag, "output", "fluid_sides", "fluid_output_mode");
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -139,7 +140,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         super.load(tag);
         radiationEmission = 0D;
         inventory.ports.load(tag);
-        tank.readFromNBT(tag.getCompound("output"));
+        fluids.loadTank(0, tag, "output", "fluid_sides", "fluid_output_mode");
+        fluids.refreshFaces();
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
     }
 
@@ -150,7 +152,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                 return inventory.ports.capability(side).cast();
             }
             if (capability == ForgeCapabilities.FLUID_HANDLER) {
-                return fluidCapability.cast();
+                return fluids.capability(side).cast();
             }
             if (capability == ForgeCapabilities.ENERGY) {
                 return energyCapability.cast();
@@ -163,7 +165,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     public void invalidateCaps() {
         super.invalidateCaps();
         inventory.ports.invalidate();
-        fluidCapability.invalidate();
+        fluids.invalidate();
         energyCapability.invalidate();
     }
 
@@ -171,7 +173,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     public void reviveCaps() {
         super.reviveCaps();
         inventory.ports.revive();
-        fluidCapability = LazyOptional.of(() -> tank);
+        fluids.revive();
         energyCapability = LazyOptional.of(() -> power);
     }
 
@@ -182,14 +184,16 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
     @Override
     public MelterMenu createMenu(int menuId, Inventory playerInventory, Player player) {
-        return new MelterMenu(menuId, playerInventory, inventory, upgrades, itemPorts(), new ContainerData() {
+        return new MelterMenu(menuId, playerInventory, inventory, upgrades, this, new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
                     case MelterMenu.PROGRESS -> progress();
                     case MelterMenu.ENERGY -> (int) ((long) PROGRESS_SCALE * power.getEnergyStored() / power.getMaxEnergyStored());
-                    case MelterMenu.FLUID_AMOUNT -> tank.getFluidAmount();
-                    case MelterMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(tank.getFluid().getFluid());
+                    case MelterMenu.FLUID_AMOUNT -> fluids.stored(0).getAmount();
+                    case MelterMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(fluids.stored(0).getFluid());
+                    case MelterMenu.FLUID_SIDES -> fluids.sideModes(0);
+                    case MelterMenu.FLUID_OUTPUT_MODE -> fluids.setting(0);
                     default -> 0;
                 };
             }
@@ -204,32 +208,4 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         }, ContainerLevelAccess.create(player.level(), worldPosition));
     }
 
-    private final class OutputTank extends FluidTank {
-        private OutputTank() {
-            super(TANK_CAPACITY);
-        }
-
-        private boolean canAccept(FluidStack product) {
-            return super.fill(product, FluidAction.SIMULATE) == product.getAmount();
-        }
-
-        private void produce(FluidStack product) {
-            super.fill(product, FluidAction.EXECUTE);
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, FluidStack fluid) {
-            return false;
-        }
-
-        @Override
-        public int fill(FluidStack resource, FluidAction action) {
-            return 0;
-        }
-
-        @Override
-        protected void onContentsChanged() {
-            setChanged();
-        }
-    }
 }
