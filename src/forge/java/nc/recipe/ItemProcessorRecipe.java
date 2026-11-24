@@ -5,13 +5,9 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorInputs;
-import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
@@ -22,7 +18,6 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
@@ -299,22 +294,7 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
         }
 
         private static Product readProduct(JsonObject json, ICondition.IContext context) {
-            if (json.has("tag")) {
-                var id = ResourceLocation.tryParse(GsonHelper.getAsString(json, "tag"));
-                if (json.has("item") || id == null) {
-                    throw new JsonSyntaxException("Expected an item or a valid item tag in output " + json);
-                }
-                var tag = TagKey.create(Registries.ITEM, id);
-                var entries = context == ICondition.IContext.EMPTY
-                        ? BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(set -> set.stream())
-                        : context.getTag(tag).stream();
-                var item = entries.map(Holder::value).filter(value -> value != Items.AIR).findFirst()
-                        .orElseThrow(() -> new JsonSyntaxException("Empty item output tag " + id));
-                json = json.deepCopy();
-                json.remove("tag");
-                json.addProperty("item", BuiltInRegistries.ITEM.getKey(item).toString());
-            }
-            var stack = CraftingHelper.getItemStack(json, true);
+            var stack = ItemRecipeResult.read(json, context);
             int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
             int minimum = GsonHelper.getAsInt(json, "min_count", 0);
             if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize() || chance < 0 || chance > 100

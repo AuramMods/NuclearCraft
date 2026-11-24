@@ -16,7 +16,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.common.crafting.conditions.ICondition;
 
 public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack depleted, int ticks,
                                  boolean pebbleBed, Parameters parameters) implements Recipe<Container>, FissionFuelStats {
@@ -81,8 +81,13 @@ public record SolidFissionRecipe(ResourceLocation id, Ingredient fuel, ItemStack
 
         @Override
         public SolidFissionRecipe fromJson(ResourceLocation id, JsonObject json) {
+            return fromJson(id, json, ICondition.IContext.EMPTY);
+        }
+
+        @Override
+        public SolidFissionRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             Ingredient fuel = Ingredient.fromJson(GsonHelper.getNonNull(json, "fuel"));
-            ItemStack depleted = CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true);
+            ItemStack depleted = ItemRecipeResult.read(GsonHelper.getAsJsonObject(json, "result"), context);
             int ticks = GsonHelper.getAsInt(json, "ticks");
             if (depleted.isEmpty() || ticks <= 0) {
                 throw new JsonSyntaxException("Invalid fission fuel recipe " + id);

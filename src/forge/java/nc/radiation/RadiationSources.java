@@ -137,6 +137,9 @@ public final class RadiationSources {
         material("plutonium", PLUTONIUM);
         material("blutonium", PLUTONIUM);
         material("cyanite", URANIUM_238);
+        fluidTag("yellorium", URANIUM);
+        fluidTag("blutonium", PLUTONIUM);
+        fluidTag("cyanite", URANIUM_238);
         material("monazite", 17 * THORIUM);
         fluid("plasma", 0.000000315D);
         fluid("tritium", TRITIUM);
@@ -354,7 +357,11 @@ public final class RadiationSources {
         double perBucket = rate * FLUID_MULTIPLIER;
         FLUIDS.put(NuclearCraft.id(id), perBucket);
         FLUIDS.put(NuclearCraft.id("flowing_" + id), perBucket);
-        FLUID_TAGS.put(ResourceLocation.tryBuild("forge", "molten_" + id), perBucket);
+        fluidTag("molten_" + id, rate);
+    }
+
+    private static void fluidTag(String id, double rate) {
+        FLUID_TAGS.put(ResourceLocation.tryBuild("forge", id), rate * FLUID_MULTIPLIER);
     }
 
     private static void item(String id, double rate) {

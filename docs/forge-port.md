@@ -222,6 +222,7 @@ Initial helium supply is external to the stock 2o.9.7 processing chain. The inst
 | Ender IO | 8.2.22-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
 | Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and chemical interoperability where applicable |
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
+| Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
 | Applied Energistics 2 | 15.4.10 | Item and fluid import/export and shared material tags |
 | Refined Storage | 1.12.4 | Item and fluid import/export |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
@@ -736,6 +737,18 @@ All 195 local GameTests passed. The packaged catalog matches all eight base valu
 Editing the dedicated server's config changed a reserved oxide fuel dose from 102 to 142 heat in the running reactor. With default fuel settings, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each moved 24 mB of fresh and depleted salt and delivered 464 mB of high-pressure steam.
 
 The isolated 539-mod Auram client showed the configured recipes and ran a KubeJS replacement at the shipped TBU oxide recipe ID. The replacement used its own values, and the reactor produced one depleted item at 34 heat with a 2.5% decay factor. Both client runs used master volume zero and OpenAL No Output. Their native observers recorded zero desktop activations, foreground samples, and visible window samples.
+
+### Extreme Reactors fuel and Cyanite
+
+The optional `nuclearcraft:solid_fission/yellorium` recipe converts one Yellorium or Blutonium ingot into one Cyanite ingot. Forge loads it when a Cyanite result and a fuel tag are populated. The result uses the first registered item in `forge:ingots/cyanite`. The dedicated Extreme Reactors ingots are in `nuclearcraft:extreme_reactors_fuel` because Extreme Reactors also lists them in the general uranium and plutonium tags. Other Yellorium and Blutonium providers use their Forge ingot tags with general uranium and plutonium excluded. A pack can add a deliberate exception through the NuclearCraft tag.
+
+The recipe applies the legacy Yellorium profile to uranium array slot 11. It uses nine-sixteenths of the LEU-235 oxide duration and eight-ninths of its heat and process radiation, with integer truncation for duration and heat. Efficiency, criticality, intrinsic flux, and the decay factor use the slot directly. The LEU-235 self-priming setting leaves this fuel on the legacy priming rule. Use a neutron source or flux from an active fuel component. The default recipe takes 2,700 ticks and lists 106 heat per tick. NuclearCraft also reads the Extreme Reactors fluid tags for Yellorium, Blutonium, and Cyanite radiation.
+
+All 195 local GameTests passed. The packaged test on Forge 47.4.18 used Auram's Extreme Reactors 2.0.97 and ZeroCore 2.1.48. Both fuels waited for a wall source, and both applied a configured heat value of 152 and a 13% decay factor. Ender IO fed the Yellorium circuit and carried its two Cyanite to the Extreme Reactors Reprocessor. The Reprocessor received water through an Ender IO conduit and FE from a NuclearCraft Decay Generator through a Mekanism cable. The output line collected one Blutonium ingot. [Extreme Reactors Reprocessor documentation](https://www.curseforge.com/minecraft/mc-mods/extreme-reactors)
+
+The Mekanism item line fed two Blutonium ingots. The reactor held its two Cyanite while adjacent storage was full and delivered them after a restart. The test confirmed the destination counts and the untouched uranium in both source barrels after a chunk unload and reload. Runtime fluid checks matched the legacy radiation rates for the source and flowing form of all three Extreme Reactors fluids. A test datapack also supplied the fuel and result tags on Forge without Extreme Reactors. The reactor resolved that output and rejected the alternatives that also belonged to the general uranium or plutonium tags.
+
+The isolated 539-mod Auram client found both Extreme Reactors ingots in the same JEI recipe and displayed Cyanite as the result. It showed the default 2,700 ticks, 106 heat, and 6.5% decay factor. The client used master volume zero and OpenAL No Output. The native observer recorded zero desktop activations, foreground samples, and visible window samples.
 
 ### Shared fission settings and vent recipes
 

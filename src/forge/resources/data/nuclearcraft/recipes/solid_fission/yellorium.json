@@ -1,0 +1,49 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": { "type": "forge:tag_empty", "tag": "forge:ingots/cyanite" }
+        },
+        {
+            "type": "forge:or",
+            "values": [
+                { "type": "forge:not", "value": { "type": "forge:tag_empty", "tag": "nuclearcraft:extreme_reactors_fuel" } },
+                { "type": "forge:not", "value": { "type": "forge:tag_empty", "tag": "forge:ingots/yellorium" } },
+                { "type": "forge:not", "value": { "type": "forge:tag_empty", "tag": "forge:ingots/blutonium" } }
+            ]
+        }
+    ],
+    "fuel": {
+        "type": "forge:difference",
+        "base": [
+            { "tag": "nuclearcraft:extreme_reactors_fuel" },
+            {
+                "type": "forge:difference",
+                "base": [
+                    { "tag": "forge:ingots/yellorium" },
+                    { "tag": "forge:ingots/blutonium" }
+                ],
+                "subtracted": [
+                    { "tag": "forge:ingots/uranium" },
+                    { "tag": "forge:ingots/plutonium" }
+                ]
+            }
+        ],
+        "subtracted": { "item": "minecraft:barrier" }
+    },
+    "result": { "tag": "forge:ingots/cyanite" },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 11,
+        "profile": "yellorium"
+    },
+    "ticks": 2700,
+    "heat": 106,
+    "efficiency": 1,
+    "criticality": 102,
+    "intrinsic_flux": 0,
+    "self_priming": false,
+    "decay_factor": 0.065,
+    "radiation": 1.3019913811728395e-05
+}

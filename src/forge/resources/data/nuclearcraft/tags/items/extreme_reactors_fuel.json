@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        { "id": "bigreactors:yellorium_ingot", "required": false },
+        { "id": "bigreactors:blutonium_ingot", "required": false }
+    ]
+}

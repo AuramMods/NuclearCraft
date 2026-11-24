@@ -76,7 +76,26 @@ public final class LegacyFissionFuelConfig {
         return selection.index < list.size() ? list.get(selection.index) : null;
     }
 
-    public record Selection(Family family, int index) {
+    public enum Profile {
+        STANDARD, YELLORIUM;
+
+        private double scale(Setting setting, double value) {
+            if (this != YELLORIUM) {
+                return value;
+            }
+            return switch (setting) {
+                case FUEL_TIME -> value * 9D / 16D;
+                case HEAT_GENERATION, RADIATION -> value * 8D / 9D;
+                default -> value;
+            };
+        }
+    }
+
+    public record Selection(Family family, int index, Profile profile) {
+        public Selection(Family family, int index) {
+            this(family, index, Profile.STANDARD);
+        }
+
         public Selection {
             if (index < 0 || index >= family.entries) {
                 throw new IllegalArgumentException("Fuel index " + index + " is outside the " + family + " array");
@@ -85,10 +104,13 @@ public final class LegacyFissionFuelConfig {
 
         public double number(Setting setting, double fallback) {
             Object value = NCFission.legacyFuelValue(this, setting);
-            return value instanceof Number number ? number.doubleValue() : fallback;
+            return value instanceof Number number ? profile.scale(setting, number.doubleValue()) : fallback;
         }
 
         public boolean selfPriming(boolean fallback) {
+            if (profile == Profile.YELLORIUM) {
+                return false;
+            }
             Object value = NCFission.legacyFuelValue(this, Setting.SELF_PRIMING);
             return value instanceof Boolean enabled ? enabled : fallback;
         }

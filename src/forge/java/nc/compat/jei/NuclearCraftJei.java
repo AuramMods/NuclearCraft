@@ -85,6 +85,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
@@ -351,7 +352,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(IRRADIATION, recipes.getAllRecipesFor(NCFission.IRRADIATION.get()));
-        registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
+        registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()).stream()
+                .filter(recipe -> !ForgeHooks.hasNoElements(recipe.fuel())).toList());
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
         registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));

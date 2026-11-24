@@ -4,6 +4,7 @@ import com.google.gson.JsonParser;
 import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.LegacyFissionFuelConfig.Family;
+import nc.init.LegacyFissionFuelConfig.Profile;
 import nc.init.LegacyFissionFuelConfig.Selection;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
@@ -92,6 +93,8 @@ public final class FissionDecayGameTests {
         var salt = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get());
         helper.assertTrue(solid.size() == 81 && pebble.size() == 27 && salt.size() == 27,
                 "Load every legacy fuel form");
+        helper.assertTrue(manager.byKey(NuclearCraft.id("solid_fission/yellorium")).isEmpty(),
+                "The optional solid fuel stays out of a clean Forge catalog");
         var selections = new HashSet<Selection>();
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
@@ -144,6 +147,19 @@ public final class FissionDecayGameTests {
             helper.assertTrue(synced.parameters().legacy() == null && synced.ticks() == 55 && synced.heat() == 18
                             && synced.efficiency() == 0.75 && buffer.readableBytes() == 0,
                     "A replacement at the shipped ID can send its own values with no legacy binding");
+            var external = solidSerializer.fromJson(NuclearCraft.id("solid_fission/yellorium"),
+                    JsonParser.parseString("""
+                            {"fuel":{"item":"minecraft:copper_ingot"},"result":{"item":"minecraft:gold_ingot"},
+                             "ticks":2700,"heat":106,"efficiency":1,"criticality":102,"self_priming":true,
+                             "legacy_fuel":{"family":"uranium","index":11,"profile":"yellorium"}}
+                            """).getAsJsonObject());
+            buffer.clear();
+            solidSerializer.toNetwork(buffer, external);
+            var syncedExternal = solidSerializer.fromNetwork(external.id(), buffer);
+            helper.assertTrue(new Selection(Family.URANIUM, 11, Profile.YELLORIUM).equals(syncedExternal.parameters().legacy())
+                            && syncedExternal.ticks() == 2700 && syncedExternal.heat() == 106
+                            && !syncedExternal.selfPriming() && buffer.readableBytes() == 0,
+                    "The optional fuel keeps its conversion profile and requires an external source");
         } finally {
             buffer.release();
         }

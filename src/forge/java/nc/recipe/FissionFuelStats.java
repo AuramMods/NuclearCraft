@@ -3,6 +3,7 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.LegacyFissionFuelConfig;
+import nc.init.LegacyFissionFuelConfig.Profile;
 import nc.init.LegacyFissionFuelConfig.Selection;
 import nc.init.LegacyFissionFuelConfig.Setting;
 import nc.init.NCFission;
@@ -94,7 +95,8 @@ public interface FissionFuelStats {
                 throw new JsonSyntaxException("Expected a whole legacy_fuel index for " + id);
             }
             try {
-                return new Selection(LegacyFissionFuelConfig.Family.valueOf(family.toUpperCase(Locale.ROOT)), (int) index);
+                var profile = Profile.valueOf(GsonHelper.getAsString(binding, "profile", "standard").toUpperCase(Locale.ROOT));
+                return new Selection(LegacyFissionFuelConfig.Family.valueOf(family.toUpperCase(Locale.ROOT)), (int) index, profile);
             } catch (IllegalArgumentException error) {
                 throw new JsonSyntaxException("Invalid legacy_fuel binding for " + id, error);
             }
@@ -103,7 +105,8 @@ public interface FissionFuelStats {
         static Parameters fromNetwork(FriendlyByteBuf buffer) {
             return new Parameters(buffer.readVarInt(), buffer.readDouble(), buffer.readVarInt(), buffer.readVarInt(),
                     buffer.readBoolean(), buffer.readDouble(), buffer.readDouble(),
-                    buffer.readNullable(input -> new Selection(input.readEnum(LegacyFissionFuelConfig.Family.class), input.readVarInt())));
+                    buffer.readNullable(input -> new Selection(input.readEnum(LegacyFissionFuelConfig.Family.class),
+                            input.readVarInt(), input.readEnum(Profile.class))));
         }
 
         void toNetwork(FriendlyByteBuf buffer) {
@@ -117,6 +120,7 @@ public interface FissionFuelStats {
             buffer.writeNullable(legacy, (output, selection) -> {
                 output.writeEnum(selection.family());
                 output.writeVarInt(selection.index());
+                output.writeEnum(selection.profile());
             });
         }
     }
