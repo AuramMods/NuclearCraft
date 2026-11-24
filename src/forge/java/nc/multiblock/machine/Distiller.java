@@ -3,13 +3,12 @@ package nc.multiblock.machine;
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
+import nc.multiblock.machine.MachinePartBlock.TrayPosition;
 import nc.recipe.DistillerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleMenuProvider;
@@ -37,6 +36,7 @@ public final class Distiller extends MachineController {
     private List<BlockPos> distributors = List.of();
     private List<Block> layers = List.of();
     private List<Integer> trayLevels = List.of();
+    private List<Integer> positionedTrays = List.of();
     private int area;
     private int trays;
     private int refluxUnits;
@@ -192,7 +192,37 @@ public final class Distiller extends MachineController {
         soundVolume = 0;
         setLit(false);
         setReboilersActive(false);
+        if (bounds != null) {
+            setTrayPositions(trayLevels, true);
+            positionedTrays = trayLevels;
+        }
         syncRender();
+    }
+
+    @Override void beforeDisconnect() {
+        setTrayPositions(positionedTrays, false);
+        positionedTrays = List.of();
+    }
+
+    private void setTrayPositions(List<Integer> levels, boolean assembled) {
+        if (!(level instanceof ServerLevel server)) return;
+        BlockPos low = bounds.min().offset(1, 1, 1);
+        BlockPos high = bounds.max().offset(-1, -1, -1);
+        for (int index = 0; index < levels.size(); index++) {
+            int y = low.getY() + levels.get(index);
+            TrayPosition position = assembled ? (index % 2 == 0 ? TrayPosition.EVEN : TrayPosition.ODD) : TrayPosition.STATIC;
+            for (int x = low.getX(); x <= high.getX(); x++) {
+                for (int z = low.getZ(); z <= high.getZ(); z++) {
+                    var chunk = server.getChunkSource().getChunkNow(x >> 4, z >> 4);
+                    if (chunk == null) continue;
+                    BlockPos pos = new BlockPos(x, y, z);
+                    BlockState state = chunk.getBlockState(pos);
+                    if (state.hasProperty(MachinePartBlock.TRAY_POSITION) && state.getValue(MachinePartBlock.TRAY_POSITION) != position) {
+                        server.setBlock(pos, state.setValue(MachinePartBlock.TRAY_POSITION, position), Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+        }
     }
 
     private void setActive(boolean active) {
@@ -317,12 +347,6 @@ public final class Distiller extends MachineController {
                 Arrays.stream(tag.getLongArray("distributors")).mapToObj(BlockPos::of).toList(),
                 FluidStack.loadFluidStackFromNBT(tag.getCompound("first")),
                 FluidStack.loadFluidStackFromNBT(tag.getCompound("second")), tag.getFloat("sound_volume"));
-    }
-
-    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
-
-    @Override public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
-        if (packet.getTag() != null) handleUpdateTag(packet.getTag());
     }
 
     private void resetProgress(@Nullable ResourceLocation recipe) {

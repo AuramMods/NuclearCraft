@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidUtil;
@@ -77,6 +78,13 @@ public class MachinePartBlock extends Block {
         @Override public String getSerializedName() { return name().toLowerCase(Locale.ROOT); }
     }
 
+    public enum TrayPosition implements StringRepresentable {
+        STATIC, EVEN, ODD;
+
+        @Override public String getSerializedName() { return name().toLowerCase(Locale.ROOT); }
+    }
+
+    public static final EnumProperty<TrayPosition> TRAY_POSITION = EnumProperty.create("position", TrayPosition.class);
     public static final EnumProperty<Mode> MODE = EnumProperty.create("mode", Mode.class);
     public static final BooleanProperty FRAME_EDGE = BooleanProperty.create("frame");
     private final Part part;
@@ -117,6 +125,49 @@ public class MachinePartBlock extends Block {
             ChunkPos pos = event.getChunk().getPos();
             Cuboid.visitNearby(server, pos, NCMachines.maxSize() + 2, MachineController.class,
                     controller -> controller.chunkUnloaded(pos));
+        }
+    }
+
+    @SubscribeEvent
+    public static void loadTrayModels(ChunkDataEvent.Load event) {
+        // A saved tray can load before its controller and the rest of the shell.
+        for (var section : event.getChunk().getSections()) {
+            if (section == null || !section.maybeHas(MachinePartBlock::shiftedTray)) continue;
+            for (int y = 0; y < 16; y++) {
+                for (int z = 0; z < 16; z++) {
+                    for (int x = 0; x < 16; x++) {
+                        var state = section.getBlockState(x, y, z);
+                        if (shiftedTray(state)) {
+                            section.setBlockState(x, y, z, state.setValue(TRAY_POSITION, TrayPosition.STATIC));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean shiftedTray(BlockState state) {
+        return state.hasProperty(TRAY_POSITION) && state.getValue(TRAY_POSITION) != TrayPosition.STATIC;
+    }
+
+    public static final class SieveTray extends MachinePartBlock {
+        public SieveTray(Properties properties) {
+            super(properties, Part.SIEVE_TRAY);
+            registerDefaultState(stateDefinition.any().setValue(TRAY_POSITION, TrayPosition.STATIC));
+        }
+
+        @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(TRAY_POSITION);
+        }
+    }
+
+    public static final class SieveAssembly extends MachinePartBlock {
+        public SieveAssembly(Properties properties, Part part) {
+            super(properties, part);
+        }
+
+        @Override public boolean skipRendering(BlockState state, BlockState neighbor, Direction face) {
+            return state == neighbor || super.skipRendering(state, neighbor, face);
         }
     }
 

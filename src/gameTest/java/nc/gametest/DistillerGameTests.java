@@ -7,6 +7,7 @@ import nc.multiblock.machine.Distiller;
 import nc.multiblock.machine.MachinePartBlock;
 import nc.multiblock.machine.MachinePartBlock.Mode;
 import nc.multiblock.machine.MachinePartBlock.Part;
+import nc.multiblock.machine.MachinePartBlock.TrayPosition;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -189,6 +190,52 @@ public final class DistillerGameTests {
                     helper.assertTrue(fluid(helper, GAS_OUTPUT, Direction.SOUTH).drain(250, EXECUTE)
                             .isFluidStackIdentical(stack("nuclearcraft:heavy_water", 250)), "Forward selection restores output eight");
                 }).thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void trayModelsFollowAssemblyAndStageOrder(GameTestHelper helper) {
+        var distiller = build(helper);
+        for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 5, 1), new BlockPos(4, 7, 4))) {
+            Part part = pos.getX() == 1 || pos.getX() == 4 || pos.getZ() == 1 || pos.getZ() == 4 || pos.getY() == 7
+                    ? Part.FRAME : pos.getY() == 5 ? Part.SIEVE_TRAY : Part.HASTELLOY_SIEVE;
+            helper.setBlock(pos, NCMachines.block(part));
+        }
+        BlockPos first = new BlockPos(2, 2, 2);
+        BlockPos second = new BlockPos(2, 5, 2);
+        assertTrayPlane(helper, first, TrayPosition.STATIC);
+        assertTrayPlane(helper, second, TrayPosition.STATIC);
+        var replica = new Distiller(BlockPos.ZERO, distiller.getBlockState());
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "The two-stage tower assembles"))
+                .thenExecute(() -> {
+                    assertTrayPlane(helper, first, TrayPosition.EVEN);
+                    assertTrayPlane(helper, second, TrayPosition.ODD);
+                    replica.onDataPacket(null, distiller.getUpdatePacket());
+                    helper.assertTrue(replica.renderVolume() != null, "The assembled update gives the client a volume");
+                    helper.setBlock(CORNER, Blocks.AIR);
+                    replica.onDataPacket(null, distiller.getUpdatePacket());
+                    helper.assertTrue(replica.renderVolume() == null, "The empty disassembly update clears the client volume");
+                    assertTrayPlane(helper, first, TrayPosition.STATIC);
+                    assertTrayPlane(helper, second, TrayPosition.STATIC);
+                    for (BlockPos pos : BlockPos.betweenClosed(first, first.offset(1, 0, 1))) {
+                        helper.setBlock(pos, Blocks.AIR);
+                    }
+                    helper.setBlock(CORNER, NCMachines.block(Part.FRAME));
+                })
+                .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "The remaining stage forms again"))
+                .thenExecute(() -> {
+                    assertTrayPlane(helper, second, TrayPosition.EVEN);
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    assertTrayPlane(helper, second, TrayPosition.STATIC);
+                }).thenSucceed();
+    }
+
+    private static void assertTrayPlane(GameTestHelper helper, BlockPos corner, TrayPosition position) {
+        for (BlockPos pos : BlockPos.betweenClosed(corner, corner.offset(1, 0, 1))) {
+            helper.assertTrue(helper.getBlockState(pos).getOptionalValue(MachinePartBlock.TRAY_POSITION)
+                    .orElse(null) == position, "The tray plane at " + corner + " should render as " + position);
+        }
     }
 
     private static void useMultitool(GameTestHelper helper, boolean reverse) {

@@ -7,7 +7,9 @@ import nc.multiblock.machine.MachinePartBlock.Part;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
@@ -22,6 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 abstract class MachineController extends BlockEntity implements ComputerPort.Controller {
     protected @Nullable Cuboid bounds;
@@ -183,6 +186,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     @Nullable String wallError(Part part, Direction outward) { return part.distillerWall() || part.electrodeTerminal() ? "wall" : null; }
     abstract @Nullable String validateLayout(ServerLevel server, Cuboid found);
     void assemblyChanged() {}
+    void beforeDisconnect() {}
 
     final void fail(String error) {
         boolean previouslyAssembled = bounds != null;
@@ -194,6 +198,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     }
 
     private void disconnect() {
+        if (bounds != null) beforeDisconnect();
         computerPorts.unbind();
         bounds = null;
         for (var port : ports) port.unbind(this);
@@ -263,6 +268,17 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
         if (assembled()) openMenu(player);
         else player.displayClientMessage(Component.translatable("message.nuclearcraft." + controllerPart.id().replace("_controller", "")
                 + "." + validation), true);
+    }
+
+    @Override
+    public final ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public final void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
+        // Forge sends an empty update tag as null when the machine has no assembled volume.
+        handleUpdateTag(Objects.requireNonNullElseGet(packet.getTag(), CompoundTag::new));
     }
 
     @Override protected void saveAdditional(CompoundTag tag) {

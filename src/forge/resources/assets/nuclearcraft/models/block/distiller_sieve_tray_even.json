@@ -1,0 +1,35 @@
+{
+    "parent": "nuclearcraft:block/distiller_sieve_tray",
+    "elements": [
+        {
+            "from": [0.9375, 8, 0.9375],
+            "to": [16.9375, 24, 16.9375],
+            "faces": {
+                "down": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#bottom"
+                },
+                "up": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#top"
+                },
+                "north": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#side"
+                },
+                "south": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#side"
+                },
+                "west": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#side"
+                },
+                "east": {
+                    "uv": [0, 0, 16, 16],
+                    "texture": "#side"
+                }
+            }
+        }
+    ]
+}

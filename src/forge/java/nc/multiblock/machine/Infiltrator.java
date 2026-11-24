@@ -8,9 +8,7 @@ import nc.recipe.InfiltratorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleMenuProvider;
@@ -257,12 +255,6 @@ public final class Infiltrator extends MachineController {
         renderVolume = volume.length != 7 ? null : new RenderVolume(new BlockPos(volume[0], volume[1], volume[2]),
                 volume[3], volume[4], volume[5], volume[6], FluidStack.loadFluidStackFromNBT(tag.getCompound("pressure")),
                 tag.getFloat("sound_volume"));
-    }
-
-    @Override public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
-
-    @Override public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
-        if (packet.getTag() != null) handleUpdateTag(packet.getTag());
     }
 
     private void reset(@Nullable ResourceLocation recipe) {

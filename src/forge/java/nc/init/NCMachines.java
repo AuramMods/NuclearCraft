@@ -99,6 +99,8 @@ public final class NCMachines {
                         : BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK);
                 return switch (part) {
                     case FRAME -> new MachinePartBlock.Frame(properties);
+                    case SIEVE_TRAY -> new MachinePartBlock.SieveTray(properties.noOcclusion());
+                    case STEEL_SIEVE, PTFE_SIEVE, HASTELLOY_SIEVE -> new MachinePartBlock.SieveAssembly(properties.noOcclusion(), part);
                     case COMPUTER -> new MachinePartBlock.Computer(properties);
                     case REDSTONE -> new MachinePartBlock.Redstone(properties);
                     case REBOILER, INFILTRATOR_HEATER -> new MachinePartBlock.Active(properties, part);

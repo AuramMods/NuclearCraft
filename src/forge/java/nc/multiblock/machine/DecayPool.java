@@ -6,9 +6,7 @@ import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.DecayPoolRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleMenuProvider;
@@ -125,14 +123,6 @@ public final class DecayPool extends MachineController {
         renderVolume = data.length == 7 ? new RenderVolume(new BlockPos(data[0], data[1], data[2]),
                 data[3], data[4], data[5], data[6], FluidStack.loadFluidStackFromNBT(tag.getCompound("feed")),
                 FluidStack.loadFluidStackFromNBT(tag.getCompound("product"))) : null;
-    }
-
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
-
-    @Override
-    public void onDataPacket(Connection connection, ClientboundBlockEntityDataPacket packet) {
-        if (packet.getTag() != null) handleUpdateTag(packet.getTag());
     }
 
     private boolean heatWater(ServerLevel server) {

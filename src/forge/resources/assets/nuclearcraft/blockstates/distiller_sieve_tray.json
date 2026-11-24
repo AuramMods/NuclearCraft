@@ -1,7 +1,13 @@
 {
     "variants": {
-        "": {
+        "position=static": {
             "model": "nuclearcraft:block/distiller_sieve_tray"
+        },
+        "position=even": {
+            "model": "nuclearcraft:block/distiller_sieve_tray_even"
+        },
+        "position=odd": {
+            "model": "nuclearcraft:block/distiller_sieve_tray_odd"
         }
     }
 }
