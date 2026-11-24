@@ -7,6 +7,7 @@ import nc.automation.MachineInterfaceTarget;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.recipe.ItemProcessorRecipe;
+import nc.recipe.PressurizerPlateRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -83,6 +84,8 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
                 refreshInput();
                 RecipeManager manager = level.getRecipeManager();
                 return manager.getAllRecipesFor(machine.recipes()).stream().anyMatch(recipe -> recipe.canInsert(input, slot, stack))
+                        || machine == Machine.PRESSURIZER && PressurizerPlateRecipes.forServer(manager).stream()
+                        .anyMatch(recipe -> recipe.canInsert(input, slot, stack))
                         || (smeltingRecipes != null && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level)
                         .map(recipe -> electricSmelting(recipe, level).canInsert(input, slot, stack))
                         .orElse(false));
@@ -128,8 +131,15 @@ public final class ItemProcessorBlockEntity extends BlockEntity implements Machi
 
     private @Nullable ItemProcessorRecipe findRecipe(Level level) {
         ItemProcessorRecipe recipe = recipes.getRecipeFor(input, level).orElse(null);
-        if (recipe != null || smeltingRecipes == null || input.getItem(0).isEmpty()) {
+        if (recipe != null || input.getItem(0).isEmpty()) {
             return recipe;
+        }
+        if (machine == Machine.PRESSURIZER) {
+            return PressurizerPlateRecipes.forServer(level.getRecipeManager()).stream()
+                    .filter(plate -> plate.matches(input, level)).findFirst().orElse(null);
+        }
+        if (smeltingRecipes == null) {
+            return null;
         }
         SmeltingRecipe source = smeltingRecipes.getRecipeFor(input, level).orElse(null);
         if (source == null) {

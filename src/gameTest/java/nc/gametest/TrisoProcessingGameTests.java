@@ -3,6 +3,7 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Machine;
 import nc.recipe.ItemProcessorRecipe;
+import nc.recipe.PressurizerPlateRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -64,6 +65,65 @@ public final class TrisoProcessingGameTests {
                             && assemblyEnergy.getEnergyStored() == 0 && assemblyItems.getStackInSlot(1).isEmpty(),
                     "The Assembler consumes its batch inputs and 6,000 FE to coat nine LEU-235 fuel items");
         }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 1920)
+    public static void pressurizerDiscoversTaggedPlatesAndAllowsRecipeOverrides(GameTestHelper helper) {
+        var recipes = PressurizerPlateRecipes.forServer(helper.getLevel().getRecipeManager());
+        var metal = recipes.stream().filter(recipe -> recipe.id().equals(
+                NuclearCraft.id("pressurizer/plates/pressurizer_qa_metal"))).findFirst().orElseThrow();
+        var dense = recipes.stream().filter(recipe -> recipe.id().equals(
+                NuclearCraft.id("pressurizer/dense_plates/pressurizer_qa_metal"))).findFirst().orElseThrow();
+        var gem = recipes.stream().filter(recipe -> recipe.id().equals(
+                NuclearCraft.id("pressurizer/plates/pressurizer_qa_gem"))).findFirst().orElseThrow();
+        helper.assertTrue(metal.inputs().get(0).ingredient().test(new ItemStack(Items.IRON_INGOT))
+                        && !metal.inputs().get(0).ingredient().test(new ItemStack(Items.DIAMOND))
+                        && metal.products().get(0).stack().is(Items.PAPER),
+                "Use the ingot tag and the first item in the ordered plate tag");
+        helper.assertTrue(gem.inputs().get(0).ingredient().test(new ItemStack(Items.DIAMOND)),
+                "Use the gem tag when the ingot tag is absent");
+        helper.assertTrue(dense.inputs().get(0).count() == 9 && dense.products().get(0).stack().is(Items.BOOK),
+                "The canonical dense plate tag selects the output and nine matching plates supply the input");
+        helper.assertTrue(recipes.stream().noneMatch(recipe -> recipe.id().getPath().endsWith("/graphite")
+                        || recipe.id().getPath().endsWith("/pressurizer_qa_override")),
+                "Exclude graphite plates and leave an explicit stable recipe ID to the datapack");
+
+        helper.setBlock(PRESS, Machine.PRESSURIZER.block());
+        var press = helper.getBlockEntity(PRESS);
+        var items = press.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH).orElseThrow(AssertionError::new);
+        var energy = press.getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).orElseThrow(AssertionError::new);
+        var ingot = new ItemStack(Items.IRON_INGOT);
+        helper.assertTrue(items.insertItem(0, ingot, true).isEmpty() && items.getStackInSlot(0).isEmpty(),
+                "The Forge capability simulates insertion of a discovered ingot");
+        helper.assertTrue(items.insertItem(0, ingot, false).isEmpty(), "Feed the actual batch");
+        energy.receiveEnergy(24_000, false);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(items.getStackInSlot(1).is(Items.PAPER)
+                        && items.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                        "Press one ingot for 24,000 FE"))
+                .thenExecute(() -> {
+                    items.extractItem(1, 1, false);
+                    energy.receiveEnergy(96_000, false);
+                    helper.assertTrue(items.insertItem(0, new ItemStack(Items.PAPER, 8), false).isEmpty(),
+                            "Accept a partial dense-plate batch");
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(energy.getEnergyStored() == 96_000 && items.getStackInSlot(1).isEmpty(),
+                            "Eight plates leave the dense recipe and power untouched");
+                    items.insertItem(0, new ItemStack(Items.PAPER), false);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(items.getStackInSlot(1).is(Items.BOOK)
+                        && items.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                        "Press nine plates for 96,000 FE"))
+                .thenExecute(() -> {
+                    items.extractItem(1, 1, false);
+                    energy.receiveEnergy(50, false);
+                    items.insertItem(0, new ItemStack(Items.COPPER_INGOT), false);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(items.getStackInSlot(1).is(Items.FLINT)
+                        && items.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                        "A normal datapack recipe supplies the override product for its configured FE"))
+                .thenSucceed();
     }
 
     @GameTest(template = "empty")

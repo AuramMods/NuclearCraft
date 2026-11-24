@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/pressurizer_qa_override"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "minecraft:flint",
+        "count": 1
+    },
+    "ticks": 10,
+    "energy_per_tick": 5
+}
