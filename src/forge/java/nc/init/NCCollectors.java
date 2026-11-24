@@ -1,7 +1,12 @@
 package nc.init;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import nc.NuclearCraft;
 import nc.processor.PassiveCollectorBlock;
 import nc.processor.PassiveCollectorBlockEntity;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -12,13 +17,21 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.common.crafting.conditions.ICondition;
+import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
 import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 public final class NCCollectors {
+    private static final ForgeConfigSpec AVAILABILITY_SPEC;
+    private static final ForgeConfigSpec.ConfigValue<List<Boolean>> REGISTER_PASSIVE;
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.IntValue UPDATE_INTERVAL;
     private static final ForgeConfigSpec.BooleanValue AUTO_OUTPUT;
@@ -28,6 +41,14 @@ public final class NCCollectors {
     private static final ForgeConfigSpec.DoubleValue COBBLESTONE_POWER;
 
     static {
+        var availability = new ForgeConfigSpec.Builder();
+        REGISTER_PASSIVE = availability
+                .comment("Enable all tiers of the cobblestone generator, water source, and nitrogen collector, in that order.")
+                .worldRestart().define("register_passive", List.of(true, true, true),
+                        value -> value instanceof List<?> list && list.size() == Family.values().length
+                                && list.stream().allMatch(Boolean.class::isInstance));
+        AVAILABILITY_SPEC = availability.build();
+
         var builder = new ForgeConfigSpec.Builder();
         builder.push("collectors");
         UPDATE_INTERVAL = builder.comment("Ticks between automatic output attempts.")
@@ -53,13 +74,23 @@ public final class NCCollectors {
 
     private NCCollectors() {}
 
-    public static void register(ModLoadingContext context) {
+    public static void register(FMLJavaModLoadingContext context) {
+        context.registerConfig(ModConfig.Type.COMMON, AVAILABILITY_SPEC, "nuclearcraft-collector-availability.toml");
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-collectors.toml");
+        context.getModEventBus().addListener(NCCollectors::registerCondition);
         Collector.values();
     }
 
+    private static void registerCondition(FMLCommonSetupEvent event) {
+        event.enqueueWork(() -> CraftingHelper.register(CollectorEnabled.SERIALIZER));
+    }
+
+    public static List<Collector> enabledCollectors() {
+        return Arrays.stream(Collector.values()).filter(Collector::enabled).toList();
+    }
+
     static void displayItems(CreativeModeTab.Output output) {
-        for (Collector collector : Collector.values()) {
+        for (Collector collector : enabledCollectors()) {
             output.accept(collector.block());
         }
     }
@@ -73,7 +104,11 @@ public final class NCCollectors {
     }
 
     public enum Family {
-        COBBLESTONE, WATER, NITROGEN
+        COBBLESTONE, WATER, NITROGEN;
+
+        boolean enabled() {
+            return !AVAILABILITY_SPEC.isLoaded() || REGISTER_PASSIVE.get().get(ordinal());
+        }
     }
 
     public enum Collector {
@@ -109,6 +144,10 @@ public final class NCCollectors {
             return block.get();
         }
 
+        public boolean enabled() {
+            return family.enabled();
+        }
+
         public boolean producesItems() {
             return family == Family.COBBLESTONE;
         }
@@ -132,6 +171,41 @@ public final class NCCollectors {
 
         public int capacity() {
             return Math.max(1, (int) Math.ceil(6 * updateInterval() * rate()));
+        }
+    }
+
+    private record CollectorEnabled(Family family) implements ICondition {
+        private static final ResourceLocation ID = NuclearCraft.id("collector_enabled");
+        private static final IConditionSerializer<CollectorEnabled> SERIALIZER = new IConditionSerializer<>() {
+            @Override
+            public void write(JsonObject json, CollectorEnabled condition) {
+                json.addProperty("family", condition.family.name().toLowerCase(Locale.ROOT));
+            }
+
+            @Override
+            public CollectorEnabled read(JsonObject json) {
+                String family = GsonHelper.getAsString(json, "family");
+                try {
+                    return new CollectorEnabled(Family.valueOf(family.toUpperCase(Locale.ROOT)));
+                } catch (IllegalArgumentException error) {
+                    throw new JsonSyntaxException("Unknown passive collector family: " + family, error);
+                }
+            }
+
+            @Override
+            public ResourceLocation getID() {
+                return ID;
+            }
+        };
+
+        @Override
+        public ResourceLocation getID() {
+            return ID;
+        }
+
+        @Override
+        public boolean test(IContext context) {
+            return family.enabled();
         }
     }
 }

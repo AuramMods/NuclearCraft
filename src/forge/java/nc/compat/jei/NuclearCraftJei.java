@@ -29,7 +29,7 @@ import nc.client.ItemProcessorScreen;
 import nc.client.ScrubberScreen;
 import nc.client.MelterScreen;
 import nc.client.NuclearFurnaceScreen;
-import nc.init.NCCollectors.Collector;
+import nc.init.NCCollectors;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
@@ -313,7 +313,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addIngredientInfo(Arrays.stream(Tier.values()).map(NCRadiation::shielding)
                         .map(ItemStack::new).toList(),
                 VanillaTypes.ITEM_STACK, Component.translatable("gui.nuclearcraft.jei.armor_shielding"));
-        registration.addRecipes(CollectorCategory.TYPE, List.of(Collector.values()));
+        registration.addRecipes(CollectorCategory.TYPE, NCCollectors.enabledCollectors());
         registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
         registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
         for (Machine machine : Machine.values()) {
@@ -372,7 +372,7 @@ public final class NuclearCraftJei implements IModPlugin {
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
-        for (Collector collector : Collector.values()) {
+        for (var collector : NCCollectors.enabledCollectors()) {
             registration.addRecipeCatalyst(collector.block(), CollectorCategory.TYPE);
         }
         for (Machine machine : Machine.values()) {

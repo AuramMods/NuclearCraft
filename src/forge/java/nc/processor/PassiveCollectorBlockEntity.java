@@ -40,13 +40,15 @@ public final class PassiveCollectorBlockEntity extends BlockEntity {
     public PassiveCollectorBlockEntity(BlockPos pos, BlockState state) {
         super(NCCollectors.ENTITY.get(), pos, state);
         collector = ((PassiveCollectorBlock) state.getBlock()).collector();
-        power = new ProcessorEnergy(this, MAX_ENERGY, () ->
-                (int) Math.ceil(Math.max(16, NCCollectors.updateInterval()) * collector.power()));
+        power = new ProcessorEnergy(this, MAX_ENERGY, () -> collector.enabled()
+                ? (int) Math.ceil(Math.max(16, NCCollectors.updateInterval()) * collector.power()) : 0);
         createCapabilities();
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, PassiveCollectorBlockEntity machine) {
-        machine.generate();
+        if (machine.collector.enabled()) {
+            machine.generate();
+        }
         int interval = NCCollectors.updateInterval();
         if (machine.stock > 0 && NCCollectors.autoOutput()
                 && Math.floorMod(level.getGameTime() + pos.hashCode(), interval) == 0) {
@@ -163,7 +165,7 @@ public final class PassiveCollectorBlockEntity extends BlockEntity {
             if (capability == ForgeCapabilities.FLUID_HANDLER && !collector.producesItems()) {
                 return fluids.cast();
             }
-            if (capability == ForgeCapabilities.ENERGY && collector.power() > 0) {
+            if (capability == ForgeCapabilities.ENERGY && collector.enabled() && collector.power() > 0) {
                 return energy.cast();
             }
         }

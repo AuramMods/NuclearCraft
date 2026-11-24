@@ -1,5 +1,11 @@
 {
     "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:collector_enabled",
+            "family": "cobblestone"
+        }
+    ],
     "category": "redstone",
     "pattern": [
         "CCC",
