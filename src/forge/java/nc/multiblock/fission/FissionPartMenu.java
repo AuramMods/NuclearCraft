@@ -187,7 +187,11 @@ public final class FissionPartMenu extends AbstractContainerMenu {
             tank.drain(tank.getFluidAmount(), FluidAction.EXECUTE);
             return true;
         }
-        return id == CLEAR_INPUT && entity instanceof PebbleCooler cooler && cooler.selectFilter(FluidStack.EMPTY);
+        if (id != CLEAR_INPUT) {
+            return false;
+        }
+        return entity instanceof PebbleCooler cooler ? cooler.selectFilter(FluidStack.EMPTY)
+                : ((FissionPortBlockEntity) entity).selectGasFilter(FluidStack.EMPTY);
     }
 
     @Override
@@ -232,9 +236,11 @@ public final class FissionPartMenu extends AbstractContainerMenu {
             var tanks = selectedGas();
             setTank(INPUT, tanks.cold);
             setTank(OUTPUT, tanks.hot);
-            ResourceLocation filter = entity instanceof PebbleCooler cooler && tanks == cooler.localTanks()
-                    ? cooler.filter() : null;
-            gasFilter = filter != null && controller == null;
+            ResourceLocation filter = tanks.filter();
+            if (filter == null && entity instanceof PebbleCooler cooler) {
+                filter = cooler.filter();
+            }
+            gasFilter = filter != null;
             var fluid = filter == null ? gas.cold() : BuiltInRegistries.FLUID.get(filter);
             set(FILTER, BuiltInRegistries.FLUID.getId(fluid));
             set(COOLING, NCPebbleFission.cooling(gas));
@@ -270,7 +276,8 @@ public final class FissionPartMenu extends AbstractContainerMenu {
     public boolean linked() { return (get(STATUS) & LINKED) != 0; }
     public boolean local() { return (get(STATUS) & LOCAL_VIEW) != 0; }
     public boolean processing() { return (get(STATUS) & PROCESSING) != 0; }
-    public boolean canClearGasFilter() { return (get(STATUS) & GAS_FILTER) != 0; }
+    public boolean exactGasFilter() { return (get(STATUS) & GAS_FILTER) != 0; }
+    public boolean canClearGasFilter() { return exactGasFilter() && !connected(); }
     public boolean outputPort() { return (get(STATUS) & OUTPUT_PORT) != 0; }
     public float progress() { return get(PROGRESS) / 1000F; }
     public int heat() { return get(HEAT); }

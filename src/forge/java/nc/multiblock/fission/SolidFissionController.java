@@ -3,7 +3,6 @@ package nc.multiblock.fission;
 import nc.multiblock.Cuboid;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
-import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
@@ -501,7 +500,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return getBlockState().getValue(FissionWallBlock.ACTIVE);
     }
 
-    PebbleCooling.Tanks pebbleCircuit(NCGasCoolants gas) {
+    PebbleCooling.Tanks pebbleCircuit(PebbleCooling.Channel gas) {
         return gasCooling.circuit(gas);
     }
 

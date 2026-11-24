@@ -29,6 +29,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 
 public final class FissionWallBlock extends FissionPartBlock implements EntityBlock {
@@ -206,7 +207,10 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             return true;
         }
         if (role == Role.COOLER_PORT) {
-            if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+            var sample = FluidUtil.getFluidContained(held).orElse(FluidStack.EMPTY);
+            if (!sample.isEmpty() && port.selectGasFilter(sample)) {
+                player.displayClientMessage(Component.translatable("gui.nuclearcraft.salt_part.filter", sample.getDisplayName()), true);
+            } else if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
                 FissionPartMenu.open(player, port, FissionPartMenu.Kind.COOLER_PORT);
             }
             return true;

@@ -21,6 +21,7 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -32,6 +33,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     private final @Nullable PebbleCooling.Tanks localPebbleGas;
     private Binding binding;
     private @Nullable ResourceLocation fuelFilter;
+    private @Nullable ResourceLocation gasFilter;
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
     private LazyOptional<IItemHandler> items = LazyOptional.empty();
     private LazyOptional<IEnergyStorage> power = LazyOptional.empty();
@@ -43,7 +45,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
             default -> NCFission.PORT_ENTITY.get();
         }, pos, state);
         localPebbleGas = FissionPartBlock.role(state) == Role.COOLER_PORT
-                ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, stack -> true) : null;
+                ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, this::gasFilter) : null;
         localFuelItems = switch (FissionPartBlock.role(state)) {
             case FUEL_PORT -> new FissionFuelItems(this, FissionVariant.SOLID, null);
             case CHAMBER_PORT -> new FissionFuelItems(this, FissionVariant.PEBBLE, null);
@@ -134,9 +136,35 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     PebbleCooling.Tanks pebbleGas() {
-        var controller = pebbleController();
-        return controller == null ? localPebbleGas()
-                : controller.pebbleCircuit(((FissionWallBlock) getBlockState().getBlock()).coolant());
+        Binding current = binding;
+        return current == null || !connected(current) ? localPebbleGas() : current.controller.pebbleCircuit(current.port.gas());
+    }
+
+    private @Nullable ResourceLocation gasFilter() {
+        return gasFilter;
+    }
+
+    @Nullable PebbleCooling.Channel gasChannel() {
+        return localPebbleGas == null ? null
+                : new PebbleCooling.Channel(((FissionWallBlock) getBlockState().getBlock()).coolant(), gasFilter);
+    }
+
+    boolean selectGasFilter(FluidStack sample) {
+        var channel = gasChannel();
+        if (channel == null || assembled() || !localPebbleGas().cold.isEmpty()
+                || (!sample.isEmpty() && !sample.getFluid().is(channel.gas().input()))) {
+            return false;
+        }
+        var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());
+        if (Objects.equals(gasFilter, next)) {
+            return false;
+        }
+        gasFilter = next;
+        setChanged();
+        if (level instanceof ServerLevel server) {
+            FissionPartBlock.geometryChanged(server, worldPosition);
+        }
+        return true;
     }
 
     @Nullable SolidFissionController saltController() {
@@ -264,6 +292,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
         if (localPebbleGas != null) {
             tag.put("pebble_gas", localPebbleGas.save());
+            if (gasFilter != null) {
+                tag.putString("gas_filter", gasFilter.toString());
+            }
         }
         if (irradiationItems != null) {
             irradiationItems.save(tag);
@@ -278,6 +309,12 @@ public final class FissionPortBlockEntity extends BlockEntity {
         super.load(tag);
         if (localPebbleGas != null) {
             localPebbleGas.load(tag.getCompound("pebble_gas"));
+            var previous = gasFilter;
+            gasFilter = tag.contains("gas_filter") ? ResourceLocation.tryParse(tag.getString("gas_filter")) : null;
+            if (!Objects.equals(previous, gasFilter) && level instanceof ServerLevel server) {
+                FissionPartBlock.geometryChanged(server, worldPosition);
+            }
+            return;
         }
         if (localFuelItems != null) {
             var previous = localFuelItems.filter();

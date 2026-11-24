@@ -2,7 +2,6 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.multiblock.Cuboid;
-import nc.init.NCGasCoolants;
 import nc.init.NCSaltCoolants;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import org.jetbrains.annotations.Nullable;
@@ -21,7 +20,7 @@ import java.util.Objects;
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
                           List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers, FissionVariant variant) {
-    record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
+    record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable PebbleCooling.Channel gas,
                 @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
         boolean itemFuel() {
             return role == Role.FUEL_PORT || role == Role.CHAMBER_PORT;
@@ -120,7 +119,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             }
                             var wall = (FissionWallBlock) state.getBlock();
                             ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),
-                                    wall.coolant(), wall.saltCoolant(), role == Role.FUEL_PORT || role == Role.CHAMBER_PORT
+                                    entity.gasChannel(), wall.saltCoolant(), role == Role.FUEL_PORT || role == Role.CHAMBER_PORT
                                             || role == Role.VESSEL_PORT ? entity.fuelFilter() : null));
                         }
                         default -> {

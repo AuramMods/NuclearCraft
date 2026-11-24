@@ -2684,6 +2684,7 @@
     "gui.nuclearcraft.salt_part.heat": "Cluster heat  %s / %s H",
     "gui.nuclearcraft.fission_part.reserved": "Reserved %s",
     "gui.nuclearcraft.fission_part.fuel_buffer": "Stored %s / %s items",
+    "gui.nuclearcraft.fission_part.gas_tag": "Accepts fluids tagged %s",
     "gui.nuclearcraft.salt_part.no_cluster": "No heat cluster",
     "gui.nuclearcraft.salt_part.capacity": "Capacity %s mB",
     "gui.nuclearcraft.salt_part.filter": "Filter %s",

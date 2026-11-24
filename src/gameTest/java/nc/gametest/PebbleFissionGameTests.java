@@ -189,6 +189,103 @@ public final class PebbleFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 200)
+    public static void filteredCoolerPortsKeepTaggedGasAlternativesInSeparateCircuits(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(MIN, Blocks.AIR);
+        BlockPos secondInput = COLD.east();
+        BlockPos secondOutput = HOT.east();
+        helper.setBlock(secondInput, NCPebbleFission.port(NCGasCoolants.OXYGEN));
+        helper.setBlock(secondOutput, output(NCPebbleFission.port(NCGasCoolants.OXYGEN)));
+        var player = inspector(helper);
+        var oxygen = NCGasCoolants.OXYGEN.cold();
+        var alternate = NCGasCoolants.FLUOROMETHANE.cold();
+        // The test datapack adds this second source to forge:oxygen.
+        var normalSample = new ItemStack(oxygen.getBucket());
+        var alternateSample = new ItemStack(alternate.getBucket());
+        player.setItemInHand(InteractionHand.MAIN_HAND, normalSample);
+        for (BlockPos part : new BlockPos[]{COLD, HOT, CHAMBER.above()}) {
+            helper.useBlock(part, player);
+        }
+        player.setItemInHand(InteractionHand.MAIN_HAND, alternateSample);
+        for (BlockPos part : new BlockPos[]{secondInput, secondOutput, CHAMBER.below()}) {
+            helper.useBlock(part, player);
+        }
+        helper.assertTrue(player.getMainHandItem().is(alternateSample.getItem()) && player.getMainHandItem().getCount() == 1,
+                "Setting filters leaves the sample in hand");
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        helper.setBlock(MIN, NCFission.CASING.get());
+        int[] savedGas = new int[4];
+
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var first = fluids(helper, COLD, Direction.NORTH);
+                    var second = fluids(helper, secondInput, Direction.NORTH);
+                    var normal = new FluidStack(oxygen, 300);
+                    var other = new FluidStack(alternate, 500);
+                    helper.assertTrue(!first.isFluidValid(0, other) && !second.isFluidValid(0, normal)
+                                    && first.fill(other, FluidAction.SIMULATE) == 0
+                                    && second.fill(normal, FluidAction.EXECUTE) == 0,
+                            "The input ports reject the other source even though both sources belong to the allowed tag");
+                    helper.assertTrue(first.fill(normal, FluidAction.SIMULATE) == 300 && first.getFluidInTank(0).isEmpty()
+                                    && first.fill(normal, FluidAction.EXECUTE) == 300
+                                    && second.fill(other, FluidAction.EXECUTE) == 500,
+                            "Each accepted source goes only into its own buffer");
+                    helper.useBlock(CHAMBER.below(), player);
+                    var linked = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(linked.linked() && linked.exactGasFilter() && linked.gasFilter().getFluid() == alternate
+                                    && linked.gas(false).isFluidStackIdentical(other),
+                            "The chosen cooler uses the matching circuit");
+                    helper.useBlock(CHAMBER.north(), player);
+                    helper.assertTrue(!((FissionPartMenu) player.containerMenu).linked(),
+                            "An unfiltered cooler with two candidate circuits keeps its local tanks");
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
+                    runReactor(helper);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(amount(helper, HOT, Direction.SOUTH) > 0
+                                && amount(helper, secondOutput, Direction.SOUTH) > 0,
+                        "Both filtered circuits cool the running chamber"))
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    var stale = helper.getBlockEntity(secondOutput).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.SOUTH);
+                    var old = stale.orElseThrow(AssertionError::new);
+                    savedGas[0] = amount(helper, COLD, Direction.NORTH);
+                    savedGas[1] = amount(helper, HOT, Direction.SOUTH);
+                    savedGas[2] = amount(helper, secondInput, Direction.NORTH);
+                    savedGas[3] = amount(helper, secondOutput, Direction.SOUTH);
+                    helper.assertTrue(savedGas[1] == 2 * (300 - savedGas[0]) && savedGas[3] == 2 * (500 - savedGas[2]),
+                            "Both hot outputs match the amounts used by their own circuit");
+                    helper.setBlock(MIN, Blocks.AIR);
+                    helper.assertTrue(!stale.isPresent() && old.drain(1, FluidAction.EXECUTE).isEmpty(),
+                            "Disassembly revokes the cached filtered output");
+                    var pos = helper.absolutePos(secondOutput);
+                    player.moveTo(pos.getX() + 0.5D, pos.getY() + 1D, pos.getZ() + 0.5D);
+                    helper.useBlock(secondOutput, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.canClearGasFilter() && menu.clickMenuButton(player, FissionPartMenu.CLEAR_INPUT),
+                            "The detached port filter can be cleared from the empty input tank");
+                    menu.broadcastChanges();
+                    helper.assertTrue(!menu.exactGasFilter(), "The menu reports the cleared filter");
+                    player.setItemInHand(InteractionHand.MAIN_HAND, alternateSample);
+                    helper.useBlock(secondOutput, player);
+                    player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+                    var saved = controller(helper).saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCPebbleFission.CONTROLLER.get());
+                    controller(helper).load(saved);
+                    helper.setBlock(MIN, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> helper.assertTrue(
+                        savedGas[0] == amount(helper, COLD, Direction.NORTH)
+                                && savedGas[1] == amount(helper, HOT, Direction.SOUTH)
+                                && savedGas[2] == amount(helper, secondInput, Direction.NORTH)
+                                && savedGas[3] == amount(helper, secondOutput, Direction.SOUTH),
+                        "All filtered gas buffers survive controller reload and filter reselection"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 160)
     public static void matchingPebbleChambersShareCriticality(GameTestHelper helper) {
         buildReactor(helper);

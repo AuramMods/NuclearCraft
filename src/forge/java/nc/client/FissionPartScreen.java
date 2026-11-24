@@ -2,9 +2,11 @@ package nc.client;
 
 import nc.NuclearCraft;
 import nc.multiblock.fission.FissionPartMenu;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -113,7 +115,13 @@ public final class FissionPartScreen extends AbstractContainerScreen<FissionPart
         lines.add(Component.translatable("gui.nuclearcraft.salt_part.capacity", menu.capacity(output)));
         if (!output) {
             var filter = menu.gasFilter();
-            lines.add(Component.translatable("gui.nuclearcraft.salt_part.filter", filter.getDisplayName()));
+            var key = BuiltInRegistries.FLUID.getKey(filter.getFluid());
+            if (menu.exactGasFilter()) {
+                lines.add(Component.translatable("gui.nuclearcraft.salt_part.filter", filter.getDisplayName()));
+                lines.add(Component.literal(key.toString()).withStyle(ChatFormatting.GRAY));
+            } else {
+                lines.add(Component.translatable("gui.nuclearcraft.fission_part.gas_tag", "#forge:" + key.getPath()));
+            }
         }
         if (!fluid.isEmpty() || (!output && menu.canClearGasFilter())) {
             lines.add(Component.translatable("gui.nuclearcraft.salt_part.clear"));

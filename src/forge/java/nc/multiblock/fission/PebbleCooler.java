@@ -5,6 +5,7 @@ import nc.init.NCPebbleFission;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fluids.FluidStack;
@@ -22,8 +23,7 @@ public final class PebbleCooler extends BlockEntity {
     public PebbleCooler(BlockPos pos, BlockState state) {
         super(NCPebbleFission.COOLER_ENTITY.get(), pos, state);
         gas = ((PebbleCoolerBlock) state.getBlock()).gas();
-        local = new PebbleCooling.Tanks(gas, this,
-                stack -> filter == null || filter.equals(ForgeRegistries.FLUIDS.getKey(stack.getFluid())));
+        local = new PebbleCooling.Tanks(gas, this, this::filter);
     }
 
     NCGasCoolants gas() { return gas; }
@@ -67,6 +67,10 @@ public final class PebbleCooler extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         local.load(tag.getCompound("gas"));
+        var previous = filter;
         filter = tag.contains("gas_filter") ? ResourceLocation.tryParse(tag.getString("gas_filter")) : null;
+        if (!Objects.equals(filter, previous) && level instanceof ServerLevel server) {
+            FissionPartBlock.geometryChanged(server, worldPosition);
+        }
     }
 }
