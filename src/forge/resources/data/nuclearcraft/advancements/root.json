@@ -1,0 +1,31 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:leu_235_za"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.root.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.root.desc"
+        },
+        "background": "nuclearcraft:textures/block/wasteland_earth.png",
+        "show_toast": false,
+        "announce_to_chat": false
+    },
+    "criteria": {
+        "location": {
+            "trigger": "minecraft:location",
+            "conditions": {
+                "player": [
+                    {
+                        "condition": "minecraft:location_check",
+                        "predicate": {
+                            "dimension": "minecraft:overworld"
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}

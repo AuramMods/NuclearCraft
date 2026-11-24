@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import nc.NuclearCraft;
 import nc.init.NCGenerators;
+import nc.init.NCRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -276,7 +277,7 @@ final class VaultPiece extends StructurePiece {
             BlockState crateState = Blocks.OAK_PLANKS.defaultBlockState();
             BlockState voltaicState = block("voltaic_pile_basic", Blocks.IRON_BLOCK);
             BlockState slabState = Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, SlabType.DOUBLE);
-            BlockState furnaceState = block("nuclear_furnace", Blocks.FURNACE);
+            BlockState furnaceState = NCRegistries.NUCLEAR_FURNACE.get().defaultBlockState();
             BlockState leadState = block("lead_block", Blocks.IRON_BLOCK);
             BlockState decayGeneratorState = NCGenerators.DECAY_GENERATOR.get().defaultBlockState();
             BlockState noteBlockState = Blocks.NOTE_BLOCK.defaultBlockState();
@@ -573,10 +574,7 @@ final class VaultPiece extends StructurePiece {
                         else {
                             facing = Direction.WEST;
                         }
-                        BlockState orientedFurnace = furnaceState;
-                        if (orientedFurnace.hasProperty(BlockStateProperties.HORIZONTAL_FACING)) {
-                            orientedFurnace = orientedFurnace.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
-                        }
+                        BlockState orientedFurnace = furnaceState.setValue(BlockStateProperties.HORIZONTAL_FACING, facing);
                         placeBlock(level, orientedFurnace, shapeX[index], floorY, shapeZ[index], structureBoundingBoxIn);
                     }
                     ++placedDecorations;

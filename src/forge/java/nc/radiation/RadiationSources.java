@@ -94,6 +94,7 @@ public final class RadiationSources {
     private static final double DEPLETED_LEU_233 = getDepletedFuelRadiation(URANIUM_238, 5, PLUTONIUM_241, 1, PLUTONIUM_242, 1, AMERICIUM_243, 1, STRONTIUM_90, CAESIUM_137, 0.5D, 0.5D);
     private static final double DEPLETED_HEU_233 = getDepletedFuelRadiation(URANIUM_235, 1, URANIUM_238, 2, PLUTONIUM_242, 3, AMERICIUM_243, 1, STRONTIUM_90, CAESIUM_137, 1.5D, 0.5D);
     private static final double DEPLETED_LEU_235 = getDepletedFuelRadiation(URANIUM_238, 4, PLUTONIUM_239, 1, PLUTONIUM_242, 2, AMERICIUM_243, 1, 0D, CAESIUM_137, 0.5D, 0.5D);
+    public static final double LEU_235_FISSION = (LEU_235 + DEPLETED_LEU_235) / 64D;
     private static final double DEPLETED_HEU_235 = getDepletedFuelRadiation(URANIUM_238, 3, NEPTUNIUM_236, 1, PLUTONIUM_242, 2, AMERICIUM_243, 1, 0D, CAESIUM_137, 1.5D, 0.5D);
     private static final double DEPLETED_LEN_236 = getDepletedFuelRadiation(URANIUM_238, 4, NEPTUNIUM_237, 1, PLUTONIUM_241, 1, PLUTONIUM_242, 2, 0D, CAESIUM_137, 0.5D, 0.5D);
     private static final double DEPLETED_HEN_236 = getDepletedFuelRadiation(URANIUM_238, 4, PLUTONIUM_238, 1, PLUTONIUM_241, 1, PLUTONIUM_242, 1, 0D, CAESIUM_137, 1.5D, 0.5D);

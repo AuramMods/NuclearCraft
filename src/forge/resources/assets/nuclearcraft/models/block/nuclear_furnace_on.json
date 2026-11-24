@@ -1,0 +1,6 @@
+{
+    "parent": "nuclearcraft:block/nuclear_furnace",
+    "textures": {
+        "north": "nuclearcraft:block/nuclear_furnace_front_on"
+    }
+}

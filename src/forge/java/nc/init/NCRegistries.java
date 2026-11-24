@@ -7,6 +7,9 @@ import nc.processor.FluidProcessorMenu;
 import nc.processor.MelterBlock;
 import nc.processor.MelterBlockEntity;
 import nc.processor.MelterMenu;
+import nc.processor.NuclearFurnaceBlock;
+import nc.processor.NuclearFurnaceBlockEntity;
+import nc.processor.NuclearFurnaceMenu;
 import nc.processor.ProcessorBlock;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
@@ -70,6 +73,17 @@ public final class NCRegistries {
             RECIPE_TYPES.register("melter", () -> RecipeType.simple(NuclearCraft.id("melter")));
     public static final RegistryObject<RecipeSerializer<MelterRecipe>> MELTER_SERIALIZER =
             RECIPE_SERIALIZERS.register("melter", MelterRecipe.Serializer::new);
+
+    public static final RegistryObject<NuclearFurnaceBlock> NUCLEAR_FURNACE = BLOCKS.register("nuclear_furnace",
+            () -> new NuclearFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.FURNACE).strength(3F, 15F)
+                    .lightLevel(state -> 0)));
+    public static final RegistryObject<Item> NUCLEAR_FURNACE_ITEM = ITEMS.register("nuclear_furnace",
+            () -> new BlockItem(NUCLEAR_FURNACE.get(), new Item.Properties()));
+    public static final RegistryObject<BlockEntityType<NuclearFurnaceBlockEntity>> NUCLEAR_FURNACE_ENTITY =
+            BLOCK_ENTITIES.register("nuclear_furnace", () -> BlockEntityType.Builder.of(NuclearFurnaceBlockEntity::new,
+                    NUCLEAR_FURNACE.get()).build(null));
+    public static final RegistryObject<MenuType<NuclearFurnaceMenu>> NUCLEAR_FURNACE_MENU =
+            MENUS.register("nuclear_furnace", () -> new MenuType<>(NuclearFurnaceMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> ELECTROLYZER =
             BLOCKS.register("electrolyzer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
@@ -178,6 +192,7 @@ public final class NCRegistries {
                     .title(Component.translatable("itemGroup.nuclearcraft.machines"))
                     .icon(() -> MELTER_ITEM.get().getDefaultInstance())
                     .displayItems((parameters, output) -> {
+                        output.accept(NUCLEAR_FURNACE_ITEM.get());
                         output.accept(MELTER_ITEM.get());
                         output.accept(ELECTROLYZER_ITEM.get());
                         output.accept(SALT_MIXER_ITEM.get());

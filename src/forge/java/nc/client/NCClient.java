@@ -33,6 +33,7 @@ public final class NCClient {
     public static void setup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
             MenuScreens.register(NCRegistries.MELTER_MENU.get(), MelterScreen::new);
+            MenuScreens.register(NCRegistries.NUCLEAR_FURNACE_MENU.get(), NuclearFurnaceScreen::new);
             MenuScreens.register(NCRadiation.SCRUBBER_MENU.get(), ScrubberScreen::new);
             MenuScreens.register(NCRegistries.ELECTROLYZER_MENU.get(), FluidProcessorScreen::new);
             MenuScreens.register(NCRegistries.SALT_MIXER_MENU.get(), FluidProcessorScreen::new);

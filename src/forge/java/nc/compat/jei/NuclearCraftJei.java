@@ -14,16 +14,19 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import mezz.jei.api.constants.VanillaTypes;
+import mezz.jei.api.constants.RecipeTypes;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
+import mezz.jei.api.registration.IRecipeTransferRegistration;
 import nc.NuclearCraft;
 import nc.client.FluidProcessorScreen;
 import nc.client.SaltFissionPartScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.ScrubberScreen;
 import nc.client.MelterScreen;
+import nc.client.NuclearFurnaceScreen;
 import nc.init.NCCollectors.Collector;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
@@ -38,6 +41,7 @@ import nc.init.NCRegistries;
 import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.machine.MachinePartBlock.Part;
+import nc.processor.NuclearFurnaceMenu;
 import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
@@ -338,6 +342,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 materialType(Kind.CATHODE), materialType(Kind.ANODE), materialType(Kind.DIAPHRAGM));
         for (Kind kind : Kind.values()) registration.addRecipeCatalyst(materialBlock(kind), materialType(kind));
         registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
+        registration.addRecipeCatalyst(NCRegistries.NUCLEAR_FURNACE.get(), RecipeTypes.SMELTING);
         registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
         registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
         registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
@@ -368,6 +373,12 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     @Override
+    public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
+        registration.addRecipeTransferHandler(NuclearFurnaceMenu.class, NCRegistries.NUCLEAR_FURNACE_MENU.get(),
+                RecipeTypes.SMELTING, 0, 1, 3, 36);
+    }
+
+    @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         registration.addGuiContainerHandler(SaltFissionPartScreen.class, new IGuiContainerHandler<>() {
             @Override
@@ -378,6 +389,7 @@ public final class NuclearCraftJei implements IModPlugin {
             }
         });
         registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
+        registration.addRecipeClickArea(NuclearFurnaceScreen.class, 78, 32, 28, 23, RecipeTypes.SMELTING);
         registration.addRecipeClickArea(ScrubberScreen.class, 70, 35, 37, 16, SCRUBBER);
         registration.addGuiContainerHandler(FluidProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override

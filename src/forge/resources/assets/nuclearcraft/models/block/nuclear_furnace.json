@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "particle": "nuclearcraft:block/nuclear_furnace_side",
+        "up": "nuclearcraft:block/nuclear_furnace_top",
+        "down": "nuclearcraft:block/nuclear_furnace_bottom",
+        "north": "nuclearcraft:block/nuclear_furnace_front_off",
+        "south": "nuclearcraft:block/nuclear_furnace_back",
+        "east": "nuclearcraft:block/nuclear_furnace_side",
+        "west": "nuclearcraft:block/nuclear_furnace_side"
+    }
+}
