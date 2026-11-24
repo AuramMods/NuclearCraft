@@ -3,6 +3,7 @@ package nc.init;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
@@ -63,6 +64,10 @@ final class NCMaterials {
         item("marshmallow", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.4F)
                 .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0, false, false), 1F).build()));
         item("graham_cracker", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
+        food("pikelet", 6, 1.2F, false, 0, MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED, MobEffects.WATER_BREATHING);
+        food("congress_tart", 8, 4.4F, false, 1, MobEffects.DAMAGE_BOOST, MobEffects.FIRE_RESISTANCE, MobEffects.ABSORPTION);
+        food("ricecake", 2, 0.2F, false, 0, MobEffects.DAMAGE_RESISTANCE);
+        food("fish_and_ricecake", 10, 2.4F, true, 1, MobEffects.DAMAGE_BOOST, MobEffects.REGENERATION, MobEffects.DAMAGE_RESISTANCE);
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);
         }
@@ -108,6 +113,17 @@ final class NCMaterials {
                 "polymethylsilylene_methylene", "empty_cooler", "empty_cooler_port")) {
             item(name);
         }
+    }
+
+    private static void food(String id, int nutrition, float saturation, boolean meat, int amplifier, MobEffect... effects) {
+        var food = new FoodProperties.Builder().nutrition(nutrition).saturationMod(saturation);
+        if (meat) {
+            food.meat();
+        }
+        for (MobEffect effect : effects) {
+            food.effect(() -> new MobEffectInstance(effect, 300, amplifier, false, false), 1F);
+        }
+        item(id, new Item.Properties().food(food.build()));
     }
 
     private static RegistryObject<Item> item(String id) {

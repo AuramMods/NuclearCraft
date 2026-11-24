@@ -1,0 +1,4 @@
+{
+    "replace": false,
+    "values": ["nuclearcraft:nuclear_wasteland", "#minecraft:is_overworld"]
+}

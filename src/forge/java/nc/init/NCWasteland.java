@@ -11,6 +11,7 @@ import nc.worldgen.WastelandBiomeSource;
 import nc.worldgen.WastelandChunkGenerator;
 import nc.worldgen.WastelandEntrances;
 import nc.worldgen.WastelandPortalBlock;
+import nc.worldgen.structure.vault.WastelandVault;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
@@ -107,6 +108,7 @@ public final class NCWasteland {
         FEATURES.register("glowing_mushroom_patch", GlowingMushroomPatch::new);
         FEATURES.register("huge_glowing_mushroom", HugeGlowingMushroomFeature::new);
         FEATURES.register(context.getModEventBus());
+        WastelandVault.register(context.getModEventBus());
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-wasteland.toml");
         context.registerConfig(ModConfig.Type.COMMON, WORLDGEN_SPEC, "nuclearcraft-wasteland-worldgen.toml");
         context.getModEventBus().addListener(NCWasteland::setupOverworldBiome);

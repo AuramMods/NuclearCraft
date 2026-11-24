@@ -1,0 +1,6 @@
+{
+    "type": "nuclearcraft:wasteland_vault",
+    "biomes": "#nuclearcraft:vault_placement",
+    "step": "underground_structures",
+    "spawn_overrides": {}
+}

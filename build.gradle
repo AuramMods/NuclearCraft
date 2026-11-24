@@ -256,6 +256,9 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/items/gelatin.png'
         include 'assets/nuclearcraft/textures/items/lithium_ion_cell.png'
         include 'assets/nuclearcraft/textures/items/marshmallow.png'
+        include 'assets/nuclearcraft/textures/items/pikelet.png'
+        include 'assets/nuclearcraft/textures/items/congress_tart.png'
+        include 'assets/nuclearcraft/textures/items/*ricecake.png'
         eachFile {
             path = path.replace('/textures/blocks/', '/textures/block/').replace('/textures/items/', '/textures/item/')
         }

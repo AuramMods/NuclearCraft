@@ -1,0 +1,11 @@
+{
+    "replace": false,
+    "values": [
+        "minecraft:cooked_cod",
+        "minecraft:cooked_salmon",
+        {
+            "id": "#forge:cooked_fishes",
+            "required": false
+        }
+    ]
+}
