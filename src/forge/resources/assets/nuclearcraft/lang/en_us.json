@@ -2538,7 +2538,7 @@
     "message.nuclearcraft.infiltrator.interior": "The Infiltrator contains a part that does not belong in its interior.",
     "gui.nuclearcraft.infiltrator.inputs": "Inputs",
     "gui.nuclearcraft.infiltrator.output": "Output",
-    "gui.nuclearcraft.infiltrator.pressure_short": "P.",
+    "gui.nuclearcraft.infiltrator.pressure_label": "Pressure",
     "gui.nuclearcraft.infiltrator.chambers": "Pressure chambers %s",
     "gui.nuclearcraft.infiltrator.heating": "Heating bonus +%s%%",
     "gui.nuclearcraft.infiltrator.pressure": "Pressure fluid efficiency %s%%",

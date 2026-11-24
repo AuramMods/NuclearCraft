@@ -20,11 +20,15 @@ public final class InfiltratorMenu extends AbstractContainerMenu {
     public static final int TOGGLE = 0;
     public static final int CLEAR = 1;
     private static final int MACHINE_SLOTS = 3;
-    private static final int ENERGY = 6;
-    private static final int CAPACITY = 10;
-    private static final int POWER = 14;
-    private static final int TANK_CAPACITY = 18;
-    private static final int FIRST_TANK = 20;
+    private static final int CHAMBERS = 2;
+    private static final int PROGRESS = 4;
+    private static final int PRESSURE_EFFICIENCY = 5;
+    private static final int HEATING_BONUS = 9;
+    private static final int ENERGY = 13;
+    private static final int CAPACITY = 17;
+    private static final int POWER = 21;
+    private static final int TANK_CAPACITY = 25;
+    private static final int FIRST_TANK = 27;
     private static final int DATA_COUNT = FIRST_TANK + 3 * 4;
 
     private final ContainerLevelAccess access;
@@ -56,19 +60,21 @@ public final class InfiltratorMenu extends AbstractContainerMenu {
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
         for (int row = 0; row < 3; row++) {
-            for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, 9 + row * 9 + column, 8 + column * 18, 124 + row * 18));
+            for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, 9 + row * 9 + column, 18 + column * 18, 124 + row * 18));
         }
-        for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column, 8 + column * 18, 182));
+        for (int column = 0; column < 9; column++) addSlot(new Slot(inventory, column, 18 + column * 18, 182));
     }
 
     private static int menuValue(Infiltrator machine, int index) {
         return switch (index) {
             case 0 -> machine.halted() ? 1 : 0;
             case 1 -> machine.processing() ? 1 : 0;
-            case 2 -> machine.chambers();
-            case 3 -> (int) (machine.progressFraction() * 10_000);
-            case 4 -> (int) (machine.pressureEfficiency() * 100);
-            case 5 -> (int) (machine.heatingBonus() * 100);
+            case CHAMBERS, CHAMBERS + 1 -> word(machine.chambers(), index - CHAMBERS);
+            case PROGRESS -> (int) (machine.progressFraction() * 10_000);
+            case PRESSURE_EFFICIENCY, PRESSURE_EFFICIENCY + 1, PRESSURE_EFFICIENCY + 2, PRESSURE_EFFICIENCY + 3 ->
+                    word(Double.doubleToLongBits(machine.pressureEfficiency()), index - PRESSURE_EFFICIENCY);
+            case HEATING_BONUS, HEATING_BONUS + 1, HEATING_BONUS + 2, HEATING_BONUS + 3 ->
+                    word(Double.doubleToLongBits(machine.heatingBonus()), index - HEATING_BONUS);
             case ENERGY, ENERGY + 1, ENERGY + 2, ENERGY + 3 -> word(machine.power(), index - ENERGY);
             case CAPACITY, CAPACITY + 1, CAPACITY + 2, CAPACITY + 3 -> word(machine.energyCapacity(), index - CAPACITY);
             case POWER, POWER + 1, POWER + 2, POWER + 3 -> word(machine.energyPerTick(), index - POWER);
@@ -122,10 +128,10 @@ public final class InfiltratorMenu extends AbstractContainerMenu {
 
     public boolean halted() { return data.get(0) != 0; }
     public boolean processing() { return data.get(1) != 0; }
-    public int chambers() { return data.get(2) & 0xffff; }
-    public float progress() { return (data.get(3) & 0xffff) / 10_000F; }
-    public int pressureEfficiency() { return data.get(4) & 0xffff; }
-    public int heatingBonus() { return data.get(5) & 0xffff; }
+    public int chambers() { return (int) unpack(CHAMBERS, 2); }
+    public float progress() { return (data.get(PROGRESS) & 0xffff) / 10_000F; }
+    public double pressureEfficiency() { return Double.longBitsToDouble(unpack(PRESSURE_EFFICIENCY, 4)) * 100; }
+    public double heatingBonus() { return Double.longBitsToDouble(unpack(HEATING_BONUS, 4)) * 100; }
     public long energy() { return unpack(ENERGY, 4); }
     public long capacity() { return unpack(CAPACITY, 4); }
     public long power() { return unpack(POWER, 4); }

@@ -9,6 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public final class InfiltratorScreen extends AbstractContainerScreen<InfiltratorMenu> {
@@ -18,17 +19,19 @@ public final class InfiltratorScreen extends AbstractContainerScreen<Infiltrator
 
     public InfiltratorScreen(InfiltratorMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
+        imageWidth = 196;
         imageHeight = 206;
+        inventoryLabelX = 18;
         inventoryLabelY = 113;
     }
 
     @Override protected void init() {
         super.init();
         toggle = addRenderableWidget(Button.builder(toggleLabel(), ignored -> click(InfiltratorMenu.TOGGLE))
-                .bounds(leftPos + 12, topPos + 86, 72, 18).build());
+                .bounds(leftPos + 16, topPos + 86, 72, 18).build());
         clear = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.decay_pool.clear"), ignored -> {
             if (canClear()) click(InfiltratorMenu.CLEAR);
-        }).bounds(leftPos + 92, topPos + 86, 72, 18).build());
+        }).bounds(leftPos + 108, topPos + 86, 72, 18).build());
     }
 
     private void click(int button) {
@@ -68,13 +71,15 @@ public final class InfiltratorScreen extends AbstractContainerScreen<Infiltrator
         graphics.fill(x + 1, topPos + y + 1, x + 1 + amount, topPos + y + 5, color);
     }
 
-    private static int tankX(int slot) { return switch (slot) { case 0 -> 62; case 1 -> 86; default -> 146; }; }
+    private static int tankX(int slot) { return switch (slot) { case 0 -> 62; case 1 -> 86; default -> 160; }; }
+
+    private static String percent(double value) { return String.format(Locale.ROOT, "%.1f", value); }
 
     @Override protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         super.renderLabels(graphics, mouseX, mouseY);
         graphics.drawString(font, Component.translatable("gui.nuclearcraft.infiltrator.inputs"), 13, 46, 0x404040, false);
         graphics.drawString(font, Component.translatable("gui.nuclearcraft.infiltrator.output"), 109, 46, 0x404040, false);
-        graphics.drawString(font, Component.translatable("gui.nuclearcraft.infiltrator.pressure_short"), 145, 46, 0x404040, false);
+        graphics.drawString(font, Component.translatable("gui.nuclearcraft.infiltrator.pressure_label"), 145, 46, 0x404040, false);
     }
 
     @Override public void render(GuiGraphics graphics, int x, int y, float delta) {
@@ -88,19 +93,19 @@ public final class InfiltratorScreen extends AbstractContainerScreen<Infiltrator
             graphics.renderTooltip(font, List.of(
                     Component.translatable("gui.nuclearcraft.distiller.progress", Math.round(menu.progress() * 100)),
                     Component.translatable("gui.nuclearcraft.infiltrator.chambers", menu.chambers()),
-                    Component.translatable("gui.nuclearcraft.infiltrator.heating", menu.heatingBonus())),
+                    Component.translatable("gui.nuclearcraft.infiltrator.heating", percent(menu.heatingBonus()))),
                     Optional.empty(), x, y);
         } else if (isHovering(12, 36, width, 6, x, y)) {
             graphics.renderTooltip(font, List.of(Component.translatable("gui.nuclearcraft.distiller.stored", menu.energy(), menu.capacity()),
                     Component.translatable("gui.nuclearcraft.distiller.power", menu.power())), Optional.empty(), x, y);
-        } else if (isHovering(92, 86, 72, 18, x, y)) {
+        } else if (isHovering(108, 86, 72, 18, x, y)) {
             graphics.renderTooltip(font, Component.translatable("gui.nuclearcraft.decay_pool.clear_hint"), x, y);
         }
         for (int slot = 0; slot < 3; slot++) {
             if (!isHovering(tankX(slot), TANK_Y, 16, 16, x, y)) continue;
             var stack = menu.fluid(slot);
             graphics.renderTooltip(font, List.of(
-                    slot == 2 ? Component.translatable("gui.nuclearcraft.infiltrator.pressure", menu.pressureEfficiency())
+                    slot == 2 ? Component.translatable("gui.nuclearcraft.infiltrator.pressure", percent(menu.pressureEfficiency()))
                             : Component.translatable("gui.nuclearcraft.distiller.input", slot + 1),
                     stack.isEmpty() ? Component.translatable("gui.nuclearcraft.electrolyzer.empty_tank")
                             : Component.translatable("gui.nuclearcraft.fluid_amount", stack.getDisplayName(), stack.getAmount())),

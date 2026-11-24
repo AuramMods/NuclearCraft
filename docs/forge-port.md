@@ -229,6 +229,10 @@ The same packaged JAR ran in the isolated 539-mod Auram snapshot on Forge 47.4.1
 
 On a packaged Forge 47.4.10 dedicated server, Ender IO supplied silicon carbide fiber, molten polymer, helium, and Forge Energy to one Infiltrator and delivered one SiC/SiC CMC ingot to a barrel. Mekanism supplied zirconia, molten polyphenylene sulfide, helium, and Forge Energy to the second Infiltrator and delivered one Zirfon. Each reservoir retained exactly 64,000 mB of helium.
 
+Both routes processed a second batch after restarting the dedicated server. Each destination barrel saved two products. Saved controller data showed empty item and feed fluid slots, the original 64,000 mB of helium, and positive FE.
+
+In the full 539-mod Auram snapshot on Forge 47.4.18 with AuramCore 1.0.37 build `a064b87`, Ender IO delivered one SiC/SiC CMC ingot and Mekanism delivered two Zirfon after a KubeJS output-count override. Both controllers saved empty feed slots, the full pressure charge, and positive FE. The client loaded JEI, used OpenAL No Output, and exited without displaying a window or taking focus.
+
 ## Registry migration references
 
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
