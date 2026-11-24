@@ -2,7 +2,6 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.init.NCHeatExchangers;
-import nc.init.NCSaltCoolants;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,7 +35,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     private final @Nullable PebbleCoolant coolant;
-    private final @Nullable NCSaltCoolants saltCoolant;
+    private final @Nullable FissionCoolant saltCoolant;
 
     public FissionWallBlock(Properties properties, Role role) {
         this(properties, role, null);
@@ -46,12 +45,12 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         this(properties, role, coolant, null);
     }
 
-    public static FissionWallBlock heaterPort(Properties properties, NCSaltCoolants coolant) {
+    public static FissionWallBlock heaterPort(Properties properties, FissionCoolant coolant) {
         return new FissionWallBlock(properties, Role.HEATER_PORT, null, coolant);
     }
 
     private FissionWallBlock(Properties properties, Role role, @Nullable PebbleCoolant coolant,
-                             @Nullable NCSaltCoolants saltCoolant) {
+                             @Nullable FissionCoolant saltCoolant) {
         super(properties, role);
         this.coolant = coolant;
         this.saltCoolant = saltCoolant;
@@ -62,7 +61,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         return coolant;
     }
 
-    @Nullable NCSaltCoolants saltCoolant() {
+    public @Nullable FissionCoolant saltCoolant() {
         return saltCoolant;
     }
 

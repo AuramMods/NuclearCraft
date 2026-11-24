@@ -10,14 +10,14 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,30 +30,30 @@ final class SaltCooling {
     private static final int VOLUME_PER_HEATER = 36;
 
     private final SolidFissionController owner;
-    private final Map<NCSaltCoolants, Tanks> circuits = new EnumMap<>(NCSaltCoolants.class);
-    private final Set<NCSaltCoolants> connected = EnumSet.noneOf(NCSaltCoolants.class);
+    private final Map<FissionCoolant, Tanks> circuits = new HashMap<>();
+    private final Set<FissionCoolant> connected = new HashSet<>();
     private final Map<BlockPos, Fraction> credit = new HashMap<>();
-    private record Fraction(NCSaltCoolants coolant, double amount) {}
+    private record Fraction(FissionCoolant coolant, double amount) {}
 
     SaltCooling(SolidFissionController owner) {
         this.owner = owner;
     }
 
-    private Tanks circuit(NCSaltCoolants coolant) {
+    private Tanks circuit(FissionCoolant coolant) {
         return circuits.computeIfAbsent(coolant, kind -> new Tanks(kind, owner));
     }
 
-    FluidTank tank(NCSaltCoolants coolant, boolean output) {
+    FluidTank tank(FissionCoolant coolant, boolean output) {
         return circuit(coolant).tank(output);
     }
 
-    @Nullable Tanks connectedTanks(NCSaltCoolants coolant) {
+    @Nullable Tanks connectedTanks(FissionCoolant coolant) {
         return connected.contains(coolant) ? circuits.get(coolant) : null;
     }
 
-    double progress(BlockPos pos, NCSaltCoolants coolant) {
+    double progress(BlockPos pos, FissionCoolant coolant) {
         Fraction fraction = credit.get(pos);
-        return fraction != null && fraction.coolant() == coolant ? fraction.amount() : 0;
+        return fraction != null && coolant.equals(fraction.coolant()) ? fraction.amount() : 0;
     }
 
     void clearMaterial() {
@@ -69,7 +69,7 @@ final class SaltCooling {
                 connected.add(port.salt());
             }
         }
-        var counts = new EnumMap<NCSaltCoolants, Integer>(NCSaltCoolants.class);
+        var counts = new HashMap<FissionCoolant, Integer>();
         for (BlockPos pos : layout.sinks()) {
             if (SaltHeaterBlock.entity(level, pos) instanceof SaltHeater heater) {
                 counts.merge(heater.coolant(), 1, Integer::sum);
@@ -82,13 +82,13 @@ final class SaltCooling {
         credit.keySet().retainAll(layout.sinks());
     }
 
-    Map<BlockPos, NCSaltCoolants> available(ServerLevel level, SolidFissionLayout layout,
+    Map<BlockPos, FissionCoolant> available(ServerLevel level, SolidFissionLayout layout,
                                             Set<BlockPos> vessels, Set<BlockPos> moderators) {
-        var eligible = new EnumMap<NCSaltCoolants, List<BlockPos>>(NCSaltCoolants.class);
+        var eligible = new HashMap<FissionCoolant, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof SaltHeater heater) {
-                NCSaltCoolants coolant = heater.coolant();
-                if (heater.tanks().transferable() > 0 && NCSaltFission.cooling(coolant) > 0) {
+                FissionCoolant coolant = heater.coolant();
+                if (coolant.cooling() > 0 && heater.tanks().transferable() > 0) {
                     eligible.computeIfAbsent(coolant, ignored -> new ArrayList<>()).add(pos);
                 }
             }
@@ -98,8 +98,8 @@ final class SaltCooling {
                         vessels, moderators));
     }
 
-    boolean heat(ServerLevel level, BlockPos pos, NCSaltCoolants coolant, double efficiency) {
-        if (efficiency <= 0 || !(level.getBlockEntity(pos) instanceof SaltHeater heater) || heater.coolant() != coolant) {
+    boolean heat(ServerLevel level, BlockPos pos, FissionCoolant coolant, double efficiency) {
+        if (efficiency <= 0 || !(level.getBlockEntity(pos) instanceof SaltHeater heater) || !coolant.equals(heater.coolant())) {
             return false;
         }
         Tanks tanks = heater.tanks();
@@ -108,13 +108,14 @@ final class SaltCooling {
             return false;
         }
         Fraction previous = credit.get(pos);
-        double progress = (previous != null && previous.coolant() == coolant ? previous.amount() : 0)
-                + efficiency * NCSaltFission.cooling(coolant) / HeatExchangerConfig.nakHeatPerMb();
+        int inputAmount = coolant.inputIngredient().amount();
+        double progress = (previous != null && coolant.equals(previous.coolant()) ? previous.amount() : 0)
+                + efficiency * coolant.cooling() / (HeatExchangerConfig.nakHeatPerMb() * inputAmount);
         int amount = Math.min(transferable, (int) progress);
         credit.put(pos, new Fraction(coolant, progress - Math.floor(progress)));
         if (amount > 0) {
-            tanks.hot.fill(new FluidStack(coolant.hot(), amount), EXECUTE);
-            tanks.cold.drain(amount, EXECUTE);
+            tanks.hot.fill(new FluidStack(coolant.hot(), coolant.outputAmount() * amount), EXECUTE);
+            tanks.cold.drain(inputAmount * amount, EXECUTE);
         }
         owner.setChanged();
         return true;
@@ -147,7 +148,11 @@ final class SaltCooling {
                 CompoundTag state = new CompoundTag();
                 state.putLong("pos", pos.asLong());
                 state.putDouble("amount", fraction.amount());
-                state.putInt("coolant", fraction.coolant().ordinal());
+                if (fraction.coolant() instanceof NCSaltCoolants stock) {
+                    state.putInt("coolant", stock.ordinal());
+                } else {
+                    state.putString("coolant_id", fraction.coolant().id());
+                }
                 savedCredit.add(state);
             }
         });
@@ -156,35 +161,40 @@ final class SaltCooling {
     }
 
     void load(CompoundTag tag) {
-        var coolants = NCSaltCoolants.values();
-        for (NCSaltCoolants coolant : coolants) {
+        var coolants = NCSaltFission.coolants();
+        for (FissionCoolant coolant : coolants.values()) {
             if (tag.contains(coolant.id(), Tag.TAG_COMPOUND) || circuits.containsKey(coolant)) {
                 circuit(coolant).load(tag.getCompound(coolant.id()));
             }
         }
         credit.clear();
+        var stock = NCSaltCoolants.values();
         for (Tag entry : tag.getList("fractions", Tag.TAG_COMPOUND)) {
             CompoundTag state = (CompoundTag) entry;
             double amount = state.getDouble("amount");
             int kind = state.getInt("coolant");
-            if (amount > 0 && amount < 1 && kind >= 0 && kind < coolants.length) {
-                credit.put(BlockPos.of(state.getLong("pos")), new Fraction(coolants[kind], amount));
+            FissionCoolant coolant = state.contains("coolant_id", Tag.TAG_STRING)
+                    ? coolants.get(state.getString("coolant_id")) : kind >= 0 && kind < stock.length ? stock[kind] : null;
+            if (amount > 0 && amount < 1 && coolant != null) {
+                credit.put(BlockPos.of(state.getLong("pos")), new Fraction(coolant, amount));
             }
         }
     }
 
     static final class Tanks {
+        private final FissionCoolant coolant;
         private final FluidTank cold;
         private final FluidTank hot;
         private long minimum = BASE_VOLUME;
 
-        Tanks(NCSaltCoolants coolant, BlockEntity owner) {
-            cold = makeTank(owner, stack -> stack.getFluid() == coolant.cold());
-            hot = makeTank(owner, stack -> stack.getFluid() == coolant.hot());
+        Tanks(FissionCoolant coolant, BlockEntity owner) {
+            this.coolant = coolant;
+            cold = makeTank(owner, coolant.inputIngredient().amount(), coolant.inputIngredient()::accepts);
+            hot = makeTank(owner, coolant.outputAmount(), stack -> !stack.isEmpty() && stack.getFluid() == coolant.hot());
         }
 
-        private static FluidTank makeTank(BlockEntity owner, Predicate<FluidStack> accepts) {
-            return new FluidTank(BASE_VOLUME, accepts) {
+        private static FluidTank makeTank(BlockEntity owner, int batch, Predicate<FluidStack> accepts) {
+            return new FluidTank(Math.max(BASE_VOLUME, batch), accepts) {
                 @Override
                 protected void onContentsChanged() {
                     owner.setChanged();
@@ -198,15 +208,17 @@ final class SaltCooling {
 
         void resize(long capacity) {
             minimum = Math.max(BASE_VOLUME, capacity);
-            SaltFuelBank.resize(cold, minimum);
-            SaltFuelBank.resize(hot, minimum);
+            SaltFuelBank.resize(cold, Math.max(minimum, coolant.inputIngredient().amount()));
+            SaltFuelBank.resize(hot, Math.max(minimum, coolant.outputAmount()));
         }
 
         int transferable() {
-            if (!cold.isFluidValid(cold.getFluid()) || (!hot.isEmpty() && !hot.isFluidValid(hot.getFluid()))) {
+            if (!cold.isFluidValid(cold.getFluid()) || coolant.hot() == Fluids.EMPTY
+                    || (!hot.isEmpty() && !hot.isFluidValid(hot.getFluid()))) {
                 return 0;
             }
-            return Math.min(cold.getFluidAmount(), hot.getCapacity() - hot.getFluidAmount());
+            return Math.min(cold.getFluidAmount() / coolant.inputIngredient().amount(),
+                    (hot.getCapacity() - hot.getFluidAmount()) / coolant.outputAmount());
         }
 
         void clear() {

@@ -1,10 +1,13 @@
 package nc.init;
 
+import nc.NuclearCraft;
+import nc.multiblock.fission.FissionCoolant;
+import nc.recipe.FluidIngredient;
 import net.minecraft.world.level.material.Fluid;
 
 import java.util.function.Consumer;
 
-public enum NCSaltCoolants {
+public enum NCSaltCoolants implements FissionCoolant {
     NAK("nak", 0xFFE5BC),
     IRON("iron_nak", 0x8D1515),
     REDSTONE("redstone_nak", 0xAB1C09),
@@ -40,12 +43,14 @@ public enum NCSaltCoolants {
 
     private final String id;
     private final int color;
+    private final FluidIngredient ingredient;
     private NCFluids.RegisteredFluid cold;
     private NCFluids.RegisteredFluid hot;
 
     NCSaltCoolants(String id, int color) {
         this.id = id;
         this.color = color;
+        this.ingredient = new FluidIngredient(NuclearCraft.id(id), false, 1);
     }
 
     static void registerFluids() {
@@ -57,6 +62,7 @@ public enum NCSaltCoolants {
         }
     }
 
+    @Override
     public String id() {
         return id;
     }
@@ -65,10 +71,27 @@ public enum NCSaltCoolants {
         return this == NAK ? "standard" : id.substring(0, id.length() - "_nak".length());
     }
 
+    @Override
+    public FluidIngredient inputIngredient() {
+        return ingredient;
+    }
+
+    @Override
+    public int outputAmount() {
+        return 1;
+    }
+
+    @Override
+    public int cooling() {
+        return NCSaltFission.cooling(this);
+    }
+
+    @Override
     public Fluid cold() {
         return cold.source().get();
     }
 
+    @Override
     public Fluid hot() {
         return hot.source().get();
     }

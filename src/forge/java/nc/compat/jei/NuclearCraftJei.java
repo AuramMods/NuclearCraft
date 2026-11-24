@@ -34,6 +34,7 @@ import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
+import nc.multiblock.fission.SaltHeaterBlock;
 import nc.init.NCGenerators;
 import nc.init.NCMachines;
 import nc.init.NCItemProcessors.Machine;
@@ -131,8 +132,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "fission_heating", FissionHeatRecipe.class);
     private static final RecipeType<FissionHeatRecipe> FISSION_EMERGENCY_COOLING =
             RecipeType.create(NuclearCraft.MOD_ID, "fission_emergency_cooling", FissionHeatRecipe.class);
-    private static final RecipeType<NCSaltCoolants> SALT_HEATING =
-            RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", NCSaltCoolants.class);
+    private static final RecipeType<SaltHeaterBlock> SALT_HEATING =
+            RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", SaltHeaterBlock.class);
     private static final RecipeType<HeatExchangerRecipe> HEAT_EXCHANGER =
             RecipeType.create(NuclearCraft.MOD_ID, "heat_exchanger", HeatExchangerRecipe.class);
     private static final RecipeType<CondenserRecipe> CONDENSER =
@@ -279,11 +280,12 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(FISSION_EMERGENCY_COOLING, NCPebbleFission.CONTROLLER.get(), gui,
                         NuclearCraftJei::fissionHeat, NuclearCraftJei::fissionHeatCost,
                         Component.translatable("gui.nuclearcraft.jei.fission_emergency_cooling")),
-                new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, coolant) -> {
-                    layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStack(new ItemStack(NCSaltFission.heater(coolant)));
-                    fluidSlot(layout, INPUT, 43, List.of(new FluidStack(coolant.cold(), 1)));
-                    fluidSlot(layout, OUTPUT, 104, List.of(new FluidStack(coolant.hot(), 1)));
-                }, coolant -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", NCSaltFission.cooling(coolant))),
+                new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, heater) -> {
+                    var coolant = heater.coolant();
+                    layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStack(new ItemStack(heater));
+                    fluidSlot(layout, INPUT, 43, coolant.inputIngredient().alternatives());
+                    fluidSlot(layout, OUTPUT, 104, List.of(new FluidStack(coolant.hot(), coolant.outputAmount())));
+                }, heater -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", heater.coolant().cooling())),
                 new Category<>(HEAT_EXCHANGER, NCHeatExchangers.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
@@ -363,7 +365,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
         registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));
         registration.addRecipes(FISSION_EMERGENCY_COOLING, recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()));
-        registration.addRecipes(SALT_HEATING, List.of(NCSaltCoolants.values()));
+        registration.addRecipes(SALT_HEATING, NCSaltFission.heaters().stream()
+                .filter(heater -> heater.coolant().cold() != Fluids.EMPTY && heater.coolant().hot() != Fluids.EMPTY).toList());
         registration.addRecipes(GasCoolerCategory.TYPE, NCPebbleFission.coolers().stream()
                 .filter(cooler -> cooler.gas().cold() != Fluids.EMPTY && cooler.gas().hot() != Fluids.EMPTY).toList());
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
@@ -406,8 +409,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION_HEATING);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), FISSION_EMERGENCY_COOLING);
         registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), FISSION_EMERGENCY_COOLING);
-        for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
-            registration.addRecipeCatalyst(NCSaltFission.heater(coolant), SALT_HEATING);
+        for (var heater : NCSaltFission.heaters()) {
+            registration.addRecipeCatalyst(heater, SALT_HEATING);
         }
         for (var cooler : NCPebbleFission.coolers()) {
             registration.addRecipeCatalyst(cooler, GasCoolerCategory.TYPE);

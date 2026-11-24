@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -24,9 +23,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public final class SaltHeaterBlock extends FissionPartBlock implements EntityBlock {
-    private final NCSaltCoolants coolant;
+    private final FissionCoolant coolant;
 
-    public SaltHeaterBlock(Properties properties, NCSaltCoolants coolant) {
+    public SaltHeaterBlock(Properties properties, FissionCoolant coolant) {
         super(properties, Role.SALT_HEATER);
         this.coolant = coolant;
     }
@@ -60,10 +59,10 @@ public final class SaltHeaterBlock extends FissionPartBlock implements EntityBlo
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.translatable("tooltip.nuclearcraft.fission.placement_rule",
-                NCSaltFission.placementRules().text(coolant)).withStyle(ChatFormatting.GRAY));
+                NCSaltFission.placementRule(coolant)).withStyle(ChatFormatting.GRAY));
     }
 
-    NCSaltCoolants coolant() {
+    public FissionCoolant coolant() {
         return coolant;
     }
 }

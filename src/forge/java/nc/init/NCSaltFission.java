@@ -1,6 +1,7 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.multiblock.fission.FissionCoolant;
 import nc.multiblock.fission.FissionPlacementRules;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.multiblock.fission.FissionVariant;
@@ -12,21 +13,32 @@ import nc.multiblock.fission.SaltVessel;
 import nc.multiblock.fission.SaltVesselBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.recipe.FluidIngredient;
 import nc.recipe.SaltFissionRecipe;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public final class NCSaltFission {
     private static final Map<NCSaltCoolants, RegistryObject<SaltHeaterBlock>> HEATERS = new EnumMap<>(NCSaltCoolants.class);
@@ -34,7 +46,10 @@ public final class NCSaltFission {
     private static final Map<NCSaltCoolants, ForgeConfigSpec.IntValue> COOLING = new EnumMap<>(NCSaltCoolants.class);
     private static final Map<SaltFissionPartMenu.Kind, RegistryObject<MenuType<SaltFissionPartMenu>>> PART_MENUS =
             new EnumMap<>(SaltFissionPartMenu.Kind.class);
-    private static final CoolingPlacementConfig<NCSaltCoolants> PLACEMENT;
+    private static final CoolingPlacementConfig<FissionCoolant> PLACEMENT;
+    private static final Set<String> RESERVED_COOLANT_IDS = Set.of("any", "fractions");
+    private static List<SaltHeaterBlock> registeredHeaters = List.of();
+    private static Map<String, FissionCoolant> coolantCatalog = Map.of();
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
@@ -62,7 +77,7 @@ public final class NCSaltFission {
         }
         builder.pop();
         PLACEMENT = new CoolingPlacementConfig<>(builder, List.of(NCSaltCoolants.values()),
-                FissionPlacementRules.Part.HEATER, NCSaltCoolants::material, new String[] {
+                FissionPlacementRules.Part.HEATER, NCSaltFission::placementName, new String[] {
                     "one vessel", "one moderator", "one vessel && one moderator",
                     "one redstone heater", "two axial glowstone heaters", "one obsidian heater",
                     "two moderators", "one vessel && one casing", "exactly two iron heaters",
@@ -74,7 +89,7 @@ public final class NCSaltFission {
                     "one gold heater && one prismarine heater", "one redstone heater && one end_stone heater", "one end_stone heater && one copper heater",
                     "two axial reflectors", "two copper heaters && one purpur heater", "exactly two redstone heaters",
                     "three moderators", "three vessels"
-                });
+                }, NCSaltFission::scriptedRules);
         SPEC = builder.build();
         for (var kind : SaltFissionPartMenu.Kind.values()) {
             PART_MENUS.put(kind, NCRegistries.MENUS.register(kind.id(),
@@ -94,8 +109,7 @@ public final class NCSaltFission {
                     BlockEntityType.Builder.of(SaltVessel::new, VESSEL.get()).build(null));
     public static final RegistryObject<BlockEntityType<SaltHeater>> HEATER_ENTITY =
             NCRegistries.BLOCK_ENTITIES.register("salt_fission_heater", () ->
-                    BlockEntityType.Builder.of(SaltHeater::new,
-                            HEATERS.values().stream().map(RegistryObject::get).toArray(Block[]::new)).build(null));
+                    BlockEntityType.Builder.of(SaltHeater::new, registerHeaterCatalog()).build(null));
     public static final RegistryObject<MenuType<SolidFissionMenu>> MENU = NCRegistries.MENUS.register("salt_fission_controller",
             () -> new MenuType<>((id, player) -> new SolidFissionMenu(id, player, FissionVariant.SALT), FeatureFlags.DEFAULT_FLAGS));
     public static final RegistryObject<RecipeType<SaltFissionRecipe>> FUEL_TYPE =
@@ -119,7 +133,76 @@ public final class NCSaltFission {
         }
     }
 
-    public static FissionPlacementRules<NCSaltCoolants> placementRules() { return PLACEMENT.rules(); }
+    public static FissionCoolant scriptedCoolant(String id, String input, int inputAmount, String output, int outputAmount,
+                                                 int cooling, String placementRule) {
+        if (!id.matches("[a-z0-9_]+") || RESERVED_COOLANT_IDS.contains(id)
+                || Arrays.stream(NCSaltCoolants.values()).anyMatch(coolant -> coolant.id().equals(id) || coolant.material().equals(id))) {
+            throw new IllegalArgumentException("Invalid scripted salt heater ID " + id);
+        }
+        if (inputAmount <= 0 || outputAmount <= 0 || cooling < 0) {
+            throw new IllegalArgumentException("A salt heater requires positive batches and nonnegative cooling");
+        }
+        boolean tag = input.startsWith("#");
+        ResourceLocation inputId = ResourceLocation.tryParse(tag ? input.substring(1) : input);
+        ResourceLocation outputId = ResourceLocation.tryParse(output);
+        if (inputId == null || outputId == null) {
+            throw new IllegalArgumentException("Invalid fluid ID or tag in scripted salt heater " + id);
+        }
+        return new ScriptedCoolant(id, new FluidIngredient(inputId, tag, inputAmount), outputId, outputAmount, cooling,
+                Objects.requireNonNull(placementRule));
+    }
+
+    public static SaltHeaterBlock createScriptedHeater(FissionCoolant coolant) {
+        return new SaltHeaterBlock(NCFission.properties(), coolant);
+    }
+
+    public static FissionWallBlock createScriptedHeaterPort(FissionCoolant coolant) {
+        return FissionWallBlock.heaterPort(NCFission.properties(), coolant);
+    }
+
+    public static BlockItem createScriptedHeaterItem(String blockId) {
+        var id = ResourceLocation.tryParse(blockId);
+        var block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
+        if (!(block instanceof SaltHeaterBlock || block instanceof FissionWallBlock wall && wall.saltCoolant() != null)) {
+            throw new IllegalArgumentException("No NuclearCraft salt heater or heater port with ID " + blockId);
+        }
+        return new BlockItem(block, new Item.Properties());
+    }
+
+    private static Block[] registerHeaterCatalog() {
+        registeredHeaters = ForgeRegistries.BLOCKS.getValues().stream().filter(SaltHeaterBlock.class::isInstance)
+                .map(SaltHeaterBlock.class::cast).toList();
+        coolantCatalog = registeredHeaters.stream().map(SaltHeaterBlock::coolant).distinct()
+                .collect(Collectors.toUnmodifiableMap(FissionCoolant::id, coolant -> coolant));
+        return registeredHeaters.toArray(Block[]::new);
+    }
+
+    private static Map<FissionCoolant, String> scriptedRules() {
+        return coolantCatalog.values().stream().filter(ScriptedCoolant.class::isInstance).map(ScriptedCoolant.class::cast)
+                .collect(Collectors.toMap(coolant -> coolant, ScriptedCoolant::placementRule));
+    }
+
+    private static String placementName(FissionCoolant coolant) {
+        return coolant instanceof NCSaltCoolants stock ? stock.material() : coolant.id();
+    }
+
+    public static String placementRule(FissionCoolant coolant) {
+        String rule = PLACEMENT.rules().text(coolant);
+        return rule == null && coolant instanceof ScriptedCoolant scripted
+                ? scripted.placementRule() : Objects.requireNonNullElse(rule, "");
+    }
+
+    private record ScriptedCoolant(String id, FluidIngredient inputIngredient, ResourceLocation output, int outputAmount,
+                                   int cooling, String placementRule) implements FissionCoolant {
+        @Override
+        public Fluid hot() {
+            return Objects.requireNonNullElse(ForgeRegistries.FLUIDS.getValue(output), Fluids.EMPTY);
+        }
+    }
+
+    public static List<SaltHeaterBlock> heaters() { return registeredHeaters; }
+    public static Map<String, FissionCoolant> coolants() { return coolantCatalog; }
+    public static FissionPlacementRules<FissionCoolant> placementRules() { return PLACEMENT.rules(); }
     public static MenuType<SaltFissionPartMenu> partMenu(SaltFissionPartMenu.Kind kind) { return PART_MENUS.get(kind).get(); }
     public static SaltHeaterBlock heater(NCSaltCoolants coolant) { return HEATERS.get(coolant).get(); }
     public static FissionWallBlock port(NCSaltCoolants coolant) { return PORTS.get(coolant).get(); }

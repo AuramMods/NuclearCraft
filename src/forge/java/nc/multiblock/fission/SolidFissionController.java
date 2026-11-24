@@ -4,7 +4,6 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
-import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
@@ -610,11 +609,11 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return Objects.requireNonNull(saltFuel);
     }
 
-    @Nullable SaltCooling.Tanks connectedSaltCoolant(NCSaltCoolants coolant) {
+    @Nullable SaltCooling.Tanks connectedSaltCoolant(FissionCoolant coolant) {
         return !assembled() || saltCooling == null ? null : saltCooling.connectedTanks(coolant);
     }
 
-    double heaterProgress(BlockPos pos, NCSaltCoolants coolant) {
+    double heaterProgress(BlockPos pos, FissionCoolant coolant) {
         return saltCooling == null ? 0 : saltCooling.progress(pos, coolant);
     }
 

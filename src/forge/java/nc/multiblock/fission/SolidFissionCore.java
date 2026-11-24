@@ -3,8 +3,6 @@ package nc.multiblock.fission;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
 import nc.init.NCRadiation;
-import nc.init.NCSaltCoolants;
-import nc.init.NCSaltFission;
 import nc.multiblock.Cuboid;
 import nc.recipe.FissionFuelStats;
 import nc.recipe.FissionIrradiatorRecipe;
@@ -51,7 +49,7 @@ final class SolidFissionCore {
     record CoolerStats(boolean processing, double speed) {}
 
     private record GasLoad(BlockPos pos, PebbleCoolant gas, double efficiency) {}
-    private record SaltLoad(BlockPos pos, NCSaltCoolants coolant, double efficiency) {}
+    private record SaltLoad(BlockPos pos, FissionCoolant coolant, double efficiency) {}
 
     private static final class Irradiation {
         final FissionIrradiator part;
@@ -381,7 +379,7 @@ final class SolidFissionCore {
         }
         Map<BlockPos, PebbleCoolant> coolers = gasCooling == null ? Map.of()
                 : gasCooling.available(level, layout, thermalCells, moderatorPositions);
-        Map<BlockPos, NCSaltCoolants> heaters = saltCooling == null ? Map.of()
+        Map<BlockPos, FissionCoolant> heaters = saltCooling == null ? Map.of()
                 : saltCooling.available(level, layout, thermalCells, moderatorPositions);
         Set<BlockPos> sinks = fluidCooling ? Set.of() : availableSinks(level, thermalCells, moderatorPositions);
         Set<BlockPos> cooledParts = switch (layout.variant()) {
@@ -486,8 +484,8 @@ final class SolidFissionCore {
             long cooling = 0;
             for (BlockPos sink : cluster.sinks()) {
                 PebbleCoolant gas = coolers.get(sink);
-                NCSaltCoolants salt = heaters.get(sink);
-                int rate = gas != null ? gas.cooling() : salt != null ? NCSaltFission.cooling(salt)
+                FissionCoolant salt = heaters.get(sink);
+                int rate = gas != null ? gas.cooling() : salt != null ? salt.cooling()
                         : sinks.contains(sink) ? ((SolidHeatSinkBlock) level.getBlockState(sink).getBlock()).cooling() : 0;
                 if (rate > 0) {
                     cooling += rate;
@@ -505,7 +503,7 @@ final class SolidFissionCore {
                     if (gas != null) {
                         gasLoads.add(new GasLoad(sink, gas, efficiency));
                     }
-                    NCSaltCoolants coolant = heaters.get(sink);
+                    FissionCoolant coolant = heaters.get(sink);
                     if (coolant != null) {
                         saltLoads.add(new SaltLoad(sink, coolant, efficiency));
                     }

@@ -1,6 +1,5 @@
 package nc.multiblock.fission;
 
-import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -9,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class SaltHeater extends BlockEntity {
-    private final NCSaltCoolants coolant;
+    private final FissionCoolant coolant;
     private final SaltCooling.Tanks local;
     private @Nullable SolidFissionController controller;
 
@@ -19,7 +18,7 @@ public final class SaltHeater extends BlockEntity {
         local = new SaltCooling.Tanks(coolant, this);
     }
 
-    NCSaltCoolants coolant() { return coolant; }
+    FissionCoolant coolant() { return coolant; }
     SaltCooling.Tanks localTanks() { return local; }
 
     @Nullable SolidFissionController controller() {

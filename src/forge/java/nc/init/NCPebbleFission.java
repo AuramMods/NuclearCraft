@@ -172,14 +172,6 @@ public final class NCPebbleFission {
     private record ScriptedCoolant(String id, FluidIngredient inputIngredient, ResourceLocation output, int outputAmount,
                                   int cooling, String placementRule) implements PebbleCoolant {
         @Override
-        public Fluid cold() {
-            if (!inputIngredient.tag()) {
-                return Objects.requireNonNullElse(ForgeRegistries.FLUIDS.getValue(inputIngredient.id()), Fluids.EMPTY);
-            }
-            return inputIngredient.alternatives().stream().map(stack -> stack.getFluid()).findFirst().orElse(Fluids.EMPTY);
-        }
-
-        @Override
         public Fluid hot() {
             return Objects.requireNonNullElse(ForgeRegistries.FLUIDS.getValue(output), Fluids.EMPTY);
         }

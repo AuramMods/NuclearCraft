@@ -2,7 +2,6 @@ package nc.multiblock.fission;
 
 import nc.init.NCFission;
 import nc.multiblock.Cuboid;
-import nc.init.NCSaltCoolants;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
@@ -21,7 +20,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
                           List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable PebbleCooling.Channel gas,
-                @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
+                @Nullable FissionCoolant salt, @Nullable ResourceLocation fuelFilter) {
         boolean itemFuel() {
             return role == Role.FUEL_PORT || role == Role.CHAMBER_PORT;
         }

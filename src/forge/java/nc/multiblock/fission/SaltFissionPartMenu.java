@@ -1,7 +1,7 @@
 package nc.multiblock.fission;
 
-import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
+import nc.recipe.FluidIngredient;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -39,7 +39,8 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private static final int HEAT_CAPACITY = 11;
     private static final int COOLING = 12;
     private static final int STATUS = 13;
-    private static final int DATA_SIZE = 14 * 2;
+    private static final int HEATER_BLOCK = 14;
+    private static final int DATA_SIZE = 15 * 2;
     private static final int CONNECTED = 1;
     private static final int PROCESSING = 2;
     private static final int OUTPUT_PORT = 4;
@@ -100,6 +101,17 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
 
     public FluidStack filter() {
         return fluidAt(FILTER, 1);
+    }
+
+    public @Nullable FluidIngredient coolantInput() {
+        var block = BuiltInRegistries.BLOCK.byId(get(HEATER_BLOCK));
+        if (block instanceof SaltHeaterBlock heater) {
+            return heater.coolant().inputIngredient();
+        }
+        if (block instanceof FissionWallBlock wall && wall.saltCoolant() != null) {
+            return wall.saltCoolant().inputIngredient();
+        }
+        return null;
     }
 
     public FluidStack reserved() {
@@ -218,6 +230,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         setTank(OUTPUT, part.tank(viewLocal, true));
         ResourceLocation filter = part.filter();
         set(FILTER, fluidId(part.coolant != null ? part.coolant.cold() : filter == null ? null : ForgeRegistries.FLUIDS.getValue(filter)));
+        set(HEATER_BLOCK, part.coolant == null ? 0 : BuiltInRegistries.BLOCK.getId(expected));
         FluidStack reserved = part.vessel == null ? FluidStack.EMPTY : part.vessel.reservedForInspection();
         set(RESERVED, fluidId(reserved.getFluid()));
         set(RESERVED_AMOUNT, reserved.getAmount());
@@ -225,7 +238,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
                 : part.coolant != null && !kind.port() && part.controller != null
                     ? part.controller.heaterProgress(pos, part.coolant) : 0;
         set(PROGRESS, (int) (1000 * progress));
-        set(COOLING, part.coolant != null ? NCSaltFission.cooling(part.coolant) : 0);
+        set(COOLING, part.coolant != null ? part.coolant.cooling() : 0);
         var heat = part.controller == null || kind.port() ? SolidFissionCore.PartHeat.NONE : part.controller.partHeat(pos);
         set(HEAT, (int) Math.min(Integer.MAX_VALUE, heat.amount()));
         set(HEAT_CAPACITY, (int) Math.min(Integer.MAX_VALUE, heat.capacity()));
@@ -268,7 +281,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
 
     private record Part(@Nullable SolidFissionController controller, @Nullable SaltVessel vessel,
                         @Nullable FissionPortBlockEntity port, @Nullable SaltHeater heater,
-                        @Nullable NCSaltCoolants coolant, boolean outputPort) {
+                        @Nullable FissionCoolant coolant, boolean outputPort) {
         @Nullable SaltCooling.Tanks sharedCoolant() {
             return coolant == null || controller == null ? null : controller.connectedSaltCoolant(coolant);
         }

@@ -734,6 +734,37 @@ All 194 local GameTests passed. A packaged Forge 47.4.18 upgrade retained 1,501 
 
 The muted Auram client filled an unassembled heater with a 1,000 mB bucket. Both heater and port menus showed their own buffers and the 725 mB cold and 324 mB hot shared circuit after assembly. Clearing the port's local hot tank preserved the shared circuit and local cold supply. The native observer recorded zero desktop activations, foreground samples, and visible window samples.
 
+### Scripted molten-salt heaters
+
+Migrate `Registration.registerFissionHeater` to a KubeJS startup script. Keep the legacy material name and use the same IDs on the server and client. Register the heater and its reversible wall port from the same definition.
+
+```js
+const NuclearCraftSalt = Java.loadClass('nc.init.NCSaltFission')
+const demo = NuclearCraftSalt.scriptedCoolant(
+    'demo', 'nuclearcraft:nak', 3, 'nuclearcraft:nak_hot', 5, 110, 'one vessel'
+)
+const parts = {
+    'nuclearcraft:salt_fission_heater_demo': () => NuclearCraftSalt.createScriptedHeater(demo),
+    'nuclearcraft:fission_heater_port_demo': () => NuclearCraftSalt.createScriptedHeaterPort(demo)
+}
+
+StartupEvents.registry('block', event => {
+    for (const id in parts) event.createCustom(id, parts[id])
+})
+
+StartupEvents.registry('item', event => {
+    for (const id in parts) event.createCustom(id, () => NuclearCraftSalt.createScriptedHeaterItem(id))
+})
+```
+
+Pass a source fluid ID or a fluid tag prefixed with `#` for the input. The output uses a source fluid ID. Both amounts are positive millibuckets per batch. The heater waits until it can consume the whole input and fit the whole product. Keep the cooling rate in H/t and the legacy placement rule. Placement rules can reference any stock or registered scripted heater by name. Use a unique lowercase name made of letters, digits, and underscores.
+
+Supply the blockstates, models, mining tags, loot tables, and crafting recipes through the pack. Reuse the stock port's directional and active variants for rendering. Scripted heaters and ports use the stock local and shared storage paths. Save a migrated shared circuit under `salt_cooling.<material>` and keep the startup definition installed with the world. Scripted fractional batch progress uses the material's `coolant_id` in the controller's `salt_cooling.fractions` list. Stock progress still reads and writes its original numeric index.
+
+On packaged Forge 47.4.18, Auram’s KubeJS 2001.6.5-build.16 registered a heater that converted 3 mB of either coolant in its tag into 5 mB of hot NaK. Ender IO 8.2.22-beta supplied 97 mB of NaK and Mekanism 10.4.16.80 supplied 128 mB of iron NaK to separate reactors. The heaters kept their 160 mB and 210 mB products against adjacent tanks containing water. The fractional progress and the 1 mB and 2 mB remainders survived a dedicated restart. Both networks delivered the exact amounts, and the outputs and remaining inputs survived confirmed chunk unload and reload. A stock save upgrade preserved its 1,501 mB cold and 1,570 mB hot shared amounts and the heater and port local buffers.
+
+All 204 local GameTests passed. The new heater test verified that four free millibuckets cannot fit a five-millibucket product, then cleared space and heated 60 mB into 100 mB before reassembling from the save. The same JAR loaded in the isolated 539-mod Auram client. Each reactor delivered its exact output through its pipe network, the client synchronized the crafting recipe and loaded both custom part models, JEI displayed the 3-to-5 mB recipe, and the port menu displayed the pack's custom fluid tag. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible window samples.
+
 ### Pebble-bed chamber and cooler controls
 
 Chambers and chamber ports share input and depleted fuel when their item filters match. Use a TRISO pellet on a chamber or port with an empty local input and the reactor unassembled to select its filter. The sample stays in your hand. Use an empty hand to open the part's screen. Shift-click an empty filtered input slot to clear the filter while unassembled. An unfiltered port still accepts any valid TRISO fuel. A chamber with no matching port uses its own items. A pellet already reserved for processing returns its depleted fuel to the storage it came from.

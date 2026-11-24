@@ -593,10 +593,8 @@ public final class NCFission {
     private static Block[] portBlocks() {
         List<Block> blocks = new ArrayList<>(List.of(CELL_PORT.get(), VENT.get(), NCPebbleFission.CHAMBER_PORT.get(), NCSaltFission.VESSEL_PORT.get()));
         ForgeRegistries.BLOCKS.getValues().stream().filter(FissionWallBlock.class::isInstance)
-                .map(FissionWallBlock.class::cast).filter(block -> block.coolant() != null).forEach(blocks::add);
-        for (NCSaltCoolants coolant : NCSaltCoolants.values()) {
-            blocks.add(NCSaltFission.port(coolant));
-        }
+                .map(FissionWallBlock.class::cast).filter(block -> block.coolant() != null || block.saltCoolant() != null)
+                .forEach(blocks::add);
         return blocks.toArray(Block[]::new);
     }
 

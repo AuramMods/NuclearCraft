@@ -8,6 +8,7 @@ import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SaltFissionPartMenu;
+import nc.multiblock.fission.SaltHeaterBlock;
 import nc.multiblock.fission.SolidFissionController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,11 +25,14 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 import java.util.OptionalInt;
 import java.util.UUID;
@@ -38,6 +42,7 @@ import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIM
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
+@Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public final class SaltFissionGameTests {
     private static final String FUEL = "lecf_251_fluoride_flibe";
     private static final String DEPLETED = "depleted_" + FUEL;
@@ -51,6 +56,88 @@ public final class SaltFissionGameTests {
     private static final BlockPos SECOND_OUT = new BlockPos(6, 3, 7);
     private static final BlockPos NAK_IN = new BlockPos(3, 1, 3);
     private static final BlockPos NAK_OUT = new BlockPos(3, 5, 3);
+
+    @SubscribeEvent
+    public static void registerScriptedHeater(RegisterEvent event) {
+        event.register(ForgeRegistries.Keys.BLOCKS, helper -> {
+            var coolant = NCSaltFission.scriptedCoolant("qa_nak", "nuclearcraft:nak", 3,
+                    "nuclearcraft:nak_hot", 5, 110, "one vessel");
+            helper.register(NuclearCraft.id("salt_fission_heater_qa_nak"), NCSaltFission.createScriptedHeater(coolant));
+            helper.register(NuclearCraft.id("fission_heater_port_qa_nak"), NCSaltFission.createScriptedHeaterPort(coolant));
+        });
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 500)
+    public static void scriptedSaltHeaterKeepsWholeBatchesAcrossBackpressureAndReload(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        var heater = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("salt_fission_heater_qa_nak"));
+        var port = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("fission_heater_port_qa_nak"));
+        helper.setBlock(FIRST_VESSEL.below(), heater);
+        helper.setBlock(NAK_IN, port);
+        helper.setBlock(NAK_OUT, port.defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var state = controller.saveWithoutMetadata();
+        var circuit = new CompoundTag();
+        circuit.put("output", stack("nak_hot", 1292).writeToNBT(new CompoundTag()));
+        var storage = new CompoundTag();
+        storage.put("qa_nak", circuit);
+        state.put("salt_cooling", storage);
+        controller.load(state);
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The scripted heater ports form a shared circuit"))
+                .thenExecute(() -> {
+                    var profile = ((SaltHeaterBlock) heater).coolant();
+                    var rule = NCSaltFission.placementRules().text(profile);
+                    helper.assertTrue("one vessel".equals(rule), "The custom rule should be compiled, found " + rule);
+                    var player = saltInspector(helper);
+                    helper.useBlock(NAK_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.linked() && menu.coolantInput() != null && !menu.coolantInput().tag()
+                                    && menu.coolantInput().id().equals(NuclearCraft.id("nak"))
+                                    && menu.coolantInput().amount() == 3 && menu.cooling() == 110,
+                            "The port menu shows the configured input and cooling rate");
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    helper.assertTrue(input.fill(stack("iron_nak", 62), SIMULATE) == 0
+                                    && input.fill(stack("nak", 62), EXECUTE) == 62,
+                            "The input port accepts only the registered cold coolant");
+                    fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 180), EXECUTE);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(12, () -> {
+                    var output = fluids(helper, NAK_OUT, Direction.UP);
+                    helper.assertTrue(fluids(helper, NAK_IN, Direction.DOWN).getFluidInTank(0).getAmount() == 62
+                                    && output.getFluidInTank(0).getAmount() == 1292,
+                            "Four millibuckets of room cannot fit a whole five-millibucket product");
+                    helper.assertTrue(output.drain(100, EXECUTE).isFluidStackIdentical(stack("nak_hot", 100)),
+                            "Drawing product through the outward side makes room for whole batches");
+                })
+                .thenWaitUntil(() -> {
+                    int cold = fluids(helper, NAK_IN, Direction.DOWN).getFluidInTank(0).getAmount();
+                    var hot = fluids(helper, NAK_OUT, Direction.UP).getFluidInTank(0);
+                    helper.assertTrue(cold == 2 && hot.isFluidStackIdentical(stack("nak_hot", 1292)),
+                            "Twenty whole batches convert 60 mB to 100 mB, found " + cold + " mB of cold and "
+                                    + hot.getAmount() + " mB of hot coolant");
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    helper.setBlock(CASE, Blocks.AIR);
+                    var saved = controller.saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCSaltFission.CONTROLLER.get());
+                    helper.getBlockEntity(CONTROLLER).load(saved);
+                    helper.setBlock(CASE, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> helper.assertTrue(((SolidFissionController) helper.getBlockEntity(CONTROLLER)).assembled(),
+                        "The saved reactor reassembles with the custom port type"))
+                .thenExecute(() -> helper.assertTrue(
+                        fluids(helper, NAK_IN, Direction.DOWN).getFluidInTank(0).isFluidStackIdentical(stack("nak", 2))
+                                && fluids(helper, NAK_OUT, Direction.UP).drain(1292, EXECUTE)
+                                    .isFluidStackIdentical(stack("nak_hot", 1292)),
+                        "The saved circuit restores its exact cold remainder and hot product"))
+                .thenSucceed();
+    }
 
     @GameTest(template = "empty")
     public static void saltFissionLoadsTheLegacyFluidFuelsAndHeaters(GameTestHelper helper) {
