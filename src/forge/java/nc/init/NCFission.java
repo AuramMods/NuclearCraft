@@ -3,6 +3,9 @@ package nc.init;
 import nc.NuclearCraft;
 import nc.multiblock.fission.FissionControlBlockEntity;
 import nc.multiblock.fission.FissionFuelCell;
+import nc.multiblock.fission.FissionIrradiator;
+import nc.multiblock.fission.FissionIrradiatorBlock;
+import nc.multiblock.fission.FissionIrradiatorMenu;
 import nc.multiblock.fission.FissionManagerBlock;
 import nc.multiblock.fission.FissionShieldBlock;
 import nc.multiblock.fission.FissionFuelCellBlock;
@@ -16,6 +19,8 @@ import nc.multiblock.fission.SolidHeatSinkBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.SolidFissionRecipe;
+import nc.recipe.FissionIrradiatorRecipe;
+import nc.recipe.FissionIrradiatorRecipe.Material;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -59,6 +64,8 @@ public final class NCFission {
     private static final ForgeConfigSpec.IntValue NEUTRON_REACH;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_FLUX_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue MELTDOWN_RADIATION;
+    private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_HEAT = new EnumMap<>(Material.class);
+    private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_EFFICIENCY = new EnumMap<>(Material.class);
 
     private static final TagKey<Block> GRAPHITE_BLOCKS = storageBlocks("graphite");
     private static final TagKey<Block> BERYLLIUM_BLOCKS = storageBlocks("beryllium");
@@ -81,6 +88,14 @@ public final class NCFission {
         BORON_SILVER_EFFICIENCY = builder.defineInRange("boron_silver_efficiency", 0.5D, 0D, 255D);
         GADOLINIUM_SAMARIUM_HEAT = builder.defineInRange("gadolinium_samarium_heat_per_flux", 10D, 0D, 32767D);
         GADOLINIUM_SAMARIUM_EFFICIENCY = builder.defineInRange("gadolinium_samarium_efficiency", 0.75D, 0D, 255D);
+        builder.pop();
+        builder.push("irradiator");
+        for (Material material : Material.values()) {
+            builder.push(material.id());
+            IRRADIATOR_HEAT.put(material, builder.defineInRange("heat_per_flux", 0D, 0D, 32_767D));
+            IRRADIATOR_EFFICIENCY.put(material, builder.defineInRange("efficiency", material.defaultEfficiency, 0D, 32_767D));
+            builder.pop();
+        }
         builder.pop();
         builder.push("neutrons");
         NEUTRON_REACH = builder.defineInRange("reach", 4, 1, 255);
@@ -123,6 +138,24 @@ public final class NCFission {
     public static final RegistryObject<FissionWallBlock> CONTROLLER = wall("solid_fission_controller", Role.CONTROLLER);
     public static final RegistryObject<FissionWallBlock> VENT = wall("fission_vent", Role.VENT);
     public static final RegistryObject<FissionWallBlock> CELL_PORT = wall("fission_cell_port", Role.FUEL_PORT);
+    public static final RegistryObject<FissionIrradiatorBlock> IRRADIATOR = part("fission_irradiator",
+            () -> new FissionIrradiatorBlock(properties()));
+    public static final RegistryObject<FissionWallBlock> IRRADIATOR_PORT = wall("fission_irradiator_port", Role.IRRADIATOR_PORT);
+    public static final RegistryObject<BlockEntityType<FissionIrradiator>> IRRADIATOR_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_irradiator", () ->
+                    BlockEntityType.Builder.of(FissionIrradiator::new, IRRADIATOR.get()).build(null));
+    public static final RegistryObject<BlockEntityType<FissionPortBlockEntity>> IRRADIATOR_PORT_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_irradiator_port", () ->
+                    BlockEntityType.Builder.of(FissionPortBlockEntity::new, IRRADIATOR_PORT.get()).build(null));
+    public static final RegistryObject<MenuType<FissionIrradiatorMenu>> IRRADIATOR_MENU =
+            irradiatorMenu(false);
+    public static final RegistryObject<MenuType<FissionIrradiatorMenu>> IRRADIATOR_PORT_MENU =
+            irradiatorMenu(true);
+    public static final RegistryObject<RecipeType<FissionIrradiatorRecipe>> IRRADIATION =
+            NCRegistries.RECIPE_TYPES.register("fission_irradiator", () -> RecipeType.simple(NuclearCraft.id("fission_irradiator")));
+    public static final RegistryObject<RecipeSerializer<FissionIrradiatorRecipe>> IRRADIATOR_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("fission_irradiator", FissionIrradiatorRecipe.Serializer::new);
+
     public static final RegistryObject<FissionFuelCellBlock> CELL = part("solid_fission_cell",
             () -> new FissionFuelCellBlock(properties()));
     public static final RegistryObject<SolidHeatSinkBlock> WATER_SINK = SINKS.get(NCHeatSinks.WATER);
@@ -205,6 +238,8 @@ public final class NCFission {
                         output.accept(CONTROLLER.get());
                         output.accept(CELL.get());
                         output.accept(CELL_PORT.get());
+                        output.accept(IRRADIATOR.get());
+                        output.accept(IRRADIATOR_PORT.get());
                         output.accept(VENT.get());
                         for (NCHeatSinks sink : NCHeatSinks.values()) {
                             output.accept(heatSink(sink));
@@ -311,6 +346,23 @@ public final class NCFission {
 
     static BlockBehaviour.Properties properties() {
         return BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK);
+    }
+
+    private static RegistryObject<MenuType<FissionIrradiatorMenu>> irradiatorMenu(boolean port) {
+        return NCRegistries.MENUS.register(port ? "fission_irradiator_port" : "fission_irradiator",
+                () -> new MenuType<>((id, inventory) -> new FissionIrradiatorMenu(id, inventory, port), FeatureFlags.DEFAULT_FLAGS));
+    }
+
+    public static double irradiatorHeat(Material material) {
+        return configured(IRRADIATOR_HEAT.get(material));
+    }
+
+    public static double irradiatorEfficiency(Material material) {
+        return configured(IRRADIATOR_EFFICIENCY.get(material));
+    }
+
+    public static long maxModeratorLineFlux() {
+        return Math.max(1L, (long) neutronReach() * Math.max(GRAPHITE.flux(), Math.max(BERYLLIUM.flux(), HEAVY_WATER.flux())));
     }
 
     private NCFission() {}

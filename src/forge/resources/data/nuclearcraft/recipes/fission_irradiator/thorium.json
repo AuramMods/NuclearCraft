@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:fission_irradiator",
+    "input": [
+        {
+            "tag": "forge:ingots/thorium"
+        },
+        {
+            "tag": "forge:dusts/thorium"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:tbp_dust"
+    },
+    "flux_required": 160000,
+    "material": "thorium",
+    "radiation": 7.15e-11
+}

@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:fission_irradiator",
+    "input": [
+        {
+            "tag": "forge:ingots/bismuth"
+        },
+        {
+            "tag": "forge:dusts/bismuth"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:polonium_dust"
+    },
+    "flux_required": 1920000,
+    "material": "bismuth",
+    "radiation": 4.975e-20
+}

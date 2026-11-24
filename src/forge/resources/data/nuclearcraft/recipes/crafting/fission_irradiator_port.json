@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PHP",
+        "ZFZ",
+        "PHP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "Z": {
+            "tag": "forge:ingots/zirconium"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_irradiator_port",
+        "count": 4
+    }
+}

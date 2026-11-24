@@ -149,6 +149,10 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
 
     public record Input(Ingredient ingredient, int count) {
         boolean accepts(ItemStack stack) {
+            return accepts(ingredient, stack);
+        }
+
+        static boolean accepts(Ingredient ingredient, ItemStack stack) {
             if (!ingredient.test(stack)) {
                 return false;
             }

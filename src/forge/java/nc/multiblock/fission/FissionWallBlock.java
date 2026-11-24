@@ -1,6 +1,8 @@
 package nc.multiblock.fission;
 
+import nc.init.NCFission;
 import nc.init.NCGasCoolants;
+import nc.init.NCHeatExchangers;
 import nc.init.NCSaltCoolants;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
@@ -71,7 +73,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return switch (role(state)) {
             case CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER -> new SolidFissionController(pos, state);
-            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT -> new FissionPortBlockEntity(pos, state);
+            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT, IRRADIATOR_PORT -> new FissionPortBlockEntity(pos, state);
             default -> throw new IllegalStateException("Unexpected reactor wall block " + state);
         };
     }
@@ -79,6 +81,9 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         Role role = role(state);
+        if (level instanceof ServerLevel && role == Role.IRRADIATOR_PORT && type == NCFission.IRRADIATOR_PORT_ENTITY.get()) {
+            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportIrradiation((ServerLevel) world);
+        }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
         }
@@ -114,6 +119,10 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
                         controller.inventory().getStackInSlot(slot));
             }
         }
+        if (!level.isClientSide && role(state) == Role.IRRADIATOR_PORT && !state.is(replacement.getBlock())
+                && level.getBlockEntity(pos) instanceof FissionPortBlockEntity port) {
+            port.localIrradiatorItems().dropContents(level);
+        }
         super.onRemove(state, level, pos, replacement, moved);
     }
 
@@ -126,7 +135,19 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
 
         if (level instanceof ServerLevel server) {
             BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof FissionPortBlockEntity port && player.isShiftKeyDown()) {
+            if (entity instanceof FissionPortBlockEntity port && role(state) == Role.IRRADIATOR_PORT) {
+                var held = player.getItemInHand(hand);
+                if ((player.isShiftKeyDown() && held.isEmpty())
+                        || (held.is(NCHeatExchangers.MULTITOOL.get()) && port.irradiatorController() == null)) {
+                    boolean output = !state.getValue(ACTIVE);
+                    level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
+                    geometryChanged(server, pos);
+                    player.displayClientMessage(Component.translatable(output
+                            ? "message.nuclearcraft.fission.port_output" : "message.nuclearcraft.fission.port_input"), true);
+                } else {
+                    FissionIrradiatorMenu.interact(server, player, hand, port);
+                }
+            } else if (entity instanceof FissionPortBlockEntity port && player.isShiftKeyDown()) {
                 if (role(state) == Role.VESSEL_PORT) {
                     var result = SaltVesselBlock.selectFilter(player, hand, server, pos, port::fuelFilter);
                     if (result != InteractionResult.PASS) {
@@ -156,7 +177,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             } else {
                 return InteractionResult.PASS;
             }
-        } else if (!isController(role(state)) && role(state) != Role.VESSEL_PORT && role(state) != Role.HEATER_PORT
+        } else if (!isController(role(state)) && role(state) != Role.IRRADIATOR_PORT && role(state) != Role.VESSEL_PORT && role(state) != Role.HEATER_PORT
                 && !player.isShiftKeyDown()) {
             return InteractionResult.PASS;
         }

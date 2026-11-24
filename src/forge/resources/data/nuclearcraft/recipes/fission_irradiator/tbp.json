@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:fission_irradiator",
+    "input": [
+        {
+            "tag": "forge:ingots/tbp"
+        },
+        {
+            "tag": "forge:dusts/tbp"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:protactinium_233_dust"
+    },
+    "flux_required": 2720000,
+    "material": "tbp",
+    "radiation": 0.08358024698110801
+}

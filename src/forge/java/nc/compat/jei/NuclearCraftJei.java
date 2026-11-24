@@ -4,6 +4,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.handlers.IGuiClickableArea;
 import mezz.jei.api.gui.handlers.IGuiContainerHandler;
@@ -22,6 +23,7 @@ import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
 import nc.NuclearCraft;
 import nc.client.FluidProcessorScreen;
+import nc.client.FissionIrradiatorScreen;
 import nc.client.SaltFissionPartScreen;
 import nc.client.ItemProcessorScreen;
 import nc.client.ScrubberScreen;
@@ -64,6 +66,7 @@ import nc.recipe.SaltMixerRecipe;
 import nc.recipe.ScrubberRecipe;
 import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
+import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.client.Minecraft;
@@ -106,6 +109,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "supercooler", SupercoolerRecipe.class);
     private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
             RecipeType.create(NuclearCraft.MOD_ID, "salt_mixer", SaltMixerRecipe.class);
+    private static final RecipeType<FissionIrradiatorRecipe> IRRADIATION =
+            RecipeType.create(NuclearCraft.MOD_ID, "fission_irradiator", FissionIrradiatorRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
             RecipeType.create("nuclearcraft", "solid_fission", SolidFissionRecipe.class);
     private static final RecipeType<SolidFissionRecipe> PEBBLE =
@@ -235,6 +240,12 @@ public final class NuclearCraftJei implements IModPlugin {
                 }, recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(CENTRIFUGE, NCRegistries.CENTRIFUGE.get(), gui, NuclearCraftJei::centrifugeRecipe,
                         recipe -> energy(recipe.ticks(), recipe.energyPerTick())),
+                new Category<>(IRRADIATION, NCFission.IRRADIATOR.get(), gui, (layout, recipe) -> {
+                    layout.addSlot(INPUT, 30, 12).setStandardSlotBackground().addItemStacks(
+                            Arrays.stream(recipe.input().getItems())
+                                    .filter(recipe::accepts).map(stack -> stack.copyWithCount(recipe.count())).toList());
+                    layout.addSlot(OUTPUT, 108, 12).setStandardSlotBackground().addItemStack(recipe.result());
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.irradiation", recipe.fluxRequired())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", recipe.ticks(), recipe.heat())),
                 new Category<>(PEBBLE, NCPebbleFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
@@ -315,6 +326,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(SUPERCOOLER, recipes.getAllRecipesFor(NCRegistries.SUPERCOOLING.get()));
         registration.addRecipes(CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
         registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
+        registration.addRecipes(IRRADIATION, recipes.getAllRecipesFor(NCFission.IRRADIATION.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()));
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
@@ -350,6 +362,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
         registration.addRecipeCatalyst(NCRegistries.SUPERCOOLER.get(), SUPERCOOLER);
         registration.addRecipeCatalyst(NCRegistries.CENTRIFUGE.get(), CENTRIFUGE);
+        registration.addRecipeCatalyst(NCFission.IRRADIATOR.get(), IRRADIATION);
+        registration.addRecipeCatalyst(NCFission.IRRADIATOR_PORT.get(), IRRADIATION);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
         registration.addRecipeCatalyst(NCPebbleFission.CONTROLLER.get(), PEBBLE);
         registration.addRecipeCatalyst(NCSaltFission.CONTROLLER.get(), SALT_FISSION);
@@ -380,6 +394,12 @@ public final class NuclearCraftJei implements IModPlugin {
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
+        registration.addGuiContainerHandler(FissionIrradiatorScreen.class, new IGuiContainerHandler<>() {
+            @Override
+            public Collection<IGuiClickableArea> getGuiClickableAreas(FissionIrradiatorScreen screen, double x, double y) {
+                return screen.getMenu().port() ? List.of() : List.of(IGuiClickableArea.createBasic(74, 35, 37, 16, IRRADIATION));
+            }
+        });
         registration.addGuiContainerHandler(SaltFissionPartScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(SaltFissionPartScreen screen, double x, double y) {
@@ -636,6 +656,19 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override
         public void setRecipe(IRecipeLayoutBuilder builder, R recipe, IFocusGroup focuses) {
             layout.accept(builder, recipe);
+        }
+
+        @Override
+        public void getTooltip(ITooltipBuilder tooltip, R recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
+            if (!(recipe instanceof FissionIrradiatorRecipe irradiation) || mouseY < 9 || mouseY >= 30
+                    || mouseX < 69 || mouseX >= 95) {
+                return;
+            }
+            Object maximum = irradiation.maxFlux() < 0
+                    ? Component.translatable("gui.nuclearcraft.jei.irradiation_unlimited") : irradiation.maxFlux();
+            tooltip.add(Component.translatable("gui.nuclearcraft.jei.irradiation_range", irradiation.minFlux(), maximum));
+            tooltip.add(Component.translatable("gui.nuclearcraft.jei.irradiation_stats",
+                    decimal(irradiation.heatPerFlux()), decimal(100D * irradiation.efficiency())));
         }
 
         @Override

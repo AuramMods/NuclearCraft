@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PZP",
+        "AFA",
+        "PZP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "Z": {
+            "tag": "forge:ingots/zirconium"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "A": {
+            "tag": "forge:ingots/zircaloy"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_irradiator",
+        "count": 4
+    }
+}

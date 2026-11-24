@@ -1,10 +1,12 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.multiblock.fission.FissionPartBlock.Role;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -15,18 +17,24 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+
 public final class FissionPortBlockEntity extends BlockEntity {
+    private final @Nullable IrradiatorItems irradiationItems;
     private Binding binding;
     private @Nullable ResourceLocation fuelFilter;
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
     private LazyOptional<IItemHandler> items = LazyOptional.empty();
 
     public FissionPortBlockEntity(BlockPos pos, BlockState state) {
-        super(NCFission.PORT_ENTITY.get(), pos, state);
+        super(FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? NCFission.IRRADIATOR_PORT_ENTITY.get()
+                : NCFission.PORT_ENTITY.get(), pos, state);
+        irradiationItems = FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? new IrradiatorItems(this) : null;
     }
 
     void bind(SolidFissionController controller, SolidFissionLayout.Port port) {
@@ -81,6 +89,47 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 ? current.controller : null;
     }
 
+    @Nullable SolidFissionController irradiatorController() {
+        Binding current = binding;
+        return irradiationItems != null && current != null && connected(current) ? current.controller : null;
+    }
+
+    IrradiatorItems localIrradiatorItems() {
+        return Objects.requireNonNull(irradiationItems);
+    }
+
+    IrradiatorItems irradiatorItems() {
+        var controller = irradiatorController();
+        return controller == null ? localIrradiatorItems() : controller.irradiatorItems(localIrradiatorItems());
+    }
+
+    void exportIrradiation(ServerLevel level) {
+        Binding current = binding;
+        if (current == null || !current.port.output() || irradiatorController() == null) {
+            return;
+        }
+        var inventory = irradiatorItems();
+        ItemStack product = inventory.getStackInSlot(1);
+        if (product.isEmpty()) {
+            return;
+        }
+        Direction side = current.port.side();
+        BlockPos adjacent = worldPosition.relative(side);
+        if (!level.hasChunkAt(adjacent)) {
+            return;
+        }
+        var target = level.getBlockEntity(adjacent);
+        if (target == null) {
+            return;
+        }
+        var destination = target.getCapability(ForgeCapabilities.ITEM_HANDLER, side.getOpposite()).orElse(null);
+        if (destination != null) {
+            int available = product.getCount();
+            var remainder = ItemHandlerHelper.insertItem(destination, product.copy(), false);
+            inventory.extractItem(1, available - remainder.getCount(), false);
+        }
+    }
+
     @Nullable ResourceLocation fuelFilter() {
         return fuelFilter;
     }
@@ -93,6 +142,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        if (irradiationItems != null) {
+            irradiationItems.save(tag);
+        }
         if (fuelFilter != null) {
             tag.putString("fuel_filter", fuelFilter.toString());
         }
@@ -101,10 +153,19 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (irradiationItems != null) {
+            var previous = irradiationItems.filter();
+            irradiationItems.load(tag);
+            if (level instanceof ServerLevel server
+                    && !Objects.equals(previous, irradiationItems.filter())) {
+                FissionPartBlock.geometryChanged(server, worldPosition);
+            }
+            return;
+        }
         var next = tag.contains("fuel_filter") ? ResourceLocation.tryParse(tag.getString("fuel_filter")) : null;
-        if (!java.util.Objects.equals(fuelFilter, next)) {
+        if (!Objects.equals(fuelFilter, next)) {
             fuelFilter = next;
-            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            if (level instanceof ServerLevel server) {
                 FissionPartBlock.geometryChanged(server, worldPosition);
             }
         }
@@ -163,7 +224,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         private FuelHandler(Binding connection) {
             this.connection = connection;
-            inventory = connection.controller.inventory();
+            inventory = irradiationItems != null ? connection.controller.irradiatorItems(irradiationItems)
+                    : connection.controller.inventory();
         }
 
         @Override
@@ -194,7 +256,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot == 0 && !connection.port.output() && connected(connection) && connection.controller.acceptsFuel(stack);
+            return slot == 0 && !connection.port.output() && connected(connection)
+                    && (irradiationItems != null ? inventory.isItemValid(0, stack) : connection.controller.acceptsFuel(stack));
         }
     }
 }

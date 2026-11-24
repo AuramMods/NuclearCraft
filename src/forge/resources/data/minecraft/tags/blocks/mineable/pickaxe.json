@@ -58,6 +58,8 @@
         "nuclearcraft:fission_cooler_port_sulfur_hexafluoride",
         "nuclearcraft:fission_vent",
         "nuclearcraft:fission_cell_port",
+        "nuclearcraft:fission_irradiator",
+        "nuclearcraft:fission_irradiator_port",
         "nuclearcraft:turbine_casing",
         "nuclearcraft:turbine_glass",
         "nuclearcraft:turbine_rotor_bearing",

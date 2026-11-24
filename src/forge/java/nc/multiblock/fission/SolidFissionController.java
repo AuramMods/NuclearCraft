@@ -60,6 +60,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final @Nullable SaltCooling saltCooling;
     private final @Nullable SaltFuelBank saltFuel;
     private final Map<BlockPos, Long> clusterHeat = new HashMap<>();
+    private final Map<ResourceLocation, IrradiatorItems> irradiationBanks = new HashMap<>();
 
     private SolidFissionLayout layout;
     private SolidFissionCore core;
@@ -190,6 +191,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         controls(layout).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.bind(this)));
         refreshControlStates(server);
+        bindIrradiators(server);
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.bind(this, port);
@@ -209,6 +211,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
+        irradiationBanks.clear();
+        for (BlockPos pos : previous.irradiators()) {
+            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            if (chunk != null && chunk.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
+                irradiator.unbind();
+            }
+        }
         controls(previous).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.unbind(server)));
         for (SolidFissionLayout.Port port : previous.ports()) {
             var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
@@ -216,6 +225,26 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 entity.unbind();
             }
         }
+    }
+
+    private void bindIrradiators(ServerLevel server) {
+        for (SolidFissionLayout.Port port : layout.ports()) {
+            if (port.role() == Role.IRRADIATOR_PORT
+                    && server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
+                IrradiatorItems local = entity.localIrradiatorItems();
+                irradiationBanks.merge(local.filter(), local,
+                        (first, next) -> !first.hasItems() && next.hasItems() ? next : first);
+            }
+        }
+        for (BlockPos pos : layout.irradiators()) {
+            if (server.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
+                irradiator.bind(this, irradiationBanks.get(irradiator.localItems().filter()));
+            }
+        }
+    }
+
+    IrradiatorItems irradiatorItems(IrradiatorItems local) {
+        return irradiationBanks.getOrDefault(local.filter(), local);
     }
 
     private static Stream<BlockPos> controls(SolidFissionLayout layout) {

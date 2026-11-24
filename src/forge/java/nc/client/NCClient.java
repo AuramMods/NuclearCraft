@@ -45,6 +45,8 @@ public final class NCClient {
                 MenuScreens.register(machine.menu(), ItemProcessorScreen::new);
             }
             MenuScreens.register(NCFission.MENU.get(), SolidFissionScreen::new);
+            MenuScreens.register(NCFission.IRRADIATOR_MENU.get(), FissionIrradiatorScreen::new);
+            MenuScreens.register(NCFission.IRRADIATOR_PORT_MENU.get(), FissionIrradiatorScreen::new);
             MenuScreens.register(NCPebbleFission.MENU.get(), SolidFissionScreen::new);
             MenuScreens.register(NCSaltFission.MENU.get(), SolidFissionScreen::new);
             for (var kind : SaltFissionPartMenu.Kind.values()) {
