@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecm_247_oxide"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 21
+    },
     "ticks": 2150,
     "heat": 268,
     "efficiency": 1.55,

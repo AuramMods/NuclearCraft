@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecf_251_triso"
     },
+    "legacy_fuel": {
+        "family": "californium",
+        "index": 10
+    },
     "ticks": 2000,
     "heat": 288,
     "efficiency": 1.8,

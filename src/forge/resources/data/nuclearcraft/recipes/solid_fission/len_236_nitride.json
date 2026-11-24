@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_len_236_nitride"
     },
+    "legacy_fuel": {
+        "family": "neptunium",
+        "index": 2
+    },
     "ticks": 2462,
     "heat": 234,
     "efficiency": 1.1,

@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_hea_242_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "americium",
+        "index": 9
+    },
     "ticks": 12.819444444444445,
     "heat": 936,
     "efficiency": 1.4,

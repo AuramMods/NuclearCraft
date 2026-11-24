@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_heu_235_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 19
+    },
     "ticks": 41.666666666666664,
     "heat": 288,
     "efficiency": 1.05,

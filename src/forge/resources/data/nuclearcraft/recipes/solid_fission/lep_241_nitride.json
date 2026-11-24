@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lep_241_nitride"
     },
+    "legacy_fuel": {
+        "family": "plutonium",
+        "index": 12
+    },
     "ticks": 3946,
     "heat": 146,
     "efficiency": 1.25,

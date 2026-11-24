@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_tbu_triso"
     },
+    "legacy_fuel": {
+        "family": "thorium",
+        "index": 0
+    },
     "ticks": 14400,
     "heat": 40,
     "efficiency": 1.25,

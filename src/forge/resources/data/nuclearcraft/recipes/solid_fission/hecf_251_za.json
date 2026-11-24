@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hecf_251_za"
     },
+    "legacy_fuel": {
+        "family": "californium",
+        "index": 18
+    },
     "ticks": 1600,
     "heat": 1080,
     "efficiency": 1.85,

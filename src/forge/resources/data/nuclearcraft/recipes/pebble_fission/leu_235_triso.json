@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leu_235_triso"
     },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 10
+    },
     "ticks": 4800,
     "heat": 120,
     "efficiency": 1,

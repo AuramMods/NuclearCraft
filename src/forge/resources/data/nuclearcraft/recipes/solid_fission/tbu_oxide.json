@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_tbu_oxide"
     },
+    "legacy_fuel": {
+        "family": "thorium",
+        "index": 1
+    },
     "ticks": 14400,
     "heat": 40,
     "efficiency": 1.25,

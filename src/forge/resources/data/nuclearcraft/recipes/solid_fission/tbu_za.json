@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_tbu_za"
     },
+    "legacy_fuel": {
+        "family": "thorium",
+        "index": 3
+    },
     "ticks": 11520,
     "heat": 50,
     "efficiency": 1.25,

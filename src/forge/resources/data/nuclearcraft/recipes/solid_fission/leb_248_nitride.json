@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leb_248_nitride"
     },
+    "legacy_fuel": {
+        "family": "berkelium",
+        "index": 2
+    },
     "ticks": 2716,
     "heat": 212,
     "efficiency": 1.65,

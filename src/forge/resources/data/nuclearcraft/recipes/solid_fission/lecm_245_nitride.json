@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecm_245_nitride"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 12
+    },
     "ticks": 3032,
     "heat": 190,
     "efficiency": 1.5,

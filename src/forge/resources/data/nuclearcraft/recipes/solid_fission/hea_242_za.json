@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hea_242_za"
     },
+    "legacy_fuel": {
+        "family": "americium",
+        "index": 8
+    },
     "ticks": 1180,
     "heat": 1464,
     "efficiency": 1.4,

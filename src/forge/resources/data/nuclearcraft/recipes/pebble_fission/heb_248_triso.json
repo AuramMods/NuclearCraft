@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_heb_248_triso"
     },
+    "legacy_fuel": {
+        "family": "berkelium",
+        "index": 5
+    },
     "ticks": 2166,
     "heat": 798,
     "efficiency": 1.7,

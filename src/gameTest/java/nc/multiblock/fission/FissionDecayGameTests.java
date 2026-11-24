@@ -1,7 +1,10 @@
 package nc.multiblock.fission;
 
+import com.google.gson.JsonParser;
 import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
+import nc.init.LegacyFissionFuelConfig.Family;
+import nc.init.LegacyFissionFuelConfig.Selection;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
@@ -13,6 +16,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+
+import java.util.HashSet;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -80,36 +85,68 @@ public final class FissionDecayGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void fuelDecayCatalogPreservesAndSynchronizesEveryFactor(GameTestHelper helper) {
+    public static void fissionFuelCatalogKeepsItsLegacyArraySlotsAcrossNetworkSync(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var solid = manager.getAllRecipesFor(NCFission.FUEL_TYPE.get());
         var pebble = manager.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get());
         var salt = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get());
         helper.assertTrue(solid.size() == 81 && pebble.size() == 27 && salt.size() == 27,
-                "All legacy fuel forms have a decay factor");
+                "Load every legacy fuel form");
+        var selections = new HashSet<Selection>();
         var buffer = new FriendlyByteBuf(Unpooled.buffer());
         try {
+            var solidSerializer = NCFission.FUEL_SERIALIZER.get();
             for (var recipe : solid) {
                 buffer.clear();
-                NCFission.FUEL_SERIALIZER.get().toNetwork(buffer, recipe);
-                var synced = NCFission.FUEL_SERIALIZER.get().fromNetwork(recipe.id(), buffer);
-                helper.assertTrue(synced.decayFactor() == recipe.decayFactor() && synced.radiation() == recipe.radiation()
+                solidSerializer.toNetwork(buffer, recipe);
+                var synced = solidSerializer.fromNetwork(recipe.id(), buffer);
+                Selection selection = synced.parameters().legacy();
+                String path = recipe.id().getPath();
+                int form = path.endsWith("_oxide") ? 1 : path.endsWith("_nitride") ? 2 : 3;
+                helper.assertTrue(synced.parameters().equals(recipe.parameters()) && synced.ticks() == recipe.ticks()
+                                && selection != null && selection.index() % 5 == form && selections.add(selection)
                                 && !synced.pebbleBed() && buffer.readableBytes() == 0 && synced.decayFactor() > 0,
-                        "Item fuel network round trip must preserve decay and radiation for " + recipe.id());
+                        "Solid fuel sync must preserve the values and its unique legacy array slot for " + recipe.id());
             }
+            var pebbleSerializer = NCPebbleFission.FUEL_SERIALIZER.get();
             for (var recipe : pebble) {
                 buffer.clear();
-                NCPebbleFission.FUEL_SERIALIZER.get().toNetwork(buffer, recipe);
-                var synced = NCPebbleFission.FUEL_SERIALIZER.get().fromNetwork(recipe.id(), buffer);
-                helper.assertTrue(synced.decayFactor() == recipe.decayFactor() && synced.radiation() == recipe.radiation()
+                pebbleSerializer.toNetwork(buffer, recipe);
+                var synced = pebbleSerializer.fromNetwork(recipe.id(), buffer);
+                Selection selection = synced.parameters().legacy();
+                helper.assertTrue(synced.parameters().equals(recipe.parameters()) && synced.ticks() == recipe.ticks()
+                                && selection != null && selection.index() % 5 == 0 && selections.add(selection)
                                 && synced.pebbleBed() && buffer.readableBytes() == 0 && synced.decayFactor() > 0,
-                        "TRISO network round trip must preserve decay and radiation for " + recipe.id());
+                        "TRISO sync must preserve its values and unique legacy array slot for " + recipe.id());
             }
+            var saltSerializer = NCSaltFission.FUEL_SERIALIZER.get();
+            for (var recipe : salt) {
+                buffer.clear();
+                saltSerializer.toNetwork(buffer, recipe);
+                var synced = saltSerializer.fromNetwork(recipe.id(), buffer);
+                Selection selection = synced.parameters().legacy();
+                helper.assertTrue(synced.parameters().equals(recipe.parameters()) && synced.ticks() == recipe.ticks()
+                                && selection != null && selection.index() % 5 == 4 && selections.add(selection)
+                                && buffer.readableBytes() == 0 && synced.decayFactor() > 0,
+                        "Salt fuel sync must preserve fractional ticks and its unique legacy array slot for " + recipe.id());
+            }
+            var leu = (FissionFuelStats) manager.byKey(NuclearCraft.id("solid_fission/leu_235_oxide")).orElseThrow();
+            helper.assertTrue(new Selection(Family.URANIUM, 11).equals(leu.parameters().legacy()),
+                    "LEU-235 oxide uses slot 11 in the original uranium section");
+            var custom = solidSerializer.fromJson(NuclearCraft.id("solid_fission/leu_235_oxide"),
+                    JsonParser.parseString("""
+                            {"fuel":{"item":"nuclearcraft:leu_235_oxide"},"result":{"item":"nuclearcraft:depleted_leu_235_oxide"},
+                             "ticks":55,"heat":18,"efficiency":0.75,"criticality":1}
+                            """).getAsJsonObject());
+            buffer.clear();
+            solidSerializer.toNetwork(buffer, custom);
+            var synced = solidSerializer.fromNetwork(custom.id(), buffer);
+            helper.assertTrue(synced.parameters().legacy() == null && synced.ticks() == 55 && synced.heat() == 18
+                            && synced.efficiency() == 0.75 && buffer.readableBytes() == 0,
+                    "A replacement at the shipped ID can send its own values with no legacy binding");
         } finally {
             buffer.release();
         }
-        helper.assertTrue(salt.stream().allMatch(recipe -> recipe.decayFactor() > 0),
-                "The molten-salt catalog already carries its original decay factors");
         helper.succeed();
     }
 

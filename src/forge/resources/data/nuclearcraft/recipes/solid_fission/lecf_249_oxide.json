@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecf_249_oxide"
     },
+    "legacy_fuel": {
+        "family": "californium",
+        "index": 1
+    },
     "ticks": 1066,
     "heat": 540,
     "efficiency": 1.75,

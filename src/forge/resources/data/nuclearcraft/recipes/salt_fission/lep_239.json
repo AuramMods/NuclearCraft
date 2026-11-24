@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_lep_239_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "plutonium",
+        "index": 4
+    },
     "ticks": 40.0,
     "heat": 100,
     "efficiency": 1.2,

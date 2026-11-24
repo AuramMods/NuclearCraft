@@ -67,6 +67,7 @@ public final class NCFission {
     private static final ForgeConfigSpec.DoubleValue FUEL_HEAT;
     private static final ForgeConfigSpec.DoubleValue FUEL_EFFICIENCY;
     private static final ForgeConfigSpec.DoubleValue FUEL_RADIATION;
+    private static final LegacyFissionFuelConfig LEGACY_FUEL;
     private static final ForgeConfigSpec.IntValue COOLING_LENIENCY;
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SPARSITY;
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DISSIPATION;
@@ -116,6 +117,7 @@ public final class NCFission {
         FUEL_HEAT = builder.defineInRange("fission_fuel_heat_multiplier", 1D, 0D, 255D);
         FUEL_EFFICIENCY = builder.defineInRange("fission_fuel_efficiency_multiplier", 1D, 0D, 255D);
         FUEL_RADIATION = builder.defineInRange("fission_fuel_radiation_multiplier", 1D, 0D, 255D);
+        LEGACY_FUEL = new LegacyFissionFuelConfig(builder);
         COOLING_LENIENCY = builder.defineInRange("fission_cooling_efficiency_leniency", 10, 0, 32_767);
         SPARSITY = builder.comment("Minimum efficiency followed by the useful-part density for full efficiency.")
                 .define("fission_sparsity_penalty_params", List.of(0.5D, 0.75D),
@@ -407,6 +409,10 @@ public final class NCFission {
     public static double fuelHeatMultiplier() { return configured(FUEL_HEAT); }
     public static double fuelEfficiencyMultiplier() { return configured(FUEL_EFFICIENCY); }
     public static double fuelRadiationMultiplier() { return configured(FUEL_RADIATION); }
+    static @Nullable Object legacyFuelValue(LegacyFissionFuelConfig.Selection selection, LegacyFissionFuelConfig.Setting setting) {
+        return SPEC.isLoaded() ? LEGACY_FUEL.value(selection, setting) : null;
+    }
+
     public static int coolingLeniency() { return configured(COOLING_LENIENCY); }
     public static double emergencyCoolingMultiplier() { return configured(EMERGENCY_COOLING); }
     public static double heatingGasMultiplier() { return configured(HEATING_GAS); }

@@ -715,7 +715,8 @@ public final class NuclearCraftJei implements IModPlugin {
             }
             if (recipe instanceof FissionFuelStats fuel) {
                 tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_criticality", fuel.criticality(), fuel.intrinsicFlux()));
-                tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_decay", decimal(fuel.decayFactor() * 100D)));
+                String decayPercent = BigDecimal.valueOf(fuel.decayFactor()).movePointRight(2).stripTrailingZeros().toPlainString();
+                tooltip.add(Component.translatable("gui.nuclearcraft.jei.fission_decay", decayPercent));
                 return;
             }
             if (!(recipe instanceof FissionIrradiatorRecipe irradiation)) {

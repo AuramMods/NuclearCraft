@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lep_239_za"
     },
+    "legacy_fuel": {
+        "family": "plutonium",
+        "index": 3
+    },
     "ticks": 3646,
     "heat": 158,
     "efficiency": 1.2,

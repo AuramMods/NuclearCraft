@@ -711,6 +711,32 @@ In separate Ender IO 8.2.22-beta and Mekanism 10.4.16.80 routes, each isolated s
 
 The packaged conductor rendered with its original texture in the isolated client with all 538 installed Auram mods. The saved block entities retained their exact heat values. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
 
+### Per-fuel fission settings
+
+Copy the legacy arrays into the `[fuel]` table in `world/serverconfig/nuclearcraft-fission.toml`. Keep the original `fission_<family>_<setting>` keys, such as `fission_uranium_heat_generation`. Each family has `fuel_time`, `heat_generation`, `efficiency`, `criticality`, `intrinsic_flux`, `decay_factor`, `self_priming`, and `radiation` arrays. Use TOML arrays and retain the legacy order. The arrays use five entries per fuel in TRISO, oxide, nitride, zirconium alloy, and molten-salt order.
+
+| Family | Legacy order |
+| --- | --- |
+| `thorium` | TBU |
+| `uranium` | LEU-233, HEU-233, LEU-235, HEU-235 |
+| `neptunium` | LEN-236, HEN-236 |
+| `plutonium` | LEP-239, HEP-239, LEP-241, HEP-241 |
+| `mixed` | MIX-239, MIX-241 |
+| `americium` | LEA-242, HEA-242 |
+| `curium` | LECm-243, HECm-243, LECm-245, HECm-245, LECm-247, HECm-247 |
+| `berkelium` | LEB-248, HEB-248 |
+| `californium` | LECf-249, HECf-249, LECf-251, HECf-251 |
+
+An empty array uses the recipe values. A short array overrides its leading entries and falls back to the recipe for the rest. Forge resets an invalid array as a unit so indices stay aligned. Salt fuel converts legacy ingot duration to ticks per mB by dividing by 144. The reactor applies the global multipliers and any salt-specific multipliers after selecting the base values.
+
+The shipped recipes opt into the arrays through `legacy_fuel`, which contains `family` and the zero-based `index`. For example, LEU-235 oxide uses `{"family":"uranium","index":11}`. A datapack or KubeJS replacement can omit that field to use its own base values at the same recipe ID.
+
+All 195 local GameTests passed. The packaged catalog matches all eight base values from the 2o.9.7 arrays for all 135 recipes, and each binding survived recipe synchronization. On Forge 47.4.18, all five configured TBU fuel forms processed without an external neutron source, used their configured base heat and decay values, and retained their results through restart. An omitted uranium entry kept its recipe defaults. Forge reset a malformed plutonium array without shifting any fuel index. A muted multiplayer client received all five configured recipes from the dedicated server and showed the expected criticality, intrinsic flux, and decay tooltips in JEI.
+
+Editing the dedicated server's config changed a reserved oxide fuel dose from 102 to 142 heat in the running reactor. With default fuel settings, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each moved 24 mB of fresh and depleted salt and delivered 464 mB of high-pressure steam.
+
+The isolated 539-mod Auram client showed the configured recipes and ran a KubeJS replacement at the shipped TBU oxide recipe ID. The replacement used its own values, and the reactor produced one depleted item at 34 heat with a 2.5% decay factor. Both client runs used master volume zero and OpenAL No Output. Their native observers recorded zero desktop activations, foreground samples, and visible window samples.
+
 ### Shared fission settings and vent recipes
 
 Copy the legacy `fission_min_size` and `fission_max_size` values into `world/serverconfig/nuclearcraft-fission.toml`. Size limits apply to each interior dimension. The same file retains `fission_fuel_time_multiplier`, `fission_fuel_heat_multiplier`, `fission_fuel_efficiency_multiplier`, and `fission_fuel_radiation_multiplier`. These settings apply to the three reactor types and multiply any molten-salt-specific overrides already in the Forge configuration. Fuel heat rounds down to whole heat units. Solid and pebble fuel durations round down and have a minimum of one tick. Molten-salt duration keeps its fractional precision. JEI shows scaled duration and heat.

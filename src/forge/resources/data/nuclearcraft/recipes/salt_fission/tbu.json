@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_tbu_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "thorium",
+        "index": 4
+    },
     "ticks": 125.0,
     "heat": 32,
     "efficiency": 1.25,

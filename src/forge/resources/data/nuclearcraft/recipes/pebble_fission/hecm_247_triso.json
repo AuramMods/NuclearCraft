@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hecm_247_triso"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 25
+    },
     "ticks": 2150,
     "heat": 804,
     "efficiency": 1.6,

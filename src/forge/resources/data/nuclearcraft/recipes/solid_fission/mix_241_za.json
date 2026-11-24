@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_mix_241_za"
     },
+    "legacy_fuel": {
+        "family": "mixed",
+        "index": 8
+    },
     "ticks": 2406,
     "heat": 240,
     "efficiency": 1.15,

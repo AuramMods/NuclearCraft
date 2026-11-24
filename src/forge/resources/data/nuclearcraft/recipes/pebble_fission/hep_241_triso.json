@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hep_241_triso"
     },
+    "legacy_fuel": {
+        "family": "plutonium",
+        "index": 15
+    },
     "ticks": 3164,
     "heat": 546,
     "efficiency": 1.3,

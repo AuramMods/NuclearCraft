@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leb_248_za"
     },
+    "legacy_fuel": {
+        "family": "berkelium",
+        "index": 3
+    },
     "ticks": 1734,
     "heat": 332,
     "efficiency": 1.65,

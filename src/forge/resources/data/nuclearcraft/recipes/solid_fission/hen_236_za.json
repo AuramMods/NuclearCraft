@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hen_236_za"
     },
+    "legacy_fuel": {
+        "family": "neptunium",
+        "index": 8
+    },
     "ticks": 1574,
     "heat": 1098,
     "efficiency": 1.15,

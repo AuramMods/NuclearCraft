@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leu_235_za"
     },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 13
+    },
     "ticks": 3840,
     "heat": 150,
     "efficiency": 1,

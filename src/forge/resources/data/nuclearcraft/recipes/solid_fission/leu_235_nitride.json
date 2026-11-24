@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leu_235_nitride"
     },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 12
+    },
     "ticks": 6000,
     "heat": 96,
     "efficiency": 1,

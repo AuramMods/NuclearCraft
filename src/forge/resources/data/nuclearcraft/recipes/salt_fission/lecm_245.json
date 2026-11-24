@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_lecm_245_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 14
+    },
     "ticks": 21.055555555555557,
     "heat": 190,
     "efficiency": 1.5,

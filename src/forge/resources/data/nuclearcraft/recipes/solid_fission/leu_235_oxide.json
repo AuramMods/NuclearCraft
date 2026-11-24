@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_leu_235_oxide"
     },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 11
+    },
     "ticks": 4800,
     "heat": 120,
     "efficiency": 1,

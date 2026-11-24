@@ -2,6 +2,7 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import nc.init.LegacyFissionFuelConfig.Setting;
 import nc.init.NCFission;
 import nc.init.NCSaltFission;
 import nc.processor.ProcessorInputs;
@@ -18,26 +19,32 @@ import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 
 public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, FluidStack depleted, double ticks,
-                                int heat, double efficiency, int criticality, int intrinsicFlux, boolean selfPriming,
-                                double decayFactor, double radiation) implements Recipe<Container>, FissionFuelStats {
+                                Parameters parameters) implements Recipe<Container>, FissionFuelStats {
+    private static final int INGOT_VOLUME = 144;
+
     public SaltFissionRecipe {
         depleted = depleted.copy();
     }
 
+    public double ticks() {
+        double legacyTicks = parameters.number(Setting.FUEL_TIME, 0D);
+        return legacyTicks > 0D ? legacyTicks / INGOT_VOLUME : ticks;
+    }
+
     @Override
     public double runtimeTicks() {
-        double scaled = ticks * (NCFission.fuelTimeMultiplier() * NCSaltFission.timeMultiplier());
+        double scaled = ticks() * (NCFission.fuelTimeMultiplier() * NCSaltFission.timeMultiplier());
         return Math.max(Double.MIN_VALUE, Math.min(Double.MAX_VALUE, scaled));
     }
 
     @Override
     public int runtimeHeat() {
-        return (int) (heat * (NCFission.fuelHeatMultiplier() * NCSaltFission.heatMultiplier()));
+        return (int) (heat() * (NCFission.fuelHeatMultiplier() * NCSaltFission.heatMultiplier()));
     }
 
     @Override
     public double runtimeEfficiency() {
-        return Math.min(Double.MAX_VALUE, efficiency * (NCFission.fuelEfficiencyMultiplier() * NCSaltFission.efficiencyMultiplier()));
+        return Math.min(Double.MAX_VALUE, efficiency() * (NCFission.fuelEfficiencyMultiplier() * NCSaltFission.efficiencyMultiplier()));
     }
 
     @Override
@@ -91,29 +98,16 @@ public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, Fluid
             var fuel = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fuel"), id);
             var depleted = FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id);
             double ticks = GsonHelper.getAsDouble(json, "ticks");
-            int heat = GsonHelper.getAsInt(json, "heat");
-            double efficiency = GsonHelper.getAsDouble(json, "efficiency");
-            int criticality = GsonHelper.getAsInt(json, "criticality");
-            int intrinsicFlux = GsonHelper.getAsInt(json, "intrinsic_flux", 0);
-            double decay = GsonHelper.getAsDouble(json, "decay_factor", 0);
-            double radiation = GsonHelper.getAsDouble(json, "radiation", 0);
-            if (!finiteNonnegative(ticks) || ticks == 0 || heat < 0 || !finiteNonnegative(efficiency)
-                    || criticality < 0 || intrinsicFlux < 0 || !finiteNonnegative(decay) || !finiteNonnegative(radiation)) {
+            if (!Double.isFinite(ticks) || ticks <= 0D) {
                 throw new JsonSyntaxException("Invalid molten-salt fission fuel " + id);
             }
-            return new SaltFissionRecipe(id, fuel, depleted, ticks, heat, efficiency, criticality, intrinsicFlux,
-                    GsonHelper.getAsBoolean(json, "self_priming", false), decay, radiation);
-        }
-
-        private static boolean finiteNonnegative(double value) {
-            return Double.isFinite(value) && value >= 0;
+            return new SaltFissionRecipe(id, fuel, depleted, ticks, Parameters.fromJson(id, json));
         }
 
         @Override
         public SaltFissionRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new SaltFissionRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), buffer.readVarInt(),
-                    buffer.readVarInt(), buffer.readBoolean(), buffer.readDouble(), buffer.readDouble());
+                    buffer.readDouble(), Parameters.fromNetwork(buffer));
         }
 
         @Override
@@ -121,13 +115,7 @@ public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, Fluid
             recipe.fuel.toNetwork(buffer);
             buffer.writeFluidStack(recipe.depleted);
             buffer.writeDouble(recipe.ticks);
-            buffer.writeVarInt(recipe.heat);
-            buffer.writeDouble(recipe.efficiency);
-            buffer.writeVarInt(recipe.criticality);
-            buffer.writeVarInt(recipe.intrinsicFlux);
-            buffer.writeBoolean(recipe.selfPriming);
-            buffer.writeDouble(recipe.decayFactor);
-            buffer.writeDouble(recipe.radiation);
+            recipe.parameters.toNetwork(buffer);
         }
     }
 }

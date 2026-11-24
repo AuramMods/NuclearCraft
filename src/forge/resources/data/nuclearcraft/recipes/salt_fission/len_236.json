@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_len_236_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "neptunium",
+        "index": 4
+    },
     "ticks": 17.09722222222222,
     "heat": 234,
     "efficiency": 1.1,

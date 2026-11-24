@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecm_245_za"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 13
+    },
     "ticks": 1932,
     "heat": 298,
     "efficiency": 1.5,

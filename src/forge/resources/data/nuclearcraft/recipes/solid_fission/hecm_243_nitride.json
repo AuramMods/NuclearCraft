@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hecm_243_nitride"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 7
+    },
     "ticks": 1870,
     "heat": 924,
     "efficiency": 1.5,

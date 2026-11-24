@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_tbu_nitride"
     },
+    "legacy_fuel": {
+        "family": "thorium",
+        "index": 2
+    },
     "ticks": 18000,
     "heat": 32,
     "efficiency": 1.25,

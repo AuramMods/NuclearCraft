@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hecm_243_za"
     },
+    "legacy_fuel": {
+        "family": "curium",
+        "index": 8
+    },
     "ticks": 1200,
     "heat": 1440,
     "efficiency": 1.5,

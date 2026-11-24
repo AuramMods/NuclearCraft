@@ -8,6 +8,10 @@
         "fluid": "nuclearcraft:depleted_leb_248_fluoride_flibe",
         "amount": 1
     },
+    "legacy_fuel": {
+        "family": "berkelium",
+        "index": 4
+    },
     "ticks": 18.86111111111111,
     "heat": 212,
     "efficiency": 1.65,

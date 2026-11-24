@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_hen_236_oxide"
     },
+    "legacy_fuel": {
+        "family": "neptunium",
+        "index": 6
+    },
     "ticks": 1972,
     "heat": 876,
     "efficiency": 1.15,

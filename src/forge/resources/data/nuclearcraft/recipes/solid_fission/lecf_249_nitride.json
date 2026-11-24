@@ -6,6 +6,10 @@
     "result": {
         "item": "nuclearcraft:depleted_lecf_249_nitride"
     },
+    "legacy_fuel": {
+        "family": "californium",
+        "index": 2
+    },
     "ticks": 1334,
     "heat": 432,
     "efficiency": 1.75,
