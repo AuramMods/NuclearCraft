@@ -12,6 +12,7 @@ import nc.multiblock.machine.MachinePartBlock;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.multiblock.fission.FissionMultitool;
+import nc.multiblock.quantum.QuantumMultitool;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -67,6 +68,8 @@ public final class NCHeatExchangers {
                 @Override
                 public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
                     BlockState state = context.getLevel().getBlockState(context.getClickedPos());
+                    var quantum = QuantumMultitool.useOn(stack, context);
+                    if (quantum != InteractionResult.PASS) return quantum;
                     var fission = FissionMultitool.useOn(stack, context);
                     if (fission != InteractionResult.PASS) return fission;
                     if (state.getBlock() instanceof ExchangerTubeBlock tube) return tube.configure(state, context);
@@ -78,6 +81,9 @@ public final class NCHeatExchangers {
                 @Override
                 public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
                     ItemStack stack = player.getItemInHand(hand);
+                    if (QuantumMultitool.setAngle(player, stack)) {
+                        return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
+                    }
                     if (level instanceof ServerLevel server && player instanceof ServerPlayer user && player.isShiftKeyDown()) {
                         var hit = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
                         if ((hit.getType() == HitResult.Type.MISS

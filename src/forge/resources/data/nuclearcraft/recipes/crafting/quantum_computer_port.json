@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        { "type": "forge:mod_loaded", "modid": "computercraft" },
+        { "type": "nuclearcraft:quantum_enabled" }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "EME",
+        "CNC",
+        "EPE"
+    ],
+    "key": {
+        "E": { "tag": "forge:ingots/extreme" },
+        "M": { "item": "computercraft:wired_modem" },
+        "C": { "item": "computercraft:cable" },
+        "N": { "item": "minecraft:ender_pearl" },
+        "P": { "item": "computercraft:computer_normal" }
+    },
+    "result": { "item": "nuclearcraft:quantum_computer_port" }
+}

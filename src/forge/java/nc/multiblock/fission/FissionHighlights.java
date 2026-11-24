@@ -43,7 +43,7 @@ public final class FissionHighlights {
                 }).add();
     }
 
-    static void send(ServerPlayer player, Collection<BlockPos> positions) {
+    public static void send(ServerPlayer player, Collection<BlockPos> positions) {
         if (!positions.isEmpty() && !(player instanceof FakePlayer) && player.connection != null) {
             CHANNEL.send(PacketDistributor.PLAYER.with(() -> player),
                     new Report(player.serverLevel().dimension().location(), List.copyOf(positions)));

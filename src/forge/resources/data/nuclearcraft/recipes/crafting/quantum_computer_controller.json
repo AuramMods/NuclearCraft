@@ -1,0 +1,28 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:quantum_enabled"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "EPE",
+        "PFP",
+        "EPE"
+    ],
+    "key": {
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "P": {
+            "item": "minecraft:ender_pearl"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:quantum_computer_controller"
+    }
+}

@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:quantum_enabled"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "ESE",
+        "S S",
+        "ESE"
+    ],
+    "key": {
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:quantum_computer_connector",
+        "count": 8
+    }
+}

@@ -76,10 +76,17 @@ repositories {
         url = 'https://maven.blamejared.com/'
         content { includeGroup 'vazkii.patchouli' }
     }
+    maven {
+        url = 'https://maven.squiddev.cc'
+        content { includeGroup 'cc.tweaked' }
+    }
 }
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-forge-api:${cc_tweaked_version}"
+    compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-common-api:${cc_tweaked_version}"
+    compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-core-api:${cc_tweaked_version}"
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-common-api:${jei_version}")
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge-api:${jei_version}")
     compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}:api")
@@ -140,6 +147,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/solar_panel_*.png'
         include 'assets/nuclearcraft/textures/blocks/distributor/*.png'
         include 'assets/nuclearcraft/textures/blocks/machine/*.png'
+        include 'assets/nuclearcraft/textures/blocks/quantum_computer/**/*.png'
         include 'assets/nuclearcraft/textures/blocks/machine/frame/*.png'
         include 'assets/nuclearcraft/textures/blocks/machine/decay_pool/*.png'
         include 'assets/nuclearcraft/textures/blocks/machine/distiller/*.png'

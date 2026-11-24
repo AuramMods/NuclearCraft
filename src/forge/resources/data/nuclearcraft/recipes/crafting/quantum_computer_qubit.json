@@ -1,0 +1,31 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:quantum_enabled"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "ESE",
+        "PRP",
+        "ESE"
+    ],
+    "key": {
+        "E": {
+            "tag": "forge:ingots/extreme"
+        },
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "P": {
+            "item": "minecraft:ender_pearl"
+        },
+        "R": {
+            "tag": "forge:storage_blocks/redstone"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:quantum_computer_qubit"
+    }
+}

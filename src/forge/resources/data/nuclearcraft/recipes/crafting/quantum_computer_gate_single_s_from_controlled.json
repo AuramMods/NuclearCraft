@@ -1,0 +1,17 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "conditions": [
+        {
+            "type": "nuclearcraft:quantum_enabled"
+        }
+    ],
+    "category": "redstone",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:quantum_computer_gate_control_cs"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:quantum_computer_gate_single_s"
+    }
+}

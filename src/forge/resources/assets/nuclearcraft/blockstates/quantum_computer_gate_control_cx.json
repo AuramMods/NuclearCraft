@@ -1,0 +1,7 @@
+{
+    "variants": {
+        "": {
+            "model": "nuclearcraft:block/quantum_computer_gate_control_cx"
+        }
+    }
+}

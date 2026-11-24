@@ -16,6 +16,7 @@ import nc.init.NCGenerators;
 import nc.init.NCItemProcessors;
 import nc.init.NCMachines;
 import nc.init.NCRadiation;
+import nc.init.NCQuantum;
 import nc.init.NCRegistries;
 import nc.init.NCWasteland;
 import nc.init.NCTerrainRecipes;
@@ -39,6 +40,7 @@ public final class NuclearCraft {
         NCEntities.register(context);
         NCEquipment.register(context);
         NCGenerators.register(context);
+        NCQuantum.register(context);
         NCRadiation.register(context);
         Guidebook.register(context);
         FluidConfig.register(context);

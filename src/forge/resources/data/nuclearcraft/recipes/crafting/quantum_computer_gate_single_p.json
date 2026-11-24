@@ -1,0 +1,28 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:quantum_enabled"
+        }
+    ],
+    "category": "redstone",
+    "pattern": [
+        "SSS",
+        "SPS",
+        "SEE"
+    ],
+    "key": {
+        "S": {
+            "tag": "forge:ingots/steel"
+        },
+        "P": {
+            "item": "minecraft:ender_pearl"
+        },
+        "E": {
+            "tag": "forge:ingots/extreme"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:quantum_computer_gate_single_p"
+    }
+}

@@ -278,6 +278,7 @@
         "nuclearcraft:polyethersulfone_diaphragm",
         "nuclearcraft:zirfon_diaphragm",
         "nuclearcraft:supercold_ice",
-        "nuclearcraft:solidified_corium"
+        "nuclearcraft:solidified_corium",
+        "#nuclearcraft:quantum_computer_parts"
     ]
 }
