@@ -3,8 +3,10 @@ package nc.worldgen;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import nc.NuclearCraft;
+import nc.worldgen.structure.vault.WastelandVault;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.tags.TagKey;
@@ -18,6 +20,7 @@ import net.minecraft.world.level.levelgen.NoiseBasedChunkGenerator;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 public final class WastelandChunkGenerator extends NoiseBasedChunkGenerator {
     public static final Codec<WastelandChunkGenerator> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -44,6 +47,15 @@ public final class WastelandChunkGenerator extends NoiseBasedChunkGenerator {
         wastelandBiomes.setSeed(seed);
         return ChunkGeneratorStructureState.createForFlat(random, seed, wastelandBiomes,
                 structures.listElements().filter(holder -> holder.is(WASTELAND_STRUCTURES)).<Holder<StructureSet>>map(holder -> holder));
+    }
+
+    @Override
+    public void createStructures(RegistryAccess registries, ChunkGeneratorStructureState state, StructureManager structures,
+                                 ChunkAccess chunk, StructureTemplateManager templates) {
+        super.createStructures(registries, state, structures, chunk, templates);
+        if (structures.shouldGenerateStructures()) {
+            WastelandVault.createNaturalStart(registries, this, state, chunk);
+        }
     }
 
     @Override

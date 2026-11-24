@@ -5,9 +5,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.LegacyRandomSource;
+import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
@@ -98,6 +101,36 @@ public final class WastelandVaultGameTests {
             }
         }
         helper.assertTrue(observed.equals(expected), "Expected every legacy vault reward, got " + observed);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void naturalVaultRollsAndDistantRoomIndexSurviveSave(GameTestHelper helper) {
+        var level = helper.getLevel();
+        long seed = 5164099796394745566L;
+        var origin = new ChunkPos(-666, 858);
+        var distant = new ChunkPos(-675, 858);
+        helper.assertTrue(WastelandVault.winsPlacementRoll(seed, origin, false)
+                        && WastelandVault.winsPlacementRoll(seed, new ChunkPos(-29, 18), true)
+                        && !WastelandVault.winsPlacementRoll(seed, new ChunkPos(5, 44), true),
+                "The sparse roll and both village roll outcomes match the legacy seed");
+
+        var random = new WorldgenRandom(new LegacyRandomSource(0L));
+        random.setLargeFeatureSeed(seed, origin.x, origin.z);
+        var pieces = VaultLayout.create(origin.getMiddleBlockPosition(68), 256, random);
+        var vault = WastelandVault.get(level);
+        var start = new StructureStart(vault, origin, 0, new PiecesContainer(List.copyOf(pieces)));
+        var data = new VaultOverflow.OverflowData(level);
+        data.discover(start, ignored -> { throw new AssertionError("A manually placed vault has no deferred placement"); });
+        pieces.get(pieces.size() - 1).markNaturalEntrance();
+
+        var discovered = new HashSet<ChunkPos>();
+        data.discover(start, discovered::add);
+        data.discover(start, ignored -> { throw new AssertionError("The same origin was indexed twice"); });
+        var restored = new VaultOverflow.OverflowData(level, data.save(new CompoundTag()));
+        helper.assertTrue(discovered.contains(distant) && restored.forChunk(distant).size() == 1
+                        && restored.forChunk(origin).isEmpty(),
+                "The deferred index saves and restores only rooms outside native structure range");
         helper.succeed();
     }
 }

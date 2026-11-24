@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.init.NCWasteland;
 import nc.recipe.TerrainRecipe;
 import nc.recipe.TerrainRecipe.Kind;
+import nc.worldgen.structure.vault.WastelandVault;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ImposterProtoChunk;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.event.TickEvent;
@@ -127,18 +129,32 @@ public final class WastelandMapping {
             long pos = chunk.getPos().toLong();
             if (queue.get(pos) == chunk) {
                 // Block callbacks may add or remove chunks from the queue.
-                map(level, chunk, recipes);
-                queue.remove(pos, chunk);
-                PENDING.remove(chunk);
-                chunk.setUnsaved(true);
+                finish(level, chunk, recipes);
             }
         }
+    }
+
+    public static void finishPending(ServerLevel level, LevelChunk chunk) {
+        if (PENDING.contains(chunk) && NCWasteland.mappingEnabled()) {
+            finish(level, chunk, TerrainRecipe.ordered(level, Kind.WASTELAND));
+        }
+    }
+
+    private static void finish(ServerLevel level, LevelChunk chunk, List<TerrainRecipe> recipes) {
+        map(level, chunk, recipes);
+        PENDING.remove(chunk);
+        var queue = QUEUES.get(level);
+        if (queue != null) {
+            queue.remove(chunk.getPos().toLong(), chunk);
+        }
+        chunk.setUnsaved(true);
     }
 
     static void map(ServerLevel level, LevelChunk chunk, List<TerrainRecipe> recipes) {
         var origin = chunk.getPos();
         var random = RandomSource.create(level.getSeed() ^ origin.toLong());
         var mutable = new BlockPos.MutableBlockPos();
+        var vaults = WastelandVault.pieceBounds(level, chunk);
         boolean mapsAir = recipes.stream().anyMatch(recipe -> recipe.input().matches(Blocks.AIR.defaultBlockState())
                 || recipe.input().matches(Blocks.CAVE_AIR.defaultBlockState())
                 || recipe.input().matches(Blocks.VOID_AIR.defaultBlockState()));
@@ -157,6 +173,9 @@ public final class WastelandMapping {
                             continue;
                         }
                         mutable.set(origin.getMinBlockX() + x, bottom + y, origin.getMinBlockZ() + z);
+                        if (insideVault(vaults, mutable)) {
+                            continue;
+                        }
                         BlockState replacement = replacement(level, mutable, state, recipes, random);
                         if (state != replacement) {
                             level.setBlock(mutable, replacement, Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE);
@@ -165,6 +184,15 @@ public final class WastelandMapping {
                 }
             }
         }
+    }
+
+    private static boolean insideVault(List<BoundingBox> vaults, BlockPos pos) {
+        for (var bounds : vaults) {
+            if (bounds.isInside(pos)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static BlockState replacement(ServerLevel level, BlockPos pos, BlockState state,

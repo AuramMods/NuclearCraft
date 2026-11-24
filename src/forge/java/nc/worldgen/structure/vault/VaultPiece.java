@@ -53,6 +53,7 @@ final class VaultPiece extends StructurePiece {
     private final int surfaceY;
     private final int roomTypeOrdinal;
     private final int sectorTypeOrdinal;
+    private boolean naturalEntrance;
 
     VaultPiece(int pieceType, BoundingBox bounds, int doorMask, int surfaceY, int roomTypeOrdinal, int sectorTypeOrdinal) {
         super(WastelandVault.PIECE.get(), 0, bounds);
@@ -71,10 +72,19 @@ final class VaultPiece extends StructurePiece {
         surfaceY = tag.getInt("SurfaceY");
         roomTypeOrdinal = tag.contains("RoomType", Tag.TAG_INT) ? tag.getInt("RoomType") : -1;
         sectorTypeOrdinal = tag.getInt("SectorType");
+        naturalEntrance = tag.getBoolean("NaturalEntrance");
     }
 
     void setBounds(BoundingBox bounds) {
         boundingBox = bounds;
+    }
+
+    void markNaturalEntrance() {
+        naturalEntrance = true;
+    }
+
+    boolean isNaturalEntrance() {
+        return naturalEntrance;
     }
 
     @Override
@@ -84,6 +94,9 @@ final class VaultPiece extends StructurePiece {
         tag.putInt("SurfaceY", surfaceY);
         tag.putInt("RoomType", roomTypeOrdinal);
         tag.putInt("SectorType", sectorTypeOrdinal);
+        if (naturalEntrance) {
+            tag.putBoolean("NaturalEntrance", true);
+        }
     }
 
     @Override

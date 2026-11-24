@@ -1,17 +1,25 @@
 package nc.worldgen.structure.vault;
 
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.StructureTags;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.Structure;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.function.Predicate;
 
 final class VaultEntrance {
     private static final int CHUNK_EDGE_PADDING = 3;
@@ -26,10 +34,34 @@ final class VaultEntrance {
     @Nullable
     static BlockPos find(ServerLevel level, LevelChunk chunk) {
         var structures = level.registryAccess().registryOrThrow(Registries.STRUCTURE);
-        var village = chunk.getAllStarts().values().stream().filter(StructureStart::isValid)
+        return find(chunk.getPos(), village(structures, chunk), level.getMaxBuildHeight(),
+                (x, z) -> level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z),
+                pos -> {
+                    var block = level.getBlockState(pos);
+                    return !block.canBeReplaced() && block.getFluidState().isEmpty();
+                });
+    }
+
+    @Nullable
+    static StructureStart village(Registry<Structure> structures, ChunkAccess chunk) {
+        return chunk.getAllStarts().values().stream().filter(StructureStart::isValid)
                 .filter(start -> structures.wrapAsHolder(start.getStructure()).is(StructureTags.VILLAGE))
                 .findFirst().orElse(null);
-        var pos = chunk.getPos();
+    }
+
+    @Nullable
+    static BlockPos findBeforeTerrain(ChunkGenerator generator, ChunkAccess chunk, RandomState random,
+                                      @Nullable StructureStart village) {
+        var heights = new Long2IntOpenHashMap();
+        return find(chunk.getPos(), village, chunk.getMaxBuildHeight(),
+                (x, z) -> heights.computeIfAbsent(ChunkPos.asLong(x, z), ignored ->
+                        generator.getBaseHeight(x, z, Heightmap.Types.WORLD_SURFACE_WG, chunk, random)),
+                pos -> false);
+    }
+
+    @Nullable
+    private static BlockPos find(ChunkPos pos, @Nullable StructureStart village, int maxBuildHeight,
+                                 SurfaceHeight height, Predicate<BlockPos> obstructed) {
         var bounds = village == null
                 ? new BoundingBox(pos.getMinBlockX(), 0, pos.getMinBlockZ(), pos.getMaxBlockX(), 0, pos.getMaxBlockZ())
                 : village.getBoundingBox();
@@ -66,8 +98,8 @@ final class VaultEntrance {
                     if (intersects) {
                         continue;
                     }
-                    int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
-                    if (y <= 0 || y > level.getMaxBuildHeight() - CLEARANCE_HEIGHT - 1) {
+                    int y = height.at(x, z);
+                    if (y <= 0 || y > maxBuildHeight - CLEARANCE_HEIGHT - 1) {
                         continue;
                     }
                     int minY = y;
@@ -76,12 +108,11 @@ final class VaultEntrance {
                     int shaftRadius = VaultLayout.ENTRANCE_RADIUS;
                     for (int sx = x - shaftRadius; sx <= x + shaftRadius; sx++) {
                         for (int sz = z - shaftRadius; sz <= z + shaftRadius; sz++) {
-                            int top = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, sx, sz);
+                            int top = height.at(sx, sz);
                             minY = Math.min(minY, top);
                             maxY = Math.max(maxY, top);
                             for (int sy = y + 1; sy <= y + CLEARANCE_HEIGHT; sy++) {
-                                var state = level.getBlockState(cursor.set(sx, sy, sz));
-                                if (!state.canBeReplaced() && state.getFluidState().isEmpty()) {
+                                if (obstructed.test(cursor.set(sx, sy, sz))) {
                                     blocked++;
                                 }
                             }
@@ -102,5 +133,10 @@ final class VaultEntrance {
             }
         }
         return null;
+    }
+
+    @FunctionalInterface
+    private interface SurfaceHeight {
+        int at(int x, int z);
     }
 }
