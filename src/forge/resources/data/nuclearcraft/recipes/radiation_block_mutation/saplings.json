@@ -1,0 +1,10 @@
+{
+    "type": "nuclearcraft:radiation_block_mutation",
+    "input": {
+        "tag": "minecraft:saplings"
+    },
+    "result": {
+        "block": "minecraft:dead_bush"
+    },
+    "radiation_threshold": 4
+}

@@ -43,6 +43,11 @@ public final class NCWasteland {
     private static final ForgeConfigSpec.BooleanValue ENABLED = CONFIG
             .comment("Allow Wasteland portal travel. The dimension keeps its resource ID for existing saves.")
             .define("wasteland_dimension_gen", true);
+    private static final ForgeConfigSpec.BooleanValue MAPPING_ENABLED =
+            CONFIG.define("wasteland_mapping_enabled", true);
+    private static final ForgeConfigSpec.IntValue MAPPING_CHUNKS_PER_TICK = CONFIG
+            .comment("Chunks mapped per server tick after feature generation. Zero keeps newly generated chunks queued and maps one at a time.")
+            .defineInRange("wasteland_mapping_chunks_per_tick", 8, 0, 400);
     private static final ForgeConfigSpec SPEC = CONFIG.build();
 
     private static final ForgeConfigSpec.Builder WORLDGEN_CONFIG = new ForgeConfigSpec.Builder();
@@ -83,6 +88,14 @@ public final class NCWasteland {
 
     public static boolean hasOverworldWasteland() {
         return OVERWORLD_BIOME.get() && OVERWORLD_WEIGHT.get() > 0;
+    }
+
+    public static boolean mappingEnabled() {
+        return MAPPING_ENABLED.get();
+    }
+
+    public static int mappingChunksPerTick() {
+        return MAPPING_CHUNKS_PER_TICK.get();
     }
 
     public static boolean enabled() {

@@ -1,0 +1,10 @@
+{
+    "type": "nuclearcraft:radiation_block_purification",
+    "input": {
+        "block": "nuclearcraft:wasteland_earth"
+    },
+    "result": {
+        "block": "minecraft:dirt"
+    },
+    "radiation_threshold": 0.001
+}

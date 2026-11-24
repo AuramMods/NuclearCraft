@@ -83,6 +83,8 @@ public final class WorldRadiation {
         int start = loaded.random.nextInt(count);
         Levels readings = store(level);
         StructureSource structure = structureSource(level, loaded.random);
+        int cap = RadiationConfig.BLOCK_EFFECT_MAX_RATE.get();
+        RadiationTerrain terrain = cap > 0 ? RadiationTerrain.forTick(level, cap) : null;
         double tickMultiplier = (double) count / size;
         Direction side = SIDES[(int) Math.floorMod(level.getGameTime(), SIDES.length)];
         var selected = new LevelChunk[size];
@@ -90,7 +92,7 @@ public final class WorldRadiation {
             selected[i] = loaded.chunks.get((start + i) % count);
         }
         for (int i = 0; i < size; i++) {
-            sample(level, selected[i], readings, side, i == 0, loaded, structure, tickMultiplier);
+            sample(level, selected[i], readings, side, i == 0, loaded, structure, terrain, tickMultiplier);
         }
         for (LevelChunk chunk : selected) {
             spread(loaded, chunk, readings);
@@ -110,7 +112,7 @@ public final class WorldRadiation {
     }
 
     private static void sample(ServerLevel level, LevelChunk chunk, Levels readings, Direction side,
-                               boolean checkBlock, LoadedChunks loaded, StructureSource structure, double tickMultiplier) {
+                               boolean checkBlock, LoadedChunks loaded, StructureSource structure, RadiationTerrain terrain, double tickMultiplier) {
         RandomSource random = loaded.random;
         var pos = chunk.getPos();
         BlockPos sample = pos.getBlockAt(random.nextInt(16),
@@ -208,7 +210,11 @@ public final class WorldRadiation {
             loaded.scrubbing.remove(key);
         }
         double speed = current < sources ? spread : RadiationConfig.CHUNK_DECAY.get() * (1 - fraction) + spread * fraction;
-        readings.set(key, Math.min(limit, Math.max(0, current + (sources - current) * speed)));
+        double rate = Math.min(limit, Math.max(0, current + (sources - current) * speed));
+        readings.set(key, rate);
+        if (terrain != null) {
+            terrain.apply(level, chunk, rate, random);
+        }
     }
 
     private static double containerRate(BlockEntity entity, Direction side) {

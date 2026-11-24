@@ -78,6 +78,8 @@ public final class RadiationConfig {
             BUILDER.defineInRange("radiation_lowest_rate", 1E-15, 0D, 1D);
     static final ForgeConfigSpec.DoubleValue CHUNK_LIMIT =
             BUILDER.defineInRange("radiation_chunk_limit", -1D, -1D, Double.MAX_VALUE);
+    static final ForgeConfigSpec.IntValue BLOCK_EFFECT_MAX_RATE =
+            BUILDER.defineInRange("radiation_block_effect_max_rate", 0, 0, 15);
     static final ForgeConfigSpec.BooleanValue CHECK_BLOCKS = BUILDER.define("radiation_check_blocks", true);
     static final ForgeConfigSpec.BooleanValue MACHINE_SOURCES = BUILDER.define("radiation_tile_entities", true);
     static final ForgeConfigSpec.BooleanValue INVENTORY_SOURCES = BUILDER.define("radiation_hardcore_stacks", true);

@@ -15,6 +15,7 @@ import nc.init.NCMachines;
 import nc.init.NCRadiation;
 import nc.init.NCRegistries;
 import nc.init.NCWasteland;
+import nc.init.NCTerrainRecipes;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -43,6 +44,7 @@ public final class NuclearCraft {
         NCMachines.registerConfig(context);
         NCItemProcessors.registerConfig(context);
         NCWasteland.register(context);
+        NCTerrainRecipes.register();
         NCRegistries.register(context.getModEventBus());
         NCFluids.register(context.getModEventBus());
     }

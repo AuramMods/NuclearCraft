@@ -1,0 +1,10 @@
+{
+    "type": "nuclearcraft:radiation_block_mutation",
+    "input": {
+        "block": "minecraft:vine"
+    },
+    "result": {
+        "block": "minecraft:air"
+    },
+    "radiation_threshold": 1
+}

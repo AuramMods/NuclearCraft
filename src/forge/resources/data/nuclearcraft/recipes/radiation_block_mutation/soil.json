@@ -1,0 +1,10 @@
+{
+    "type": "nuclearcraft:radiation_block_mutation",
+    "input": {
+        "tag": "minecraft:dirt"
+    },
+    "result": {
+        "block": "nuclearcraft:wasteland_earth"
+    },
+    "radiation_threshold": 10
+}

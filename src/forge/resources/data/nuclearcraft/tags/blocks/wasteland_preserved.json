@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:dead_bush",
+    "minecraft:ladder",
+    "nuclearcraft:glowing_mushroom",
+    "nuclearcraft:wasteland_portal"
+  ]
+}
