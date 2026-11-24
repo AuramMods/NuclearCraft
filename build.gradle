@@ -136,6 +136,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/sounds/player/rad_x.ogg'
         include 'assets/nuclearcraft/sounds/player/geiger_tick.ogg'
         include 'assets/nuclearcraft/sounds/player/chems_wear_off.ogg'
+        include 'assets/nuclearcraft/sounds/player/rad_poisoning.ogg'
         include 'assets/nuclearcraft/textures/blocks/fertile_isotope/*.png'
         include 'assets/nuclearcraft/textures/blocks/fluids/molten_*.png*'
         include 'assets/nuclearcraft/textures/blocks/fluids/steam.png*'

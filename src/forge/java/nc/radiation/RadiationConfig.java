@@ -46,6 +46,15 @@ public final class RadiationConfig {
             BUILDER.defineInRange("radiation_rad_x_lifetime", 12000D, 20D, 1E9);
     static final ForgeConfigSpec.DoubleValue RAD_X_COOLDOWN =
             BUILDER.defineInRange("radiation_rad_x_cooldown", 0D, 0D, 100_000D);
+    static final ForgeConfigSpec.DoubleValue POISON_TIME =
+            BUILDER.defineInRange("radiation_poison_time", 60D, 1D, 1_000_000D);
+    static final ForgeConfigSpec.ConfigValue<List<? extends String>> FOODS =
+            BUILDER.comment("Food entries use namespace:item_dose_resistance. Negative dose adds gradual treatment.")
+                    .defineListAllowEmpty("radiation_foods", List.of("minecraft:golden_apple_-20_0.1",
+                            "minecraft:enchanted_golden_apple_-100_0.5", "minecraft:golden_carrot_-4_0",
+                            "minecraft:spider_eye_0_0.5", "minecraft:poisonous_potato_0_0.5", "minecraft:pufferfish_0_2",
+                            "minecraft:rabbit_stew_0_0.1", "minecraft:chorus_fruit_0_-0.25", "minecraft:beetroot_0_0.25",
+                            "minecraft:beetroot_soup_0_1.5", "quark:golden_frog_leg_-4_0"), FoodRadiation::valid);
     static final ForgeConfigSpec.IntValue CHUNKS_PER_TICK =
             BUILDER.defineInRange("radiation_world_chunks_per_tick", 5, 1, 400);
     static final ForgeConfigSpec.DoubleValue SPREAD =
@@ -81,7 +90,7 @@ public final class RadiationConfig {
     static final ForgeConfigSpec.IntValue UNIT_DIGITS =
             BUILDER.defineInRange("radiation_unit_prefixes", 0, 0, 15);
     private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SOUND_VOLUMES =
-            BUILDER.comment("Legacy radiation sound multipliers. Index 0 is the Geiger click, index 6 is the warning.")
+            BUILDER.comment("Legacy radiation sound multipliers. Index 0 is the Geiger click, 3 is food, and 6 is the warning.")
                     .defineListAllowEmpty("radiation_sound_volumes", List.of(1D, 1D, 1D, 1D, 1D, 1D, 1D, 1D),
                             value -> value instanceof Number number
                                     && number.doubleValue() >= 0 && number.doubleValue() <= 15);

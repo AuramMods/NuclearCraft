@@ -30,6 +30,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ComparatorBlock;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -112,6 +113,40 @@ public final class RadiationGameTests {
                             && recipe.assemble(grid, level.registryAccess()).is(stack(material, 1).getItem()),
                     "The complete recipe crafts " + material);
         }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void eatingRadiationFoodsChangesDoseAndTemporaryResistance(GameTestHelper helper) {
+        var player = player(helper, "TestFood");
+        player.getInventory().setItem(0, stack("californium_252_ingot", 16));
+        PlayerRadiation.tick(player, 10);
+        player.getInventory().clearContent();
+        double previousDose = PlayerRadiation.dose(player);
+        ForgeEventFactory.onItemUseFinish(player, Items.GOLDEN_APPLE.getDefaultInstance(), 0, ItemStack.EMPTY);
+        near(helper, PlayerRadiation.dose(player), previousDose, "Apple treatment is buffered");
+        PlayerRadiation.tick(player, 5);
+        double firstDose = previousDose * Math.pow(1 - 5E-7, 5) - 20D * 5 * 5 / 300;
+        near(helper, PlayerRadiation.dose(player), firstDose, "One twelfth of a golden apple treatment drains in five ticks");
+        PlayerRadiation.tick(player, 55);
+        near(helper, PlayerRadiation.dose(player), firstDose * Math.pow(1 - 5E-7, 55) - 20D * 55 / 60,
+                "A golden apple removes twenty Rad over sixty ticks");
+        player.getInventory().setItem(0, stack("californium_252_ingot", 1));
+        PlayerRadiation.tick(player, 5);
+        double remainingProtection = 0.1 - 25 * 1.1 / 26 * 60 / 12000;
+        near(helper, PlayerRadiation.rate(player), 0.38 * 0.38 / (0.38 + remainingProtection),
+                "Food resistance decays at its own scaled rate");
+
+        var vulnerable = player(helper, "TestChorus");
+        ForgeEventFactory.onItemUseFinish(vulnerable, Items.CHORUS_FRUIT.getDefaultInstance(), 0, ItemStack.EMPTY);
+        vulnerable.getInventory().setItem(0, stack("californium_252_ingot", 1));
+        PlayerRadiation.tick(vulnerable, 5);
+        near(helper, PlayerRadiation.rate(vulnerable), 0.38 * 1.25, "Chorus fruit briefly increases exposure");
+        vulnerable.getInventory().clearContent();
+        PlayerRadiation.tick(vulnerable, 3_000);
+        vulnerable.getInventory().setItem(0, stack("californium_252_ingot", 1));
+        PlayerRadiation.tick(vulnerable, 5);
+        near(helper, PlayerRadiation.rate(vulnerable), 0.38, "Negative temporary resistance returns to zero");
         helper.succeed();
     }
 

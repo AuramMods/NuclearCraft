@@ -8,6 +8,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
@@ -31,6 +32,11 @@ public final class PlayerRadiation {
     private static final String RATE = "rate";
     private static final String RAW_RATE = "raw_rate";
     private static final String RESISTANCE = "resistance";
+    private static final String RECENT_RESISTANCE = "recent_resistance";
+    private static final String RAD_X_USED = "rad_x_used";
+    private static final String RECENT_RADAWAY = "recent_radaway";
+    private static final String POISON = "poison";
+    private static final String RECENT_POISON = "recent_poison";
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String RAD_X_COOLDOWN = "rad_x_cooldown";
     private static final String IMMUNITY = "immunity_ticks";
@@ -114,6 +120,12 @@ public final class PlayerRadiation {
             // The legacy resistance curve runs separately for each stack, before rates are added.
             rate += RadiationShielding.attenuate(raw, resistance);
         }
+        double poison = data.getDouble(POISON);
+        if (poison > 0) {
+            double absorbed = Math.min(poison, data.getDouble(RECENT_POISON) * ticks / RadiationConfig.POISON_TIME.get());
+            rate += absorbed / ticks;
+            remainder(data, POISON, RECENT_POISON, poison - absorbed);
+        }
         if (data.isEmpty() && rate == 0) {
             return;
         }
@@ -133,17 +145,13 @@ public final class PlayerRadiation {
             }
         }
 
-        if (internalResistance > 0) {
-            double change = Math.max(internalResistance, RadiationConfig.RAD_X_AMOUNT.get())
-                    * ticks / RadiationConfig.RAD_X_LIFETIME.get();
-            double remaining = Math.max(0, internalResistance - change);
-            data.putDouble(RESISTANCE, remaining);
-            if (remaining == 0) {
-                player.displayClientMessage(Component.translatable("message.nuclearcraft.rad_x_wore_off"), true);
-            }
+        decayResistance(player, data, internalResistance, ticks);
+        double normalRate = RadiationConfig.RADAWAY_RATE.get();
+        if (data.contains(RECENT_RADAWAY)) {
+            normalRate *= data.getDouble(RECENT_RADAWAY) / RadiationConfig.RADAWAY_AMOUNT.get();
         }
-        dose -= drain(data, MedicineItem.Kind.RADAWAY, RadiationConfig.RADAWAY_RATE.get() * ticks);
-        dose -= drain(data, MedicineItem.Kind.SLOW_RADAWAY, RadiationConfig.SLOW_RADAWAY_RATE.get() * ticks);
+        dose -= drain(data, MedicineItem.Kind.RADAWAY.id(), RECENT_RADAWAY, normalRate * ticks);
+        dose -= drain(data, MedicineItem.Kind.SLOW_RADAWAY.id(), null, RadiationConfig.SLOW_RADAWAY_RATE.get() * ticks);
         reduceCooldown(data, RADAWAY_COOLDOWN, ticks);
         reduceCooldown(data, RAD_X_COOLDOWN, ticks);
         data.putDouble(DOSE, Math.max(0, dose));
@@ -169,13 +177,45 @@ public final class PlayerRadiation {
         return resistance < 0 ? effective / (1 - resistance) : effective;
     }
 
-    private static double drain(CompoundTag data, MedicineItem.Kind kind, double limit) {
-        double buffer = data.getDouble(kind.id());
+    private static double drain(CompoundTag data, String key, String recentKey, double limit) {
+        double buffer = data.getDouble(key);
         double amount = Math.min(buffer, limit);
         if (amount > 0) {
-            data.putDouble(kind.id(), buffer - amount);
+            remainder(data, key, recentKey, buffer - amount);
         }
         return amount;
+    }
+
+    private static void remainder(CompoundTag data, String key, String recentKey, double remaining) {
+        if (remaining <= 0) {
+            data.remove(key);
+            if (recentKey != null) {
+                data.remove(recentKey);
+            }
+        } else {
+            data.putDouble(key, remaining);
+        }
+    }
+
+    private static void decayResistance(ServerPlayer player, CompoundTag data, double resistance, int ticks) {
+        if (resistance == 0) {
+            data.remove(RECENT_RESISTANCE);
+            return;
+        }
+        double radX = RadiationConfig.RAD_X_AMOUNT.get();
+        double recent = data.contains(RECENT_RESISTANCE) ? data.getDouble(RECENT_RESISTANCE) : radX;
+        double magnitude = Math.abs(resistance);
+        double change = Math.max(magnitude, radX * (1 + recent) / (1 + radX))
+                * ticks / RadiationConfig.RAD_X_LIFETIME.get();
+        double remaining = Math.max(0, magnitude - change);
+        data.putDouble(RESISTANCE, Math.copySign(remaining, resistance));
+        if (remaining == 0) {
+            data.remove(RECENT_RESISTANCE);
+            if (resistance > 0 && (!data.contains(RAD_X_USED) || data.getBoolean(RAD_X_USED))) {
+                data.putBoolean(RAD_X_USED, false);
+                player.displayClientMessage(Component.translatable("message.nuclearcraft.rad_x_wore_off"), true);
+            }
+        }
     }
 
     public static double dose(Player player) {
@@ -233,9 +273,12 @@ public final class PlayerRadiation {
     static void treat(ServerPlayer player, MedicineItem.Kind kind) {
         CompoundTag data = read(player);
         switch (kind) {
-            case RADAWAY -> data.putDouble(kind.id(), data.getDouble(kind.id()) + RadiationConfig.RADAWAY_AMOUNT.get());
+            case RADAWAY -> addRadaway(data, RadiationConfig.RADAWAY_AMOUNT.get());
             case SLOW_RADAWAY -> data.putDouble(kind.id(), data.getDouble(kind.id()) + RadiationConfig.SLOW_RADAWAY_AMOUNT.get());
-            case RAD_X -> data.putDouble(RESISTANCE, data.getDouble(RESISTANCE) + RadiationConfig.RAD_X_AMOUNT.get());
+            case RAD_X -> {
+                addResistance(data, RadiationConfig.RAD_X_AMOUNT.get());
+                data.putBoolean(RAD_X_USED, true);
+            }
         }
         if (kind == MedicineItem.Kind.RAD_X) {
             data.putDouble(RAD_X_COOLDOWN, RadiationConfig.RAD_X_COOLDOWN.get());
@@ -243,6 +286,51 @@ public final class PlayerRadiation {
             data.putDouble(RADAWAY_COOLDOWN, RadiationConfig.RADAWAY_COOLDOWN.get());
         }
         save(player, data);
+    }
+
+    static void eat(ServerPlayer player, FoodRadiation.Effects effects) {
+        CompoundTag data = read(player);
+        double dose = effects.dose();
+        if (dose > 0) {
+            data.putDouble(POISON, data.getDouble(POISON) + dose);
+            data.putDouble(RECENT_POISON, Math.max(dose, data.getDouble(RECENT_POISON)));
+            foodSound(player, NCRadiation.RAD_POISONING.get(), Math.sqrt(dose) / 10);
+        } else if (dose < 0) {
+            addRadaway(data, -dose);
+            foodSound(player, NCRadiation.RADAWAY_SOUND.get(), Math.sqrt(-dose) / 10);
+        }
+        double resistance = effects.resistance();
+        if (resistance != 0 && data.getDouble(RAD_X_COOLDOWN) <= 0) {
+            addResistance(data, resistance);
+            foodSound(player, resistance > 0 ? NCRadiation.RAD_X_SOUND.get() : NCRadiation.CHEMS_WEAR_OFF.get(),
+                    5 * Math.sqrt(Math.abs(resistance)) / RadiationConfig.RAD_X_AMOUNT.get());
+        }
+        save(player, data);
+    }
+
+    private static void addRadaway(CompoundTag data, double amount) {
+        String key = MedicineItem.Kind.RADAWAY.id();
+        double buffer = data.getDouble(key);
+        double previous = buffer > 0 && !data.contains(RECENT_RADAWAY)
+                ? RadiationConfig.RADAWAY_AMOUNT.get() : data.getDouble(RECENT_RADAWAY);
+        data.putDouble(key, buffer + amount);
+        data.putDouble(RECENT_RADAWAY, Math.max(previous, amount));
+    }
+
+    private static void addResistance(CompoundTag data, double amount) {
+        double old = data.getDouble(RESISTANCE);
+        double previous = old != 0 && !data.contains(RECENT_RESISTANCE)
+                ? RadiationConfig.RAD_X_AMOUNT.get() : data.getDouble(RECENT_RESISTANCE);
+        if (!data.contains(RAD_X_USED)) {
+            data.putBoolean(RAD_X_USED, old > 0);
+        }
+        data.putDouble(RESISTANCE, old + amount);
+        data.putDouble(RECENT_RESISTANCE, Math.max(previous, Math.abs(amount)));
+    }
+
+    private static void foodSound(ServerPlayer player, SoundEvent sound, double strength) {
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS,
+                (float) ((1 - Math.pow(10, -strength)) * RadiationConfig.soundVolume(3)), 1F);
     }
 
     private static boolean kill(ServerPlayer player) {

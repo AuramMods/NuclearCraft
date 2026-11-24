@@ -43,6 +43,7 @@ public final class NCRadiation {
     public static final RegistryObject<SoundEvent> CHEMS_WEAR_OFF = sound("player.chems_wear_off");
     public static final RegistryObject<SoundEvent> RADAWAY_SOUND = sound("player.radaway");
     public static final RegistryObject<SoundEvent> RAD_X_SOUND = sound("player.rad_x");
+    public static final RegistryObject<SoundEvent> RAD_POISONING = sound("player.rad_poisoning");
 
     public static final RegistryObject<Item> GEIGER_COUNTER = NCRegistries.ITEMS.register("geiger_counter",
             () -> new GeigerCounterItem(new Item.Properties().stacksTo(1)));

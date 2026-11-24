@@ -26,5 +26,9 @@
     "player.chems_wear_off": {
         "subtitle": "subtitles.nuclearcraft.chems_wear_off",
         "sounds": ["nuclearcraft:player/chems_wear_off"]
+    },
+    "player.rad_poisoning": {
+        "subtitle": "subtitles.nuclearcraft.rad_poisoning",
+        "sounds": ["nuclearcraft:player/rad_poisoning"]
     }
 }
