@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_mix_239",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:mix_239_pellet"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

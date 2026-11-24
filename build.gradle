@@ -89,6 +89,8 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/supercooler_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/centrifuge_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/extractor_front_*.png'
+        include 'assets/nuclearcraft/textures/blocks/ingot_former_front_*.png'
+        include 'assets/nuclearcraft/textures/blocks/crystallizer_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/glowing_mushroom.png'
         include 'assets/nuclearcraft/textures/blocks/decay_hastener_front_*.png'
         include 'assets/nuclearcraft/textures/blocks/rock_crusher_front_*.png'
@@ -154,6 +156,8 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/gui/container/supercooler.png'
         include 'assets/nuclearcraft/textures/gui/container/centrifuge.png'
         include 'assets/nuclearcraft/textures/gui/container/extractor.png'
+        include 'assets/nuclearcraft/textures/gui/container/ingot_former.png'
+        include 'assets/nuclearcraft/textures/gui/container/crystallizer.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_vessel_port.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_heater_port.png'
         include 'assets/nuclearcraft/textures/blocks/heat_exchanger/**/*.png'
@@ -192,6 +196,10 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/items/roasted_cocoa_beans.png'
         include 'assets/nuclearcraft/textures/items/ground_cocoa_nibs.png'
         include 'assets/nuclearcraft/textures/items/cocoa_solids.png'
+        include 'assets/nuclearcraft/textures/items/cocoa_butter.png'
+        include 'assets/nuclearcraft/textures/items/*chocolate.png'
+        include 'assets/nuclearcraft/textures/items/gelatin.png'
+        include 'assets/nuclearcraft/textures/items/marshmallow.png'
         eachFile {
             path = path.replace('/textures/blocks/', '/textures/block/').replace('/textures/items/', '/textures/item/')
         }

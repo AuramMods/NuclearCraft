@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_end_stone",
+        "amount": 288
+    },
+    "result": {
+        "item": "minecraft:end_stone"
+    },
+    "ticks": 800,
+    "energy_per_tick": 0
+}

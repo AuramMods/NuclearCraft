@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/silicon_carbide"
+        },
+        {
+            "item": "nuclearcraft:sic_fiber"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:sic_vapor",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_emerald",
+        "amount": 666
+    },
+    "result": {
+        "item": "minecraft:emerald"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

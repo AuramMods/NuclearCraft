@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_hard_carbon",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:hard_carbon_ingot"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

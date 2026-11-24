@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:crystallizer",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:potassium_hydroxide_solution",
+        "amount": 666
+    },
+    "result": {
+        "item": "nuclearcraft:potassium_hydroxide"
+    },
+    "ticks": 800,
+    "energy_per_tick": 5
+}

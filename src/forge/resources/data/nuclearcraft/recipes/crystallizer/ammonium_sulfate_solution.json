@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:crystallizer",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:ammonium_sulfate_solution",
+        "amount": 666
+    },
+    "result": {
+        "item": "nuclearcraft:ammonium_sulfate"
+    },
+    "ticks": 1600,
+    "energy_per_tick": 10
+}

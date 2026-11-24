@@ -29,6 +29,7 @@ final class NCChemicalFluids {
         NCFluids.liquid("fluorite_water", "salt_solution", 1000, 0x5C7BC3, 300, 1000);
         NCFluids.liquid("fluorobenzene", "liquid", 800, 0xBAB58B, 300, 800);
         NCFluids.gas("fso_vapor", 0xFF8C862E, 1000);
+        NCFluids.molten("gadolinium", 0x99C3F2);
         NCFluids.liquid("hodybeso_solution", "salt_solution", 1000, 0x7C7EA1, 300, 1000);
         NCFluids.gas("hydrogen_chloride", 0xFFBCC371, 300);
         NCFluids.liquid("hydrogen_peroxide", "hydrogen_peroxide", 1000, 0xFFFFFF, 300, 1000);
@@ -41,9 +42,11 @@ final class NCChemicalFluids {
         NCFluids.molten("nickel_oxide", 0x435E49);
         NCFluids.molten("nickel_sulfide", 0xCBD3AD);
         NCFluids.liquid("orthosilicic_acid", "liquid", 1000, 0xB8B8B8, 300, 1000);
+        NCFluids.molten("palladium", 0x767676);
         NCFluids.gas("oxygen_difluoride", 0xFFEA1B01, 300);
         NCFluids.liquid("phenol", "liquid", 800, 0xF2F2F2, 300, 800);
         NCFluids.molten("polydimethylsilylene", 0x774F60);
+        NCFluids.molten("polymethylsilylene_methylene", 0x5A5246);
         NCFluids.molten("polyethersulfone", 0xC9B8A6);
         NCFluids.molten("polyphenylene_sulfide", 0x3F3D3E);
         NCFluids.molten("polytetrafluoroethene", 0x7F9F4D);
@@ -51,6 +54,7 @@ final class NCChemicalFluids {
         NCFluids.liquid("potassium_hydroquinone_solution", "salt_solution", 1000, 0x7A86C4, 300, 1000);
         NCFluids.liquid("potassium_hydroxide_solution", "salt_solution", 1000, 0x7384D2, 300, 1000);
         NCFluids.molten("potassium_sulfide", 0x917C34);
+        NCFluids.gas("sic_vapor", 0xFF78746A, 1000);
         NCFluids.molten("silicon", 0x676767);
         NCFluids.liquid("sodium_fluoride_solution", "salt_solution", 1000, 0x787ACA, 300, 1000);
         NCFluids.liquid("sodium_hydroquinone_solution", "salt_solution", 1000, 0x7C7ED7, 300, 1000);
@@ -58,5 +62,6 @@ final class NCChemicalFluids {
         NCFluids.molten("sodium_sulfide", 0x9A8B0B);
         NCFluids.soul("soul", 0xFF7B6F68, SoundEvents.GHAST_HURT, SoundEvents.GHAST_SCREAM);
         NCFluids.liquid("sulfuric_acid", "liquid", 1000, 0x454500, 300, 1000);
+        NCFluids.molten("zirconium", 0xE0E0B8);
     }
 }

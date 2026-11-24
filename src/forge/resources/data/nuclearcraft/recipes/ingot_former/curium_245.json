@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_curium_245",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:curium_245_ingot"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

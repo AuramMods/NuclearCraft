@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/palladium"
+        },
+        {
+            "tag": "forge:dusts/palladium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:palladium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

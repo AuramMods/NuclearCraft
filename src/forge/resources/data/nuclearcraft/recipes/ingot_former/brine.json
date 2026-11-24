@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:brine",
+        "amount": 15
+    },
+    "result": {
+        "tag": "forge:dusts/salt"
+    },
+    "ticks": 100,
+    "energy_per_tick": 0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/salt"
+            }
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_soularium",
+        "amount": 144
+    },
+    "result": {
+        "tag": "c:ingots/soularium"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "c:ingots/soularium"
+            }
+        }
+    ]
+}

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_lithium_7",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_7_ingot"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

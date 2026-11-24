@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:milk_chocolate"
+    },
+    "result": {
+        "fluid": "nuclearcraft:milk_chocolate",
+        "amount": 144
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:cocoa_butter"
+    },
+    "result": {
+        "fluid": "nuclearcraft:cocoa_butter",
+        "amount": 144
+    },
+    "ticks": 200,
+    "energy_per_tick": 20
+}

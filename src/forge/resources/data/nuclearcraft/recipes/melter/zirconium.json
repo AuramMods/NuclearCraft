@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/zirconium"
+        },
+        {
+            "tag": "forge:dusts/zirconium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:zirconium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

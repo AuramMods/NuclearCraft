@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_lapis",
+        "amount": 666
+    },
+    "result": {
+        "item": "minecraft:lapis_lazuli"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:unsweetened_chocolate",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:unsweetened_chocolate"
+    },
+    "ticks": 200,
+    "energy_per_tick": 0
+}

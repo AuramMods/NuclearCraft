@@ -1,0 +1,26 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PSP",
+        "SCS",
+        "PUP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_advanced"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "U": {
+            "item": "minecraft:cauldron"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:crystallizer"
+    }
+}

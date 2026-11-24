@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_redstone",
+        "amount": 100
+    },
+    "result": {
+        "item": "minecraft:redstone"
+    },
+    "ticks": 100,
+    "energy_per_tick": 0
+}

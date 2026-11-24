@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_nether_brick",
+        "amount": 72
+    },
+    "result": {
+        "item": "minecraft:nether_brick"
+    },
+    "ticks": 200,
+    "energy_per_tick": 0
+}

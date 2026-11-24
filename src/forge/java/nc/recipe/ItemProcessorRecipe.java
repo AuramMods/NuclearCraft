@@ -5,9 +5,13 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorInputs;
+import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.Container;
@@ -19,6 +23,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -177,6 +182,11 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
     public record Serializer(Machine machine) implements RecipeSerializer<ItemProcessorRecipe> {
         @Override
         public ItemProcessorRecipe fromJson(ResourceLocation id, JsonObject json) {
+            return fromJson(id, json, ICondition.IContext.EMPTY);
+        }
+
+        @Override
+        public ItemProcessorRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             var entries = GsonHelper.getAsJsonArray(json, "ingredients");
             if (entries.size() != machine.inputs()) {
                 throw new JsonSyntaxException("Expected " + machine.inputs() + " item inputs for " + id);
@@ -197,14 +207,14 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             } else if (json.has("fluid_result")) {
                 throw new JsonSyntaxException("Unexpected fluid result for " + id);
             }
-            List<Product> results = json.has("results") ? readResults(id, json, "results")
-                    : validateResults(id, List.of(readProduct(GsonHelper.getAsJsonObject(json, "result"))));
+            List<Product> results = json.has("results") ? readResults(id, json, "results", context)
+                    : validateResults(id, List.of(readProduct(GsonHelper.getAsJsonObject(json, "result"), context)));
             List<Product> alternate = List.of();
             if (json.has("alternate_results")) {
                 if (machine != Machine.ROCK_CRUSHER) {
                     throw new JsonSyntaxException("Unexpected alternate outputs for " + id);
                 }
-                alternate = readResults(id, json, "alternate_results");
+                alternate = readResults(id, json, "alternate_results", context);
             }
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
@@ -224,16 +234,31 @@ public record ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Inp
             return FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), recipeId);
         }
 
-        private List<Product> readResults(ResourceLocation id, JsonObject json, String key) {
+        private List<Product> readResults(ResourceLocation id, JsonObject json, String key, ICondition.IContext context) {
             List<Product> results = new ArrayList<>(machine.outputs());
             for (var entry : GsonHelper.getAsJsonArray(json, key)) {
                 results.add(entry.isJsonNull() && machine == Machine.FUEL_REPROCESSOR
-                        ? EMPTY_PRODUCT : readProduct(GsonHelper.convertToJsonObject(entry, "result")));
+                        ? EMPTY_PRODUCT : readProduct(GsonHelper.convertToJsonObject(entry, "result"), context));
             }
             return validateResults(id, results);
         }
 
-        private static Product readProduct(JsonObject json) {
+        private static Product readProduct(JsonObject json, ICondition.IContext context) {
+            if (json.has("tag")) {
+                var id = ResourceLocation.tryParse(GsonHelper.getAsString(json, "tag"));
+                if (json.has("item") || id == null) {
+                    throw new JsonSyntaxException("Expected an item or a valid item tag in output " + json);
+                }
+                var tag = TagKey.create(Registries.ITEM, id);
+                var entries = context == ICondition.IContext.EMPTY
+                        ? BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(set -> set.stream())
+                        : context.getTag(tag).stream();
+                var item = entries.map(Holder::value).filter(value -> value != Items.AIR).findFirst()
+                        .orElseThrow(() -> new JsonSyntaxException("Empty item output tag " + id));
+                json = json.deepCopy();
+                json.remove("tag");
+                json.addProperty("item", BuiltInRegistries.ITEM.getKey(item).toString());
+            }
             var stack = CraftingHelper.getItemStack(json, true);
             int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
             int minimum = GsonHelper.getAsInt(json, "min_count", 0);

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_glowstone",
+        "amount": 250
+    },
+    "result": {
+        "item": "minecraft:glowstone_dust"
+    },
+    "ticks": 100,
+    "energy_per_tick": 0
+}

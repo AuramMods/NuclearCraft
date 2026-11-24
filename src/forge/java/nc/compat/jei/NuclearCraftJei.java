@@ -205,7 +205,8 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
         registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
         for (Machine machine : Machine.values()) {
-            registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()));
+            registration.addRecipes(itemType(machine), recipes.getAllRecipesFor(machine.recipes()).stream()
+                    .filter(recipe -> recipe.fluidInput() == null || !recipe.fluidInput().alternatives().isEmpty()).toList());
         }
         registration.addRecipes(DECAY, recipes.getAllRecipesFor(NCGenerators.DECAY_RECIPES.get()));
         registration.addRecipes(MELTER, recipes.getAllRecipesFor(NCRegistries.MELTING.get()));
@@ -346,7 +347,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         var fluid = recipe.fluidInput();
         if (fluid != null) {
-            fluidSlot(layout, INPUT, 43, fluid.alternatives());
+            fluidSlot(layout, INPUT, recipe.inputs().isEmpty() ? 20 : 43, fluid.alternatives());
         }
         if (machine.hasFluidOutput()) {
             fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));

@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:crystallizer",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:sic_vapor",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:sic_fiber"
+    },
+    "ticks": 3200,
+    "energy_per_tick": 20
+}

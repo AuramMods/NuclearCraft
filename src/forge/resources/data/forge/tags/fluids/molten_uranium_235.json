@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:uranium_235",
+        "nuclearcraft:flowing_uranium_235"
+    ]
+}

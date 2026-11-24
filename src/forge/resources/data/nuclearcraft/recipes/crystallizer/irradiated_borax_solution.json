@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:crystallizer",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:irradiated_borax_solution",
+        "amount": 666
+    },
+    "result": {
+        "item": "nuclearcraft:borax"
+    },
+    "ticks": 800,
+    "energy_per_tick": 5
+}

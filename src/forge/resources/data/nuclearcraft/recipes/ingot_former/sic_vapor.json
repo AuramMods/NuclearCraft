@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:sic_vapor",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:silicon_carbide_ingot"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

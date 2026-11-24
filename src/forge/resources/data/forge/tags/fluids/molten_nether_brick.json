@@ -1,0 +1,7 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:nether_brick",
+        "nuclearcraft:flowing_nether_brick"
+    ]
+}

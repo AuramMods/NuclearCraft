@@ -66,7 +66,9 @@ public final class NCItemProcessors {
         FUEL_REPROCESSOR("fuel_reprocessor", 1, 8, false, 30, null, 86, 20, 48, 30, 38, 1, 4, 12),
         PRESSURIZER("pressurizer", 1, 1, true, 56, null, 116, 0, 74, 35, 16),
         ASSEMBLER("assembler", 4, 1, false, 46, null, 126, 0, 84, 31, 36, 2, 1, 12),
-        EXTRACTOR("extractor", 1, 1, true, 42, new TankSlot(126, 31, 24, true), 102, 0, 60, 34, 18, 1, 1, 12);
+        EXTRACTOR("extractor", 1, 1, true, 42, new TankSlot(126, 31, 24, true), 102, 0, 60, 34, 18, 1, 1, 12),
+        INGOT_FORMER("ingot_former", 0, 1, false, 0, new TankSlot(56, 35, 16, false), 116, 0, 74, 35, 16),
+        CRYSTALLIZER("crystallizer", 0, 1, true, 0, new TankSlot(56, 35, 16, false), 116, 0, 74, 35, 16);
 
         private final String id;
         private final int inputs;

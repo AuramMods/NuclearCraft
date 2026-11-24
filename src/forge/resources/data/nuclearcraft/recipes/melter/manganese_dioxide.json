@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/manganese_dioxide"
+        },
+        {
+            "tag": "forge:dusts/manganese_dioxide"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:manganese_dioxide",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

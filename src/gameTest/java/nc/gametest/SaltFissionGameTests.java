@@ -65,7 +65,7 @@ public final class SaltFissionGameTests {
         helper.succeed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 270)
+    @GameTest(template = "fission", timeoutTicks = 270)
     public static void saltFissionResumesAfterFullOutputAndReassembly(GameTestHelper helper) {
         shell(helper);
         addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
@@ -128,7 +128,7 @@ public final class SaltFissionGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 200)
+    @GameTest(template = "fission", timeoutTicks = 200)
     public static void saltFissionKeepsTwoFilteredFuelCircuitsSeparate(GameTestHelper helper) {
         String secondFuel = "hecf_251_fluoride_flibe";
         shell(helper);
@@ -152,7 +152,7 @@ public final class SaltFissionGameTests {
         });
     }
 
-    @GameTest(template = "empty", timeoutTicks = 70)
+    @GameTest(template = "fission", timeoutTicks = 70)
     public static void saltFissionCompletesMultipleDosesWhenUndercoolingSpeedsItUp(GameTestHelper helper) {
         String accelerated = "hecf_251_fluoride_flibe";
         shell(helper);
@@ -171,7 +171,7 @@ public final class SaltFissionGameTests {
                 .thenSucceed();
     }
 
-    @GameTest(template = "empty", timeoutTicks = 95)
+    @GameTest(template = "fission", timeoutTicks = 95)
     public static void saltInspectionChecksDistanceAndDisassemblyBeforeChangingTanks(GameTestHelper helper) {
         shell(helper);
         addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);

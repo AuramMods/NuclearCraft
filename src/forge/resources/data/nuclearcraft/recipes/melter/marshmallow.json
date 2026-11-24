@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:marshmallow"
+    },
+    "result": {
+        "fluid": "nuclearcraft:marshmallow",
+        "amount": 144
+    },
+    "ticks": 400,
+    "energy_per_tick": 20
+}

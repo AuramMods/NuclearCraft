@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/gadolinium"
+        },
+        {
+            "tag": "forge:dusts/gadolinium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:gadolinium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

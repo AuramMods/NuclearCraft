@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:polymethylsilylene_methylene",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:polymethylsilylene_methylene"
+    },
+    "ticks": 400,
+    "energy_per_tick": 0
+}

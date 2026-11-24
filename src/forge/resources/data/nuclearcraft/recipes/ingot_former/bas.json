@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "fluid": "nuclearcraft:bas",
+        "amount": 666
+    },
+    "result": {
+        "item": "nuclearcraft:boron_arsenide"
+    },
+    "ticks": 800,
+    "energy_per_tick": 0
+}

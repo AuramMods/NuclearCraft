@@ -215,6 +215,8 @@
         "nuclearcraft:fission_heater_port_cryotheum",
         "nuclearcraft:supercooler",
         "nuclearcraft:extractor",
-        "nuclearcraft:centrifuge"
+        "nuclearcraft:centrifuge",
+        "nuclearcraft:ingot_former",
+        "nuclearcraft:crystallizer"
     ]
 }

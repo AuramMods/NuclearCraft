@@ -1,0 +1,29 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PHP",
+        "FCF",
+        "PTP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        },
+        "F": {
+            "tag": "forge:ingots/ferroboron"
+        },
+        "C": {
+            "item": "nuclearcraft:chassis"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:ingot_former"
+    }
+}

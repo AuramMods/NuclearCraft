@@ -3,6 +3,8 @@ package nc.init;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
@@ -49,6 +51,20 @@ final class NCMaterials {
         item("roasted_cocoa_beans");
         item("ground_cocoa_nibs", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
         item("cocoa_solids");
+        item("cocoa_butter", new Item.Properties().food(new FoodProperties.Builder().nutrition(2).saturationMod(0.2F)
+                .effect(() -> new MobEffectInstance(MobEffects.ABSORPTION, 300, 0, false, false), 1F).build()));
+        item("unsweetened_chocolate", new Item.Properties().food(new FoodProperties.Builder().nutrition(2).saturationMod(0.2F)
+                .effect(() -> new MobEffectInstance(MobEffects.DIG_SPEED, 300, 0, false, false), 1F).build()));
+        item("dark_chocolate", new Item.Properties().food(new FoodProperties.Builder().nutrition(3).saturationMod(0.4F)
+                .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0, false, false), 1F)
+                .effect(() -> new MobEffectInstance(MobEffects.DIG_SPEED, 300, 0, false, false), 1F).build()));
+        item("milk_chocolate", new Item.Properties().food(new FoodProperties.Builder().nutrition(4).saturationMod(0.6F)
+                .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0, false, false), 1F)
+                .effect(() -> new MobEffectInstance(MobEffects.DIG_SPEED, 300, 0, false, false), 1F)
+                .effect(() -> new MobEffectInstance(MobEffects.ABSORPTION, 300, 0, false, false), 1F).build()));
+        item("gelatin");
+        item("marshmallow", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.4F)
+                .effect(() -> new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 300, 0, false, false), 1F).build()));
         item("graham_cracker", new Item.Properties().food(new FoodProperties.Builder().nutrition(1).saturationMod(0.2F).build()));
         for (String name : List.of("copper", "tin", "lead", "magnesium", "aluminum", "silver")) {
             metal(name, 3F, SoundType.METAL);

@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "item": "nuclearcraft:silicon"
+    },
+    "result": {
+        "fluid": "nuclearcraft:silicon",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}
