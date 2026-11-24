@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:fission_glass"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:fission_casing"
+    }
+}

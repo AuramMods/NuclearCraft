@@ -30,7 +30,7 @@ public class FissionPartBlock extends Block {
             ResourceKey.create(Registries.DAMAGE_TYPE, NuclearCraft.id("fission_burn"));
 
     public enum Role {
-        CASING, CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER, VENT, FUEL_PORT, CHAMBER_PORT,
+        CASING, GLASS, MONITOR, POWER_PORT, CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER, VENT, FUEL_PORT, CHAMBER_PORT,
         COOLER_PORT, VESSEL_PORT, HEATER_PORT, SOURCE, SOURCE_MANAGER, SHIELD_MANAGER, IRRADIATOR_PORT,
         CELL, PEBBLE_CHAMBER, VESSEL, HEAT_SINK, PEBBLE_COOLER, SALT_HEATER, MODERATOR, REFLECTOR, SHIELD, IRRADIATOR, CONDUCTOR
     }
@@ -44,6 +44,19 @@ public class FissionPartBlock extends Block {
 
     static Role role(BlockState state) {
         return state.getBlock() instanceof FissionPartBlock part ? part.role : null;
+    }
+
+    static boolean isClusterComponent(BlockState state) {
+        Role role = role(state);
+        return role != null && switch (role) {
+            case CELL, PEBBLE_CHAMBER, VESSEL, HEAT_SINK, PEBBLE_COOLER, SALT_HEATER, SHIELD, IRRADIATOR, CONDUCTOR -> true;
+            default -> false;
+        };
+    }
+
+    static BlockPos legacyPosition(long position) {
+        // Minecraft 1.12.2 placed the 12 Y bits between X and Z.
+        return new BlockPos((int) (position >> 38), (int) (position << 26 >> 52), (int) (position << 38 >> 38));
     }
 
     @Override

@@ -422,6 +422,18 @@ All 146 GameTests passed, including the arithmetic, legacy state conversion, and
 
 A packaged Forge 47.4.10 test with Auram's KubeJS 2001.6.5-build.16 changed the LECf-251 oxide decay factor to 0.55. The resulting fresh fuel ran on a 36-flux path with an effective criticality of 31. The isolated Forge 47.4.18 client with all 538 installed Auram mod JARs showed the original factors in all three JEI fuel categories. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
 
+### Fission monitors and wall parts
+
+Solid-fuel, pebble-bed, and molten-salt reactors accept Fission Glass, Fission Monitors, and Fission Power Ports on casing faces. Assembly turns the monitor and port outward, including on the roof and floor. Fission Glass retains pickaxe harvesting, culls shared faces, and can be crafted back into casing. All three parts retain their original crafting ingredients and registry IDs. The optional legacy ConnectedTexturesMod overlay is pending.
+
+Sneak and right-click a fission component with the Multitool, then right-click a monitor with the tool to store the link. Bare-hand right-click highlights its current heat cluster for five seconds. Using the tool on a linked monitor without a new selection highlights just the selected component. The monitor lights when its reactor runs. The link survives a server restart and is resolved against the assembled reactor. Converted monitors and Multitools read the original `componentPos` encoding. The monitor saves the link as `component_pos` in the Forge format.
+
+The Fission Power Port exposes a sided Forge Energy capability on its outward face. Use a Multitool to switch between input and output. World conversion maps the legacy active metadata bit to the Forge `active` block state to preserve output mode. The three legacy reactors give this port zero capacity. Reactors deliver usable energy through their heat, steam, and turbine chain.
+
+All 149 GameTests passed, including face placement on all three reactor variants, legacy link decoding, and capability invalidation on mode changes. On packaged Forge 47.4.18, a redstone conduit from Auram's Ender IO 8.2.22-beta started and stopped a solid-fuel reactor. Its monitor followed both transitions, and the saved link and fuel progress survived a server restart.
+
+A multiplayer client rendered outlines for exactly the linked fuel cell, water heat sink, and conductor. The same outlines rendered with all 538 installed Auram mod JARs after JEI loaded. Overheating was disabled for the disposable Auram rendering fixture. Both clients used OpenAL No Output with master volume zero. The native watcher recorded zero focus activations or visible window samples.
+
 ### Player radiation
 
 The player settings ported from the legacy radiation category retain their names in `world/serverconfig/nuclearcraft-radiation.toml`. These cover the enable switch, update interval, maximum dose, natural decay, water and rain multipliers, immune player UUIDs, death behavior and medicine. A new world starts with the legacy defaults, including a 1,000 Rad maximum and 90 seconds of immunity after death. Doses and active treatment persist in Forge player data at `PlayerPersisted."nuclearcraft:radiation"`. Moving a legacy player save requires explicitly converting the radiation capability data. The existing `ncRadiationResistance` armor stack tag still contributes resistance.

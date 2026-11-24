@@ -238,6 +238,20 @@ final class SolidFissionCore {
         conductors = Set.copyOf(layout.conductors());
     }
 
+    List<BlockPos> clusterPositions(BlockPos target) {
+        for (Cluster cluster : clusters) {
+            if (cluster.contains(target)) {
+                var positions = new ArrayList<BlockPos>(cluster.size());
+                positions.addAll(cluster.cells());
+                positions.addAll(cluster.sinks());
+                positions.addAll(cluster.heatingParts());
+                positions.addAll(cluster.conductors());
+                return List.copyOf(positions);
+            }
+        }
+        return List.of();
+    }
+
     PartHeat partHeat(ServerLevel level, BlockPos pos, Map<BlockPos, Long> storedHeat, boolean running) {
         for (Cluster cluster : clusters) {
             if (cluster.contains(pos)) {

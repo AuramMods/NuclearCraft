@@ -6,6 +6,8 @@ import nc.multiblock.fission.FissionConductorBlock;
 import nc.multiblock.fission.FissionControlBlockEntity;
 import nc.multiblock.fission.FissionDecaySettings;
 import nc.multiblock.fission.FissionFuelCell;
+import nc.multiblock.fission.FissionGlassBlock;
+import nc.multiblock.fission.FissionMonitor;
 import nc.multiblock.fission.FissionIrradiator;
 import nc.multiblock.fission.FissionIrradiatorBlock;
 import nc.multiblock.fission.FissionIrradiatorMenu;
@@ -154,6 +156,17 @@ public final class NCFission {
     }
 
     public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing", Role.CASING);
+    public static final RegistryObject<FissionGlassBlock> GLASS = part("fission_glass",
+            () -> new FissionGlassBlock(properties().destroyTime(1.5F).noOcclusion()
+                    .isViewBlocking((state, level, pos) -> false).isSuffocating((state, level, pos) -> false)));
+    public static final RegistryObject<FissionWallBlock> MONITOR = wall("fission_monitor", Role.MONITOR);
+    public static final RegistryObject<BlockEntityType<FissionMonitor>> MONITOR_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_monitor", () ->
+                    BlockEntityType.Builder.of(FissionMonitor::new, MONITOR.get()).build(null));
+    public static final RegistryObject<FissionWallBlock> POWER_PORT = wall("fission_power_port", Role.POWER_PORT);
+    public static final RegistryObject<BlockEntityType<FissionPortBlockEntity>> POWER_PORT_ENTITY =
+            NCRegistries.BLOCK_ENTITIES.register("fission_power_port", () ->
+                    BlockEntityType.Builder.of(FissionPortBlockEntity::new, POWER_PORT.get()).build(null));
     public static final RegistryObject<FissionConductorBlock> CONDUCTOR = part("fission_conductor",
             () -> new FissionConductorBlock(properties()));
     public static final RegistryObject<BlockEntityType<FissionConductor>> CONDUCTOR_ENTITY =
@@ -259,6 +272,9 @@ public final class NCFission {
                     .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
                     .displayItems((parameters, output) -> {
                         output.accept(CASING.get());
+                        output.accept(GLASS.get());
+                        output.accept(MONITOR.get());
+                        output.accept(POWER_PORT.get());
                         output.accept(CONDUCTOR.get());
                         output.accept(CONTROLLER.get());
                         output.accept(CELL.get());

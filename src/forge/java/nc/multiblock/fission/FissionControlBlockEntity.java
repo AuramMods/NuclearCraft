@@ -90,10 +90,7 @@ public final class FissionControlBlockEntity extends BlockEntity {
                 CompoundTag legacy = tag.getCompound("listenerPosSet");
                 for (String key : legacy.getAllKeys()) {
                     if (legacy.contains(key, Tag.TAG_LONG)) {
-                        // Minecraft 1.12.2 packed signed X, Y, and Z in 26, 12, and 26 bits.
-                        long pos = legacy.getLong(key);
-                        listeners.add(new BlockPos((int) (pos >> 38), (int) (pos << 26 >> 52),
-                                (int) (pos << 38 >> 38)));
+                        listeners.add(FissionPartBlock.legacyPosition(legacy.getLong(key)));
                     }
                 }
             }

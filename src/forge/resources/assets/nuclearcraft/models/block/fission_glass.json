@@ -1,0 +1,7 @@
+{
+    "parent": "minecraft:block/cube_all",
+    "textures": {
+        "all": "nuclearcraft:block/fission/glass"
+    },
+    "render_type": "minecraft:cutout"
+}

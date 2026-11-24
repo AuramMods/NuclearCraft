@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PGP",
+        "TFT",
+        "PGP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "G": {
+            "item": "minecraft:glowstone_dust"
+        },
+        "T": {
+            "tag": "forge:ingots/tough"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_monitor",
+        "count": 4
+    }
+}

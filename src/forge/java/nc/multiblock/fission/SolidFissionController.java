@@ -17,6 +17,7 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -65,6 +66,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private SolidFissionLayout layout;
     private SolidFissionCore core;
     private Component validationMessage = Component.translatable("message.nuclearcraft.fission.checking");
+    private @Nullable BlockPos errorPosition;
     private long casingHeat;
     private boolean enabled;
     private boolean dirty = true;
@@ -89,6 +91,22 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     public Component validationMessage() {
         return validationMessage;
+    }
+
+    void showValidation(ServerPlayer player) {
+        player.displayClientMessage(validationMessage, true);
+        if (errorPosition != null) {
+            FissionHighlights.send(player, List.of(errorPosition));
+        }
+    }
+
+    boolean containsFissionComponent(BlockPos pos) {
+        return containsPart(pos) && layout.bounds().boundaryAxes(pos) == 0
+                && FissionPartBlock.isClusterComponent(level.getBlockState(pos));
+    }
+
+    List<BlockPos> clusterPositions(BlockPos pos) {
+        return core == null ? List.of() : core.clusterPositions(pos);
     }
 
     void partChanged(BlockPos pos, boolean removed) {
@@ -155,8 +173,16 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             coolCasing();
         }
         BlockState state = getBlockState();
-        if (state.getValue(FissionWallBlock.ACTIVE) != active) {
-            server.setBlock(worldPosition, state.setValue(FissionWallBlock.ACTIVE, active), Block.UPDATE_CLIENTS);
+        if (state.getValue(FissionWallBlock.ACTIVE) == active) {
+            return;
+        }
+        server.setBlock(worldPosition, state.setValue(FissionWallBlock.ACTIVE, active), Block.UPDATE_CLIENTS);
+        if (layout != null) {
+            for (BlockPos pos : layout.monitors()) {
+                if (server.getBlockEntity(pos) instanceof FissionMonitor monitor) {
+                    monitor.display(active, null);
+                }
+            }
         }
     }
 
@@ -164,6 +190,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         dirty = false;
         SolidFissionLayout.Validation result = SolidFissionLayout.find(server, worldPosition);
         validationMessage = result.message();
+        errorPosition = result.errorPosition();
         SolidFissionLayout found = result.layout();
         if (found == null) {
             disassemble();
@@ -196,6 +223,11 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         controls(layout).forEach(pos -> controlAt(server, pos).ifPresent(control -> control.bind(this)));
         refreshControlStates(server);
         bindIrradiators(server);
+        for (BlockPos pos : layout.monitors()) {
+            if (server.getBlockEntity(pos) instanceof FissionMonitor monitor) {
+                monitor.bind(this, layout.bounds().outward(pos));
+            }
+        }
         for (BlockPos pos : layout.cells()) {
             var decay = FissionFuelDecay.of(server.getBlockEntity(pos));
             if (decay != null) {
@@ -222,6 +254,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return;
         }
         irradiationBanks.clear();
+        for (BlockPos pos : previous.monitors()) {
+            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            if (chunk != null && chunk.getBlockEntity(pos) instanceof FissionMonitor monitor) {
+                monitor.unbind();
+            }
+        }
         for (BlockPos pos : previous.cells()) {
             var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
             var decay = FissionFuelDecay.of(chunk == null ? null : chunk.getBlockEntity(pos));

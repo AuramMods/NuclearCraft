@@ -12,6 +12,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -19,24 +21,100 @@ import java.util.Set;
 
 public final class FissionMultitool {
     private static final String LINK = "nuclearcraft_fission_link";
+    private static final String COMPONENT = "nuclearcraft_fission_component";
 
     private FissionMultitool() {}
 
+    public static boolean handles(BlockState state) {
+        return state.getBlock() instanceof FissionControlBlock || FissionPartBlock.role(state) == Role.MONITOR
+                || FissionPartBlock.isClusterComponent(state);
+    }
+
     public static InteractionResult useOn(ItemStack tool, UseOnContext context) {
         var level = context.getLevel();
-        if (!(level.getBlockState(context.getClickedPos()).getBlock() instanceof FissionControlBlock)) {
+        BlockPos pos = context.getClickedPos();
+        BlockState state = level.getBlockState(pos);
+        if (context.getPlayer() == null) {
+            return InteractionResult.PASS;
+        }
+        boolean sneaking = context.getPlayer().isShiftKeyDown();
+        Role role = FissionPartBlock.role(state);
+        boolean control = state.getBlock() instanceof FissionControlBlock;
+        boolean monitor = role == Role.MONITOR && !sneaking;
+        boolean component = sneaking && FissionPartBlock.isClusterComponent(state);
+        if (!control && !monitor && !component) {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
-        if (level instanceof ServerLevel server && context.getPlayer() instanceof ServerPlayer player
-                && server.getBlockEntity(context.getClickedPos()) instanceof FissionControlBlockEntity part) {
-            interact(server, player, part, tool);
-            play(server, player);
-            return InteractionResult.CONSUME;
+        if (!(level instanceof ServerLevel server) || !(context.getPlayer() instanceof ServerPlayer player)) {
+            return InteractionResult.PASS;
         }
-        return InteractionResult.PASS;
+        if (monitor && server.getBlockEntity(pos) instanceof FissionMonitor part) {
+            useMonitor(server, player, tool, part);
+        } else if (component && (!control || !tool.getOrCreateTag().contains(LINK, Tag.TAG_COMPOUND))) {
+            var selected = new CompoundTag();
+            selected.putString("dimension", server.dimension().location().toString());
+            selected.putLong("pos", pos.asLong());
+            tool.getOrCreateTag().put(COMPONENT, selected);
+            monitorMessage(player, "select", state.getBlock().getName());
+        } else if (control && server.getBlockEntity(pos) instanceof FissionControlBlockEntity part) {
+            interact(server, player, part, tool);
+        } else {
+            return InteractionResult.PASS;
+        }
+        play(server, player);
+        return InteractionResult.CONSUME;
+    }
+
+    static void inspectCluster(ServerPlayer player, FissionMonitor monitor) {
+        var cluster = monitor.cluster();
+        if (cluster.isEmpty()) {
+            monitorMessage(player, monitor.target() == null ? "no_target" : "no_cluster");
+        } else {
+            FissionHighlights.send(player, cluster);
+        }
+    }
+
+    private static void useMonitor(ServerLevel level, ServerPlayer player, ItemStack tool, FissionMonitor monitor) {
+        CompoundTag data = tool.getOrCreateTag();
+        CompoundTag legacy = data.getCompound("ncMultitool");
+        if (data.contains(COMPONENT, Tag.TAG_COMPOUND) || legacy.contains("fissionComponentInfo", Tag.TAG_COMPOUND)) {
+            BlockPos target = selectedComponent(level, data, legacy);
+            if (target == null || !monitor.link(target)) {
+                monitorMessage(player, "wrong_target");
+                return;
+            }
+            data.remove(COMPONENT);
+            legacy.remove("fissionComponentInfo");
+            monitorMessage(player, "linked", target.getX(), target.getY(), target.getZ());
+            FissionHighlights.send(player, List.of(target));
+        } else {
+            BlockPos target = monitor.target();
+            if (target == null) {
+                monitorMessage(player, "no_target");
+            } else {
+                monitorMessage(player, "target", level.getBlockState(target).getBlock().getName(),
+                        target.getX(), target.getY(), target.getZ());
+                FissionHighlights.send(player, List.of(target));
+            }
+        }
+    }
+
+    private static @Nullable BlockPos selectedComponent(ServerLevel level, CompoundTag data, CompoundTag legacy) {
+        if (data.contains(COMPONENT, Tag.TAG_COMPOUND)) {
+            CompoundTag info = data.getCompound(COMPONENT);
+            return info.contains("pos", Tag.TAG_LONG) && info.getString("dimension").equals(level.dimension().location().toString())
+                    ? BlockPos.of(info.getLong("pos")) : null;
+        }
+        CompoundTag info = legacy.getCompound("fissionComponentInfo");
+        return info.contains("componentPos", Tag.TAG_LONG)
+                ? FissionPartBlock.legacyPosition(info.getLong("componentPos")) : null;
+    }
+
+    private static void monitorMessage(ServerPlayer player, String key, Object... args) {
+        player.displayClientMessage(Component.translatable("message.nuclearcraft.fission.monitor." + key, args), true);
     }
 
     static void interact(ServerLevel level, ServerPlayer player, FissionControlBlockEntity part, ItemStack tool) {
@@ -108,10 +186,16 @@ public final class FissionMultitool {
 
     public static boolean clear(ServerLevel level, ServerPlayer player, ItemStack tool) {
         CompoundTag tag = tool.getTag();
-        if (tag == null || !tag.contains(LINK)) {
+        if (tag == null) {
+            return false;
+        }
+        var legacy = tag.getCompound("ncMultitool");
+        if (!tag.contains(LINK) && !tag.contains(COMPONENT) && !legacy.contains("fissionComponentInfo")) {
             return false;
         }
         tag.remove(LINK);
+        tag.remove(COMPONENT);
+        legacy.remove("fissionComponentInfo");
         play(level, player);
         message(player, "clear");
         return true;

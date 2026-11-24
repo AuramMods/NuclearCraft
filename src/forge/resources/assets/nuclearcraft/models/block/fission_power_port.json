@@ -1,0 +1,12 @@
+{
+    "parent": "minecraft:block/cube",
+    "textures": {
+        "up": "nuclearcraft:block/fission/power_port_side",
+        "down": "nuclearcraft:block/fission/power_port_side",
+        "west": "nuclearcraft:block/fission/power_port_side",
+        "east": "nuclearcraft:block/fission/power_port_side",
+        "particle": "nuclearcraft:block/fission/power_port_side",
+        "south": "nuclearcraft:block/fission/power_port_in",
+        "north": "nuclearcraft:block/fission/power_port_out_input"
+    }
+}

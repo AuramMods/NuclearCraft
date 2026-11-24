@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "pattern": [
+        "PCP",
+        "RFR",
+        "PCP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "F": {
+            "item": "nuclearcraft:steel_frame"
+        },
+        "C": {
+            "tag": "forge:ingots/copper"
+        },
+        "R": {
+            "item": "minecraft:redstone"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:fission_power_port",
+        "count": 4
+    }
+}

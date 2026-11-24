@@ -9,11 +9,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -73,7 +75,9 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return switch (role(state)) {
             case CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER -> new SolidFissionController(pos, state);
-            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT, IRRADIATOR_PORT -> new FissionPortBlockEntity(pos, state);
+            case MONITOR -> new FissionMonitor(pos, state);
+            case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT,
+                    IRRADIATOR_PORT, POWER_PORT -> new FissionPortBlockEntity(pos, state);
             default -> throw new IllegalStateException("Unexpected reactor wall block " + state);
         };
     }
@@ -88,6 +92,11 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
         }
         return null;
+    }
+
+    @Override
+    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction side) {
+        return side != null && isController(role(state));
     }
 
     @Override
@@ -133,54 +142,75 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             return InteractionResult.PASS;
         }
 
+        Role role = role(state);
+        boolean sneaking = player.isShiftKeyDown();
+        boolean multitool = player.getItemInHand(hand).is(NCHeatExchangers.MULTITOOL.get());
+        if (role == Role.MONITOR && (sneaking || multitool)) {
+            return InteractionResult.PASS;
+        }
         if (level instanceof ServerLevel server) {
             BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof FissionPortBlockEntity port && role(state) == Role.IRRADIATOR_PORT) {
-                var held = player.getItemInHand(hand);
-                if ((player.isShiftKeyDown() && held.isEmpty())
-                        || (held.is(NCHeatExchangers.MULTITOOL.get()) && port.irradiatorController() == null)) {
-                    boolean output = !state.getValue(ACTIVE);
-                    level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
-                    geometryChanged(server, pos);
-                    player.displayClientMessage(Component.translatable(output
-                            ? "message.nuclearcraft.fission.port_output" : "message.nuclearcraft.fission.port_input"), true);
-                } else {
-                    FissionIrradiatorMenu.interact(server, player, hand, port);
-                }
-            } else if (entity instanceof FissionPortBlockEntity port && player.isShiftKeyDown()) {
-                if (role(state) == Role.VESSEL_PORT) {
-                    var result = SaltVesselBlock.selectFilter(player, hand, server, pos, port::fuelFilter);
-                    if (result != InteractionResult.PASS) {
-                        return result;
-                    }
-                }
-                if ((role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)
-                        && !player.getItemInHand(hand).isEmpty()) {
+            if (entity instanceof FissionMonitor monitor && player instanceof ServerPlayer user) {
+                FissionMultitool.inspectCluster(user, monitor);
+            } else if (entity instanceof FissionPortBlockEntity port) {
+                if (!usePort(server, state, pos, player, hand, hit, port, role, multitool, sneaking)) {
                     return InteractionResult.PASS;
-                }
-                boolean output = !state.getValue(ACTIVE);
-                level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
-                geometryChanged(server, pos);
-                player.displayClientMessage(Component.translatable(output
-                        ? "message.nuclearcraft.fission.port_output" : "message.nuclearcraft.fission.port_input"), true);
-            } else if (entity instanceof FissionPortBlockEntity && (role(state) == Role.VESSEL_PORT || role(state) == Role.HEATER_PORT)) {
-                if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
-                    SaltFissionPartMenu.open(player, server, pos, role(state) == Role.VESSEL_PORT
-                            ? SaltFissionPartMenu.Kind.VESSEL_PORT : SaltFissionPartMenu.Kind.HEATER_PORT);
                 }
             } else if (entity instanceof SolidFissionController controller) {
                 if (controller.assembled()) {
                     player.openMenu(controller);
-                } else {
-                    player.displayClientMessage(controller.validationMessage(), true);
+                } else if (player instanceof ServerPlayer user) {
+                    controller.showValidation(user);
                 }
             } else {
                 return InteractionResult.PASS;
             }
-        } else if (!isController(role(state)) && role(state) != Role.IRRADIATOR_PORT && role(state) != Role.VESSEL_PORT && role(state) != Role.HEATER_PORT
-                && !player.isShiftKeyDown()) {
+        } else if (!isController(role) && role != Role.MONITOR && role != Role.IRRADIATOR_PORT
+                && role != Role.VESSEL_PORT && role != Role.HEATER_PORT && !sneaking && !multitool) {
             return InteractionResult.PASS;
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }
+
+    private static boolean usePort(ServerLevel level, BlockState state, BlockPos pos, Player player,
+                                   InteractionHand hand, BlockHitResult hit, FissionPortBlockEntity port,
+                                   Role role, boolean multitool, boolean sneaking) {
+        var held = player.getItemInHand(hand);
+        if ((multitool && !sneaking && (role == Role.POWER_PORT || !port.assembled()))
+                || (sneaking && held.isEmpty())) {
+            togglePort(level, state, pos, player);
+            return true;
+        }
+        if (role == Role.IRRADIATOR_PORT) {
+            FissionIrradiatorMenu.interact(level, player, hand, port);
+            return true;
+        }
+        if (sneaking) {
+            if (role == Role.VESSEL_PORT) {
+                return SaltVesselBlock.selectFilter(player, hand, level, pos, port::fuelFilter).consumesAction();
+            }
+            if (role == Role.HEATER_PORT || role == Role.POWER_PORT) {
+                return false;
+            }
+            togglePort(level, state, pos, player);
+            return true;
+        }
+        if (role == Role.VESSEL_PORT || role == Role.HEATER_PORT) {
+            if (!FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection())) {
+                SaltFissionPartMenu.open(player, level, pos, role == Role.VESSEL_PORT
+                        ? SaltFissionPartMenu.Kind.VESSEL_PORT : SaltFissionPartMenu.Kind.HEATER_PORT);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private static void togglePort(ServerLevel level, BlockState state, BlockPos pos, Player player) {
+        boolean output = !state.getValue(ACTIVE);
+        level.setBlock(pos, state.setValue(ACTIVE, output), Block.UPDATE_ALL);
+        geometryChanged(level, pos);
+        player.displayClientMessage(Component.translatable(output ? "message.nuclearcraft.fission.port_output"
+                : "message.nuclearcraft.fission.port_input"), true);
+    }
+
 }

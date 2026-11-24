@@ -11,7 +11,6 @@ import nc.multiblock.hx.ExchangerWallBlock;
 import nc.multiblock.machine.MachinePartBlock;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
-import nc.multiblock.fission.FissionControlBlock;
 import nc.multiblock.fission.FissionMultitool;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -68,7 +67,8 @@ public final class NCHeatExchangers {
                 @Override
                 public InteractionResult onItemUseFirst(ItemStack stack, UseOnContext context) {
                     BlockState state = context.getLevel().getBlockState(context.getClickedPos());
-                    if (state.getBlock() instanceof FissionControlBlock) return FissionMultitool.useOn(stack, context);
+                    var fission = FissionMultitool.useOn(stack, context);
+                    if (fission != InteractionResult.PASS) return fission;
                     if (state.getBlock() instanceof ExchangerTubeBlock tube) return tube.configure(state, context);
                     if (state.getBlock() instanceof MachinePartBlock.Wall wall && context.getPlayer() != null
                             && context.getPlayer().isShiftKeyDown()) return wall.reverseProcessPort(context);
@@ -81,7 +81,7 @@ public final class NCHeatExchangers {
                     if (level instanceof ServerLevel server && player instanceof ServerPlayer user && player.isShiftKeyDown()) {
                         var hit = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
                         if ((hit.getType() == HitResult.Type.MISS
-                                || !(level.getBlockState(hit.getBlockPos()).getBlock() instanceof FissionControlBlock))
+                                || !FissionMultitool.handles(level.getBlockState(hit.getBlockPos())))
                                 && FissionMultitool.clear(server, user, stack)) {
                             return InteractionResultHolder.consume(stack);
                         }

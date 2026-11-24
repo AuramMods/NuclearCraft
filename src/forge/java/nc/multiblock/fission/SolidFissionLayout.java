@@ -19,15 +19,15 @@ import java.util.Objects;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
-                          List<BlockPos> conductors, FissionVariant variant) {
+                          List<BlockPos> conductors, List<BlockPos> monitors, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable NCGasCoolants gas,
                 @Nullable NCSaltCoolants salt, @Nullable ResourceLocation fuelFilter) {
         boolean fluid() {
-            return role != Role.FUEL_PORT && role != Role.CHAMBER_PORT && role != Role.IRRADIATOR_PORT;
+            return role != Role.FUEL_PORT && role != Role.CHAMBER_PORT && role != Role.IRRADIATOR_PORT && role != Role.POWER_PORT;
         }
     }
 
-    record Validation(SolidFissionLayout layout, Component message) {}
+    record Validation(@Nullable SolidFissionLayout layout, Component message, @Nullable BlockPos errorPosition) {}
 
     static Validation find(ServerLevel level, BlockPos origin) {
         Cuboid bounds = Cuboid.findConnected(level, origin, FissionPartBlock.MAX_INTERIOR_LENGTH + 2,
@@ -61,6 +61,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         List<BlockPos> managers = new ArrayList<>();
         List<BlockPos> irradiators = new ArrayList<>();
         List<BlockPos> conductors = new ArrayList<>();
+        List<BlockPos> monitors = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(pos);
             FissionPartBlock.Role role = FissionPartBlock.role(state);
@@ -96,7 +97,8 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                         return invalid("wall", pos);
                     }
                     switch (role) {
-                        case CASING -> {}
+                        case CASING, GLASS -> {}
+                        case MONITOR -> monitors.add(pos.immutable());
                         case CONTROLLER, PEBBLE_CONTROLLER, SALT_CONTROLLER -> {
                             if (!pos.equals(origin)) {
                                 return invalid("multiple_controllers", pos);
@@ -104,7 +106,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                         }
                         case SOURCE -> sources.add(pos.immutable());
                         case SOURCE_MANAGER, SHIELD_MANAGER -> managers.add(pos.immutable());
-                        case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT, IRRADIATOR_PORT -> {
+                        case VENT, FUEL_PORT, CHAMBER_PORT, COOLER_PORT, VESSEL_PORT, HEATER_PORT, IRRADIATOR_PORT, POWER_PORT -> {
                             if (!validPort(variant, role) || !(level.getBlockEntity(pos) instanceof FissionPortBlockEntity entity)) {
                                 return invalid("wall", pos);
                             }
@@ -158,12 +160,12 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
-                List.copyOf(conductors), variant),
-                Component.translatable("message.nuclearcraft.fission.assembled"));
+                List.copyOf(conductors), List.copyOf(monitors), variant),
+                Component.translatable("message.nuclearcraft.fission.assembled"), null);
     }
 
     private static boolean validPort(FissionVariant variant, Role role) {
-        return role == Role.VENT || role == Role.IRRADIATOR_PORT || switch (variant) {
+        return role == Role.VENT || role == Role.IRRADIATOR_PORT || role == Role.POWER_PORT || switch (variant) {
             case SOLID -> role == Role.FUEL_PORT;
             case PEBBLE -> role == Role.CHAMBER_PORT || role == Role.COOLER_PORT;
             case SALT -> role == Role.VESSEL_PORT || role == Role.HEATER_PORT;
@@ -195,6 +197,6 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
 
     static Validation invalid(String reason, BlockPos pos) {
         return new Validation(null, Component.translatable("message.nuclearcraft.fission." + reason,
-                pos.getX(), pos.getY(), pos.getZ()));
+                pos.getX(), pos.getY(), pos.getZ()), pos.immutable());
     }
 }

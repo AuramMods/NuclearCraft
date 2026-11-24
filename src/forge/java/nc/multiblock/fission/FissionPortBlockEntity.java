@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
@@ -30,10 +31,14 @@ public final class FissionPortBlockEntity extends BlockEntity {
     private @Nullable ResourceLocation fuelFilter;
     private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
     private LazyOptional<IItemHandler> items = LazyOptional.empty();
+    private LazyOptional<IEnergyStorage> power = LazyOptional.empty();
 
     public FissionPortBlockEntity(BlockPos pos, BlockState state) {
-        super(FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? NCFission.IRRADIATOR_PORT_ENTITY.get()
-                : NCFission.PORT_ENTITY.get(), pos, state);
+        super(switch (FissionPartBlock.role(state)) {
+            case IRRADIATOR_PORT -> NCFission.IRRADIATOR_PORT_ENTITY.get();
+            case POWER_PORT -> NCFission.POWER_PORT_ENTITY.get();
+            default -> NCFission.PORT_ENTITY.get();
+        }, pos, state);
         irradiationItems = FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? new IrradiatorItems(this) : null;
     }
 
@@ -44,7 +49,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
         unbind();
         binding = next;
-        if (port.fluid()) {
+        if (port.role() == Role.POWER_PORT) {
+            power = LazyOptional.of(() -> new PowerHandler(next));
+        } else if (port.fluid()) {
             fluid = LazyOptional.of(() -> new VentHandler(next));
         } else {
             items = LazyOptional.of(() -> new FuelHandler(next));
@@ -55,6 +62,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
         binding = null;
         fluid.invalidate();
         items.invalidate();
+        power.invalidate();
+        power = LazyOptional.empty();
         fluid = LazyOptional.empty();
         items = LazyOptional.empty();
     }
@@ -75,12 +84,19 @@ public final class FissionPortBlockEntity extends BlockEntity {
             if (capability == ForgeCapabilities.ITEM_HANDLER) {
                 return items.cast();
             }
+            if (capability == ForgeCapabilities.ENERGY) {
+                return power.cast();
+            }
         }
         return super.getCapability(capability, side);
     }
 
     private boolean connected(Binding connection) {
         return !isRemoved() && binding == connection && connection.controller.assembled();
+    }
+
+    boolean assembled() {
+        return binding != null && connected(binding);
     }
 
     @Nullable SolidFissionController saltController() {
@@ -172,6 +188,22 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     private record Binding(SolidFissionController controller, SolidFissionLayout.Port port) {}
+
+    // The legacy fission power port had no reactor energy storage in any of the three variants.
+    private final class PowerHandler implements IEnergyStorage {
+        private final Binding connection;
+
+        PowerHandler(Binding connection) {
+            this.connection = connection;
+        }
+
+        @Override public int receiveEnergy(int amount, boolean simulate) { return 0; }
+        @Override public int extractEnergy(int amount, boolean simulate) { return 0; }
+        @Override public int getEnergyStored() { return 0; }
+        @Override public int getMaxEnergyStored() { return 0; }
+        @Override public boolean canExtract() { return connected(connection) && connection.port.output(); }
+        @Override public boolean canReceive() { return connected(connection) && !connection.port.output(); }
+    }
 
     private final class VentHandler implements IFluidHandler {
         private final Binding connection;
