@@ -2,6 +2,7 @@ package nc.gametest;
 
 import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
+import nc.radiation.ChunkRadiationSource;
 import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
@@ -142,13 +143,15 @@ public final class SaltFissionGameTests {
                     "Two filter groups accept different fuel salts through isolated inlet tanks");
             fluids(helper, NAK_IN, Direction.DOWN).fill(stack("nak", 100), EXECUTE);
             helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
-            helper.succeedWhen(() -> {
+            helper.startSequence().thenWaitUntil(() -> helper.assertTrue(
+                    ((ChunkRadiationSource) helper.getBlockEntity(FIRST_VESSEL)).radiationEmission() > 0,
+                    "An active molten-salt vessel emits radiation")).thenWaitUntil(() -> {
                 var first = fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0);
                 var second = fluids(helper, SECOND_OUT, Direction.SOUTH).getFluidInTank(0);
                 helper.assertTrue(first.isFluidStackIdentical(stack(DEPLETED, 6))
                                 && second.isFluidStackIdentical(stack("depleted_" + secondFuel, 4)),
                         "Each vessel discharges its own fuel products through the matching outlet");
-            });
+            }).thenSucceed();
         });
     }
 

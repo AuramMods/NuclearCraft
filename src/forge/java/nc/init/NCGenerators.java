@@ -6,6 +6,7 @@ import nc.generator.DecayGeneratorBlockEntity;
 import nc.generator.PassiveGeneratorBlock;
 import nc.generator.PassiveGeneratorBlockEntity;
 import nc.recipe.DecayGeneratorRecipe;
+import nc.radiation.RadiationSources;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -105,6 +106,7 @@ public final class NCGenerators {
         private final String id;
         private final int defaultPower;
         private final boolean solar;
+        private final double radiation;
         private final RegistryObject<PassiveGeneratorBlock> block;
         private final RegistryObject<BlockEntityType<PassiveGeneratorBlockEntity>> entity;
 
@@ -112,6 +114,8 @@ public final class NCGenerators {
             this.id = id;
             this.defaultPower = power;
             this.solar = solar;
+            // In 2o.9.7 an RTG emits half as much when placed as when carried.
+            this.radiation = solar ? 0 : RadiationSources.stockItemRate(id) / 2;
             block = NCRegistries.BLOCKS.register(id, () -> new PassiveGeneratorBlock(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK), this));
             NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
@@ -134,6 +138,10 @@ public final class NCGenerators {
         public boolean solar() {
             return solar;
         }
+
+        public double radiation() {
+            return radiation;
+        }
     }
 
     public enum DecayFamily {
@@ -143,10 +151,16 @@ public final class NCGenerators {
 
         private final double lifetime;
         private final double power;
+        private final double radiation;
 
         DecayFamily(double lifetime, double power) {
             this.lifetime = lifetime;
             this.power = power;
+            this.radiation = RadiationSources.stockItemRate(name().toLowerCase(Locale.ROOT) + "_ingot");
+        }
+
+        public double radiation() {
+            return radiation;
         }
 
         public double lifetime() {

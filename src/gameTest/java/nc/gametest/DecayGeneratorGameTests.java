@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -37,6 +38,9 @@ public final class DecayGeneratorGameTests {
 
         helper.startSequence().thenWaitUntil(() -> helper.assertTrue(output.getEnergyStored() >= 17,
                 "Adjacent legacy fuel blocks charge the generator")).thenExecute(() -> {
+                    double expected = NCGenerators.decayInterval() * (3.85E-10 + 7.15E-11);
+                    helper.assertTrue(Math.abs(((ChunkRadiationSource) generator).radiationEmission() - expected) < 1E-15,
+                            "Adjacent uranium and thorium add their original recipe emissions");
                     int before = output.getEnergyStored();
                     helper.assertTrue(output.extractEnergy(17, true) == 17 && output.getEnergyStored() == before,
                             "A simulated energy extraction preserves the buffer");

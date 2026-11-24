@@ -121,6 +121,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/sounds/block/distiller_run.ogg'
         include 'assets/nuclearcraft/sounds/block/infiltrator_run.ogg'
         include 'assets/nuclearcraft/sounds/block/electrolyzer_run.ogg'
+        include 'assets/nuclearcraft/textures/blocks/geiger_block_*.png'
         include 'assets/nuclearcraft/textures/items/geiger_counter.png'
         include 'assets/nuclearcraft/textures/items/radaway.png'
         include 'assets/nuclearcraft/textures/items/radaway_slow.png'

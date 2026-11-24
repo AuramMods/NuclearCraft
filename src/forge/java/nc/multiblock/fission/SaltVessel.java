@@ -3,6 +3,7 @@ package nc.multiblock.fission;
 import nc.init.NCSaltFission;
 import nc.processor.ProcessorInputs;
 import nc.recipe.SaltFissionRecipe;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -20,7 +21,7 @@ import java.util.Objects;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
 
-public final class SaltVessel extends BlockEntity {
+public final class SaltVessel extends BlockEntity implements ChunkRadiationSource {
     private final RecipeManager.CachedCheck<Container, SaltFissionRecipe> recipes =
             RecipeManager.createCheck(NCSaltFission.FUEL_TYPE.get());
     private final ProcessorInputs recipeInput = new ProcessorInputs(0);
@@ -29,6 +30,8 @@ public final class SaltVessel extends BlockEntity {
     private FluidStack reserved = FluidStack.EMPTY;
     private double progress;
     private double sourceEfficiency = -1;
+    private long emissionTick = Long.MIN_VALUE;
+    private double emission;
 
     public SaltVessel(BlockPos pos, BlockState state) {
         super(NCSaltFission.VESSEL_ENTITY.get(), pos, state);
@@ -114,12 +117,19 @@ public final class SaltVessel extends BlockEntity {
     }
 
     void burn(SaltFissionRecipe recipe, SaltFuelBank bank, double speed) {
+        emission = recipe.radiation() * speed;
+        emissionTick = level.getGameTime();
         double ticks = recipe.ticks() * NCSaltFission.timeMultiplier();
         progress += speed;
         if (progress >= ticks) {
             finishDoses(recipe, bank, ticks);
         }
         setChanged();
+    }
+
+    @Override
+    public double radiationEmission() {
+        return level != null && level.getGameTime() == emissionTick ? emission : 0;
     }
 
     private void finishDoses(SaltFissionRecipe recipe, SaltFuelBank bank, double ticks) {

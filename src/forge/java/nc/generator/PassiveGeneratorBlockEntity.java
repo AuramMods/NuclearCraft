@@ -3,13 +3,14 @@ package nc.generator;
 import nc.energy.EnergyBankBlockEntity;
 import nc.init.NCGenerators;
 import nc.init.NCGenerators.PassiveGenerator;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity {
+public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity implements ChunkRadiationSource {
     private final PassiveGenerator generator;
     private long lastGenerationTick = Long.MIN_VALUE;
 
@@ -21,6 +22,11 @@ public final class PassiveGeneratorBlockEntity extends EnergyBankBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, PassiveGeneratorBlockEntity entity) {
         entity.generateTick(level.getGameTime());
         entity.pushPower();
+    }
+
+    @Override
+    public double radiationEmission() {
+        return generator.radiation();
     }
 
     @Override

@@ -27,13 +27,17 @@ import java.util.Locale;
 
 public record DecayGeneratorRecipe(ResourceLocation id, Ingredient input, Block result,
                                    @Nullable TagKey<Block> preferredResult, @Nullable DecayFamily family,
-                                   double customLifetime, double customPower) implements Recipe<Container> {
+                                   double customLifetime, double customPower, double customRadiation) implements Recipe<Container> {
     public double lifetime() {
         return family == null ? customLifetime : family.lifetime();
     }
 
     public double power() {
         return family == null ? customPower : family.power();
+    }
+
+    public double radiation() {
+        return family == null ? customRadiation : family.radiation();
     }
 
     public Block resultBlock() {
@@ -67,23 +71,25 @@ public record DecayGeneratorRecipe(ResourceLocation id, Ingredient input, Block 
             TagKey<Block> preferred = json.has("result_tag") ? TagKey.create(Registries.BLOCK,
                     resourceId(json, "result_tag", id)) : null;
             if (json.has("family")) {
-                if (json.has("lifetime") || json.has("power")) {
-                    throw new JsonSyntaxException("Specify either a decay family or custom lifetime and power in " + id);
+                if (json.has("lifetime") || json.has("power") || json.has("radiation")) {
+                    throw new JsonSyntaxException("Specify either a decay family or custom decay properties in " + id);
                 }
                 String name = GsonHelper.getAsString(json, "family");
                 try {
                     var family = DecayFamily.valueOf(name.toUpperCase(Locale.ROOT));
-                    return new DecayGeneratorRecipe(id, input, result, preferred, family, 0, 0);
+                    return new DecayGeneratorRecipe(id, input, result, preferred, family, 0, 0, 0);
                 } catch (IllegalArgumentException exception) {
                     throw new JsonSyntaxException("Unknown decay family " + name + " in " + id, exception);
                 }
             }
             double lifetime = GsonHelper.getAsDouble(json, "lifetime");
             double power = GsonHelper.getAsDouble(json, "power");
-            if (!(lifetime >= 1 && lifetime <= 16_777_215 && power >= 0 && power <= 32_767)) {
-                throw new JsonSyntaxException("Invalid lifetime or power in " + id);
+            double radiation = GsonHelper.getAsDouble(json, "radiation", 0);
+            if (!(lifetime >= 1 && lifetime <= 16_777_215 && power >= 0 && power <= 32_767)
+                    || !Double.isFinite(radiation) || radiation < 0) {
+                throw new JsonSyntaxException("Invalid decay properties in " + id);
             }
-            return new DecayGeneratorRecipe(id, input, result, preferred, null, lifetime, power);
+            return new DecayGeneratorRecipe(id, input, result, preferred, null, lifetime, power, radiation);
         }
 
         private static ResourceLocation resourceId(JsonObject json, String key, ResourceLocation recipeId) {
@@ -99,7 +105,7 @@ public record DecayGeneratorRecipe(ResourceLocation id, Ingredient input, Block 
             Ingredient input = Ingredient.fromNetwork(buffer);
             Block result = BuiltInRegistries.BLOCK.get(buffer.readResourceLocation());
             TagKey<Block> preferred = buffer.readNullable(source -> TagKey.create(Registries.BLOCK, source.readResourceLocation()));
-            return new DecayGeneratorRecipe(id, input, result, preferred, null, buffer.readDouble(), buffer.readDouble());
+            return new DecayGeneratorRecipe(id, input, result, preferred, null, buffer.readDouble(), buffer.readDouble(), buffer.readDouble());
         }
 
         @Override
@@ -109,6 +115,7 @@ public record DecayGeneratorRecipe(ResourceLocation id, Ingredient input, Block 
             buffer.writeNullable(recipe.preferredResult(), (target, tag) -> target.writeResourceLocation(tag.location()));
             buffer.writeDouble(recipe.lifetime());
             buffer.writeDouble(recipe.power());
+            buffer.writeDouble(recipe.radiation());
         }
     }
 }

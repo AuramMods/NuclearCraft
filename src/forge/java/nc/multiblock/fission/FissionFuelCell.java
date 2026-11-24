@@ -3,6 +3,7 @@ package nc.multiblock.fission;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
 import nc.recipe.SolidFissionRecipe;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
@@ -14,12 +15,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.items.ItemStackHandler;
 
-public final class FissionFuelCell extends BlockEntity {
+public final class FissionFuelCell extends BlockEntity implements ChunkRadiationSource {
     private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private ItemStack reservedFuel = ItemStack.EMPTY;
     private double progress;
     private double sourceEfficiency = -1;
+    private long emissionTick = Long.MIN_VALUE;
+    private double emission;
 
     public FissionFuelCell(BlockPos pos, BlockState state) {
         super(FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER
@@ -74,12 +77,19 @@ public final class FissionFuelCell extends BlockEntity {
     }
 
     void burn(SolidFissionRecipe recipe, ItemStackHandler inventory, double speed) {
+        emission = recipe.radiation() * speed;
+        emissionTick = level.getGameTime();
         progress += speed;
         if (progress >= recipe.ticks()) {
             progress = recipe.ticks();
             discharge(recipe, inventory);
         }
         setChanged();
+    }
+
+    @Override
+    public double radiationEmission() {
+        return level != null && level.getGameTime() == emissionTick ? emission : 0;
     }
 
     private void discharge(SolidFissionRecipe recipe, ItemStackHandler inventory) {

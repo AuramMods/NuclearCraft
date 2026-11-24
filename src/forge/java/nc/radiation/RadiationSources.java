@@ -3,6 +3,7 @@ package nc.radiation;
 import nc.NuclearCraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.HashMap;
@@ -12,10 +13,14 @@ import java.util.Map;
 public final class RadiationSources {
     private static final Map<ResourceLocation, Double> ITEMS = new HashMap<>();
     private static final Map<ResourceLocation, Double> ITEM_TAGS = new HashMap<>();
+    private static final Map<ResourceLocation, Double> FLUIDS = new HashMap<>();
+    private static final Map<ResourceLocation, Double> FLUID_TAGS = new HashMap<>();
+    private static final List<String> SALT_FORMS = List.of("", "_za", "_fluoride", "_fluoride_flibe");
     private static final List<String> ISOTOPE_FORMS = List.of("", "_carbide", "_oxide", "_nitride", "_za");
     private static final List<String> FUEL_FORMS = List.of("_oxide", "_triso", "_nitride", "_za");
 
     // Stock NuclearCraft 2o.9.7 rates are in Rad/t per item.
+    private static final double FLUID_MULTIPLIER = 125D / 18D;
     private static final double TRITIUM = 0.0115D;
     private static final double CORIUM = 0.0000165D;
     private static final double THORIUM = 0.0000000000715D;
@@ -127,6 +132,10 @@ public final class RadiationSources {
         material("blutonium", PLUTONIUM);
         material("cyanite", URANIUM_238);
         material("monazite", 17 * THORIUM);
+        fluid("plasma", 0.000000315D);
+        fluid("tritium", TRITIUM);
+        fluid("corium", CORIUM);
+        fluid("irradiated_borax_solution", CAESIUM_137 / 4);
         item("plate_du", 4 * URANIUM_238);
         item("solar_panel_du", 16 * URANIUM_238);
         item("voltaic_pile_du", 16 * URANIUM_238);
@@ -140,7 +149,7 @@ public final class RadiationSources {
         item("fission_source_polonium_beryllium", POLONIUM / 4);
         item("fission_source_californium", CALIFORNIUM_252 / 4);
         item("tritium_lamp", TRITIUM / 256);
-        item("solidified_corium", CORIUM * (125D / 18D));
+        item("solidified_corium", CORIUM * FLUID_MULTIPLIER);
         tag("dusts/irradiated_borax", CAESIUM_137 / 4);
 
         isotope("uranium_233", URANIUM_233);
@@ -198,20 +207,40 @@ public final class RadiationSources {
     private RadiationSources() {}
 
     public static double itemRate(ItemStack stack) {
+        return stackSourceRate(stack) * stack.getCount();
+    }
+
+    static double stackSourceRate(ItemStack stack) {
         if (stack.isEmpty()) {
             return 0;
         }
         Double direct = ITEMS.get(ForgeRegistries.ITEMS.getKey(stack.getItem()));
         if (direct != null) {
-            return direct * stack.getCount();
+            return direct;
         }
-        double rate = stack.getTags()
+        return stack.getTags()
                 .mapToDouble(tag -> ITEM_TAGS.getOrDefault(tag.location(), 0D))
                 .max().orElse(0);
-        return rate * stack.getCount();
+    }
+
+    public static double fluidRate(FluidStack stack) {
+        if (stack.isEmpty()) {
+            return 0;
+        }
+        var fluid = stack.getFluid();
+        Double direct = FLUIDS.get(ForgeRegistries.FLUIDS.getKey(fluid));
+        double rate = direct != null ? direct : fluid.builtInRegistryHolder().tags()
+                .mapToDouble(tag -> FLUID_TAGS.getOrDefault(tag.location(), 0D))
+                .max().orElse(0);
+        return rate * stack.getAmount() / 1000D;
+    }
+
+    public static double stockItemRate(String id) {
+        return ITEMS.getOrDefault(NuclearCraft.id(id), 0D);
     }
 
     private static void material(String id, double rate) {
+        fluid(id, rate);
         item(id + "_ingot", rate);
         item(id + "_dust", rate);
         item(id + "_ore", rate / 4);
@@ -235,6 +264,9 @@ public final class RadiationSources {
         for (String suffix : ISOTOPE_FORMS) {
             material(id + suffix, rate);
         }
+        for (String suffix : SALT_FORMS) {
+            fluid(id + suffix, rate);
+        }
     }
 
     private static void fuel(String id, double fresh, double depleted) {
@@ -242,12 +274,23 @@ public final class RadiationSources {
         item(id + "_pellet_carbide", fresh);
         tag("ingots/" + id, fresh);
         tag("ingots/" + id + "_carbide", fresh);
+        for (String suffix : SALT_FORMS) {
+            fluid(id + suffix, fresh);
+            fluid("depleted_" + id + suffix, depleted);
+        }
         for (String suffix : FUEL_FORMS) {
             item(id + suffix, fresh);
             item("depleted_" + id + suffix, depleted);
             tag("ingots/" + id + suffix, fresh);
             tag("ingots/depleted_" + id + suffix, depleted);
         }
+    }
+
+    private static void fluid(String id, double rate) {
+        double perBucket = rate * FLUID_MULTIPLIER;
+        FLUIDS.put(NuclearCraft.id(id), perBucket);
+        FLUIDS.put(NuclearCraft.id("flowing_" + id), perBucket);
+        FLUID_TAGS.put(ResourceLocation.tryBuild("forge", "molten_" + id), perBucket);
     }
 
     private static void item(String id, double rate) {

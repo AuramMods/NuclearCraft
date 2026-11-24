@@ -2,6 +2,7 @@ package nc.generator;
 
 import nc.init.NCGenerators;
 import nc.recipe.DecayGeneratorRecipe;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -19,12 +20,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public final class DecayGeneratorBlockEntity extends BlockEntity {
+public final class DecayGeneratorBlockEntity extends BlockEntity implements ChunkRadiationSource {
     private static final Direction[] SIDES = Direction.values();
 
     private LazyOptional<IEnergyStorage> output = LazyOptional.of(Output::new);
     private int energy;
     private int capacity;
+    private double radiation;
 
     public DecayGeneratorBlockEntity(BlockPos pos, BlockState state) {
         super(NCGenerators.DECAY_ENTITY.get(), pos, state);
@@ -45,6 +47,7 @@ public final class DecayGeneratorBlockEntity extends BlockEntity {
         double strongest = recipes.stream().mapToDouble(DecayGeneratorRecipe::power).max().orElse(0);
         capacity = 2 * (int) (interval * strongest);
         double power = 0;
+        double emissions = 0;
         for (Direction side : SIDES) {
             BlockPos adjacent = pos.relative(side);
             if (!level.hasChunkAt(adjacent)) {
@@ -60,13 +63,20 @@ public final class DecayGeneratorBlockEntity extends BlockEntity {
             }
             if (recipe != null) {
                 power += recipe.power();
+                emissions += recipe.radiation();
             }
         }
+        radiation = emissions * interval;
         int next = energy + Math.min(Math.max(0, capacity - energy), (int) (interval * power));
         if (next != energy) {
             energy = next;
             setChanged();
         }
+    }
+
+    @Override
+    public double radiationEmission() {
+        return radiation;
     }
 
     private static @Nullable DecayGeneratorRecipe recipeAt(List<DecayGeneratorRecipe> recipes, BlockState state) {

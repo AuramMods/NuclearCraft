@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.radiation.ChunkRadiationSource;
 import nc.init.NCFission;
 import nc.init.NCFluids;
 import nc.multiblock.fission.FissionWallBlock;
@@ -60,6 +61,9 @@ public final class SolidFissionGameTests {
                     helper.assertTrue(fuelIn.insertItem(0, fuel, false).isEmpty(), "The reactor should accept oxide fuel");
                     helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
                 })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        ((ChunkRadiationSource) helper.getBlockEntity(CELL)).radiationEmission() > 0,
+                        "An active solid-fuel cell emits radiation"))
                 .thenWaitUntil(() -> {
                     ItemStack depleted = items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0);
                     helper.assertTrue(depleted.is(NCFission.DEPLETED_LECF_251_OXIDE.get()), "Reactor has yet to deplete fuel");

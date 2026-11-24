@@ -11,5 +11,6 @@
     "efficiency": 1.6,
     "criticality": 45,
     "intrinsic_flux": 0,
-    "self_priming": false
+    "self_priming": false,
+    "radiation": 0.00023861144704861108
 }

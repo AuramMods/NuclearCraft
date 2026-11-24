@@ -6,6 +6,8 @@ import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import org.jetbrains.annotations.Nullable;
 import nc.init.NCFluids;
+import nc.radiation.ChunkRadiationSource;
+import nc.radiation.WorldRadiation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -212,6 +214,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private void melt(ServerLevel level, List<BlockPos> parts) {
         disassemble();
         for (BlockPos pos : parts) {
+            if (level.getBlockEntity(pos) instanceof ChunkRadiationSource source) {
+                WorldRadiation.addLeak(level, pos, 8D * source.radiationEmission() * NCFission.meltdownRadiationMultiplier());
+            }
             level.removeBlockEntity(pos);
             level.setBlockAndUpdate(pos, NCFluids.CORIUM.block().get().defaultBlockState());
         }

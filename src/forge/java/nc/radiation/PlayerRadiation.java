@@ -31,7 +31,6 @@ public final class PlayerRadiation {
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String RAD_X_COOLDOWN = "rad_x_cooldown";
     private static final String IMMUNITY = "immunity_ticks";
-    private static final double MINIMUM_RATE = 1E-15;
     private static final ResourceKey<DamageType> FATAL_RADS =
             ResourceKey.create(Registries.DAMAGE_TYPE, NuclearCraft.id("fatal_rads"));
 
@@ -93,12 +92,12 @@ public final class PlayerRadiation {
         }
         double multiplier = player.isInWater() ? RadiationConfig.WATER_MULTIPLIER.get()
                 : player.isInWaterOrRain() ? RadiationConfig.RAIN_MULTIPLIER.get() : 1;
-        double rate = 0;
+        double rate = attenuate(WorldRadiation.rate(player.serverLevel(), player.blockPosition()) * multiplier, resistance);
         var inventory = player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             double raw = RadiationSources.itemRate(inventory.getItem(i)) * multiplier;
             // The legacy resistance curve runs separately for each stack, before rates are added.
-            rate += resistance > 0 ? raw * raw / (raw + resistance) : raw * (1 - resistance);
+            rate += attenuate(raw, resistance);
         }
         if (data.isEmpty() && rate == 0) {
             return;
@@ -139,6 +138,10 @@ public final class PlayerRadiation {
         }
     }
 
+    private static double attenuate(double raw, double resistance) {
+        return resistance > 0 ? raw * (raw / (raw + resistance)) : raw * (1 - resistance);
+    }
+
     private static double drain(CompoundTag data, MedicineItem.Kind kind, double limit) {
         double buffer = data.getDouble(kind.id());
         double amount = Math.min(buffer, limit);
@@ -170,8 +173,8 @@ public final class PlayerRadiation {
                 format(dose), Math.round(percent), format(rate)).withStyle(color), true);
     }
 
-    private static String format(double value) {
-        return value < MINIMUM_RATE ? "0" : String.format(Locale.ROOT, "%.4g", value);
+    static String format(double value) {
+        return value < RadiationConfig.MINIMUM_RATE.get() ? "0" : String.format(Locale.ROOT, "%.4g", value);
     }
 
     static boolean canTreat(ServerPlayer player, MedicineItem.Kind kind) {

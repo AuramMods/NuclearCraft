@@ -51,6 +51,7 @@ public final class NCFission {
     private static final ForgeConfigSpec.DoubleValue CALIFORNIUM_EFFICIENCY;
     private static final ForgeConfigSpec.IntValue NEUTRON_REACH;
     private static final ForgeConfigSpec.DoubleValue INTRINSIC_FLUX_EFFICIENCY;
+    private static final ForgeConfigSpec.DoubleValue MELTDOWN_RADIATION;
 
     private static final TagKey<Block> GRAPHITE_BLOCKS = storageBlocks("graphite");
     private static final TagKey<Block> BERYLLIUM_BLOCKS = storageBlocks("beryllium");
@@ -62,6 +63,7 @@ public final class NCFission {
 
     static {
         var builder = new ForgeConfigSpec.Builder();
+        MELTDOWN_RADIATION = builder.defineInRange("fission_meltdown_radiation_multiplier", 1D, 0D, 255D);
         builder.push("neutron_sources");
         RADIUM_EFFICIENCY = builder.defineInRange("radium_beryllium_efficiency", 0.9D, 0D, 255D);
         POLONIUM_EFFICIENCY = builder.defineInRange("polonium_beryllium_efficiency", 0.95D, 0D, 255D);
@@ -274,6 +276,10 @@ public final class NCFission {
             blocks.add(NCSaltFission.port(coolant));
         }
         return blocks.toArray(Block[]::new);
+    }
+
+    public static double meltdownRadiationMultiplier() {
+        return configured(MELTDOWN_RADIATION);
     }
 
     public static void registerConfig(FMLJavaModLoadingContext context) {

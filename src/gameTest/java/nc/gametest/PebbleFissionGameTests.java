@@ -1,6 +1,8 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.radiation.ChunkRadiationSource;
+import nc.radiation.WorldRadiation;
 import nc.init.NCFission;
 import nc.init.NCGasCoolants;
 import nc.init.NCPebbleFission;
@@ -79,6 +81,9 @@ public final class PebbleFissionGameTests {
                     IFluidHandler destination = fluids(helper, inlet, Direction.NORTH);
                     helper.onEachTick(() -> FluidUtil.tryFluidTransfer(destination, hot, 1000, true));
                 })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        ((ChunkRadiationSource) helper.getBlockEntity(CHAMBER)).radiationEmission() > 0,
+                        "An active pebble fuel chamber emits radiation"))
                 .thenWaitUntil(() -> {
                     var exhaust = fluids(helper, outlet, Direction.SOUTH).getFluidInTank(0);
                     helper.assertTrue(exhaust.getFluid() == NCGasCoolants.OXYGEN.exhaust() && exhaust.getAmount() == 3600,
@@ -212,6 +217,8 @@ public final class PebbleFissionGameTests {
                 .thenWaitUntil(() -> {
                     helper.assertBlockPresent(NCFluids.CORIUM.block().get(), CHAMBER);
                     helper.assertBlockPresent(NCPebbleFission.CONTROLLER.get(), CONTROLLER);
+                    double leak = WorldRadiation.rate(helper.getLevel(), helper.absolutePos(CHAMBER));
+                    helper.assertTrue(leak > 8 * 1.4647403038194445E-5, "The meltdown immediately contaminates the cell's chunk");
                 }).thenSucceed();
     }
 

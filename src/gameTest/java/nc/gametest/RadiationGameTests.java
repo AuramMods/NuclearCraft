@@ -2,10 +2,13 @@ package nc.gametest;
 
 import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
+import nc.init.NCGenerators;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCRadiation;
+import nc.radiation.ChunkRadiationSource;
 import nc.radiation.PlayerRadiation;
 import nc.radiation.RadiationSources;
+import nc.radiation.WorldRadiation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -18,6 +21,8 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ComparatorBlock;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.player.PlayerEvent;
@@ -78,6 +83,7 @@ public final class RadiationGameTests {
                 return true;
             }
         };
+        player.moveTo(5000000, 100, 5000000, 0, 0);
         player.getInventory().setItem(2, stack("californium_252_ingot", 64));
         PlayerRadiation.tick(player, 20);
         double dose = PlayerRadiation.dose(player);
@@ -138,8 +144,44 @@ public final class RadiationGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 300)
+    public static void geigerBlockMeasuresTheChunkAndUpdatesARedstoneComparator(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(2, 1, 2);
+        helper.setBlock(pos, NCRadiation.GEIGER_BLOCK.get());
+        helper.setBlock(pos.east().below(), Blocks.STONE);
+        helper.setBlock(pos.east(), Blocks.COMPARATOR.defaultBlockState().setValue(ComparatorBlock.FACING, Direction.WEST));
+        WorldRadiation.addLeak(helper.getLevel(), helper.absolutePos(pos), 100_000);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(NCRadiation.GEIGER_BLOCK.get().getAnalogOutputSignal(helper.getBlockState(pos),
+                    helper.getLevel(), helper.absolutePos(pos)) == 15, "The logarithmic Geiger output saturates at 15");
+            var comparator = helper.getBlockState(pos.east());
+            helper.assertTrue(comparator.is(Blocks.COMPARATOR) && comparator.getValue(ComparatorBlock.POWERED),
+                    "A nearby comparator receives the changing radiation signal");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 600)
+    public static void placedRtgExposesAnEmptyHandedPlayer(GameTestHelper helper) {
+        BlockPos pos = new BlockPos(2, 1, 2);
+        helper.setBlock(pos, NCGenerators.PassiveGenerator.RTG_CALIFORNIUM.block());
+        var source = (ChunkRadiationSource) helper.getBlockEntity(pos);
+        near(helper, source.radiationEmission(), 0.0765 / 8, "The placed RTG emits the legacy rate");
+        var player = player(helper, "TestAmbient");
+        BlockPos absolute = helper.absolutePos(pos);
+        player.moveTo(absolute.getX() + 0.5, absolute.getY() + 1, absolute.getZ() + 0.5, 0, 0);
+        helper.succeedWhen(() -> {
+            double ambient = WorldRadiation.rate(helper.getLevel(), absolute);
+            helper.assertTrue(ambient > 0, "A placed RTG raises its chunk radiation");
+            PlayerRadiation.tick(player, 5);
+            near(helper, PlayerRadiation.rate(player), ambient, "Ambient radiation reaches a player with an empty inventory");
+        });
+    }
+
     private static FakePlayer player(GameTestHelper helper, String name) {
-        return new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
+        var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), name));
+        // Keep inventory-only cases separate from the active emitters in the GameTest area.
+        player.moveTo(5000000, 100, 5000000, 0, 0);
+        return player;
     }
 
     private static ItemStack stack(String id, int count) {

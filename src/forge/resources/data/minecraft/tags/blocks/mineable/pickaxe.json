@@ -1,6 +1,7 @@
 {
     "replace": false,
     "values": [
+        "nuclearcraft:geiger_block",
         "nuclearcraft:machine_frame",
         "nuclearcraft:machine_process_port",
         "nuclearcraft:machine_reservoir_port",
