@@ -29,6 +29,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -41,6 +42,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     private final boolean condenser;
     private final Circuit shell;
     private final Map<BlockPos, Circuit> circuits = new LinkedHashMap<>();
+    private final Map<BlockPos, Circuit> legacyCircuits = new LinkedHashMap<>();
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private ExchangerLayout layout;
     private Component validation = Component.translatable("message.nuclearcraft.exchanger.checking");
@@ -92,7 +94,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                     int shellTemperature = temperature(shell.input.getFluid());
                     double shellFraction = Math.min(1D, (double) shell.input.getFluidAmount() / shell.input.getCapacity());
                     for (ExchangerLayout.Network network : layout.networks()) {
-                        condense(network, circuits.get(network.anchor()), shellTemperature, shellFraction);
+                        condense(network, circuits.get(network.tubeAnchor()), shellTemperature, shellFraction);
                     }
                     if (activeTubes > 0) {
                         temperatureDifference /= activeTubes;
@@ -224,7 +226,16 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             shell.output.setCapacity(boundedCapacity(16000, volume));
         }
         for (ExchangerLayout.Network network : layout.networks()) {
-            Circuit circuit = circuits.computeIfAbsent(network.anchor(), key -> tubeCircuit());
+            Circuit circuit = circuits.get(network.tubeAnchor());
+            if (circuit == null) {
+                circuit = recoverCircuit(network);
+                circuits.put(network.tubeAnchor(), circuit);
+                setChanged();
+            }
+            if (!network.inlet().equals(circuit.inlet)) {
+                circuit.inlet = network.inlet();
+                setChanged();
+            }
             circuit.input.setCapacity(boundedCapacity(condenser ? 32000 : 4000, network.tubeCount() + 2L));
             circuit.output.setCapacity(boundedCapacity(condenser ? 8000 : 16000, network.tubeCount() + 2L));
         }
@@ -241,6 +252,20 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             notifyPipe(server, port, server.getBlockState(port.pos()).getBlock());
         }
         validation = Component.empty();
+    }
+
+    private Circuit recoverCircuit(ExchangerLayout.Network network) {
+        Circuit legacy = legacyCircuits.remove(network.inlet());
+        if (legacy != null) {
+            return legacy;
+        }
+        for (BlockPos tube : network.tubes()) {
+            Circuit existing = circuits.remove(tube);
+            if (existing != null) {
+                return existing;
+            }
+        }
+        return tubeCircuit();
     }
 
     private static int boundedCapacity(int density, long volume) {
@@ -332,7 +357,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
 
     List<List<Object>> computerNetworks() {
         return layout.networks().stream().map(network -> {
-            Circuit circuit = circuits.get(network.anchor());
+            Circuit circuit = circuits.get(network.tubeAnchor());
             return List.<Object>of(network.usefulTubes(), ComputerValues.vector(network.tubeFlow()),
                     ComputerValues.vector(network.shellFlow()), network.flowCosine(), network.retainedConductivity(),
                     network.conductivity(),
@@ -355,6 +380,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     void computerClear() {
         shell.clear();
         circuits.values().forEach(Circuit::clear);
+        legacyCircuits.clear();
         setChanged();
     }
 
@@ -374,14 +400,20 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             tag.put("shell", shell.save());
         }
         ListTag saved = new ListTag();
-        circuits.forEach((pos, circuit) -> {
-            if (!circuit.input.isEmpty() || !circuit.output.isEmpty() || circuit.credit > 0D) {
-                CompoundTag entry = circuit.save();
-                entry.putLong("anchor", pos.asLong());
-                saved.add(entry);
-            }
-        });
+        circuits.forEach((pos, circuit) -> saveCircuit(saved, circuit.inlet, pos, circuit));
+        legacyCircuits.forEach((pos, circuit) -> saveCircuit(saved, pos, null, circuit));
         tag.put("circuits", saved);
+    }
+
+    private static void saveCircuit(ListTag saved, BlockPos inlet, @Nullable BlockPos tubeAnchor, Circuit circuit) {
+        if (!circuit.input.isEmpty() || !circuit.output.isEmpty() || circuit.credit > 0D) {
+            CompoundTag entry = circuit.save();
+            entry.putLong("anchor", inlet.asLong());
+            if (tubeAnchor != null) {
+                entry.putLong("tube_anchor", tubeAnchor.asLong());
+            }
+            saved.add(entry);
+        }
     }
 
     @Override
@@ -397,11 +429,17 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             shell.load(tag.getCompound("shell"));
         }
         circuits.clear();
+        legacyCircuits.clear();
         for (Tag data : tag.getList("circuits", Tag.TAG_COMPOUND)) {
             CompoundTag entry = (CompoundTag) data;
             Circuit circuit = tubeCircuit();
             circuit.load(entry);
-            circuits.put(BlockPos.of(entry.getLong("anchor")), circuit);
+            circuit.inlet = BlockPos.of(entry.getLong("anchor"));
+            if (entry.contains("tube_anchor", Tag.TAG_LONG)) {
+                circuits.put(BlockPos.of(entry.getLong("tube_anchor")), circuit);
+            } else {
+                legacyCircuits.put(circuit.inlet, circuit);
+            }
         }
     }
 
@@ -442,6 +480,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         final Tank input;
         final Tank output = new Tank(1, stack -> true);
         private ResourceLocation recipe;
+        private BlockPos inlet;
         private double credit;
 
         Circuit(Predicate<FluidStack> accepts) {

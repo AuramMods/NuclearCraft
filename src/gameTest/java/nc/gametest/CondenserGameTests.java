@@ -174,6 +174,85 @@ public final class CondenserGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void condenserKeepsItsBuffersWhenTheInletMoves(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, FIRST_IN, Direction.WEST))
+                .thenExecute(() -> {
+                    var first = fluid(helper, FIRST_IN, Direction.WEST);
+                    var second = fluid(helper, SECOND_IN, Direction.WEST);
+                    helper.assertTrue(first.fill(new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 16000),
+                            FluidAction.EXECUTE) == 16000, "Fill the first tube circuit");
+                    helper.assertTrue(second.fill(new FluidStack(NCFluids.LOW_QUALITY_STEAM.source().get(), 32000),
+                            FluidAction.EXECUTE) == 32000, "Fill the independent second tube circuit");
+                    var controller = helper.getBlockEntity(CONTROLLER);
+                    CompoundTag oldSave = controller.saveWithoutMetadata();
+                    var entries = oldSave.getList("circuits", Tag.TAG_COMPOUND);
+                    for (int index = 0; index < entries.size(); index++) {
+                        entries.getCompound(index).remove("tube_anchor");
+                    }
+                    CompoundTag firstCircuit = circuitAt(oldSave, helper.absolutePos(FIRST_IN));
+                    firstCircuit.put("output", new FluidStack(NCFluids.CONDENSATE_WATER.source().get(), 1200)
+                            .writeToNBT(new CompoundTag()));
+                    firstCircuit.putString("recipe", "nuclearcraft:condenser/exhaust_steam");
+                    firstCircuit.putDouble("credit", 8.5D);
+                    controller.load(oldSave);
+                })
+                .thenWaitUntil(() -> fluid(helper, FIRST_IN, Direction.WEST))
+                .thenExecute(() -> {
+                    var old = helper.getBlockEntity(FIRST_IN).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST);
+                    var handler = old.orElseThrow(AssertionError::new);
+                    helper.assertTrue(handler.getFluidInTank(0).getAmount() == 16000,
+                            "An inlet-keyed save recovers the original input before changing the layout");
+                    var controller = helper.getBlockEntity(CONTROLLER);
+                    CompoundTag recovered = circuitAt(controller.saveWithoutMetadata(), helper.absolutePos(FIRST_IN));
+                    helper.assertTrue(recovered.contains("tube_anchor", Tag.TAG_LONG),
+                            "Loading an inlet-keyed save records its tube anchor");
+                    helper.setBlock(FIRST_IN, NCHeatExchangers.CASING.get());
+                    helper.assertTrue(!old.isPresent() && handler.getFluidInTank(0).isEmpty(),
+                            "A removed inlet revokes the old fluid handler");
+                    helper.setBlock(FIRST_OUT, NCHeatExchangers.INLET.get());
+                    helper.setBlock(FIRST_IN, NCHeatExchangers.OUTLET.get());
+
+                    CompoundTag paused = controller.saveWithoutMetadata();
+                    helper.setBlock(CONTROLLER, Blocks.AIR);
+                    helper.setBlock(CONTROLLER, NCHeatExchangers.CONDENSER.get());
+                    helper.getBlockEntity(CONTROLLER).load(paused);
+                })
+                .thenWaitUntil(() -> fluid(helper, FIRST_OUT, Direction.EAST))
+                .thenExecute(() -> {
+                    var first = fluid(helper, FIRST_OUT, Direction.EAST);
+                    var firstProduct = fluid(helper, FIRST_IN, Direction.WEST);
+                    var second = fluid(helper, SECOND_IN, Direction.WEST);
+                    helper.assertTrue(first.getFluidInTank(0).getAmount() == 16000
+                                    && first.getFluidInTank(0).getFluid() == NCFluids.EXHAUST_STEAM.source().get(),
+                            "The moved inlet recovers the first circuit's exact exhaust quantity");
+                    helper.assertTrue(firstProduct.drain(1200, FluidAction.EXECUTE).getAmount() == 1200
+                                    && firstProduct.getFluidInTank(0).isEmpty(),
+                            "The relocated outlet recovers the exact condensate");
+                    helper.assertTrue(second.getFluidInTank(0).getAmount() == 32000
+                                    && second.getFluidInTank(0).getFluid() == NCFluids.LOW_QUALITY_STEAM.source().get(),
+                            "The second circuit keeps its original stock and fluid");
+                    var saved = helper.getBlockEntity(CONTROLLER).saveWithoutMetadata();
+                    helper.assertTrue(saved.getList("circuits", Tag.TAG_COMPOUND).size() == 2
+                                    && circuitAt(saved, helper.absolutePos(FIRST_OUT)).getDouble("credit") == 8.5D,
+                            "Both circuits persist exactly once and the moved circuit retains its recipe credit");
+                })
+                .thenSucceed();
+    }
+
+    private static CompoundTag circuitAt(CompoundTag saved, BlockPos inlet) {
+        var circuits = saved.getList("circuits", Tag.TAG_COMPOUND);
+        for (int i = 0; i < circuits.size(); i++) {
+            CompoundTag circuit = circuits.getCompound(i);
+            if (circuit.getLong("anchor") == inlet.asLong()) {
+                return circuit;
+            }
+        }
+        throw new GameTestAssertException("No saved circuit for inlet " + inlet);
+    }
+
     private static void build(GameTestHelper helper) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 4, 4))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 4

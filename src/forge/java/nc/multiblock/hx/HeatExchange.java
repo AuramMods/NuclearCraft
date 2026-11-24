@@ -54,7 +54,7 @@ final class HeatExchange {
         List<Proposal> proposals = new ArrayList<>();
         double shellDemand = 0D;
         for (ExchangerLayout.Network network : networks) {
-            Batch tube = Batch.find(circuits.get(network.anchor()), findRecipe);
+            Batch tube = Batch.find(circuits.get(network.tubeAnchor()), findRecipe);
             if (tube == null || tube.recipe().heating() == shellBatch.recipe().heating()) {
                 continue;
             }

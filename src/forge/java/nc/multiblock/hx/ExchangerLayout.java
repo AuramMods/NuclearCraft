@@ -22,15 +22,23 @@ import java.util.function.BiPredicate;
 record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, List<Tube> tubes,
                        List<BlockPos> redstone, List<BlockPos> computers) {
     record Port(BlockPos pos, Direction side, boolean outlet, BlockPos circuit) {}
-    record Network(BlockPos anchor, int tubeCount, int usefulTubes, double conductivity, double retainedConductivity,
+    record Network(BlockPos inlet, List<BlockPos> tubes, int usefulTubes, double conductivity, double retainedConductivity,
                    Vec3 tubeFlow, Vec3 shellFlow, double flowCosine) {
+        BlockPos tubeAnchor() {
+            return tubes.get(0);
+        }
+
+        int tubeCount() {
+            return tubes.size();
+        }
+
         boolean counterflow() {
             return flowCosine < 1D / HeatExchangerConfig.maxSize();
         }
     }
     record Tube(BlockPos pos, Vec3 tubeFlow, Vec3 shellFlow) {}
     record Validation(ExchangerLayout layout, String error, BlockPos position) {}
-    private record TubeNetwork(BlockPos anchor, int tubeCount, Map<BlockPos, Vec3> flow) {}
+    private record TubeNetwork(BlockPos inlet, List<BlockPos> tubes, Map<BlockPos, Vec3> flow) {}
 
     static int maxLength() {
         return HeatExchangerConfig.maxSize() + 2;
@@ -101,14 +109,14 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             if (!visited.add(pos)) {
                 continue;
             }
-            int tubeCount = 0;
+            List<BlockPos> members = new ArrayList<>();
             Map<BlockPos, Direction> entries = new LinkedHashMap<>();
             Map<BlockPos, Direction> exits = new LinkedHashMap<>();
             ArrayDeque<BlockPos> pending = new ArrayDeque<>();
             pending.add(pos);
             while (!pending.isEmpty()) {
                 BlockPos current = pending.removeFirst();
-                tubeCount++;
+                members.add(current);
                 for (Direction side : Direction.values()) {
                     if (!tubeOpen(tubes, current, side)) {
                         continue;
@@ -129,9 +137,9 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                 return error("tube_network", pos);
             }
             BlockPos anchor = entries.keySet().stream().min(BlockPos::compareTo).orElseThrow();
-            entries.keySet().forEach(entry -> bindings.put(entry, anchor));
-            exits.keySet().forEach(exit -> bindings.put(exit, anchor));
-            tubeNetworks.add(new TubeNetwork(anchor, tubeCount, ExchangerFlow.directions(entries, exits, tubeLink)));
+            entries.keySet().forEach(entry -> bindings.put(entry, pos));
+            exits.keySet().forEach(exit -> bindings.put(exit, pos));
+            tubeNetworks.add(new TubeNetwork(anchor, List.copyOf(members), ExchangerFlow.directions(entries, exits, tubeLink)));
         }
 
         Map<BlockPos, Vec3> shellFlow = Map.of();
@@ -211,7 +219,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             retainedConductivity += coefficient * HeatExchangerConfig.retention(material);
         }
         double inverse = usefulTubes == 0 ? 0D : 1D / usefulTubes;
-        return new Network(tube.anchor(), tube.tubeCount(), usefulTubes, conductivity, retainedConductivity,
+        return new Network(tube.inlet(), tube.tubes(), usefulTubes, conductivity, retainedConductivity,
                 totalTubeFlow.scale(inverse), totalShellFlow.scale(inverse), flowCosine * inverse);
     }
 
