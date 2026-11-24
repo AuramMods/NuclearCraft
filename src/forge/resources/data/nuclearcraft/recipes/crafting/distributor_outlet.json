@@ -1,0 +1,12 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "redstone",
+    "ingredients": [
+        {
+            "item": "nuclearcraft:distributor_inlet"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:distributor_outlet"
+    }
+}

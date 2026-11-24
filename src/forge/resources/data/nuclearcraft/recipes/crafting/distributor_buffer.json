@@ -1,0 +1,27 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "redstone",
+    "pattern": [
+        "PSP",
+        "BHB",
+        "PSP"
+    ],
+    "key": {
+        "P": {
+            "item": "nuclearcraft:plate_basic"
+        },
+        "S": {
+            "item": "nuclearcraft:wire_copper"
+        },
+        "B": {
+            "item": "minecraft:bucket"
+        },
+        "H": {
+            "item": "minecraft:hopper"
+        }
+    },
+    "result": {
+        "item": "nuclearcraft:distributor_buffer",
+        "count": 8
+    }
+}

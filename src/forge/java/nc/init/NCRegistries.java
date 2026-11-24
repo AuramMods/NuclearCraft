@@ -183,6 +183,7 @@ public final class NCRegistries {
                         NCCollectors.displayItems(output);
                         NCGenerators.displayItems(output);
                         NCBatteries.displayItems(output);
+                        NCDistributors.displayItems(output);
                         output.accept(NCFluids.SULFUR.bucket().get());
                         output.accept(NCFluids.STANDARD_STEAM.bucket().get());
                         output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
@@ -205,6 +206,7 @@ public final class NCRegistries {
     public static void register(IEventBus bus) {
         NCMaterials.register();
         NCItemProcessors.register();
+        NCDistributors.register();
         NCFission.register();
         NCTurbine.register();
         NCHeatExchangers.register();

@@ -68,14 +68,15 @@ public abstract class EnergyBankBlockEntity extends BlockEntity {
             }
             BlockEntity target = neighborAt(side);
             if (target != null) {
-                target.getCapability(ForgeCapabilities.ENERGY, side.getOpposite()).ifPresent(this::push);
+                target.getCapability(ForgeCapabilities.ENERGY, side.getOpposite())
+                        .ifPresent(storage -> pushEnergyTo(storage, Integer.MAX_VALUE));
             }
         }
     }
 
-    private void push(IEnergyStorage target) {
+    protected final void pushEnergyTo(IEnergyStorage target, int limit) {
         var bank = bank();
-        int offered = available(bank, Integer.MAX_VALUE, false);
+        int offered = available(bank, limit, false);
         if (offered == 0 || bank.transferring()) {
             return;
         }
@@ -141,7 +142,11 @@ public abstract class EnergyBankBlockEntity extends BlockEntity {
         }
     }
 
-    private @Nullable BlockEntity neighborAt(Direction side) {
+    protected final List<EnergyBankBlockEntity> bankMembers() {
+        return bank().members();
+    }
+
+    protected final @Nullable BlockEntity neighborAt(Direction side) {
         if (!(level instanceof ServerLevel server)) {
             return null;
         }
@@ -152,6 +157,10 @@ public abstract class EnergyBankBlockEntity extends BlockEntity {
 
     @Nullable EnergyBankBlockEntity connectedAt(Direction side) {
         return neighborAt(side) instanceof EnergyBankBlockEntity part && part.available() && sharesBankWith(part) ? part : null;
+    }
+
+    protected final boolean exteriorFace(Direction side) {
+        return available() && connectedAt(side) == null;
     }
 
     private boolean available() {
@@ -199,7 +208,7 @@ public abstract class EnergyBankBlockEntity extends BlockEntity {
         }
     }
 
-    void refreshPorts() {
+    protected void refreshPorts() {
         var previous = List.copyOf(ports.values());
         ports.clear();
         for (EnergyPort port : previous) {

@@ -75,6 +75,10 @@ final class EnergyBank {
         return configRevision == revision;
     }
 
+    List<EnergyBankBlockEntity> members() {
+        return members;
+    }
+
     long charge() {
         return charge;
     }

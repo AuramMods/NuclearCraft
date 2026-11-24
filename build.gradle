@@ -109,6 +109,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/decay_generator.png'
         include 'assets/nuclearcraft/textures/blocks/rtg_*.png'
         include 'assets/nuclearcraft/textures/blocks/solar_panel_*.png'
+        include 'assets/nuclearcraft/textures/blocks/distributor/*.png'
         include 'assets/nuclearcraft/textures/blocks/fertile_isotope/*.png'
         include 'assets/nuclearcraft/textures/blocks/fluids/molten_*.png*'
         include 'assets/nuclearcraft/textures/blocks/fluids/steam.png*'
