@@ -1,12 +1,14 @@
 package nc.radiation;
 
 import nc.NuclearCraft;
+import nc.init.NCRadiation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageType;
@@ -27,6 +29,7 @@ public final class PlayerRadiation {
     private static final String DATA = "nuclearcraft:radiation";
     private static final String DOSE = "dose";
     private static final String RATE = "rate";
+    private static final String RAW_RATE = "raw_rate";
     private static final String RESISTANCE = "resistance";
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String RAD_X_COOLDOWN = "rad_x_cooldown";
@@ -38,12 +41,28 @@ public final class PlayerRadiation {
 
     @SubscribeEvent
     public static void onTick(TickEvent.PlayerTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && event.player instanceof ServerPlayer player
-                && RadiationConfig.ENABLED.get()) {
+        if (event.phase == TickEvent.Phase.START && event.player instanceof ServerPlayer player) {
             int interval = RadiationConfig.UPDATE_TICKS.get();
             if ((player.level().getGameTime() + player.getUUID().hashCode()) % interval == 0) {
-                tick(player, interval);
+                if (enabled()) {
+                    tick(player, interval);
+                }
+                RadiationSync.send(player);
             }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            RadiationSync.send(player);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            RadiationSync.send(player);
         }
     }
 
@@ -71,8 +90,9 @@ public final class PlayerRadiation {
         CompoundTag data = read(player);
         double max = RadiationConfig.MAX_DOSE.get();
         double dose = data.getDouble(DOSE);
+        double previousDose = dose;
         double immunity = Math.max(0, data.getDouble(IMMUNITY) - ticks);
-        boolean immune = immunity > 0 || RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID());
+        boolean immune = immunity > 0 || permanentlyImmune(player);
         boolean vulnerable = !immune && !player.isCreative() && !player.isSpectator();
         boolean fatal = vulnerable && RadiationConfig.FATAL.get();
         if (fatal && dose >= max && kill(player)) {
@@ -108,6 +128,7 @@ public final class PlayerRadiation {
             dose = Mth.clamp(dose + rate * ticks, 0, max);
         }
         data.putDouble(RATE, rate);
+        data.putDouble(RAW_RATE, rawRate(rate, resistance));
         data.putDouble(IMMUNITY, immunity);
         if (fatal && dose >= max) {
             data.putDouble(DOSE, dose);
@@ -135,11 +156,26 @@ public final class PlayerRadiation {
 
         if (vulnerable) {
             applyEffects(player, dose / max, Math.max(ticks, 19));
+            if (previousDose < 0.4 * max && dose >= 0.4 * max && RadiationConfig.REQUIRE_COUNTER.get()
+                    && !RadiationDisplay.hasCounter(player)) {
+                player.sendSystemMessage(Component.translatable("message.nuclearcraft.rad_warning")
+                        .withStyle(ChatFormatting.GOLD));
+                player.playNotifySound(NCRadiation.CHEMS_WEAR_OFF.get(), SoundSource.PLAYERS,
+                        0.8F * RadiationConfig.soundVolume(6), 0.7F);
+            }
         }
     }
 
     private static double attenuate(double raw, double resistance) {
         return resistance > 0 ? raw * (raw / (raw + resistance)) : raw * (1 - resistance);
+    }
+
+    private static double rawRate(double effective, double resistance) {
+        // Invert the legacy resistance curve for the aggregate effective reading.
+        if (resistance > 0 && effective > 0) {
+            return (effective + Math.sqrt(effective) * Math.sqrt(effective + 4 * resistance)) / 2;
+        }
+        return resistance < 0 ? effective / (1 - resistance) : effective;
     }
 
     private static double drain(CompoundTag data, MedicineItem.Kind kind, double limit) {
@@ -163,14 +199,29 @@ public final class PlayerRadiation {
         return RadiationConfig.ENABLED.get();
     }
 
+    private static boolean permanentlyImmune(Player player) {
+        return RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID());
+    }
+
+    static RadiationSync.Reading reading(ServerPlayer player) {
+        if (!enabled()) {
+            return RadiationSync.Reading.HIDDEN;
+        }
+        CompoundTag data = read(player);
+        return new RadiationSync.Reading(true, RadiationConfig.REQUIRE_COUNTER.get(), data.getDouble(DOSE),
+                RadiationConfig.MAX_DOSE.get(), data.getDouble(RATE), data.getDouble(RAW_RATE),
+                permanentlyImmune(player), data.getDouble(IMMUNITY), RadiationConfig.MINIMUM_RATE.get(),
+                RadiationConfig.UNIT_DIGITS.get(), RadiationConfig.soundVolume(0));
+    }
+
     static void report(ServerPlayer player) {
-        double dose = dose(player);
-        double percent = 100 * dose / RadiationConfig.MAX_DOSE.get();
-        double rate = rate(player);
-        ChatFormatting color = percent < 30 ? ChatFormatting.WHITE : percent < 50 ? ChatFormatting.YELLOW
-                : percent < 70 ? ChatFormatting.GOLD : percent < 90 ? ChatFormatting.RED : ChatFormatting.DARK_RED;
-        player.displayClientMessage(Component.translatable("message.nuclearcraft.geiger_reading",
-                format(dose), Math.round(percent), format(rate)).withStyle(color), true);
+        var reading = reading(player);
+        double percent = reading.dosePercent();
+        Component raw = Component.literal(reading.format(reading.rawRate(), "Rad/t"))
+                .withStyle(RadiationDisplay.rateColor(reading.rawRate()));
+        player.sendSystemMessage(Component.translatable("message.nuclearcraft.geiger_reading",
+                reading.format(reading.dose(), "Rad"), Math.round(percent), raw)
+                .withStyle(RadiationDisplay.doseColor(percent)));
     }
 
     static String format(double value) {

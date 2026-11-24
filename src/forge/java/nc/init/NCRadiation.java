@@ -10,6 +10,8 @@ import nc.radiation.GeigerBlock;
 import nc.radiation.GeigerBlockEntity;
 import nc.radiation.MedicineItem;
 import nc.radiation.RadiationConfig;
+import nc.radiation.RadiationHudConfig;
+import nc.radiation.RadiationSync;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
@@ -26,6 +28,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.RegistryObject;
 
 public final class NCRadiation {
+    public static final RegistryObject<SoundEvent> GEIGER_TICK = sound("player.geiger_tick");
+    public static final RegistryObject<SoundEvent> CHEMS_WEAR_OFF = sound("player.chems_wear_off");
     public static final RegistryObject<SoundEvent> RADAWAY_SOUND = sound("player.radaway");
     public static final RegistryObject<SoundEvent> RAD_X_SOUND = sound("player.rad_x");
 
@@ -73,6 +77,8 @@ public final class NCRadiation {
 
     public static void register(FMLJavaModLoadingContext context) {
         RadiationConfig.register(context);
+        RadiationHudConfig.register(context);
+        RadiationSync.register();
     }
 
     private static RegistryObject<SoundEvent> sound(String path) {

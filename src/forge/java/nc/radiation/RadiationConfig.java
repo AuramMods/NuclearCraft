@@ -77,6 +77,14 @@ public final class RadiationConfig {
                     name -> name instanceof String id && validId(id));
     static final ForgeConfigSpec.DoubleValue GEIGER_SCALE =
             BUILDER.defineInRange("radiation_geiger_block_redstone", 3D, -127D, 127D);
+    static final ForgeConfigSpec.BooleanValue REQUIRE_COUNTER = BUILDER.define("radiation_require_counter", true);
+    static final ForgeConfigSpec.IntValue UNIT_DIGITS =
+            BUILDER.defineInRange("radiation_unit_prefixes", 0, 0, 15);
+    private static final ForgeConfigSpec.ConfigValue<List<? extends Number>> SOUND_VOLUMES =
+            BUILDER.comment("Legacy radiation sound multipliers. Index 0 is the Geiger click, index 6 is the warning.")
+                    .defineListAllowEmpty("radiation_sound_volumes", List.of(1D, 1D, 1D, 1D, 1D, 1D, 1D, 1D),
+                            value -> value instanceof Number number
+                                    && number.doubleValue() >= 0 && number.doubleValue() <= 15);
     private static final ForgeConfigSpec SPEC;
 
     static {
@@ -92,6 +100,11 @@ public final class RadiationConfig {
 
     public static void register(FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.SERVER, SPEC, "nuclearcraft-radiation.toml");
+    }
+
+    static float soundVolume(int index) {
+        var volumes = SOUND_VOLUMES.get();
+        return index < volumes.size() ? volumes.get(index).floatValue() : 1F;
     }
 
     private static ForgeConfigSpec.ConfigValue<List<? extends String>> rates(String name, List<String> defaults) {

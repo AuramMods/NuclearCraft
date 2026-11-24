@@ -18,5 +18,13 @@
     "player.rad_x": {
         "subtitle": "subtitles.nuclearcraft.rad_x",
         "sounds": ["nuclearcraft:player/rad_x"]
+    },
+    "player.geiger_tick": {
+        "subtitle": "subtitles.nuclearcraft.geiger_tick",
+        "sounds": ["nuclearcraft:player/geiger_tick"]
+    },
+    "player.chems_wear_off": {
+        "subtitle": "subtitles.nuclearcraft.chems_wear_off",
+        "sounds": ["nuclearcraft:player/chems_wear_off"]
     }
 }
