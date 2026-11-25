@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_brass",
+            "required": false
+        },
+        {
+            "id": "embers:molten_brass",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_brass",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_brass",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_brass",
+            "required": false
+        }
+    ]
+}

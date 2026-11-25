@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_electrum"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/electrum"
+    ]
+}

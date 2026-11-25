@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_zinc",
+            "required": false
+        },
+        {
+            "id": "embers:molten_zinc",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_zinc",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_zinc",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_zinc",
+            "required": false
+        }
+    ]
+}

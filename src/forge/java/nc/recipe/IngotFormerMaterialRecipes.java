@@ -33,6 +33,8 @@ final class IngotFormerMaterialRecipes {
             "obsidian", "silicon", "cesium_137", "caesium_137", "marshmallow");
     private static final TagKey<Fluid> EXCLUDED_FLUIDS =
             TagKey.create(Registries.FLUID, NuclearCraft.id("exclude_automatic_casting"));
+    private static final TagKey<Fluid> STANDARD_INGOT_FLUIDS =
+            TagKey.create(Registries.FLUID, NuclearCraft.id("ingot_former_90mb"));
     private static final int INGOT_VOLUME = 144;
     private static final int GEM_VOLUME = 666;
 
@@ -99,7 +101,7 @@ final class IngotFormerMaterialRecipes {
         }
 
         Item product = taggedItem("ingots/" + material);
-        int volume = INGOT_VOLUME;
+        int volume = fluid.is(STANDARD_INGOT_FLUIDS) ? 90 : INGOT_VOLUME;
         if (product == Items.AIR) {
             product = taggedItem("gems/" + material);
             volume = GEM_VOLUME;

@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_bronze",
+            "required": false
+        },
+        {
+            "id": "embers:molten_bronze",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_bronze",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_bronze",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_bronze",
+            "required": false
+        }
+    ]
+}

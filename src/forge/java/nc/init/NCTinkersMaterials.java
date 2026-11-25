@@ -13,7 +13,6 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.common.crafting.conditions.IConditionSerializer;
@@ -62,7 +61,7 @@ public final class NCTinkersMaterials {
                 event.enqueueWork(() -> CraftingHelper.register(MaterialEnabled.SERIALIZER)));
         if (ModList.get().isLoaded("tconstruct")) {
             context.getModEventBus().addListener(NCTinkersMaterials::addStatsPack);
-            MinecraftForge.EVENT_BUS.addListener(NCTinkersSmeltery::onRecipeReload);
+            StockRecipeAdjustments.register("tconstruct", (recipe, additions) -> NCTinkersSmeltery.adjustRecipe(recipe));
         }
     }
 

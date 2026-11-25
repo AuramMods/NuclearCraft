@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_bronze",
+        "tag": "nuclearcraft:legacy_casting/bronze",
         "amount": 144
     },
     "result": {

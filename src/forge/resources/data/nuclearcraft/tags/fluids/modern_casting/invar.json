@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_invar",
+            "required": false
+        },
+        {
+            "id": "embers:molten_invar",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_invar",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_invar",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_invar",
+            "required": false
+        }
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_constantan",
+            "required": false
+        },
+        {
+            "id": "embers:molten_constantan",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_constantan",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_constantan",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_constantan",
+            "required": false
+        }
+    ]
+}

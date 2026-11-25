@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_platinum",
+        "tag": "nuclearcraft:legacy_casting/platinum",
         "amount": 144
     },
     "result": {

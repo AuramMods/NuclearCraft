@@ -11,6 +11,7 @@ import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCComputerPorts;
 import nc.init.NCEntities;
+import nc.init.NCEmbersRecipes;
 import nc.init.NCEquipment;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
@@ -57,6 +58,9 @@ public final class NuclearCraft {
         }
         if (ModList.get().isLoaded("tconstruct")) {
             TinkersModifiers.register(context.getModEventBus());
+        }
+        if (ModList.get().isLoaded("embers")) {
+            NCEmbersRecipes.register();
         }
         FluidConfig.register(context);
         NCFission.registerConfig(context);

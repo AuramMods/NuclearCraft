@@ -1,0 +1,39 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "nuclearcraft:modern_casting/zinc",
+        "amount": 90
+    },
+    "result": {
+        "tag": "forge:ingots/zinc"
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "tconstruct"
+                },
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "evolvedmekanism"
+                },
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "embers"
+                }
+            ]
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:ingots/zinc"
+            }
+        }
+    ]
+}

@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_brass",
+        "tag": "nuclearcraft:legacy_casting/brass",
         "amount": 144
     },
     "result": {

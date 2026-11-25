@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_constantan"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/constantan"
+    ]
+}

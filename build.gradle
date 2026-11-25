@@ -87,6 +87,7 @@ repositories {
     maven {
         url = 'https://www.cursemaven.com'
         content {
+            includeModule 'curse.maven', 'embers-rekindled-300777'
             includeModule 'curse.maven', 'tinkers-construct-74072'
             includeModule 'curse.maven', 'mantle-74924'
         }
@@ -104,6 +105,7 @@ dependencies {
     compileOnly fg.deobf("vazkii.patchouli:Patchouli:${patchouli_version}:api")
     compileOnly "mekanism:Mekanism:${mekanism_version}:api"
     compileOnly fg.deobf("com.github.glitchfiend:TerraBlender-forge:${minecraft_version}-${terrablender_version}")
+    compileOnly fg.deobf('curse.maven:embers-rekindled-300777:7446478')
     compileOnly fg.deobf('curse.maven:tinkers-construct-74072:7449219')
     compileOnly fg.deobf('curse.maven:mantle-74924:7414488')
 }
