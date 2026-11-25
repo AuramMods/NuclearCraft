@@ -1,6 +1,7 @@
 package nc.multiblock.turbine;
 
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
@@ -298,6 +299,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         }
         disassemble();
         layout = found;
+        MultiblockFrame.set(server, layout.frames(), true);
         computerPorts.bind(server, layout.computers());
         steam.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_STEAM * found.exteriorVolume()));
         exhaust.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_EXHAUST * found.exteriorVolume()));
@@ -342,6 +344,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
+        MultiblockFrame.set(server, previous.frames(), false);
         processing = false;
         power = 0;
         inputRate = 0;

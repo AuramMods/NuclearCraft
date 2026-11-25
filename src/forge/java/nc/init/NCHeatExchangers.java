@@ -50,7 +50,7 @@ public final class NCHeatExchangers {
     private static final List<RegistryObject<? extends Block>> PARTS = new ArrayList<>();
 
     public static final RegistryObject<ExchangerPartBlock> CASING = block("heat_exchanger_casing",
-            () -> new ExchangerPartBlock(metal(), Part.CASING));
+            () -> new ExchangerPartBlock.Casing(metal()));
     public static final RegistryObject<ExchangerPartBlock> GLASS = block("heat_exchanger_glass",
             () -> new ExchangerPartBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion(), Part.GLASS));
     public static final RegistryObject<ExchangerPartBlock> REDSTONE = block("heat_exchanger_redstone_port",

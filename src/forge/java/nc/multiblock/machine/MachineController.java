@@ -2,6 +2,7 @@ package nc.multiblock.machine;
 
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import net.minecraft.core.BlockPos;
@@ -208,14 +209,8 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     }
 
     private void setFrames(boolean assembled) {
-        if (!(level instanceof ServerLevel server)) return;
-        for (BlockPos pos : frames) {
-            var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
-            if (chunk == null) continue;
-            var state = chunk.getBlockState(pos);
-            if (state.hasProperty(MachinePartBlock.FRAME_EDGE) && state.getValue(MachinePartBlock.FRAME_EDGE) != assembled) {
-                server.setBlock(pos, state.setValue(MachinePartBlock.FRAME_EDGE, assembled), Block.UPDATE_CLIENTS);
-            }
+        if (level instanceof ServerLevel server) {
+            MultiblockFrame.set(server, frames, assembled);
         }
     }
 

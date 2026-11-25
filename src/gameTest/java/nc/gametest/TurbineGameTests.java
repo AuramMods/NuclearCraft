@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.multiblock.MultiblockFrame;
 import nc.init.NCFission;
 import nc.init.NCFluids;
 import nc.init.NCRegistries;
@@ -239,6 +240,9 @@ public final class TurbineGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
                 .thenExecute(() -> {
+                    helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE)
+                                    && !helper.getBlockState(FRAME.east(3).above()).getValue(MultiblockFrame.EDGE),
+                            "Only assembled edges and corners use the frame texture");
                     IFluidHandler inlet = fluid(helper, INLET, Direction.NORTH);
                     inlet.fill(new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 12), FluidAction.EXECUTE);
                     TurbineController controller = controller(helper, CONTROLLER);
@@ -257,6 +261,8 @@ public final class TurbineGameTests {
                     IEnergyStorage cached = energyCap.orElseThrow(AssertionError::new);
                     var inletCap = helper.getBlockEntity(INLET).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH);
                     helper.setBlock(FRAME, Blocks.AIR);
+                    helper.assertTrue(!helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                            "Disassembly returns the surviving frame to the wall texture");
                     helper.assertTrue(!energyCap.isPresent() && !inletCap.isPresent(),
                             "A broken frame must invalidate the steam and energy capabilities");
                     helper.assertTrue(cached.extractEnergy(323, false) == 0, "A retained dynamo handler must stop immediately");
@@ -267,6 +273,8 @@ public final class TurbineGameTests {
                     helper.setBlock(FRAME, NCTurbine.CASING.get());
                 })
                 .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                        "Reassembly restores the frame texture"))
                 .thenExecute(() -> {
                     helper.assertTrue(fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 12,
                             "Reformation must preserve the steam buffer");

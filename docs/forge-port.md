@@ -1436,7 +1436,7 @@ A packaged Forge 47.4.10 test with Auram's KubeJS 2001.6.5-build.16 changed the 
 
 ### Fission monitors and wall parts
 
-Solid-fuel, pebble-bed, and molten-salt reactors accept Fission Glass, Fission Monitors, and Fission Power Ports on casing faces. Assembly turns the monitor and port outward, including on the roof and floor. Fission Glass retains pickaxe harvesting, culls shared faces, and can be crafted back into casing. All three parts retain their original crafting ingredients and registry IDs. The optional legacy ConnectedTexturesMod overlay is pending.
+Solid-fuel, pebble-bed, and molten-salt reactors accept Fission Glass, Fission Monitors, and Fission Power Ports on casing faces. Assembly turns the monitor and port outward, including on the roof and floor. Fission Glass retains pickaxe harvesting, culls shared faces, and can be crafted back into casing. All three parts retain their original crafting ingredients and registry IDs.
 
 Sneak and right-click a fission component with the Multitool, then right-click a monitor with the tool to store the link. Bare-hand right-click highlights its current heat cluster for five seconds. Using the tool on a linked monitor without a new selection highlights just the selected component. The monitor lights when its reactor runs. The link survives a server restart and is resolved against the assembled reactor. Converted monitors and Multitools read the original `componentPos` encoding. The monitor saves the link as `component_pos` in the Forge format.
 
@@ -1445,6 +1445,18 @@ The Fission Power Port exposes a sided Forge Energy capability on its outward fa
 All 149 GameTests passed, including face placement on all three reactor variants, legacy link decoding, and capability invalidation on mode changes. On packaged Forge 47.4.18, a redstone conduit from Auram's Ender IO 8.2.22-beta started and stopped a solid-fuel reactor. Its monitor followed both transitions, and the saved link and fuel progress survived a server restart.
 
 A multiplayer client rendered outlines for exactly the linked fuel cell, water heat sink, and conductor. The same outlines rendered with all 538 installed Auram mod JARs after JEI loaded. Overheating was disabled for the disposable Auram rendering fixture. Both clients used OpenAL No Output with master volume zero. The native watcher recorded zero focus activations or visible window samples.
+
+### Multiblock casing and glass
+
+Assembled edges and corners use the original frame artwork on fission reactors, turbines, heat exchangers, condensers, and chemical machines. Flat casing faces use their wall texture. Fission, turbine, and exchanger casings keep their existing IDs and use the same `frame` block state as the chemical machine frame. Use the wall state when converting placement data. Controllers restore the appropriate edge states after validating the complete structure. The four types of multiblock glass use the original cutout layer and cull faces between matching blocks.
+
+The packaged JAR carries all 12 legacy ConnectedTexturesMod metadata entries and the original texture sheets. Adjacent faces use the connected sprite when CTM is installed. A standard Forge client uses the base textures. [ConnectedTexturesMod texture metadata](https://github.com/Chisel-Team/ConnectedTexturesMod/wiki/CTM-into-Texture-Metadata)
+
+All 219 local GameTests passed. A packaged Forge 47.4.10 dedicated server saved a 68-block-long reactor across five chunks. On restart its far edge used the wall model with the controller chunk unloaded. The same edge returned to the frame state when the controller loaded, reverted when the shell broke, and switched back after repair.
+
+Two multiplayer clients read the baked models from the same packaged build. Standard Forge used the base sprites for all 12 fixtures. CTM 1.1.10 used the correct connected sprite on each adjacent pair and the original sprite on its isolated counterpart. Both clients used OpenAL No Output and had zero focus activations, foreground samples, or visible windows. [CTM 1.1.10 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/ctm/files/5983309)
+
+The same build joined an integrated world with 540 installed Auram JARs. With Embeddium loaded, the reactor edge resolved to the frame sprite after assembly and the wall sprite after disassembly. Its flat wall used the wall sprite throughout. The repaired edges saved with `frame=true` and the flat wall saved with `frame=false`. The client ran muted and had zero focus activations, foreground samples, or visible windows. The isolated copy omitted Neo-Voxy 0.4.0-beta.1 because the installed 541-JAR profile still hit the Impersonate startup error described below.
 
 ### Player radiation
 

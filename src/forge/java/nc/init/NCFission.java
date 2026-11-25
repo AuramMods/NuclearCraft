@@ -198,7 +198,8 @@ public final class NCFission {
         SPEC = builder.build();
     }
 
-    public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing", Role.CASING);
+    public static final RegistryObject<FissionPartBlock> CASING = part("fission_casing",
+            () -> new FissionPartBlock.Casing(properties()));
     public static final RegistryObject<FissionGlassBlock> GLASS = part("fission_glass",
             () -> new FissionGlassBlock(properties().destroyTime(1.5F).noOcclusion()
                     .isViewBlocking((state, level, pos) -> false).isSuffocating((state, level, pos) -> false)));

@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.function.BiPredicate;
 
 record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, List<Tube> tubes,
-                       List<BlockPos> redstone, List<BlockPos> computers, boolean glass) {
+                       List<BlockPos> redstone, List<BlockPos> computers, List<BlockPos> frames, boolean glass) {
     record Port(BlockPos pos, Direction side, boolean outlet, BlockPos circuit) {}
     record Network(BlockPos inlet, List<BlockPos> tubes, int usefulTubes, double conductivity, double retainedConductivity,
                    Vec3 tubeFlow, Vec3 shellFlow, double flowCosine) {
@@ -60,6 +60,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
         Set<BlockPos> outlets = new HashSet<>();
         List<BlockPos> redstone = new ArrayList<>();
         List<BlockPos> computers = new ArrayList<>();
+        List<BlockPos> frames = new ArrayList<>();
         boolean glass = false;
         for (BlockPos cursor : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(cursor);
@@ -78,7 +79,9 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
                     return error("interior", cursor);
                 }
             } else if (part == Part.CASING) {
-                continue;
+                if (region > 1) {
+                    frames.add(cursor.immutable());
+                }
             } else if (region != 1 || part == null) {
                 return error("wall", cursor);
             } else if (part == Part.GLASS) {
@@ -193,7 +196,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             installed.add(new Tube(pos, tubeFlow.getOrDefault(pos, Vec3.ZERO), shellFlow.getOrDefault(pos, Vec3.ZERO)));
         }
         return new Validation(new ExchangerLayout(bounds, ports, List.copyOf(networks),
-                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers), glass), null, null);
+                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers), List.copyOf(frames), glass), null, null);
     }
 
     private static Network network(Map<BlockPos, BlockState> tubeStates, TubeNetwork tube,

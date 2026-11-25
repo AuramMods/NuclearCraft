@@ -1,6 +1,7 @@
 package nc.multiblock.hx;
 
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.HeatExchangerConfig;
@@ -226,6 +227,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             return;
         }
         layout = result.layout();
+        MultiblockFrame.set(server, layout.frames(), true);
         computerPorts.bind(server, layout.computers());
         var bounds = layout.bounds();
         BlockState state = getBlockState();
@@ -302,6 +304,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         ExchangerLayout old = layout;
         layout = null;
         if (old != null && level instanceof ServerLevel server) {
+            MultiblockFrame.set(server, old.frames(), false);
             if (old.glass()) {
                 syncRender(server);
             }

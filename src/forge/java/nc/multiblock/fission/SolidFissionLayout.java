@@ -18,7 +18,8 @@ import java.util.Objects;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
-                          List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers, FissionVariant variant) {
+                          List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers,
+                          List<BlockPos> frames, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable PebbleCooling.Channel gas,
                 @Nullable FissionCoolant salt, @Nullable ResourceLocation fuelFilter) {
         boolean itemFuel() {
@@ -67,6 +68,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         List<BlockPos> conductors = new ArrayList<>();
         List<BlockPos> monitors = new ArrayList<>();
         List<BlockPos> computers = new ArrayList<>();
+        List<BlockPos> frames = new ArrayList<>();
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             BlockState state = level.getBlockState(pos);
             FissionPartBlock.Role role = FissionPartBlock.role(state);
@@ -130,6 +132,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                     if (role != FissionPartBlock.Role.CASING) {
                         return invalid("frame", pos);
                     }
+                    frames.add(pos.immutable());
                 }
             }
         }
@@ -163,7 +166,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
-                List.copyOf(conductors), List.copyOf(monitors), List.copyOf(computers), variant),
+                List.copyOf(conductors), List.copyOf(monitors), List.copyOf(computers), List.copyOf(frames), variant),
                 Component.translatable("message.nuclearcraft.fission.assembled"), null);
     }
 

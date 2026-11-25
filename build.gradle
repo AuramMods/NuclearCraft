@@ -250,9 +250,11 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/blocks/wasteland_earth.png'
         include 'assets/nuclearcraft/textures/blocks/wasteland_portal.png*'
         include 'assets/nuclearcraft/textures/blocks/fission/casing/wall.png'
+        include 'assets/nuclearcraft/textures/blocks/fission/casing/frame*.png'
         include 'assets/nuclearcraft/textures/blocks/bin.png'
         include 'assets/nuclearcraft/textures/blocks/machine_interface.png'
         include 'assets/nuclearcraft/textures/blocks/fission/glass.png'
+        include 'assets/nuclearcraft/textures/blocks/fission/glass_ctm.png'
         include 'assets/nuclearcraft/textures/blocks/fission/computer_port.png'
         include 'assets/nuclearcraft/textures/blocks/fission/monitor_*.png'
         include 'assets/nuclearcraft/textures/blocks/fission/power_port_*.png'
@@ -314,12 +316,10 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/gui/container/fission_irradiator_port.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_heater_port.png'
         include 'assets/nuclearcraft/textures/blocks/heat_exchanger/**/*.png'
-        exclude 'assets/nuclearcraft/textures/blocks/heat_exchanger/**/*_ctm.png'
         include 'assets/nuclearcraft/textures/gui/container/condenser_controller.png'
         include 'assets/nuclearcraft/textures/gui/container/decay_pool_controller.png'
         include 'assets/nuclearcraft/textures/items/multitool.png'
         include 'assets/nuclearcraft/textures/blocks/turbine/**/*.png'
-        exclude 'assets/nuclearcraft/textures/blocks/turbine/**/*_ctm.png'
         include 'assets/nuclearcraft/textures/gui/container/turbine_controller.png'
         include 'assets/nuclearcraft/textures/gui/container/melter.png'
         include 'assets/nuclearcraft/textures/gui/container/manufactory.png'
@@ -370,6 +370,13 @@ tasks.named('processResources', ProcessResources) {
         eachFile {
             path = path.replace('/textures/blocks/', '/textures/block/').replace('/textures/items/', '/textures/item/')
         }
+        includeEmptyDirs = false
+    }
+    from('src/main/resources/assets/nuclearcraft/textures/blocks') {
+        into 'assets/nuclearcraft/textures/block'
+        include 'fission/**/*.png.mcmeta', 'heat_exchanger/**/*.png.mcmeta', 'turbine/**/*.png.mcmeta',
+                'machine/frame/frame.png.mcmeta', 'machine/glass.png.mcmeta'
+        filter { line -> line.replace('nuclearcraft:blocks/', 'nuclearcraft:block/') }
         includeEmptyDirs = false
     }
 }

@@ -20,7 +20,8 @@ import static nc.multiblock.turbine.TurbinePartBlock.Part;
 
 record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLength, List<TurbineRotorBlock> stages,
                      Map<BlockPos, Axis> rotor, Set<BlockPos> bearings, List<Port> ports,
-                     List<BlockPos> redstonePorts, List<BlockPos> computers, Dynamo dynamo, boolean glass) {
+                     List<BlockPos> redstonePorts, List<BlockPos> computers, List<BlockPos> frames,
+                     Dynamo dynamo, boolean glass) {
     record Port(BlockPos pos, Direction side, Part part) {}
 
     record Validation(TurbineLayout layout, Component message) {}
@@ -77,6 +78,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
         Set<BlockPos> bearings = new HashSet<>();
         Map<BlockPos, TurbineWallBlock> coils = new LinkedHashMap<>();
         List<BlockPos> computers = new ArrayList<>();
+        List<BlockPos> frames = new ArrayList<>();
         boolean glass = false;
         for (BlockPos pos : BlockPos.betweenClosed(bounds.min(), bounds.max())) {
             int edge = bounds.boundaryAxes(pos);
@@ -89,6 +91,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                 if (part != Part.CASING) {
                     return invalid("frame", pos);
                 }
+                frames.add(pos.immutable());
                 continue;
             }
             if (part == null || part.rotor()) {
@@ -195,7 +198,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
             }
         });
         return new Validation(new TurbineLayout(bounds, flow, shaft, blade, List.copyOf(stages), Map.copyOf(rotor),
-                Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), List.copyOf(computers), dynamo, glass),
+                Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), List.copyOf(computers), List.copyOf(frames), dynamo, glass),
                 Component.translatable("message.nuclearcraft.turbine.assembled"));
     }
 

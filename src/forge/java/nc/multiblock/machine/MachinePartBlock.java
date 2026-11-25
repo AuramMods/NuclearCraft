@@ -5,6 +5,7 @@ import nc.multiblock.computer.ComputerPort;
 import nc.init.NCHeatExchangers;
 import nc.init.NCMachines;
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -25,7 +26,6 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.event.level.ChunkDataEvent;
@@ -86,7 +86,6 @@ public class MachinePartBlock extends Block {
 
     public static final EnumProperty<TrayPosition> TRAY_POSITION = EnumProperty.create("position", TrayPosition.class);
     public static final EnumProperty<Mode> MODE = EnumProperty.create("mode", Mode.class);
-    public static final BooleanProperty FRAME_EDGE = BooleanProperty.create("frame");
     private final Part part;
 
     public MachinePartBlock(Properties properties, Part part) {
@@ -174,11 +173,11 @@ public class MachinePartBlock extends Block {
     public static final class Frame extends MachinePartBlock {
         public Frame(Properties properties) {
             super(properties, Part.FRAME);
-            registerDefaultState(stateDefinition.any().setValue(FRAME_EDGE, false));
+            registerDefaultState(stateDefinition.any().setValue(MultiblockFrame.EDGE, false));
         }
 
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-            builder.add(FRAME_EDGE);
+            builder.add(MultiblockFrame.EDGE);
         }
     }
 

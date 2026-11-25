@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.multiblock.MultiblockFrame;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFluids;
 import nc.multiblock.hx.ExchangerController;
@@ -98,6 +99,9 @@ public final class CondenserGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> fluid(helper, FIRST_IN, Direction.WEST))
                 .thenExecute(() -> {
+                    helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE)
+                                    && !helper.getBlockState(FRAME.east(3).above()).getValue(MultiblockFrame.EDGE),
+                            "Only assembled edges and corners use the frame texture");
                     IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
                     coolant.fill(new FluidStack(Fluids.WATER, coolant.getTankCapacity(0)), FluidAction.EXECUTE);
                     IFluidHandler input = fluid(helper, FIRST_IN, Direction.WEST);
@@ -118,6 +122,8 @@ public final class CondenserGameTests {
                     var old = helper.getBlockEntity(FIRST_OUT).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.EAST);
                     IFluidHandler retained = old.orElseThrow(AssertionError::new);
                     helper.setBlock(FRAME, Blocks.AIR);
+                    helper.assertTrue(!helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                            "Disassembly returns the surviving frame to the wall texture");
                     helper.assertTrue(!old.isPresent() && retained.drain(1, FluidAction.EXECUTE).isEmpty(),
                             "Breaking the frame must invalidate even previously resolved handlers");
                     CompoundTag saved = helper.getBlockEntity(CONTROLLER).saveWithoutMetadata();
@@ -127,6 +133,8 @@ public final class CondenserGameTests {
                     helper.setBlock(FRAME, NCHeatExchangers.CASING.get());
                 })
                 .thenWaitUntil(() -> fluid(helper, FIRST_OUT, Direction.EAST))
+                .thenExecute(() -> helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                        "Reassembly restores the frame texture"))
                 .thenExecute(() -> {
                     IFluidHandler output = fluid(helper, FIRST_OUT, Direction.EAST);
                     helper.assertTrue(output.getFluidInTank(0).getAmount() == output.getTankCapacity(0),

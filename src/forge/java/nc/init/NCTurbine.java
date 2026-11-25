@@ -36,7 +36,8 @@ public final class NCTurbine {
     private static final List<RegistryObject<? extends Block>> PARTS = new ArrayList<>();
     private static Map<String, String> scriptedCoilRules = Map.of();
 
-    public static final RegistryObject<TurbinePartBlock> CASING = part("turbine_casing", Part.CASING);
+    public static final RegistryObject<TurbinePartBlock> CASING = block("turbine_casing",
+            () -> new TurbinePartBlock.Casing(properties()));
     public static final RegistryObject<TurbinePartBlock> GLASS = block("turbine_glass",
             () -> new TurbinePartBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion(), Part.GLASS));
     public static final RegistryObject<TurbineWallBlock> CONTROLLER = wall("turbine_controller", Part.CONTROLLER);

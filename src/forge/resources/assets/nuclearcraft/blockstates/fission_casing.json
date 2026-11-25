@@ -1,7 +1,10 @@
 {
     "variants": {
-        "": {
+        "frame=false": {
             "model": "nuclearcraft:block/fission_casing"
+        },
+        "frame=true": {
+            "model": "nuclearcraft:block/fission_casing_frame"
         }
     }
 }

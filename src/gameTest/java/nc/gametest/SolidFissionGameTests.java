@@ -2,6 +2,7 @@ package nc.gametest;
 
 import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
+import nc.multiblock.MultiblockFrame;
 import nc.radiation.ChunkRadiationSource;
 import nc.init.NCFission;
 import nc.init.NCFluids;
@@ -146,6 +147,9 @@ public final class SolidFissionGameTests {
         helper.startSequence()
                 .thenWaitUntil(() -> requireAssembled(helper))
                 .thenExecute(() -> {
+                    helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE)
+                                    && !helper.getBlockState(FRAME.east(3).above()).getValue(MultiblockFrame.EDGE),
+                            "Only assembled edges and corners use the frame texture");
                     var vent = helper.getBlockEntity(WATER_IN);
                     var capability = vent.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH);
                     IFluidHandler oldHandler = capability.orElseThrow(AssertionError::new);
@@ -154,6 +158,8 @@ public final class SolidFissionGameTests {
                     helper.assertTrue(oldHandler.fill(new FluidStack(Fluids.WATER, 350), FluidAction.EXECUTE) == 350,
                             "The formed reactor must fill through an inlet");
                     helper.setBlock(FRAME, Blocks.AIR);
+                    helper.assertTrue(!helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                            "Disassembly returns the surviving frame to the wall texture");
                     helper.assertTrue(!capability.isPresent(), "A missing frame must invalidate pipe capability caches");
                     helper.assertTrue(oldHandler.fill(new FluidStack(Fluids.WATER, 500), FluidAction.EXECUTE) == 0,
                             "A previously resolved handler must be unable to fill a broken reactor");
@@ -165,6 +171,8 @@ public final class SolidFissionGameTests {
                     helper.setBlock(FRAME, NCFission.CASING.get());
                 })
                 .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> helper.assertTrue(helper.getBlockState(FRAME.east()).getValue(MultiblockFrame.EDGE),
+                        "Reassembly restores the frame texture"))
                 .thenExecute(() -> helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0)
                         .getAmount() == 350, "Reformation and reading saved controller data must preserve the coolant"))
                 .thenSucceed();

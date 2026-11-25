@@ -6,17 +6,20 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import nc.NuclearCraft;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public class ExchangerPartBlock extends Block {
@@ -38,6 +41,11 @@ public class ExchangerPartBlock extends Block {
 
     static Part part(BlockState state) {
         return state.getBlock() instanceof ExchangerPartBlock block ? block.part : null;
+    }
+
+    @Override
+    public boolean skipRendering(BlockState state, BlockState adjacent, Direction side) {
+        return part == Part.GLASS && adjacent.is(this) || super.skipRendering(state, adjacent, side);
     }
 
     @Override
@@ -67,6 +75,18 @@ public class ExchangerPartBlock extends Block {
             ChunkPos chunk = event.getChunk().getPos();
             Cuboid.visitNearby(level, chunk, ExchangerLayout.maxLength(), ExchangerController.class,
                     controller -> controller.chunkUnloaded(chunk));
+        }
+    }
+
+    public static final class Casing extends ExchangerPartBlock {
+        public Casing(Properties properties) {
+            super(properties, Part.CASING);
+            registerDefaultState(defaultBlockState().setValue(MultiblockFrame.EDGE, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(MultiblockFrame.EDGE);
         }
     }
 

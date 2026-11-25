@@ -1,7 +1,10 @@
 {
     "variants": {
-        "": {
+        "frame=false": {
             "model": "nuclearcraft:block/heat_exchanger_casing"
+        },
+        "frame=true": {
+            "model": "nuclearcraft:block/heat_exchanger_casing_frame"
         }
     }
 }

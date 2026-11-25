@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.init.TurbineConfig;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -16,6 +17,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -76,6 +78,11 @@ public class TurbinePartBlock extends Block {
     }
 
     @Override
+    public boolean skipRendering(BlockState state, BlockState adjacent, Direction side) {
+        return part == Part.GLASS && adjacent.is(this) || super.skipRendering(state, adjacent, side);
+    }
+
+    @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moved) {
         super.onPlace(state, level, pos, previous, moved);
         if (level instanceof ServerLevel server && !state.is(previous.getBlock())) {
@@ -124,6 +131,18 @@ public class TurbinePartBlock extends Block {
             ChunkPos pos = event.getChunk().getPos();
             Cuboid.visitNearby(level, pos, TurbineConfig.searchLength(), TurbineController.class,
                     controller -> controller.chunkUnloaded(pos));
+        }
+    }
+
+    public static final class Casing extends TurbinePartBlock {
+        public Casing(Properties properties) {
+            super(properties, Part.CASING);
+            registerDefaultState(defaultBlockState().setValue(MultiblockFrame.EDGE, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(MultiblockFrame.EDGE);
         }
     }
 

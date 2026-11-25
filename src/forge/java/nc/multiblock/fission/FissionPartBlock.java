@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -22,6 +23,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.event.level.ChunkEvent;
@@ -118,6 +120,18 @@ public class FissionPartBlock extends Block {
             ChunkPos pos = event.getChunk().getPos();
             Cuboid.visitNearby(level, pos, NCFission.searchLength(), SolidFissionController.class,
                     controller -> controller.chunkUnloaded(pos));
+        }
+    }
+
+    public static final class Casing extends FissionPartBlock {
+        public Casing(Properties properties) {
+            super(properties, Role.CASING);
+            registerDefaultState(defaultBlockState().setValue(MultiblockFrame.EDGE, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(MultiblockFrame.EDGE);
         }
     }
 

@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.multiblock.Cuboid;
+import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
@@ -223,6 +224,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         disassemble();
         layout = found;
+        MultiblockFrame.set(server, layout.frames(), true);
         computerPorts.bind(server, layout.computers());
         core = new SolidFissionCore(layout);
         casingHeat = Math.min(casingHeat, heatCapacity());
@@ -293,6 +295,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
+        MultiblockFrame.set(server, previous.frames(), false);
         irradiationBanks.clear();
         for (BlockPos pos : previous.monitors()) {
             var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);

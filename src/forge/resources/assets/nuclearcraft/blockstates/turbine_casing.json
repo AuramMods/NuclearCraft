@@ -1,7 +1,10 @@
 {
     "variants": {
-        "": {
+        "frame=false": {
             "model": "nuclearcraft:block/turbine_casing"
+        },
+        "frame=true": {
+            "model": "nuclearcraft:block/turbine_casing_frame"
         }
     }
 }
