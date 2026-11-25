@@ -29,7 +29,6 @@ import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionIrradiatorRecipe.Material;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlags;
@@ -337,41 +336,40 @@ public final class NCFission {
     public static final RegistryObject<RecipeSerializer<FissionHeatRecipe>> EMERGENCY_COOLING_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("fission_emergency_cooling", () -> new FissionHeatRecipe.Serializer(true));
 
-    public static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("fission", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.fission"))
-                    .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
-                    .displayItems((parameters, output) -> {
-                        output.accept(CASING.get());
-                        output.accept(GLASS.get());
-                        output.accept(MONITOR.get());
-                        output.accept(POWER_PORT.get());
-                        output.accept(CONDUCTOR.get());
-                        output.accept(CONTROLLER.get());
-                        output.accept(CELL.get());
-                        output.accept(CELL_PORT.get());
-                        output.accept(IRRADIATOR.get());
-                        output.accept(IRRADIATOR_PORT.get());
-                        output.accept(VENT.get());
-                        for (NCHeatSinks sink : NCHeatSinks.values()) {
-                            output.accept(heatSink(sink));
-                        }
-                        output.accept(HEAVY_WATER_MODERATOR.get());
-                        output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
-                        output.accept(LEAD_STEEL_REFLECTOR.get());
-                        output.accept(RADIUM_BERYLLIUM_SOURCE.get());
-                        output.accept(POLONIUM_BERYLLIUM_SOURCE.get());
-                        output.accept(CALIFORNIUM_SOURCE.get());
-                        output.accept(SOURCE_MANAGER.get());
-                        output.accept(SHIELD_MANAGER.get());
-                        output.accept(BORON_SILVER_SHIELD.get());
-                        output.accept(GADOLINIUM_SAMARIUM_SHIELD.get());
-                        output.accept(LECF_251_OXIDE.get());
-                        output.accept(DEPLETED_LECF_251_OXIDE.get());
-                        NCFissionFuels.displayItems(output);
-                        NCPebbleFission.displayItems(output);
-                        NCSaltFission.displayItems(output);
-                        output.accept(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
-                    }).build());
+    public static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("fission",
+            () -> CONTROLLER.get().asItem().getDefaultInstance(),
+            (parameters, output) -> {
+                output.accept(CASING.get());
+                output.accept(GLASS.get());
+                output.accept(MONITOR.get());
+                output.accept(POWER_PORT.get());
+                output.accept(CONDUCTOR.get());
+                output.accept(CONTROLLER.get());
+                output.accept(CELL.get());
+                output.accept(CELL_PORT.get());
+                output.accept(IRRADIATOR.get());
+                output.accept(IRRADIATOR_PORT.get());
+                output.accept(VENT.get());
+                for (NCHeatSinks sink : NCHeatSinks.values()) {
+                    output.accept(heatSink(sink));
+                }
+                output.accept(HEAVY_WATER_MODERATOR.get());
+                output.accept(BERYLLIUM_CARBON_REFLECTOR.get());
+                output.accept(LEAD_STEEL_REFLECTOR.get());
+                output.accept(RADIUM_BERYLLIUM_SOURCE.get());
+                output.accept(POLONIUM_BERYLLIUM_SOURCE.get());
+                output.accept(CALIFORNIUM_SOURCE.get());
+                output.accept(SOURCE_MANAGER.get());
+                output.accept(SHIELD_MANAGER.get());
+                output.accept(BORON_SILVER_SHIELD.get());
+                output.accept(GADOLINIUM_SAMARIUM_SHIELD.get());
+                output.accept(LECF_251_OXIDE.get());
+                output.accept(DEPLETED_LECF_251_OXIDE.get());
+                NCFissionFuels.displayItems(output);
+                NCPebbleFission.displayItems(output);
+                NCSaltFission.displayItems(output);
+                output.accept(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
+            });
 
     private static RegistryObject<FissionPartBlock> part(String id, Role role) {
         return part(id, () -> new FissionPartBlock(properties(), role));

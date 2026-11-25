@@ -7,7 +7,6 @@ import nc.equipment.EquipmentArmor;
 import nc.equipment.EquipmentConfig;
 import nc.equipment.EquipmentFamily;
 import nc.equipment.EquipmentTools;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ArmorItem;
@@ -36,13 +35,11 @@ public final class NCEquipment {
         return Stream.concat(tools, armor);
     }).toList();
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("equipment", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.equipment"))
-                    .icon(() -> new ItemStack(ENTRIES.get(EquipmentTools.Kind.SPAXELHOE.ordinal()).item().get()))
-                    .displayItems((parameters, output) -> ENTRIES.stream()
-                            .filter(entry -> EquipmentConfig.isEnabled(entry.family(), entry.armor()))
-                            .forEach(entry -> output.accept(entry.item().get())))
-                    .build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("equipment",
+            () -> new ItemStack(ENTRIES.get(EquipmentTools.Kind.SPAXELHOE.ordinal()).item().get()),
+            (parameters, output) -> ENTRIES.stream()
+                    .filter(entry -> EquipmentConfig.isEnabled(entry.family(), entry.armor()))
+                    .forEach(entry -> output.accept(entry.item().get())));
 
     private NCEquipment() {}
 

@@ -5,7 +5,6 @@ import nc.item.PortableEnderChestItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -33,11 +32,9 @@ final class NCMaterials {
 
     private static final RegistryObject<Item> SULFUR = item("sulfur_dust");
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("materials", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.materials"))
-                    .icon(() -> SULFUR.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> MATERIALS.forEach(item -> output.accept(item.get())))
-                    .build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("materials",
+            () -> SULFUR.get().getDefaultInstance(),
+            (parameters, output) -> MATERIALS.forEach(item -> output.accept(item.get())));
 
     private NCMaterials() {}
 

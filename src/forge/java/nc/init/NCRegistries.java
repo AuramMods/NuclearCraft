@@ -22,7 +22,6 @@ import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
 import nc.recipe.SupercoolerRecipe;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -195,44 +194,41 @@ public final class NCRegistries {
     public static final RegistryObject<RecipeSerializer<CentrifugeRecipe>> CENTRIFUGE_SERIALIZER =
             RECIPE_SERIALIZERS.register("centrifuge", CentrifugeRecipe.Serializer::new);
 
-    private static final RegistryObject<CreativeModeTab> MACHINES = TABS.register("machines", () ->
-            CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.nuclearcraft.machines"))
-                    .icon(() -> (Rate.MANUFACTORY.enabled() ? NCItemProcessors.Machine.MANUFACTORY.block()
-                            : NCAutomation.MACHINE_INTERFACE.get()).asItem().getDefaultInstance())
-                    .displayItems((parameters, output) -> {
-                        if (NCProcessorAvailability.nuclearFurnaceEnabled()) output.accept(NUCLEAR_FURNACE_ITEM.get());
-                        if (Rate.MELTER.enabled()) output.accept(MELTER_ITEM.get());
-                        if (Rate.ELECTROLYZER.enabled()) output.accept(ELECTROLYZER_ITEM.get());
-                        if (Rate.SALT_MIXER.enabled()) output.accept(SALT_MIXER_ITEM.get());
-                        if (Rate.CHEMICAL_REACTOR.enabled()) output.accept(CHEMICAL_REACTOR_ITEM.get());
-                        if (Rate.ENRICHER.enabled()) output.accept(ENRICHER_ITEM.get());
-                        if (Rate.SUPERCOOLER.enabled()) output.accept(SUPERCOOLER_ITEM.get());
-                        if (Rate.CENTRIFUGE.enabled()) output.accept(CENTRIFUGE_ITEM.get());
-                        NCItemProcessors.displayItems(output);
-                        NCCollectors.displayItems(output);
-                        NCComputerPorts.displayItems(output);
-                        NCGenerators.displayItems(output);
-                        NCBatteries.displayItems(output);
-                        NCDistributors.displayItems(output);
-                        NCAutomation.displayItems(output);
-                        NCMachines.displayItems(output);
-                        output.accept(NCFluids.SULFUR.bucket().get());
-                        output.accept(NCFluids.STANDARD_STEAM.bucket().get());
-                        output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
-                        output.accept(NCFluids.LOW_PRESSURE_STEAM.bucket().get());
-                        output.accept(NCFluids.LOW_QUALITY_STEAM.bucket().get());
-                        output.accept(NCFluids.OXYGEN.bucket().get());
-                        output.accept(NCFluids.NITROGEN.bucket().get());
-                        output.accept(NCFluids.HEAVY_WATER.bucket().get());
-                        output.accept(NCFluids.HYDROGEN.bucket().get());
-                        output.accept(NCFluids.DEUTERIUM.bucket().get());
-                        output.accept(NCFluids.HELIUM_3.bucket().get());
-                        output.accept(NCFluids.FLUORINE.bucket().get());
-                        output.accept(NCFluids.LOW_ENRICHED_WATER.bucket().get());
-                        output.accept(NCFluids.HIGH_ENRICHED_WATER.bucket().get());
-                    })
-                    .build());
+    private static final RegistryObject<CreativeModeTab> MACHINES = NCClientPresentation.category("machines",
+            () -> (Rate.MANUFACTORY.enabled() ? NCItemProcessors.Machine.MANUFACTORY.block()
+                            : NCAutomation.MACHINE_INTERFACE.get()).asItem().getDefaultInstance(),
+            (parameters, output) -> {
+                if (NCProcessorAvailability.nuclearFurnaceEnabled()) output.accept(NUCLEAR_FURNACE_ITEM.get());
+                if (Rate.MELTER.enabled()) output.accept(MELTER_ITEM.get());
+                if (Rate.ELECTROLYZER.enabled()) output.accept(ELECTROLYZER_ITEM.get());
+                if (Rate.SALT_MIXER.enabled()) output.accept(SALT_MIXER_ITEM.get());
+                if (Rate.CHEMICAL_REACTOR.enabled()) output.accept(CHEMICAL_REACTOR_ITEM.get());
+                if (Rate.ENRICHER.enabled()) output.accept(ENRICHER_ITEM.get());
+                if (Rate.SUPERCOOLER.enabled()) output.accept(SUPERCOOLER_ITEM.get());
+                if (Rate.CENTRIFUGE.enabled()) output.accept(CENTRIFUGE_ITEM.get());
+                NCItemProcessors.displayItems(output);
+                NCCollectors.displayItems(output);
+                NCComputerPorts.displayItems(output);
+                NCGenerators.displayItems(output);
+                NCBatteries.displayItems(output);
+                NCDistributors.displayItems(output);
+                NCAutomation.displayItems(output);
+                NCMachines.displayItems(output);
+                output.accept(NCFluids.SULFUR.bucket().get());
+                output.accept(NCFluids.STANDARD_STEAM.bucket().get());
+                output.accept(NCFluids.EXHAUST_STEAM.bucket().get());
+                output.accept(NCFluids.LOW_PRESSURE_STEAM.bucket().get());
+                output.accept(NCFluids.LOW_QUALITY_STEAM.bucket().get());
+                output.accept(NCFluids.OXYGEN.bucket().get());
+                output.accept(NCFluids.NITROGEN.bucket().get());
+                output.accept(NCFluids.HEAVY_WATER.bucket().get());
+                output.accept(NCFluids.HYDROGEN.bucket().get());
+                output.accept(NCFluids.DEUTERIUM.bucket().get());
+                output.accept(NCFluids.HELIUM_3.bucket().get());
+                output.accept(NCFluids.FLUORINE.bucket().get());
+                output.accept(NCFluids.LOW_ENRICHED_WATER.bucket().get());
+                output.accept(NCFluids.HIGH_ENRICHED_WATER.bucket().get());
+            });
 
     private NCRegistries() {}
 

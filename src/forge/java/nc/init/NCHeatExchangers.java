@@ -22,7 +22,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.flag.FeatureFlags;
@@ -126,16 +125,15 @@ public final class NCHeatExchangers {
     public static final RegistryObject<RecipeSerializer<HeatExchangerRecipe>> HEAT_EXCHANGER_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("heat_exchanger", HeatExchangerRecipe.Serializer::new);
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("heat_exchanger", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.heat_exchanger"))
-                    .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
-                    .displayItems((parameters, output) -> {
-                        PARTS.forEach(part -> output.accept(part.get()));
-                        output.accept(MULTITOOL.get());
-                        output.accept(NCFluids.CONDENSATE_WATER.bucket().get());
-                        output.accept(NCFluids.PREHEATED_WATER.bucket().get());
-                        NCSaltCoolants.displayBuckets(fluid -> output.accept(fluid.bucket().get()));
-                    }).build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("heat_exchanger",
+            () -> CONTROLLER.get().asItem().getDefaultInstance(),
+            (parameters, output) -> {
+                PARTS.forEach(part -> output.accept(part.get()));
+                output.accept(MULTITOOL.get());
+                output.accept(NCFluids.CONDENSATE_WATER.bucket().get());
+                output.accept(NCFluids.PREHEATED_WATER.bucket().get());
+                NCSaltCoolants.displayBuckets(fluid -> output.accept(fluid.bucket().get()));
+            });
 
     private static RegistryObject<ExchangerWallBlock> wall(String id, Part part) {
         return block(id, () -> new ExchangerWallBlock(metal(), part));

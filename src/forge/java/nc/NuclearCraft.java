@@ -11,6 +11,7 @@ import nc.init.TurbineConfig;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCComputerPorts;
+import nc.init.NCClientPresentation;
 import nc.init.NCEntities;
 import nc.init.NCEmbersRecipes;
 import nc.init.NCEquipment;
@@ -48,6 +49,7 @@ public final class NuclearCraft {
         NCBatteries.register(context);
         NCCollectors.register(context);
         NCComputerPorts.register(context);
+        NCClientPresentation.register(context);
         NCEntities.register(context);
         NCLoot.register(context);
         NCEquipment.register(context);

@@ -18,7 +18,6 @@ import nc.radiation.RadiationHudConfig;
 import nc.radiation.RadiationSync;
 import nc.radiation.ShieldingItem;
 import nc.radiation.ShieldingItem.Tier;
-import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -89,21 +88,20 @@ public final class NCRadiation {
     public static final RegistryObject<RecipeSerializer<ScrubberRecipe>> SCRUBBER_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register(SCRUBBER_ID, ScrubberRecipe.Serializer::new);
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("radiation", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.radiation"))
-                    .icon(() -> GEIGER_COUNTER.get().getDefaultInstance())
-                    .displayItems((parameters, output) -> {
-                        output.accept(GEIGER_COUNTER.get());
-                        output.accept(BADGE.get());
-                        output.accept(GEIGER_BLOCK_ITEM.get());
-                        output.accept(SCRUBBER_ITEM.get());
-                        output.accept(NCWasteland.PORTAL_ITEM.get());
-                        output.accept(RADAWAY.get());
-                        output.accept(SLOW_RADAWAY.get());
-                        output.accept(RAD_X.get());
-                        SHIELDING.values().forEach(item -> output.accept(item.get()));
-                        HAZMAT.forEach(item -> output.accept(item.get()));
-                    }).build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("radiation",
+            () -> GEIGER_COUNTER.get().getDefaultInstance(),
+            (parameters, output) -> {
+                output.accept(GEIGER_COUNTER.get());
+                output.accept(BADGE.get());
+                output.accept(GEIGER_BLOCK_ITEM.get());
+                output.accept(SCRUBBER_ITEM.get());
+                output.accept(NCWasteland.PORTAL_ITEM.get());
+                output.accept(RADAWAY.get());
+                output.accept(SLOW_RADAWAY.get());
+                output.accept(RAD_X.get());
+                SHIELDING.values().forEach(item -> output.accept(item.get()));
+                HAZMAT.forEach(item -> output.accept(item.get()));
+            });
 
     private NCRadiation() {}
 

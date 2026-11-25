@@ -9,7 +9,6 @@ import nc.multiblock.turbine.TurbinePort;
 import nc.multiblock.turbine.TurbineRotorBlock;
 import nc.multiblock.turbine.TurbineWallBlock;
 import nc.recipe.TurbineRecipe;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.flag.FeatureFlags;
@@ -74,10 +73,9 @@ public final class NCTurbine {
     public static final RegistryObject<SoundEvent> RUN_SOUND = NCRegistries.SOUNDS.register("block.nc.turbine_run",
             () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id("block.nc.turbine_run")));
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("turbine", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.turbine"))
-                    .icon(() -> CONTROLLER.get().asItem().getDefaultInstance())
-                    .displayItems((parameters, output) -> PARTS.forEach(part -> output.accept(part.get()))).build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("turbine",
+            () -> CONTROLLER.get().asItem().getDefaultInstance(),
+            (parameters, output) -> PARTS.forEach(part -> output.accept(part.get())));
 
     private static RegistryObject<TurbinePartBlock> part(String id, Part part) {
         return block(id, () -> new TurbinePartBlock(properties(), part));

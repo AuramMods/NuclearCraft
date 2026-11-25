@@ -87,6 +87,16 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
 - The remaining audit covers the reactor catalogs, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
 
+### Creative tabs and item descriptions
+
+Move `single_creative_tab` and `ctrl_info` to the client’s `config/nuclearcraft-client.toml`. Both default to false. The grouped tabs keep their existing IDs and item availability. Enable `single_creative_tab` and reopen Minecraft to gather their entries under the NuclearCraft tab. The alternate layout still contributes search entries to Minecraft and JEI. The consolidated tab uses the legacy LEU-235 nitride icon.
+
+Short legacy descriptions appear directly on the item. Longer descriptions wrap to 225 pixels and expand with Shift. With `ctrl_info` enabled, either physical Ctrl key expands the text, including on macOS.
+
+Packaged Forge 47.4.18 started and saved on a dedicated server. The separate client with JEI found the same 1,087 NuclearCraft entries in both creative layouts. Its item tooltip opened the turbine shaft description with either configured modifier, showed the matching prompt for the other key, and displayed the short Melter description directly. All 213 local GameTests passed.
+
+The original Hwyla hook returned its input tooltip as-is. Jade 11.13.2 in the isolated 539-mod Auram copy read the Melter’s Forge capabilities and reported 5,120 of 512,000 FE and 2,234 of 16,000 mB of water. The client logged in, initialized JEI with the consolidated tab, and exposed 1,059 NuclearCraft entries in Auram’s JEI catalog. Auram applied its configured uranium ingot unification. Both background clients used OpenAL No Output and exited with zero focus activations, foreground samples, or visible window samples. [Jade for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/jade/files/6855440)
+
 ### Default processor recipes
 
 The world's `nuclearcraft-processors.toml` accepts the legacy `default_processor_recipes_global` switch and `default_processor_recipes` array. Both default to true. The 20 array positions match `processor_time`. Turning off the global switch removes all shipped processor recipes. Turning off one array entry removes that machine’s shipped recipes. Both switches include recipes discovered from material tags by the Melter and Pressurizer. The Electric Furnace still uses vanilla and modded furnace recipes, as it did in 2o.9.7.

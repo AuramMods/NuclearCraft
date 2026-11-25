@@ -54,14 +54,13 @@ public final class NCQuantum {
                     BlockEntityType.Builder.of(QuantumPartEntity::new,
                             BLOCKS.values().stream().map(RegistryObject::get).toArray(Block[]::new)).build(null));
 
-    private static final RegistryObject<CreativeModeTab> TAB = NCRegistries.TABS.register("quantum", () ->
-            CreativeModeTab.builder().title(Component.translatable("itemGroup.nuclearcraft.quantum"))
-                    .icon(() -> new ItemStack(ITEMS.get(QuantumPart.QUBIT).get()))
-                    .displayItems((parameters, display) -> {
-                        if (QuantumConfig.enabled()) {
-                            ITEMS.values().forEach(item -> display.accept(item.get()));
-                        }
-                    }).build());
+    private static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("quantum",
+            () -> new ItemStack(ITEMS.get(QuantumPart.QUBIT).get()),
+            (parameters, display) -> {
+                if (QuantumConfig.enabled()) {
+                    ITEMS.values().forEach(item -> display.accept(item.get()));
+                }
+            });
 
     private NCQuantum() {}
 
