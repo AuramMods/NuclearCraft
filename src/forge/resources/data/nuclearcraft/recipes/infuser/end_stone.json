@@ -3,7 +3,7 @@
     "ingredients": [
         {
             "ingredient": {
-                "tag": "minecraft:sandstone"
+                "tag": "forge:sandstone"
             },
             "count": 1
         }

@@ -2,6 +2,8 @@
     "replace": false,
     "values": [
         "nuclearcraft:redstone",
-        "nuclearcraft:flowing_redstone"
+        "nuclearcraft:flowing_redstone",
+        { "id": "thermal:redstone", "required": false },
+        { "id": "thermal:redstone_flowing", "required": false }
     ]
 }

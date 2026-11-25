@@ -145,6 +145,29 @@ public final class InfuserGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 720)
+    public static void infusesEndStoneFromTaggedSandstone(GameTestHelper helper) {
+        helper.setBlock(INFUSER, Machine.INFUSER.block());
+        var processor = (ItemProcessorBlockEntity) helper.getBlockEntity(INFUSER);
+        var items = processor.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.UP).orElseThrow(AssertionError::new);
+        var inlet = fluid(processor, Direction.NORTH);
+        var ender = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ender"));
+        helper.assertTrue(items.insertItem(0, new ItemStack(Blocks.RED_SANDSTONE), false).isEmpty(),
+                "The Infuser accepts red sandstone through the Forge sandstone tag");
+        helper.assertTrue(inlet.fill(new FluidStack(ender, 250), FluidAction.EXECUTE) == 250,
+                "The Infuser accepts 250 mB of its own liquid ender");
+        helper.assertTrue(power.receiveEnergy(6000, false) == 6000, "The Infuser accepts the full batch charge");
+
+        helper.succeedWhen(() -> {
+            var output = items.getStackInSlot(1);
+            helper.assertTrue(output.is(Blocks.END_STONE.asItem()) && output.getCount() == 1,
+                    "The Infuser produces exactly one End Stone");
+            helper.assertTrue(items.getStackInSlot(0).isEmpty() && inlet.getFluidInTank(0).isEmpty()
+                    && power.getEnergyStored() == 0, "Production consumes the sandstone, liquid ender and 6,000 FE");
+        });
+    }
+
     private static IFluidHandler fluid(ItemProcessorBlockEntity processor, Direction side) {
         return processor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElseThrow(AssertionError::new);
     }

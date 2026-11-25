@@ -2,6 +2,8 @@
     "replace": false,
     "values": [
         "nuclearcraft:ender",
-        "nuclearcraft:flowing_ender"
+        "nuclearcraft:flowing_ender",
+        { "id": "thermal:ender", "required": false },
+        { "id": "thermal:ender_flowing", "required": false }
     ]
 }

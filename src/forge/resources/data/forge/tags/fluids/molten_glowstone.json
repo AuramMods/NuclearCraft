@@ -2,6 +2,8 @@
     "replace": false,
     "values": [
         "nuclearcraft:glowstone",
-        "nuclearcraft:flowing_glowstone"
+        "nuclearcraft:flowing_glowstone",
+        { "id": "thermal:glowstone", "required": false },
+        { "id": "thermal:glowstone_flowing", "required": false }
     ]
 }
