@@ -222,6 +222,28 @@ public final class SolidFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 100)
+    public static void solidCasingHeatUsesTheRolledProductAmount(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var feed = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("benzene")), 28);
+                    helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).fill(feed, FluidAction.EXECUTE) == 28,
+                            "The reactor vent accepts both doses");
+                    items(helper, FUEL_IN, Direction.DOWN)
+                            .insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var output = fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(output.isFluidStackIdentical(new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 6))
+                                    && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                            "The casing consumes both doses and delivers six mB");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 120)
     public static void reactorRepairRebindsPortsWithoutLosingWater(GameTestHelper helper) {
         buildReactor(helper);

@@ -14,15 +14,13 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Locale;
 
-public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidStack product,
-                                  FluidStack alternateProduct, Alternate alternate, double heat, HeatSource heatSource,
+public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidProduct product,
+                                  FluidProduct alternateProduct, Alternate alternate, double heat, HeatSource heatSource,
                                   int inputTemperature, int outputTemperature, boolean equalTemperatureHeating,
                                   int preferredFlow, double flowBonus) implements Recipe<Container> {
     public enum HeatSource {
@@ -49,12 +47,13 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidSt
         }
     }
 
-    public FluidStack output() {
-        return (alternate.selected() ? alternateProduct : product).copy();
+    public FluidProduct outputProduct() {
+        return alternate.selected() ? alternateProduct : product;
     }
 
-    @Override public FluidStack product() { return product.copy(); }
-    @Override public FluidStack alternateProduct() { return alternateProduct.copy(); }
+    public FluidStack output() {
+        return outputProduct().stack();
+    }
 
     public boolean heating() {
         return inputTemperature == outputTemperature ? equalTemperatureHeating : inputTemperature < outputTemperature;
@@ -86,7 +85,7 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidSt
         @Override
         public HeatExchangerRecipe fromJson(ResourceLocation id, JsonObject json) {
             FluidInput input = FluidInput.readRequired(json.get("input"), id);
-            FluidStack output = readOutput(id, GsonHelper.getAsJsonObject(json, "output"));
+            FluidProduct output = FluidProduct.readSlot(id, json.get("output"));
             double heat = GsonHelper.getAsDouble(json, "heat");
             int inputTemperature = GsonHelper.getAsInt(json, "input_temperature");
             int outputTemperature = GsonHelper.getAsInt(json, "output_temperature");
@@ -95,25 +94,15 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidSt
             boolean heating = GsonHelper.getAsBoolean(json, "heats_at_equal_temperature", false);
             HeatSource heatSource = choice(HeatSource.class, GsonHelper.getAsString(json, "heat_source", "fixed"), id);
             Alternate alternate = choice(Alternate.class, GsonHelper.getAsString(json, "alternate", "none"), id);
-            FluidStack alternateOutput = json.has("alternate_output")
-                    ? readOutput(id, GsonHelper.getAsJsonObject(json, "alternate_output")) : FluidStack.EMPTY;
+            FluidProduct alternateOutput = json.has("alternate_output")
+                    ? FluidProduct.readSlot(id, json.get("alternate_output")) : FluidProduct.EMPTY;
             if (!Double.isFinite(heat) || heat <= 0D || inputTemperature < 0 || outputTemperature < 0
                     || preferredFlow < -1 || preferredFlow > 1 || !Double.isFinite(flowBonus) || flowBonus < 0D
-                    || ((alternate == Alternate.NONE) != alternateOutput.isEmpty())) {
+                    || ((alternate != Alternate.NONE) != json.has("alternate_output"))) {
                 throw new JsonSyntaxException("Invalid heat exchanger recipe " + id);
             }
             return new HeatExchangerRecipe(id, input, output, alternateOutput, alternate, heat, heatSource,
                     inputTemperature, outputTemperature, heating, preferredFlow, flowBonus);
-        }
-
-        private static FluidStack readOutput(ResourceLocation recipe, JsonObject output) {
-            ResourceLocation fluidId = ResourceLocation.tryParse(GsonHelper.getAsString(output, "fluid"));
-            var fluid = fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
-            int amount = GsonHelper.getAsInt(output, "amount");
-            if (fluid == null || fluid == Fluids.EMPTY || amount <= 0) {
-                throw new JsonSyntaxException("Invalid heat exchanger fluid output for " + recipe);
-            }
-            return new FluidStack(fluid, amount);
         }
 
         private static <T extends Enum<T>> T choice(Class<T> type, String name, ResourceLocation id) {
@@ -126,8 +115,8 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidSt
 
         @Override
         public HeatExchangerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new HeatExchangerRecipe(id, FluidInput.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readFluidStack(), buffer.readEnum(Alternate.class), buffer.readDouble(),
+            return new HeatExchangerRecipe(id, FluidInput.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
+                    FluidProduct.fromNetwork(buffer), buffer.readEnum(Alternate.class), buffer.readDouble(),
                     buffer.readEnum(HeatSource.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean(),
                     buffer.readByte(), buffer.readDouble());
         }
@@ -135,8 +124,8 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidSt
         @Override
         public void toNetwork(FriendlyByteBuf buffer, HeatExchangerRecipe recipe) {
             FluidInput.write(buffer, recipe.input);
-            buffer.writeFluidStack(recipe.product);
-            buffer.writeFluidStack(recipe.alternateProduct);
+            recipe.product.toNetwork(buffer);
+            recipe.alternateProduct.toNetwork(buffer);
             buffer.writeEnum(recipe.alternate);
             buffer.writeDouble(recipe.heat);
             buffer.writeEnum(recipe.heatSource);

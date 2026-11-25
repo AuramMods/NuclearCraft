@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:boric_acid",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:boric_acid",
+                "amount": 10
+            }
+        ]
+    },
+    "output": {},
+    "heat": 16,
+    "input_temperature": 800,
+    "output_temperature": 700
+}

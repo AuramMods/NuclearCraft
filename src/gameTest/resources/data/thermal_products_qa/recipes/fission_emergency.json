@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:fission_emergency_cooling",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 10
+            }
+        ]
+    },
+    "result": {
+        "fluid": "nuclearcraft:emergency_coolant_heated",
+        "amount": 8,
+        "min_amount": 0,
+        "step": 8,
+        "chance_percent": 0
+    },
+    "heat_per_mb": 1
+}

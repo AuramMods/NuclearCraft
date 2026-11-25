@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 10
+            }
+        ]
+    },
+    "output": {
+        "fluid": "nuclearcraft:low_quality_steam",
+        "amount": 8,
+        "min_amount": 0,
+        "step": 8,
+        "chance_percent": 0
+    },
+    "power_per_mb": 8,
+    "expansion": 2
+}

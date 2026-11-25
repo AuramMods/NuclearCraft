@@ -222,11 +222,11 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         var tanks = reservedTanks(bank);
         FluidTank output = tanks.tank(true);
         FluidTank input = tanks.tank(false);
-        FluidStack product = recipe.depleted();
+        var product = recipe.product();
         boolean sameFeed = feedTanks(bank) == tanks && Objects.equals(filter, reservedCircuit)
                 && reserved.isFluidEqual(input.getFluid());
         int pending = (int) Math.floor(progress / ticks);
-        int room = outputRoom(product, output);
+        int room = product.batchesIn(output.getFluid(), output.getCapacity());
         if (room == 0) {
             progress = ticks;
             return;
@@ -243,13 +243,13 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             if (doses == 0) {
                 break;
             }
-            int produced = recipe.product().totalAmount(doses, 1, level.random);
+            int produced = product.totalAmount(doses, 1, level.random);
             input.drain(extra.consumed(), EXECUTE);
             if (produced > 0) {
-                output.fill(new FluidStack(product, produced), EXECUTE);
+                output.fill(new FluidStack(product.stack(), produced), EXECUTE);
             }
             completed += doses;
-            room = outputRoom(product, output);
+            room = product.batchesIn(output.getFluid(), output.getCapacity());
         }
         int inputSize = sameFeed ? recipe.fuel().matchedAmount(input.getFluid(), 1) : -1;
         if (inputSize > 0 && room > 0) {
@@ -260,15 +260,8 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         }
     }
 
-    private static int outputRoom(FluidStack product, FluidTank tank) {
-        if (product.isEmpty()) {
-            return Integer.MAX_VALUE;
-        }
-        return tank.isEmpty() || tank.getFluid().isFluidEqual(product) ? tank.getSpace() / product.getAmount() : 0;
-    }
-
     private static boolean hasOutputSpace(SaltFissionRecipe recipe, FluidTank tank) {
-        return outputRoom(recipe.depleted(), tank) > 0;
+        return recipe.product().batchesIn(tank.getFluid(), tank.getCapacity()) > 0;
     }
 
     private void discharge(SaltFissionRecipe recipe, FluidTank tank) {

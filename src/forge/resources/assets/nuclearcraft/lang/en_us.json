@@ -450,6 +450,8 @@
     "item.nuclearcraft.helium_3_bucket": "Helium-3 Bucket",
     "block.nuclearcraft.centrifuge": "Centrifuge",
     "gui.nuclearcraft.jei.fluid_product_chance": "%s%% chance per %s mB, %s to %s mB",
+    "gui.nuclearcraft.jei.thermal_exhaust_roll": "An empty outlet needs a positive roll to start. An established outlet receives the maximum.",
+    "gui.nuclearcraft.jei.thermal_casing_roll": "Each tick shares one roll across its batches.",
     "fluid_type.nuclearcraft.uranium": "Molten Uranium",
     "block.nuclearcraft.uranium": "Molten Uranium",
     "item.nuclearcraft.uranium_bucket": "Molten Uranium Bucket",

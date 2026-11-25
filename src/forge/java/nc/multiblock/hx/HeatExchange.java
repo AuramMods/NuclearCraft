@@ -2,6 +2,7 @@ package nc.multiblock.hx;
 
 import nc.init.HeatExchangerConfig;
 import nc.multiblock.hx.ExchangerController.Circuit;
+import nc.recipe.FluidProduct;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraftforge.fluids.FluidStack;
@@ -16,13 +17,13 @@ final class HeatExchange {
         static final Activity IDLE = new Activity(0, 0, 0D, 0D, 0D, 0L);
     }
 
-    private record Batch(Circuit circuit, HeatExchangerRecipe recipe, FluidStack product, double heat, int batches) {
+    private record Batch(Circuit circuit, HeatExchangerRecipe recipe, FluidProduct product, double heat, int batches) {
         static Batch find(Circuit circuit, Function<FluidStack, HeatExchangerRecipe> findRecipe) {
             HeatExchangerRecipe recipe = findRecipe.apply(circuit.input.getFluid());
             if (recipe == null) {
                 return null;
             }
-            FluidStack product = recipe.output();
+            FluidProduct product = recipe.outputProduct();
             int batches = circuit.capacity(recipe.input(), product);
             double heat = recipe.heatRequired();
             if (batches <= 0 || heat <= 0D || !Double.isFinite(heat)) {
@@ -36,7 +37,7 @@ final class HeatExchange {
         }
 
         int exchange(double rate) {
-            return circuit.process(recipe.id(), recipe.input(), product, heat, batches, rate);
+            return circuit.process(recipe.id(), recipe.input(), product, heat, Math.min(rate, demand()));
         }
     }
 

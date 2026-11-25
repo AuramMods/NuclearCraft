@@ -5,7 +5,6 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
-import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.handlers.IGuiClickableArea;
@@ -326,17 +325,17 @@ public final class NuclearCraftJei implements IModPlugin {
                 }, heater -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", heater.coolant().cooling())),
                 new Category<>(HEAT_EXCHANGER, NCHeatExchangers.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+                    fluidProductSlot(layout, 104, 12, recipe.outputProduct(), 1);
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.heat_exchanger",
                         decimal(recipe.heatRequired()), recipe.inputTemperature(), recipe.outputTemperature())),
                 new Category<>(CONDENSER, NCHeatExchangers.CONDENSER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+                    fluidProductSlot(layout, 104, 12, recipe.product(), 1);
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.condenser",
                         decimal(recipe.cooling()), recipe.inputTemperature(), recipe.outputTemperature())),
                 new Category<>(TURBINE, NCTurbine.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+                    thermalProductSlot(layout, recipe.product(), "gui.nuclearcraft.jei.thermal_exhaust_roll");
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.turbine", recipe.powerPerMb(), recipe.expansion())))
                 .filter(category -> stockCategoryEnabled(category.getRecipeType()))
                 .forEach(registration::addRecipeCategories);
@@ -606,7 +605,8 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static void fissionHeat(IRecipeLayoutBuilder layout, FissionHeatRecipe recipe) {
         fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
-        fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
+        thermalProductSlot(layout, recipe.product(), recipe.emergency()
+                ? "gui.nuclearcraft.jei.thermal_exhaust_roll" : "gui.nuclearcraft.jei.thermal_casing_roll");
     }
 
     private static Component fissionHeatCost(FissionHeatRecipe recipe) {
@@ -635,10 +635,21 @@ public final class NuclearCraftJei implements IModPlugin {
         }
     }
 
-    private static void fluidProductSlot(IRecipeLayoutBuilder layout, int x, int y, FluidProduct product, int factor) {
-        if (!product.isEmpty()) {
-            FluidStack maximum = FluidBatch.divide(product.stack(), factor);
-            addFluidChance(fluidSlot(layout, OUTPUT, x, y, List.of(maximum)), product, factor, maximum.getAmount());
+    private static @Nullable IRecipeSlotBuilder fluidProductSlot(IRecipeLayoutBuilder layout, int x, int y,
+                                                                 FluidProduct product, int factor) {
+        if (product.isEmpty()) {
+            return null;
+        }
+        FluidStack maximum = FluidBatch.divide(product.stack(), factor);
+        var slot = fluidSlot(layout, OUTPUT, x, y, List.of(maximum));
+        addFluidChance(slot, product, factor, maximum.getAmount());
+        return slot;
+    }
+
+    private static void thermalProductSlot(IRecipeLayoutBuilder layout, FluidProduct product, String behavior) {
+        var slot = fluidProductSlot(layout, 104, 12, product, 1);
+        if (slot != null && product.chancePercent() < 100) {
+            slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(behavior)));
         }
     }
 

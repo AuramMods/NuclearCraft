@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 10
+            }
+        ]
+    },
+    "output": {
+        "fluid": "nuclearcraft:steam",
+        "amount": 8,
+        "min_amount": 3,
+        "step": 5,
+        "chance_percent": 0
+    },
+    "heat": 16,
+    "input_temperature": 300,
+    "output_temperature": 600,
+    "alternate": "high_pressure",
+    "alternate_output": {
+        "fluid": "nuclearcraft:high_pressure_steam",
+        "amount": 8,
+        "min_amount": 3,
+        "step": 5,
+        "chance_percent": 0
+    }
+}

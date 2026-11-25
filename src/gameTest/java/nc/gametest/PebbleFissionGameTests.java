@@ -300,6 +300,39 @@ public final class PebbleFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 100)
+    public static void emergencyVentContinuesFillingAnEstablishedOutlet(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(COLD_NITROGEN, NCFission.VENT.get());
+        helper.setBlock(HOT_NITROGEN, output(NCFission.VENT.get()));
+        var feed = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("benzene")), 28);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var saved = controller(helper).saveWithoutMetadata();
+                    saved.put("coolant", feed.writeToNBT(new CompoundTag()));
+                    saved.putLong("heat", 28);
+                    controller(helper).load(saved);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 0
+                                && controller(helper).saveWithoutMetadata().getLong("heat") == 0,
+                        "The full coolant charge must remove casing heat"))
+                .thenExecute(() -> {
+                    helper.assertTrue(amount(helper, HOT_NITROGEN, Direction.SOUTH) == 0,
+                            "A zero roll cannot establish exhaust in an empty tank");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    saved.put("coolant", feed.writeToNBT(new CompoundTag()));
+                    saved.put("steam", new FluidStack(NCFluids.HEATED_EMERGENCY_COOLANT.source().get(), 1)
+                            .writeToNBT(new CompoundTag()));
+                    saved.putLong("heat", 28);
+                    controller(helper).load(saved);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 0
+                                && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 17,
+                        "A tank holding matching exhaust receives two 8 mB batches"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 110)
     public static void pebbleFuelWithNoProductPreservesExistingOutput(GameTestHelper helper) {
         buildReactor(helper);

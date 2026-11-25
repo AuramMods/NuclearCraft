@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:condenser",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:chlorine",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:chlorine",
+                "amount": 10
+            }
+        ]
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 8,
+        "min_amount": 3,
+        "step": 5,
+        "chance_percent": 0
+    },
+    "cooling": 0.001,
+    "input_temperature": 550,
+    "output_temperature": 350
+}

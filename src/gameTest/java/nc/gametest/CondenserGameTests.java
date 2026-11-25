@@ -125,6 +125,54 @@ public final class CondenserGameTests {
     }
 
     @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void condenserRollsEachTubeBatchAndSupportsAnEmptyProduct(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, COOLANT, Direction.NORTH))
+                .thenExecute(() -> {
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    coolant.fill(new FluidStack(Fluids.WATER, coolant.getTankCapacity(0)), FluidAction.EXECUTE);
+                    var registry = ForgeRegistries.FLUIDS;
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).fill(
+                                    new FluidStack(registry.getValue(NuclearCraft.id("chlorine")), 28), FluidAction.EXECUTE) == 28
+                                    && fluid(helper, SECOND_IN, Direction.WEST).fill(
+                                    new FluidStack(registry.getValue(NuclearCraft.id("benzene")), 28), FluidAction.EXECUTE) == 28,
+                            "Both condenser tubes accept their scripted recipes");
+                    var controller = helper.getBlockEntity(CONTROLLER);
+                    var saved = controller.saveWithoutMetadata();
+                    var first = fluid(helper, FIRST_OUT, Direction.EAST);
+                    var product = new FluidStack(NCFluids.CONDENSATE_WATER.source().get(), first.getTankCapacity(0) - 7);
+                    circuitAt(saved, helper.absolutePos(FIRST_IN)).put("output", product.writeToNBT(new CompoundTag()));
+                    circuitAt(saved, helper.absolutePos(SECOND_IN)).put("output",
+                            new FluidStack(Fluids.LAVA, 250).writeToNBT(new CompoundTag()));
+                    controller.load(saved);
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, SECOND_IN, Direction.WEST).getFluidInTank(0).isEmpty(),
+                        "An empty product must complete alongside a blocked circuit"))
+                .thenExecute(() -> {
+                    var outlet = fluid(helper, FIRST_OUT, Direction.EAST);
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 28
+                                    && outlet.getFluidInTank(0).getAmount() == outlet.getTankCapacity(0) - 7
+                                    && fluid(helper, SECOND_OUT, Direction.EAST).getFluidInTank(0)
+                                    .isFluidStackIdentical(new FluidStack(Fluids.LAVA, 250)),
+                            "Seven mB cannot fit the first maximum and the empty product retains the other circuit's lava");
+                    helper.assertTrue(outlet.drain(4, FluidAction.EXECUTE).getAmount() == 4, "Open 11 mB of space");
+                })
+                .thenWaitUntil(() -> {
+                    var outlet = fluid(helper, FIRST_OUT, Direction.EAST);
+                    helper.assertTrue(outlet.getFluidInTank(0).getAmount() > outlet.getTankCapacity(0) - 11, "Wait for the first roll");
+                })
+                .thenExecute(() -> {
+                    var outlet = fluid(helper, FIRST_OUT, Direction.EAST);
+                    helper.assertTrue(outlet.getFluidInTank(0).getAmount() == outlet.getTankCapacity(0) - 5
+                                    && fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).isEmpty(),
+                            "The first three mB leave room for the second maximum in the same tick");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
     public static void condenserUsesReloadableCoolantRecipes(GameTestHelper helper) {
         build(helper);
         helper.startSequence()

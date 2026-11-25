@@ -123,7 +123,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
     private boolean runTurbine(ServerLevel server, boolean active) {
         TurbineRecipe recipe = recipeFor(steam.getFluid());
-        int consumed = active && recipe != null ? expandSteam(recipe) : 0;
+        int consumed = active && recipe != null ? expandSteam(server, recipe) : 0;
         long previousPower = power;
         double previousTension = drive.tension();
         power = drive.tick(layout, recipe, consumed);
@@ -152,20 +152,21 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         return true;
     }
 
-    private int expandSteam(TurbineRecipe recipe) {
+    private int expandSteam(ServerLevel server, TurbineRecipe recipe) {
         double fill = Math.min(1D, (double) steam.getFluidAmount() / steam.getCapacity());
         double factor = 1D + (TurbineConfig.tensionThroughputFactor() - 1D) * fill;
         int throughput = (int) Math.min(steam.getFluidAmount(), drive.ratedFlow(layout) * factor);
-        FluidStack product = recipe.output();
-        var usage = FluidBatch.fit(recipe.input(), steam.getFluid(), throughput, exhaust.getSpace() / product.getAmount());
+        var product = recipe.product();
+        int room = product.batchesIn(exhaust.getFluid(), exhaust.getCapacity());
+        var usage = FluidBatch.fit(recipe.input(), steam.getFluid(), throughput, room);
         if (usage.batches() == 0) {
             return 0;
         }
-        product.setAmount(product.getAmount() * usage.batches());
-        if (exhaust.fill(product, FluidAction.SIMULATE) != product.getAmount()) {
-            return 0;
+        if (product.fillsExhaust(exhaust.getFluid(), server.random)) {
+            var produced = product.stack();
+            produced.setAmount(produced.getAmount() * usage.batches());
+            exhaust.fill(produced, FluidAction.EXECUTE);
         }
-        exhaust.fill(product, FluidAction.EXECUTE);
         steam.drain(usage.consumed(), FluidAction.EXECUTE);
         return usage.consumed();
     }

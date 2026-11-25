@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:condenser",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 10
+            }
+        ]
+    },
+    "output": null,
+    "cooling": 0.001,
+    "input_temperature": 550,
+    "output_temperature": 350
+}

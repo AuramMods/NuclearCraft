@@ -38,7 +38,6 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -172,6 +171,29 @@ public final class HeatExchangerGameTests {
                                 && fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
                                 && fluid(helper, SHELL_IN, Direction.EAST).getFluidInTank(0).isEmpty(),
                         "Each circuit must use its 18 mB and 10 mB choices under the shared heat budget"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void heatExchangerKeepsHeatBalancedWithChanceAndEmptyProducts(GameTestHelper helper) {
+        build(helper, 3);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    var registry = ForgeRegistries.FLUIDS;
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(registry.getValue(NuclearCraft.id("boric_acid")), 28));
+                    fill(helper, SHELL_IN, Direction.EAST, new FluidStack(registry.getValue(NuclearCraft.id("benzene")), 28));
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var shellIn = fluid(helper, SHELL_IN, Direction.EAST).getFluidInTank(0);
+                    var shellOut = fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0);
+                    var tubeIn = fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0);
+                    var tubeOut = fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(shellIn.isEmpty() && tubeIn.isEmpty() && tubeOut.isEmpty()
+                                    && shellOut.isFluidStackIdentical(new FluidStack(NCFluids.STANDARD_STEAM.source().get(), 6)),
+                            "Both sides match two batches under the same heat budget, with only the shell yielding fluid");
+                })
                 .thenSucceed();
     }
 

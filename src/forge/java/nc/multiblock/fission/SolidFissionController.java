@@ -495,22 +495,26 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (!Double.isFinite(heatPerMb)) {
             return 0;
         }
-        FluidStack product = recipe.output();
-        int outputAmount = product.getAmount();
-        int outputRoom = steam.getCapacity() - steam.getFluidAmount();
+        var product = recipe.product();
+        int room = product.batchesIn(steam.getFluid(), steam.getCapacity());
         int budget = (int) Math.min(availableInput, casingHeat * efficiency / heatPerMb);
-        var usage = FluidBatch.fit(recipe.input(), coolant.getFluid(), budget, outputRoom / outputAmount);
-        if (usage.batches() > 0) {
-            product.setAmount(usage.batches() * outputAmount);
-            if (steam.fill(product, FluidAction.SIMULATE) == product.getAmount()) {
-                steam.fill(product, FluidAction.EXECUTE);
-                coolant.drain(usage.consumed(), FluidAction.EXECUTE);
-                casingHeat -= Math.min(casingHeat, (long) (usage.consumed() * heatPerMb / efficiency));
-                setChanged();
-                return product.getAmount();
-            }
+        var usage = FluidBatch.fit(recipe.input(), coolant.getFluid(), budget, room);
+        if (usage.batches() == 0) {
+            return 0;
         }
-        return 0;
+        var produced = product.stack();
+        int perBatch = recipe.emergency()
+                ? (product.fillsExhaust(steam.getFluid(), level.random) ? produced.getAmount() : 0)
+                : product.rollAmount(level.random);
+        int amount = perBatch * usage.batches();
+        if (amount > 0) {
+            produced.setAmount(amount);
+            steam.fill(produced, FluidAction.EXECUTE);
+        }
+        coolant.drain(usage.consumed(), FluidAction.EXECUTE);
+        casingHeat -= Math.min(casingHeat, (long) (usage.consumed() * heatPerMb / efficiency));
+        setChanged();
+        return amount;
     }
 
     private void resetHeatingOutput() {

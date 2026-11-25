@@ -29,6 +29,17 @@ public record FluidProduct(FluidStack stack, int minAmount, int step, int chance
         return stack.isEmpty();
     }
 
+    public int batchesIn(FluidStack stored, int capacity) {
+        if (isEmpty()) return Integer.MAX_VALUE;
+        if (!stored.isEmpty() && !stored.isFluidEqual(stack)) return 0;
+        return Math.max(0, capacity - stored.getAmount()) / stack.getAmount();
+    }
+
+    // Turbines and emergency vents roll once to establish fluid in an empty outlet.
+    public boolean fillsExhaust(FluidStack stored, RandomSource random) {
+        return !stored.isEmpty() || rollAmount(random) > 0;
+    }
+
     public boolean varies() {
         return chancePercent > 0 && chancePercent < 100 && minAmount < stack.getAmount();
     }

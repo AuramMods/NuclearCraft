@@ -16,16 +16,13 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
 public record TurbineRecipe(ResourceLocation id, FluidInput input,
-                            FluidStack output, double powerPerMb, double expansion, double spinUp,
+                            FluidProduct product, double powerPerMb, double expansion, double spinUp,
                             ResourceLocation particle, double particleSpeed,
                             @Nullable Profile profile) implements Recipe<Container> {
     public static final ResourceLocation CLOUD = new ResourceLocation("minecraft", "cloud");
@@ -50,10 +47,6 @@ public record TurbineRecipe(ResourceLocation id, FluidInput input,
         return input.accepts(stack);
     }
 
-    @Override
-    public FluidStack output() {
-        return output.copy();
-    }
 
     @Override
     public boolean matches(Container container, Level level) {
@@ -99,22 +92,18 @@ public record TurbineRecipe(ResourceLocation id, FluidInput input,
         @Override
         public TurbineRecipe fromJson(ResourceLocation id, JsonObject json) {
             FluidInput input = FluidInput.readRequired(json.get("input"), id);
-            JsonObject output = GsonHelper.getAsJsonObject(json, "output");
-            ResourceLocation destination = location(output, "fluid");
-            Fluid product = ForgeRegistries.FLUIDS.getValue(destination);
-            int outputAmount = GsonHelper.getAsInt(output, "amount");
+            FluidProduct product = FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "output"));
             Profile profile = profile(json);
             double power = number(json, "power_per_mb", profile, 0D);
             double expansion = number(json, "expansion", profile, 1D);
             double spinUp = json.has("spin_up") ? number(json, "spin_up", profile, 0D) : profile != null ? -1D : 1D;
             ResourceLocation particle = json.has("particle") ? location(json, "particle") : CLOUD;
             double speed = GsonHelper.getAsDouble(json, "particle_speed", 5D / 116D);
-            if (product == null || product == Fluids.EMPTY || outputAmount <= 0
-                    || !Double.isFinite(speed) || speed < 0
+            if (!Double.isFinite(speed) || speed < 0
                     || !(BuiltInRegistries.PARTICLE_TYPE.get(particle) instanceof SimpleParticleType)) {
                 throw new JsonSyntaxException("Invalid turbine recipe " + id);
             }
-            return new TurbineRecipe(id, input, new FluidStack(product, outputAmount),
+            return new TurbineRecipe(id, input, product,
                     power, expansion, spinUp, particle, speed, profile);
         }
 
@@ -152,14 +141,14 @@ public record TurbineRecipe(ResourceLocation id, FluidInput input,
         @Override
         public TurbineRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new TurbineRecipe(id, FluidInput.fromNetwork(buffer),
-                    buffer.readFluidStack(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
+                    FluidProduct.fromNetwork(buffer), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
                     buffer.readResourceLocation(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, TurbineRecipe recipe) {
             FluidInput.write(buffer, recipe.input);
-            buffer.writeFluidStack(recipe.output);
+            recipe.product.toNetwork(buffer);
             buffer.writeDouble(recipe.powerPerMb());
             buffer.writeDouble(recipe.expansion());
             buffer.writeDouble(recipe.spinUp());

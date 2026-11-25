@@ -1114,6 +1114,22 @@ Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied a condenser with 9 mB
 
 The isolated 540-mod Auram client loaded all seven recipes through KubeJS, showed the authored amounts in JEI, and ran the recipes in-world. The client used master volume zero and OpenAL No Output. The observer recorded zero activations, foreground samples, and visible window samples.
 
+### Chance and empty thermal products
+
+Use `amount` for the maximum fluid product, `min_amount` for the guaranteed volume, and `step` and `chance_percent` for the additional rolls. Put these fields in `output` for turbines, condensers, and heat exchangers, and in `result` for solid-reactor heating and emergency cooling. Heat exchanger `alternate_output` entries use the same fields.
+
+Condenser and exchanger circuits roll each completed batch separately. Use `{}` or `null` for an explicit empty output in those circuits, including an alternate exchanger output. An empty product lets the circuit use its heat budget and consume the feed while leaving its outlet contents intact. Use `new MapData()` for an empty output in CraftTweaker's `addJsonRecipe`.
+
+Solid-reactor casing heating rolls once and applies that volume to every batch completed in the tick. Turbines and pebble-bed or molten-salt emergency vents roll when their outlet is empty. A positive roll starts the outlet with the full volume of the completed batches. A zero roll still spends the input and leaves the outlet empty. Once the outlet contains the matching fluid, each additional batch adds the maximum. All nonempty products check that the outlet can fit the maximum before spending input. JEI displays the range and describes the shared roll or empty-outlet rule where applicable.
+
+All 272 local headless GameTests passed. The condenser held 28 mB of feed with seven mB free. Opening eleven mB let both 3 mB products complete in one tick. The exchanger transferred heat while its empty-product circuit consumed feed, and the turbine generated Forge Energy when its exhaust roll was zero.
+
+Packaged Forge 47.4.10 ran all seven recipes from datapacks and CraftTweaker 14.0.59. The measured outputs survived dedicated restart. Enabling the alternate exchanger output produced the same six mB as high-pressure steam. Both idle reactor variants removed 28 units of casing heat with no product in an empty outlet, then added two 8 mB batches to an established outlet.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied 9 mB followed by 19 mB through a condenser tube inlet. Both tubes held the partial charge and exported exactly 6 mB of condensate after the second delivery. The condenser retained its water and both collectors kept their exact balances through restart and chunk unload and reload.
+
+The isolated 540-mod Auram client ran all seven KubeJS recipes and showed the chance ranges, empty products, and machine-specific roll rules in JEI. It used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible window samples.
+
 ### Alternative item inputs
 
 Use an `alternatives` object to give an item slot several counted Forge ingredients. Each choice takes an `ingredient` and a `count`. The machine processes the first choice that matches the stack and has enough items. An item pipe can add part of the required stack and the machine will wait for the rest. Shapeless recipes still assign each required input to a distinct slot.

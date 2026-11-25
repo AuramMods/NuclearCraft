@@ -21,14 +21,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidStack output, double baseHeat,
+public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidProduct product, double baseHeat,
                                 @Nullable Profile profile, boolean emergency) implements Recipe<Container> {
     public enum Profile {
         GAS, NAK, EMERGENCY
-    }
-
-    public FissionHeatRecipe {
-        output = output.copy();
     }
 
     public double heatPerMb() {
@@ -41,8 +37,6 @@ public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidStac
             case EMERGENCY -> NCFission.emergencyCoolingMultiplier();
         };
     }
-
-    @Override public FluidStack output() { return output.copy(); }
 
     @Override
     public boolean matches(Container container, Level level) {
@@ -69,7 +63,7 @@ public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidStac
         @Override
         public FissionHeatRecipe fromJson(ResourceLocation id, JsonObject json) {
             var input = FluidInput.readRequired(json.get("input"), id);
-            var output = FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id);
+            var product = FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result"));
             Profile profile = null;
             if (json.has("legacy_profile")) {
                 String value = GsonHelper.getAsString(json, "legacy_profile");
@@ -84,19 +78,19 @@ public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidStac
                     || (!json.has("heat_per_mb") && profile == null)) {
                 throw new JsonSyntaxException("Expected a positive heat_per_mb or a legacy_profile for " + id);
             }
-            return new FissionHeatRecipe(id, input, output, heat, profile, emergency);
+            return new FissionHeatRecipe(id, input, product, heat, profile, emergency);
         }
 
         @Override
         public FissionHeatRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new FissionHeatRecipe(id, FluidInput.fromNetwork(buffer), buffer.readFluidStack(),
+            return new FissionHeatRecipe(id, FluidInput.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readDouble(), buffer.readNullable(input -> input.readEnum(Profile.class)), emergency);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, FissionHeatRecipe recipe) {
             FluidInput.write(buffer, recipe.input);
-            buffer.writeFluidStack(recipe.output);
+            recipe.product.toNetwork(buffer);
             buffer.writeDouble(recipe.baseHeat);
             buffer.writeNullable(recipe.profile, FriendlyByteBuf::writeEnum);
         }

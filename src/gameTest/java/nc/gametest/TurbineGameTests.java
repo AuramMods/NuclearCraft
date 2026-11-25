@@ -272,6 +272,37 @@ public final class TurbineGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void turbineRollsOnlyToEstablishAnEmptyExhaust(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    var feed = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("benzene")), 28);
+                    helper.assertTrue(fluid(helper, INLET, Direction.NORTH).fill(feed, FluidAction.EXECUTE) == 28,
+                            "Feed two measured batches to the expansion recipe");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && energy(helper, COIL, Direction.SOUTH).getEnergyStored() > 0,
+                        "Both batches must expand and supply Forge Energy"))
+                .thenExecute(() -> {
+                    var outlet = fluid(helper, OUTLET, Direction.SOUTH);
+                    helper.assertTrue(outlet.getFluidInTank(0).isEmpty(), "A zero roll leaves an empty exhaust tank");
+                    var controller = controller(helper, CONTROLLER);
+                    var saved = controller.saveWithoutMetadata();
+                    var exhaust = new FluidStack(NCFluids.LOW_QUALITY_STEAM.source().get(), 1);
+                    saved.put("exhaust", exhaust.writeToNBT(new CompoundTag()));
+                    var feed = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("benzene")), 28);
+                    saved.put("steam", feed.writeToNBT(new CompoundTag()));
+                    controller.load(saved);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 17
+                                && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "A tank with matching exhaust receives both 8 mB maximums"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "turbine", timeoutTicks = 150)
     public static void turbineRetainsBuffersAcrossBackpressureAndReassembly(GameTestHelper helper) {
         buildTurbine(helper, BlockPos.ZERO);

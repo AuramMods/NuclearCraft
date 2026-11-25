@@ -11,6 +11,7 @@ import nc.recipe.CondenserCoolants;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.FluidBatch;
 import nc.recipe.FluidInput;
+import nc.recipe.FluidProduct;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -157,9 +158,8 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         if (recipe == null || recipe.outputTemperature() < shellTemperature) {
             return;
         }
-        FluidStack product = recipe.output();
-        int capacity = circuit.capacity(recipe.input(), product);
-        if (capacity <= 0) {
+        var product = recipe.product();
+        if (circuit.capacity(recipe.input(), product) == 0) {
             return;
         }
         double mean = HeatExchangerConfig.meanDifference(recipe.inputTemperature() - shellTemperature,
@@ -171,7 +171,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             heatRate += rate;
             shellSpeed += rate / recipe.cooling();
             temperatureDifference += mean * network.usefulTubes();
-            tubeInputRate += circuit.process(recipe.id(), recipe.input(), product, recipe.cooling(), capacity, rate);
+            tubeInputRate += circuit.process(recipe.id(), recipe.input(), product, recipe.cooling(), rate);
         }
     }
 
@@ -598,32 +598,41 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             input = new Tank(1, accepts);
         }
 
-        int capacity(FluidInput ingredient, FluidStack product) {
-            if (!output.isEmpty() && !output.getFluid().isFluidEqual(product)) {
-                return 0;
-            }
-            return FluidBatch.fit(ingredient, input.getFluid(), input.getFluidAmount(),
-                    output.getSpace() / product.getAmount()).batches();
+        int capacity(FluidInput ingredient, FluidProduct product) {
+            return fit(ingredient, product, Integer.MAX_VALUE).batches();
+        }
+
+        private FluidBatch.Usage fit(FluidInput ingredient, FluidProduct product, int requested) {
+            int room = product.batchesIn(output.getFluid(), output.getCapacity());
+            return FluidBatch.fit(ingredient, input.getFluid(), input.getFluidAmount(), Math.min(requested, room));
         }
 
         double credit(ResourceLocation id, double required) {
             return id.equals(recipe) ? Math.min(credit, Math.nextDown(required)) : 0D;
         }
 
-        int process(ResourceLocation id, FluidInput ingredient, FluidStack product, double required, int capacity, double rate) {
-            double heat = Math.min(credit(id, required) + rate, required * capacity);
-            int batches = Math.min(capacity, (int) (heat / required));
-            var usage = FluidBatch.fit(ingredient, input.getFluid(), input.getFluidAmount(), batches);
-            recipe = id;
-            credit = Math.max(0D, heat - usage.batches() * required);
-            if (usage.batches() > 0) {
-                FluidStack produced = product.copy();
-                produced.setAmount(produced.getAmount() * usage.batches());
-                output.fill(produced, FluidAction.EXECUTE);
+        int process(ResourceLocation id, FluidInput ingredient, FluidProduct product, double required, double rate) {
+            double heat = credit(id, required) + rate;
+            int consumed = 0;
+            while (heat >= required) {
+                var usage = fit(ingredient, product, (int) (heat / required));
+                if (usage.batches() == 0) {
+                    break;
+                }
+                int amount = product.totalAmount(usage.batches(), 1, level.random);
+                if (amount > 0) {
+                    var produced = product.stack();
+                    produced.setAmount(amount);
+                    output.fill(produced, FluidAction.EXECUTE);
+                }
                 input.drain(usage.consumed(), FluidAction.EXECUTE);
+                consumed += usage.consumed();
+                heat = Math.max(0D, heat - usage.batches() * required);
             }
+            recipe = id;
+            credit = heat < required && capacity(ingredient, product) > 0 ? heat : 0D;
             setChanged();
-            return usage.consumed();
+            return consumed;
         }
 
         void clear() {
