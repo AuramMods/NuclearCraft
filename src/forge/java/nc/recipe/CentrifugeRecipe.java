@@ -6,13 +6,10 @@ import nc.init.NCRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<FluidProduct> products,
@@ -32,30 +29,6 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
     @Override
     public List<FluidIngredient> inputs() {
         return List.of(input);
-    }
-
-    @Override
-    public List<FluidStack> results() {
-        return products.stream().map(FluidProduct::stack).toList();
-    }
-
-    @Override
-    public int outputFactor(int inputFactor) {
-        int factor = inputFactor;
-        for (FluidProduct product : products) {
-            factor = product.factor(factor);
-        }
-        return factor;
-    }
-
-    @Override
-    public FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
-        FluidProduct product = products.get(slot);
-        if (maximum.isEmpty() || product.chancePercent() == 100) {
-            return maximum;
-        }
-        int amount = product.rollAmount(random);
-        return amount == 0 ? FluidStack.EMPTY : new FluidStack(maximum, amount);
     }
 
     @Override
@@ -81,14 +54,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             if (results.isEmpty() || results.size() > OUTPUTS) {
                 throw new JsonSyntaxException("Expected up to six fluid outputs for " + id);
             }
-            var products = new ArrayList<FluidProduct>(results.size());
-            for (var entry : results) {
-                products.add(entry.isJsonNull() ? FluidProduct.EMPTY
-                        : FluidProduct.fromJson(id, GsonHelper.convertToJsonObject(entry, "result")));
-            }
-            if (products.stream().allMatch(FluidProduct::isEmpty)) {
-                throw new JsonSyntaxException("Centrifuge recipe needs a fluid output for " + id);
-            }
+            var products = FluidProduct.readSlots(id, results);
             return new CentrifugeRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
                     products, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));

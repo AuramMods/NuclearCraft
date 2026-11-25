@@ -15,13 +15,6 @@ public final class FluidBatch {
         return Math.max(1, factor);
     }
 
-    static int outputFactor(int factor, List<FluidStack> outputs) {
-        for (FluidStack output : outputs) {
-            factor = gcd(factor, output.getAmount());
-        }
-        return factor;
-    }
-
     static int gcd(int first, int second) {
         while (second != 0) {
             int remainder = first % second;

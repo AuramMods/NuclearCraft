@@ -13,26 +13,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, FluidStack product,
+public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, FluidProduct fluidProduct,
                                int ticks, int energyPerTick, double radiation,
                                @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
-    public SupercoolerRecipe {
-        product = product.copy();
-    }
-
-    @Override
-    public FluidStack product() {
-        return product.copy();
-    }
-
     @Override
     public List<FluidIngredient> inputs() {
         return List.of(input);
     }
 
+    public FluidStack product() {
+        return fluidProduct.stack();
+    }
+
     @Override
-    public List<FluidStack> results() {
-        return List.of(product());
+    public List<FluidProduct> products() {
+        return List.of(fluidProduct);
     }
 
     @Override
@@ -54,13 +49,13 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
                 throw new JsonSyntaxException("Invalid Supercooler recipe " + id);
             }
             return new SupercoolerRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result")), ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public SupercoolerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
+            return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
@@ -68,7 +63,7 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
         @Override
         public void toNetwork(FriendlyByteBuf buffer, SupercoolerRecipe recipe) {
             recipe.input.toNetwork(buffer);
-            buffer.writeFluidStack(recipe.product);
+            recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);

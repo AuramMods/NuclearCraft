@@ -8,24 +8,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
 
-public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidStack> results,
+public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidProduct> products,
                                  int ticks, int energyPerTick, double radiation,
                                  @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 4;
 
     public ElectrolyzerRecipe {
-        results = results.stream().map(FluidStack::copy).toList();
-    }
-
-    @Override
-    public List<FluidStack> results() {
-        return results.stream().map(FluidStack::copy).toList();
+        products = List.copyOf(products);
     }
 
     @Override
@@ -53,10 +46,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             if (entries.isEmpty() || entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
                 throw new JsonSyntaxException("Invalid Electrolyzer recipe " + id);
             }
-            List<FluidStack> outputs = new ArrayList<>(entries.size());
-            for (var entry : entries) {
-                outputs.add(FluidIngredient.readResult(GsonHelper.convertToJsonObject(entry, "result"), id));
-            }
+            var outputs = FluidProduct.readSlots(id, entries);
             return new ElectrolyzerRecipe(id, input, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
@@ -64,7 +54,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
         @Override
         public ElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
-            List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
+            var outputs = buffer.readList(FluidProduct::fromNetwork);
             return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
@@ -72,7 +62,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ElectrolyzerRecipe recipe) {
             recipe.input.toNetwork(buffer);
-            buffer.writeCollection(recipe.results, FriendlyByteBuf::writeFluidStack);
+            buffer.writeCollection(recipe.products, (packet, product) -> product.toNetwork(packet));
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);

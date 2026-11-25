@@ -16,9 +16,13 @@ import java.util.List;
 public interface FluidProcessorRecipe extends ProcessingRecipe {
     ResourceLocation id();
     List<FluidIngredient> inputs();
-    List<FluidStack> results();
+    List<FluidProduct> products();
     int ticks();
     int energyPerTick();
+
+    default List<FluidStack> results() {
+        return products().stream().map(FluidProduct::stack).toList();
+    }
 
     default double duration() {
         return ticks();
@@ -33,7 +37,11 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
     }
 
     default int outputFactor(int inputFactor) {
-        return FluidBatch.outputFactor(inputFactor, results());
+        int factor = inputFactor;
+        for (FluidProduct product : products()) {
+            factor = product.factor(factor);
+        }
+        return factor;
     }
 
     default double batchDuration() {
@@ -41,7 +49,8 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
     }
 
     default FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
-        return maximum;
+        FluidProduct product = products().get(slot);
+        return maximum.isEmpty() || product.chancePercent() == 100 ? maximum : product.roll(random);
     }
 
     default @Nullable ItemProcessorRecipe.Input itemInput() {

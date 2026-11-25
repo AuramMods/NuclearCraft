@@ -198,7 +198,7 @@ public final class MelterMaterialRecipes {
             ResourceLocation id = NuclearCraft.id("melter/" + path);
             if (fluid != null && !inputs.isEmpty() && recipes.byKey(id).isEmpty()) {
                 result.put(id, new MelterRecipe(id, Ingredient.of(inputs.stream().map(Item::getDefaultInstance)),
-                        new FluidStack(fluid, amount), ticks, power, 0D, null));
+                        FluidProduct.fixed(new FluidStack(fluid, amount)), ticks, power, 0D, null));
             }
         }
     }

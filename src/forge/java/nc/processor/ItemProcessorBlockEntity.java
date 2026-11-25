@@ -274,7 +274,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 }
             }
             for (int index = 0; index < fluidProducts.size(); index++) {
-                fluid.produce(machine.fluidInputs() + index, fluidProducts.get(index));
+                if (!fluidProducts.get(index).isEmpty()) {
+                    fluid.produce(machine.fluidInputs() + index, recipe.fluidProducts().get(index).roll(level.random));
+                }
             }
             itemPorts.push(level);
             if (fluid != null && fluid.discardsUnusableInputs()) {
@@ -399,7 +401,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             }
         }
         for (int index = 0; index < fluidProducts.size(); index++) {
-            if (!fluid.canProduce(machine.fluidInputs() + index, fluidProducts.get(index))) {
+            FluidStack product = fluidProducts.get(index);
+            if (!product.isEmpty() && !fluid.canProduce(machine.fluidInputs() + index, product)) {
                 return false;
             }
         }

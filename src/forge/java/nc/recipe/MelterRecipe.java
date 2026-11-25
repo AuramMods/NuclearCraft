@@ -17,14 +17,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
-public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack product, double ticks,
+public record MelterRecipe(ResourceLocation id, Ingredient input, FluidProduct fluidProduct, double ticks,
                            int energyPerTick, double radiation,
                            @Nullable ProcessorRecipeDefaults defaults) implements ProcessingRecipe {
 
@@ -68,9 +65,8 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
         return NCRegistries.MELTING.get();
     }
 
-    @Override
     public FluidStack product() {
-        return product.copy();
+        return fluidProduct.stack();
     }
 
     public static final class Serializer implements RecipeSerializer<MelterRecipe> {
@@ -83,15 +79,12 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
         public MelterRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             Ingredient input = readIngredient(GsonHelper.getNonNull(json, "ingredient"), context);
             JsonObject result = GsonHelper.getAsJsonObject(json, "result");
-            ResourceLocation fluidId = ResourceLocation.tryParse(GsonHelper.getAsString(result, "fluid"));
-            Fluid fluid = fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
-            int amount = GsonHelper.getAsInt(result, "amount");
             double ticks = GsonHelper.getAsDouble(json, "ticks");
             int energyPerTick = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (fluid == null || fluid == Fluids.EMPTY || amount <= 0 || !Double.isFinite(ticks) || ticks <= 0 || energyPerTick < 0) {
+            if (!Double.isFinite(ticks) || ticks <= 0 || energyPerTick < 0) {
                 throw new JsonSyntaxException("Invalid Melter recipe " + id);
             }
-            return new MelterRecipe(id, input, new FluidStack(fluid, amount), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
+            return new MelterRecipe(id, input, FluidProduct.fromJson(id, result), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
@@ -126,14 +119,14 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidStack pro
 
         @Override
         public MelterRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new MelterRecipe(id, Ingredient.fromNetwork(buffer), buffer.readFluidStack(),
+            return new MelterRecipe(id, Ingredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, MelterRecipe recipe) {
             recipe.input.toNetwork(buffer);
-            buffer.writeFluidStack(recipe.product);
+            recipe.fluidProduct.toNetwork(buffer);
             buffer.writeDouble(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);

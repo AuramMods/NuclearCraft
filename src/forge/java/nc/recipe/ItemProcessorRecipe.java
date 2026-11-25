@@ -1,6 +1,7 @@
 package nc.recipe;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors;
@@ -29,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine, List<Input> inputs,
-                                  List<FluidIngredient> fluidInputs, List<FluidStack> fluidOutputs,
+                                  List<FluidIngredient> fluidInputs, List<FluidProduct> fluidProducts,
                                   List<Product> results, List<Product> alternateResults,
                                   double ticks, int energyPerTick, double radiation,
                                   @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
@@ -39,7 +40,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
     public ItemProcessorRecipe {
         inputs = List.copyOf(inputs);
         fluidInputs = List.copyOf(fluidInputs);
-        fluidOutputs = fluidOutputs.stream().map(FluidStack::copy).toList();
+        fluidProducts = List.copyOf(fluidProducts);
         results = List.copyOf(results);
         alternateResults = List.copyOf(alternateResults);
     }
@@ -57,7 +58,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                                @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
                                @Nullable ProcessorRecipeDefaults defaults) {
         this(id, machine, inputs, fluidInput == null ? List.of() : List.of(fluidInput),
-                fluidOutput.isEmpty() ? List.of() : List.of(fluidOutput), results, alternateResults,
+                fluidOutput.isEmpty() ? List.of() : List.of(FluidProduct.fixed(fluidOutput)), results, alternateResults,
                 ticks, energyPerTick, radiation, powerMultiplier, decayTimeFromRadiation, defaults);
     }
 
@@ -86,12 +87,11 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
     }
 
     public FluidStack fluidOutput() {
-        return fluidOutputs.isEmpty() ? FluidStack.EMPTY : fluidOutputs.get(0).copy();
+        return fluidProducts.isEmpty() ? FluidStack.EMPTY : fluidProducts.get(0).stack();
     }
 
-    @Override
     public List<FluidStack> fluidOutputs() {
-        return fluidOutputs.stream().map(FluidStack::copy).toList();
+        return fluidProducts.stream().map(FluidProduct::stack).toList();
     }
 
     /** Counts are indexed by inventory slot after assigning each ingredient to a distinct slot. */
@@ -344,9 +344,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
             }
             var fluids = readFluids(id, json, "fluid_input", "fluid_inputs", machine.fluidInputs()).stream()
-                    .map(fluid -> FluidIngredient.fromJson(fluid, id)).toList();
+                    .map(fluid -> FluidIngredient.fromJson(GsonHelper.convertToJsonObject(fluid, "fluid input"), id)).toList();
             var fluidProducts = readFluids(id, json, "fluid_result", "fluid_results", machine.fluidOutputs()).stream()
-                    .map(fluid -> FluidIngredient.readResult(fluid, id)).toList();
+                    .map(fluid -> FluidProduct.readSlot(id, fluid)).toList();
             List<Product> results = json.has("results") ? readResults(id, json, "results", context)
                     : json.has("result") ? validateResults(id, List.of(Product.fromJson(GsonHelper.getAsJsonObject(json, "result"), context)))
                     : validateResults(id, List.of());
@@ -388,17 +388,17 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             return machine.rate().defaultTime() * GsonHelper.getAsDouble(json, "time_multiplier", 1D);
         }
 
-        private static List<JsonObject> readFluids(ResourceLocation id, JsonObject json, String key, String listKey, int count) {
-            List<JsonObject> fluids = new ArrayList<>(count);
+        private static List<JsonElement> readFluids(ResourceLocation id, JsonObject json, String key, String listKey, int count) {
+            List<JsonElement> fluids = new ArrayList<>(count);
             if (json.has(listKey)) {
                 if (json.has(key)) {
                     throw new JsonSyntaxException("Use one of " + key + " or " + listKey + " for " + id);
                 }
                 for (var entry : GsonHelper.getAsJsonArray(json, listKey)) {
-                    fluids.add(GsonHelper.convertToJsonObject(entry, key));
+                    fluids.add(entry);
                 }
             } else if (json.has(key)) {
-                fluids.add(GsonHelper.getAsJsonObject(json, key));
+                fluids.add(json.get(key));
             }
             if (fluids.size() != count) {
                 throw new JsonSyntaxException("Expected " + count + " entries for " + listKey + " in " + id);
@@ -434,9 +434,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             for (int index = 0; index < machine.fluidInputs(); index++) {
                 fluids.add(FluidIngredient.fromNetwork(buffer));
             }
-            List<FluidStack> fluidProducts = new ArrayList<>(machine.fluidOutputs());
+            List<FluidProduct> fluidProducts = new ArrayList<>(machine.fluidOutputs());
             for (int index = 0; index < machine.fluidOutputs(); index++) {
-                fluidProducts.add(buffer.readFluidStack());
+                fluidProducts.add(FluidProduct.fromNetwork(buffer));
             }
             List<Product> results = readProducts(buffer);
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
@@ -455,8 +455,8 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             for (FluidIngredient fluid : recipe.fluidInputs) {
                 fluid.toNetwork(buffer);
             }
-            for (FluidStack product : recipe.fluidOutputs) {
-                buffer.writeFluidStack(product);
+            for (FluidProduct product : recipe.fluidProducts) {
+                product.toNetwork(buffer);
             }
             writeProducts(buffer, recipe.results);
             buffer.writeBoolean(!recipe.alternateResults.isEmpty());

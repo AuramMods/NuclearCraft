@@ -1,17 +1,22 @@
 package nc.gametest;
 
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCRegistries;
 import nc.processor.FluidProcessorBlockEntity;
 import nc.processor.ProcessorFluidTanks;
+import nc.recipe.ChemicalReactorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
@@ -91,6 +96,52 @@ public final class ChemicalReactorGameTests {
                         && tanks.getFluidInTank(0).isEmpty() && tanks.getFluidInTank(1).isEmpty()
                         && hasFluid(tanks, 2, "hydrogen_chloride", 250),
                 "The final paid tick must finish all 250 mB of the factored batch");
+    }
+
+    @GameTest(template = "empty")
+    public static void chanceProductPreservesOutletAndWaitsForMaximumSpace(GameTestHelper helper) {
+        var id = new ResourceLocation("processor_chance_qa", "sparse_reaction");
+        var recipe = (ChemicalReactorRecipe) helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
+        var serializer = new ChemicalReactorRecipe.Serializer();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(buffer, recipe);
+            var received = serializer.fromNetwork(id, buffer);
+            var product = received.products().get(1);
+            helper.assertTrue(received.products().get(0).isEmpty() && product.stack().getAmount() == 20
+                            && product.minAmount() == 5 && product.step() == 5 && product.chancePercent() == 0
+                            && !buffer.isReadable(),
+                    "Recipe sync keeps the empty outlet and the chance parameters in their original slots");
+        } finally {
+            buffer.release();
+        }
+
+        helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());
+        var reactor = helper.getBlockEntity(REACTOR);
+        var saved = reactor.saveWithoutMetadata();
+        var unused = new FluidStack(Fluids.LAVA, 13);
+        saved.put("fluid_2", unused.writeToNBT(new CompoundTag()));
+        saved.put("fluid_3", new FluidStack(Fluids.WATER, CAPACITY - 10).writeToNBT(new CompoundTag()));
+        reactor.load(saved);
+        var tanks = fluids(reactor, Direction.NORTH);
+        var charge = energy(reactor);
+        var water = new FluidStack(Fluids.WATER, 12);
+        var lava = new FluidStack(Fluids.LAVA, 8);
+        helper.assertTrue(tanks.fill(lava, EXECUTE) == 8 && tanks.fill(water, EXECUTE) == 12,
+                "Forge fluid capabilities accept both feeds in reverse order");
+        charge.receiveEnergy(20, false);
+
+        helper.runAtTickTime(8, () -> {
+            helper.assertTrue(tanks.getFluidInTank(0).isFluidStackIdentical(lava)
+                            && tanks.getFluidInTank(1).isFluidStackIdentical(water) && charge.getEnergyStored() == 20,
+                    "The batch waits for its 20 mB maximum even though the roll can only yield 5 mB");
+            helper.assertTrue(tanks.drain(new FluidStack(Fluids.WATER, 10), EXECUTE).getAmount() == 10,
+                    "An external drain makes room for the full maximum");
+        });
+        helper.succeedWhen(() -> helper.assertTrue(tanks.getFluidInTank(0).isEmpty()
+                        && tanks.getFluidInTank(1).isEmpty() && tanks.getFluidInTank(2).isFluidStackIdentical(unused)
+                        && tanks.getFluidInTank(3).getAmount() == CAPACITY - 15 && charge.getEnergyStored() == 0,
+                "The 5 mB guarantee goes to the second outlet without touching the unused first outlet"));
     }
 
     @GameTest(template = "empty", timeoutTicks = 900)

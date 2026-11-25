@@ -15,25 +15,20 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidIngredient fluidInput,
-                             FluidStack product, int ticks, int energyPerTick, double radiation,
+                             FluidProduct fluidProduct, int ticks, int energyPerTick, double radiation,
                              @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
-    public EnricherRecipe {
-        product = product.copy();
-    }
-
-    @Override
-    public FluidStack product() {
-        return product.copy();
-    }
-
     @Override
     public List<FluidIngredient> inputs() {
         return List.of(fluidInput);
     }
 
+    public FluidStack product() {
+        return fluidProduct.stack();
+    }
+
     @Override
-    public List<FluidStack> results() {
-        return List.of(product());
+    public List<FluidProduct> products() {
+        return List.of(fluidProduct);
     }
 
     @Override
@@ -59,14 +54,14 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             var ingredient = Ingredient.fromJson(GsonHelper.getNonNull(item, "ingredient"));
             return new EnricherRecipe(id, new ItemProcessorRecipe.Input(ingredient, count),
                     FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+                    FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result")), ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = new ItemProcessorRecipe.Input(Ingredient.fromNetwork(buffer), buffer.readVarInt());
-            return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
+            return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
@@ -75,7 +70,7 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             recipe.itemInput.ingredient().toNetwork(buffer);
             buffer.writeVarInt(recipe.itemInput.count());
             recipe.fluidInput.toNetwork(buffer);
-            buffer.writeFluidStack(recipe.product);
+            recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);

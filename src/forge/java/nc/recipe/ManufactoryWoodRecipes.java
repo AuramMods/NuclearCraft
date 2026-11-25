@@ -117,7 +117,7 @@ final class ManufactoryWoodRecipes {
 
     private static ItemProcessorRecipe withWoodOutput(ItemProcessorRecipe recipe, Ingredient input, ItemStack output) {
         return new ItemProcessorRecipe(recipe.id(), recipe.machine(),
-                List.of(new ItemProcessorRecipe.Input(input, 1)), recipe.fluidInputs(), recipe.fluidOutputs(),
+                List.of(new ItemProcessorRecipe.Input(input, 1)), recipe.fluidInputs(), recipe.fluidProducts(),
                 List.of(new ItemProcessorRecipe.Product(output, 100, 0)), recipe.alternateResults(),
                 recipe.ticks(), recipe.energyPerTick(), recipe.radiation(), recipe.powerMultiplier(),
                 recipe.decayTimeFromRadiation(), recipe.defaults());

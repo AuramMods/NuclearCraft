@@ -45,7 +45,7 @@ public final class ProcessorRecipeDefaultsGameTests {
     public static void syncsBatchProvenanceForStockAndPackElectrolysis(GameTestHelper helper) {
         var id = NuclearCraft.id("electrolyzer/water");
         var stock = (ElectrolyzerRecipe) helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
-        var replacement = new ElectrolyzerRecipe(id, stock.input(), stock.results(), stock.ticks(),
+        var replacement = new ElectrolyzerRecipe(id, stock.input(), stock.products(), stock.ticks(),
                 stock.energyPerTick(), stock.radiation(), null);
         var serializer = new ElectrolyzerRecipe.Serializer();
         var buffer = new FriendlyByteBuf(Unpooled.buffer());

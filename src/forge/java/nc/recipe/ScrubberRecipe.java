@@ -17,23 +17,18 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.crafting.CraftingHelper;
+import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
 public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.Input itemInput,
-                             @Nullable FluidIngredient fluidInput, ItemStack itemOutput, FluidStack fluidOutput,
-                             @Nullable Medium medium, int customTicks, int customPower,
+                             @Nullable FluidIngredient fluidInput, ItemProcessorRecipe.Product itemProduct,
+                             FluidProduct fluidProduct, @Nullable Medium medium, int customTicks, int customPower,
                              double customEfficiency) implements Recipe<Container> {
-    public ScrubberRecipe {
-        itemOutput = itemOutput.copy();
-        fluidOutput = fluidOutput.copy();
-    }
-
-    @Override public ItemStack itemOutput() { return itemOutput.copy(); }
-    @Override public FluidStack fluidOutput() { return fluidOutput.copy(); }
+    public ItemStack itemOutput() { return itemProduct.stack(); }
+    public FluidStack fluidOutput() { return fluidProduct.stack(); }
 
     public int ticks() { return medium == null ? customTicks : medium.ticks(); }
     public int power() { return medium == null ? customPower : medium.power(); }
@@ -68,6 +63,11 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
     public static final class Serializer implements RecipeSerializer<ScrubberRecipe> {
         @Override
         public ScrubberRecipe fromJson(ResourceLocation id, JsonObject json) {
+            return fromJson(id, json, ICondition.IContext.EMPTY);
+        }
+
+        @Override
+        public ScrubberRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             ItemProcessorRecipe.Input item = null;
             if (json.has("item_input")) {
                 var entry = GsonHelper.getAsJsonObject(json, "item_input");
@@ -80,14 +80,14 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
             }
             var fluid = json.has("fluid_input")
                     ? FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id) : null;
-            ItemStack product = json.has("item_output")
-                    ? CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "item_output"), true) : ItemStack.EMPTY;
-            FluidStack result = json.has("fluid_output")
-                    ? FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "fluid_output"), id) : FluidStack.EMPTY;
+            var itemEntry = json.get("item_output");
+            var product = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? ItemProcessorRecipe.Product.EMPTY
+                    : ItemProcessorRecipe.Product.fromJson(GsonHelper.convertToJsonObject(itemEntry, "item output"), context);
+            var fluidEntry = json.get("fluid_output");
+            var result = fluidEntry == null ? FluidProduct.EMPTY : FluidProduct.readSlot(id, fluidEntry);
             if ((item == null && fluid == null) || (product.isEmpty() && result.isEmpty())
-                    || product.getCount() > product.getMaxStackSize()
                     || (fluid != null && fluid.amount() > ProcessorFluidTanks.CAPACITY)
-                    || result.getAmount() > ProcessorFluidTanks.CAPACITY) {
+                    || result.stack().getAmount() > ProcessorFluidTanks.CAPACITY) {
                 throw new JsonSyntaxException("Invalid Scrubber inputs or outputs for " + id);
             }
             if (json.has("medium")) {
@@ -115,7 +115,8 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
         public ScrubberRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = buffer.readNullable(input -> new ItemProcessorRecipe.Input(Ingredient.fromNetwork(input), input.readVarInt()));
             var fluid = buffer.readNullable(FluidIngredient::fromNetwork);
-            return new ScrubberRecipe(id, item, fluid, buffer.readItem(), buffer.readFluidStack(), null,
+            return new ScrubberRecipe(id, item, fluid, ItemProcessorRecipe.Product.fromNetwork(buffer),
+                    FluidProduct.fromNetwork(buffer), null,
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
         }
 
@@ -126,8 +127,8 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
                 output.writeVarInt(item.count());
             });
             buffer.writeNullable(recipe.fluidInput, (output, fluid) -> fluid.toNetwork(output));
-            buffer.writeItem(recipe.itemOutput);
-            buffer.writeFluidStack(recipe.fluidOutput);
+            recipe.itemProduct.toNetwork(buffer);
+            recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks());
             buffer.writeVarInt(recipe.power());
             buffer.writeDouble(recipe.efficiency());

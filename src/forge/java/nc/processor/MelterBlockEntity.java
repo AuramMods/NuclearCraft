@@ -128,7 +128,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         progressHalfTicks += 2 * speed;
         double batch = 2D * batchTicks;
         while (progressHalfTicks + 1E-9 >= batch && progressHalfTicks > 0) {
-            fluids.produce(0, product);
+            fluids.produce(0, recipe.fluidProduct().roll(level.random));
             inventory.extractItem(0, 1, false);
             inventory.ports.push(level);
             progressHalfTicks = Math.max(0, progressHalfTicks - batch);

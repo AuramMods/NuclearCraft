@@ -99,10 +99,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         }
         activeEfficiency = recipe.efficiency();
         if (++progress >= duration) {
-            itemPorts.produce(1, recipe.itemOutput());
-            FluidStack fluid = recipe.fluidOutput();
-            if (!fluid.isEmpty()) {
-                tanks.produce(1, fluid);
+            itemPorts.produce(1, recipe.itemProduct().roll(level.random));
+            if (!recipe.fluidProduct().isEmpty()) {
+                tanks.produce(1, recipe.fluidProduct().roll(level.random));
             }
             clearBatch();
             itemPorts.push(level);
