@@ -459,6 +459,9 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
 | PneumaticCraft | 6.0.22 | Liquid and Omnidirectional Hopper transfers on processors and fission ports |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
+| Tom's Simple Storage | 1.7.1 | Item routing through Inventory Connectors, Basic Inventory Hoppers, and Inventory Proxies |
+| Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
+| Satiscraftory | 1.1.3 | Conveyor transfer on sided processors and battery power for the Smelter |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -638,6 +641,16 @@ The isolated Auram client loaded all 539 installed mod JARs on Forge 47.4.10 and
 ### Hopper Ducts
 
 Auram's Hopper Ducts 1.5 ran with the packaged JAR on a headless Forge 47.4.10 server. A filtered Grated Hopper held one coal while the Manufactory's west input was disabled. The Manufactory retained its 4,000 FE. Opening that face let the machine make one coal dust. A second filtered Grated Hopper pulled the dust from the output face, and its Hopper Duct kept the dust while the destination barrel was full. After a confirmed chunk unload and restart, freeing one barrel slot delivered exactly one coal dust and left the hoppers, duct, and processor empty.
+
+### Tom's Simple Storage, Entangled, and Satiscraftory
+
+On dedicated Forge 47.4.10, Tom's Simple Storage 1.7.1 connected two barrels to a sided Manufactory using Inventory Connectors, filtered Basic Inventory Hoppers, and Inventory Proxies. The input hopper left both items in the source while the west face was closed. Opening the face transferred one coal and left one charcoal. The Manufactory held the resulting dust while the destination barrel was full. The dust survived a confirmed chunk unload and a dedicated restart. Freeing one slot let the outlet collect exactly one coal dust. A second batch raised the saved destination count to two. [Tom's Simple Storage](https://github.com/tom5454/Toms-Storage)
+
+An Entangled 1.3.20 block relayed an ice block from a hopper and 4,000 FE from a Voltaic Pile to a Melter three chunks away. An Ender IO 8.2.22-beta conduit attached to the Entangled Block. The Melter held all 1,000 mB of water while the conduit destination was full. After chunk unload and restart, closing the remote outlet held the water while the destination was empty. Reopening that outlet let the conduit collect all 1,000 mB. Removing the Melter left the binding intact and held the next ice and charge at their sources. A replacement at the same position processed them, bringing the saved destination volume to 2,000 mB. [Entangled](https://www.curseforge.com/minecraft/mc-mods/entangled)
+
+Satiscraftory 1.1.3 Mark 1 belts carried a copper ingot into a Manufactory and took its copper dust to a Satiscraftory Smelter. A Voltaic Pile powered the Smelter with 1,000 FE. With the output barrel full, the belt held the copper dust and the Smelter kept its full charge. The dust and charge survived a confirmed chunk unload and a dedicated restart. Freeing one slot let the Smelter spend the charge and deliver exactly one copper ingot. A second batch raised the destination count to two.
+
+The isolated client with all 541 installed Auram mod JARs loaded JEI and repeated the Tom's Simple Storage and Entangled routes. The saved region showed one Mekanism coal dust under the pack's unification rules, the charcoal still in the source, and exactly 1,000 mB of water in the Ender IO tank. Both NuclearCraft machines and the battery saved empty. The client used master volume zero and OpenAL No Output. The observer recorded zero foreground samples, focus activations, and visible window samples through exit.
 
 ### Tools and Armor
 
