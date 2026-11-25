@@ -37,6 +37,7 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.BooleanValue ROCK_CRUSHER_ALTERNATE;
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
+    private static final ForgeConfigSpec.ConfigValue<List<Boolean>> FLUID_RECIPE_EXPANSION;
     private static final ForgeConfigSpec.BooleanValue ORE_PROCESSING;
     private static final ForgeConfigSpec.BooleanValue SMART_PROCESSOR_INPUT;
     private static final ForgeConfigSpec.BooleanValue PROCESSOR_PARTICLES;
@@ -57,6 +58,9 @@ public final class NCItemProcessors {
         var builder = new ForgeConfigSpec.Builder();
         MEKANISM_GAS = builder.comment("Allow Mekanism gas transfer with NuclearCraft fluid tanks and the Universal Bin.")
                 .define("enable_mek_gas", true);
+        FLUID_RECIPE_EXPANSION = builder.comment("Include legacy fluid aliases in stock recipes. Order: Mekanism, Tech Reborn.")
+                .define("enable_fluid_recipe_expansion", List.of(true, true), candidate -> candidate instanceof List<?> values
+                        && values.size() == 2 && values.stream().allMatch(Boolean.class::isInstance));
         ORE_PROCESSING = builder.comment("Enable default Melter recipes for ore blocks.")
                 .define("ore_processing", true);
         SMART_PROCESSOR_INPUT = builder.comment("Accept processor ingredients that can be combined with the other stored inputs.")
@@ -127,6 +131,14 @@ public final class NCItemProcessors {
 
     public static boolean mekanismGasEnabled() {
         return SPEC.isLoaded() ? MEKANISM_GAS.get() : MEKANISM_GAS.getDefault();
+    }
+
+    public static boolean mekanismFluidRecipesEnabled() {
+        return value(FLUID_RECIPE_EXPANSION).get(0);
+    }
+
+    public static boolean techRebornFluidRecipesEnabled() {
+        return value(FLUID_RECIPE_EXPANSION).get(1);
     }
 
     public static boolean oreProcessing() {

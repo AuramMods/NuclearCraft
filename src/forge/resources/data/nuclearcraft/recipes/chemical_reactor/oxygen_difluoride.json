@@ -3,7 +3,8 @@
     "fluid_inputs": [
         {
             "tag": "forge:oxygen",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         },
         {
             "tag": "forge:fluorine",

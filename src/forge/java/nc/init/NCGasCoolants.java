@@ -40,7 +40,7 @@ public enum NCGasCoolants implements PebbleCoolant {
         this.tint = tint;
         this.cooling = cooling;
         input = TagKey.create(Registries.FLUID, ResourceLocation.tryBuild("forge", id));
-        ingredient = new FluidIngredient(input.location(), true, 1);
+        ingredient = new FluidIngredient(input.location(), true, 1, true);
     }
 
     @Override

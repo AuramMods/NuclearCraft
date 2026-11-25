@@ -3,7 +3,8 @@
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:beryllium",
-            "amount": 72
+            "amount": 72,
+            "legacy_fluid_aliases": true
         },
         {
             "tag": "forge:fluorine",

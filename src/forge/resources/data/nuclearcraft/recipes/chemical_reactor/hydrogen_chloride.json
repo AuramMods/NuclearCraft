@@ -3,11 +3,13 @@
     "fluid_inputs": [
         {
             "tag": "forge:hydrogen",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         },
         {
             "tag": "forge:chlorine",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

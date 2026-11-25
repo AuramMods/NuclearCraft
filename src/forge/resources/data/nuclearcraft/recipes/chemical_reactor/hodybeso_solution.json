@@ -7,7 +7,8 @@
         },
         {
             "fluid": "nuclearcraft:sulfuric_acid",
-            "amount": 2500
+            "amount": 2500,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

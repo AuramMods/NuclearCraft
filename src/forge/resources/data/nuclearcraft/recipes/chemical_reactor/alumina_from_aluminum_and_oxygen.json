@@ -7,7 +7,8 @@
         },
         {
             "tag": "forge:oxygen",
-            "amount": 750
+            "amount": 750,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

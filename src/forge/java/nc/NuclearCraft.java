@@ -4,6 +4,7 @@ import nc.compat.mekanism.GasFluidCapability;
 import nc.compat.patchouli.Guidebook;
 import nc.compat.projecte.ProjectEIntegration;
 import nc.compat.tconstruct.TinkersModifiers;
+import nc.config.IntegratedServerConfigs;
 import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
@@ -48,6 +49,7 @@ public final class NuclearCraft {
     }
 
     public NuclearCraft(FMLJavaModLoadingContext context) {
+        IntegratedServerConfigs.register(context.getModEventBus());
         NCBatteries.register(context);
         NCCollectors.register(context);
         NCComputerPorts.register(context);

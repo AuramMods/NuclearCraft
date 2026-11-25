@@ -146,7 +146,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         double factor = 1D + (TurbineConfig.tensionThroughputFactor() - 1D) * fill;
         int throughput = (int) Math.min(steam.getFluidAmount(), drive.ratedFlow(layout) * factor);
         FluidStack product = recipe.output();
-        int batches = Math.min(throughput / recipe.inputAmount(),
+        int batches = Math.min(throughput / recipe.input().amount(),
                 exhaust.getSpace() / product.getAmount());
         if (batches <= 0) {
             return 0;
@@ -156,7 +156,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
             return 0;
         }
         exhaust.fill(product, FluidAction.EXECUTE);
-        int used = batches * recipe.inputAmount();
+        int used = batches * recipe.input().amount();
         steam.drain(used, FluidAction.EXECUTE);
         return used;
     }

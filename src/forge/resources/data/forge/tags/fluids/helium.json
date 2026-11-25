@@ -2,6 +2,14 @@
     "replace": false,
     "values": [
         "nuclearcraft:helium",
-        "nuclearcraft:flowing_helium"
+        "nuclearcraft:flowing_helium",
+        {
+            "id": "techreborn:helium",
+            "required": false
+        },
+        {
+            "id": "techreborn:helium_flowing",
+            "required": false
+        }
     ]
 }

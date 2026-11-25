@@ -2,7 +2,8 @@
     "type": "nuclearcraft:supercooler",
     "fluid_input": {
         "tag": "forge:nitrogen",
-        "amount": 8000
+        "amount": 8000,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "fluid": "nuclearcraft:liquid_nitrogen",

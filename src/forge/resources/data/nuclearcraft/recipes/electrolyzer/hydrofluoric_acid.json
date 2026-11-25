@@ -2,7 +2,8 @@
     "type": "nuclearcraft:electrolyzer",
     "fluid_input": {
         "fluid": "nuclearcraft:hydrofluoric_acid",
-        "amount": 250
+        "amount": 250,
+        "legacy_fluid_aliases": true
     },
     "results": [
         {

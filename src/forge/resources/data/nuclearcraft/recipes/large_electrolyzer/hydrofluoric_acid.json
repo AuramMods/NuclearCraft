@@ -4,7 +4,8 @@
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:hydrofluoric_acid",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         }
     ],
     "item_outputs": [],

@@ -2,6 +2,14 @@
     "replace": false,
     "values": [
         "nuclearcraft:deuterium",
-        "nuclearcraft:flowing_deuterium"
+        "nuclearcraft:flowing_deuterium",
+        {
+            "id": "techreborn:deuterium",
+            "required": false
+        },
+        {
+            "id": "techreborn:deuterium_flowing",
+            "required": false
+        }
     ]
 }

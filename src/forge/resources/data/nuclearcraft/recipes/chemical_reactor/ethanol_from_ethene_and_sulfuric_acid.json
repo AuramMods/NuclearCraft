@@ -3,11 +3,13 @@
     "fluid_inputs": [
         {
             "tag": "forge:ethene",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         },
         {
             "fluid": "nuclearcraft:sulfuric_acid",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

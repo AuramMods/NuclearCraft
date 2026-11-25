@@ -3,7 +3,8 @@
     "ingredients": [],
     "fluid_input": {
         "tag": "forge:brine",
-        "amount": 15
+        "amount": 15,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "tag": "forge:dusts/salt"

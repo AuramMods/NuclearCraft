@@ -4,7 +4,8 @@
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:heavy_water",
-            "amount": 500
+            "amount": 500,
+            "legacy_fluid_aliases": true
         }
     ],
     "item_outputs": [],

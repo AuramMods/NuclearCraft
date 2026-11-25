@@ -2,7 +2,8 @@
     "type": "nuclearcraft:infiltrator_pressure_fluid",
     "fluid_input": {
         "tag": "forge:helium",
-        "amount": 1
+        "amount": 1,
+        "legacy_fluid_aliases": true
     },
     "efficiency": 1.0
 }

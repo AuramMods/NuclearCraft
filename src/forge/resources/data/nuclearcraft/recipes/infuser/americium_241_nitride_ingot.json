@@ -10,7 +10,8 @@
     ],
     "fluid_input": {
         "tag": "forge:nitrogen",
-        "amount": 1000
+        "amount": 1000,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "item": "nuclearcraft:americium_241_nitride_ingot",

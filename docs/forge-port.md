@@ -1,6 +1,6 @@
 # Forge 1.20.1 port verification
 
-The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds with Java 17, Mojang mappings, and Forge 47.4.10. The current installed Auram snapshot runs Forge 47.4.18. The Forge code currently comes from the legacy NuclearCraft source and uses no Neohaul implementation code.
+The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds with Java 17, Mojang mappings, and Forge 47.4.10. The verification notes record the Forge version for each tested Auram snapshot. The Forge code currently comes from the legacy NuclearCraft source and uses no Neohaul implementation code.
 
 ## Gameplay coverage
 
@@ -403,6 +403,22 @@ All 196 local GameTests passed without Mekanism, including exact tank access, si
 Two independent Pressurized Tube networks supplied 96 mB and 128 mB of oxygen to a pebble-bed reactor's exact NuclearCraft and Mekanism filtered circuits. Mechanical Pipes carried the resulting 192 mB and 256 mB of hot oxygen to Ender IO 8.2.22-beta tanks. The measured outputs survived a confirmed chunk unload and reload. Disabling the bridge kept all 80 units of a test feed in Mekanism storage. A Mechanical Pipe on the same port then accepted 80 mB of fluid oxygen.
 
 The isolated Auram client loaded all 539 installed mod JARs and ran the same Chemical Reactor circuit. Its saved world contained exactly 250 hydrogen chloride in the destination and empty input tanks. Audio used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, and visible window samples.
+
+### Fluid recipe expansion
+
+Copy the legacy `enable_fluid_recipe_expansion` pair to `world/serverconfig/nuclearcraft-processors.toml`. The first entry controls Mekanism fluids and the second controls Tech Reborn fluids. Both default to true. Restart the world after changing the pair. `enable_mek_gas` independently controls transport of Mekanism gas through the gas capability.
+
+The stock fluid inputs that use these aliases carry `"legacy_fluid_aliases": true`. For an exact fluid input, the enabled integrations add registered equivalents of the named fluid. For a tagged input, the Forge tag defines the available fluids and the two settings control the recognized Mekanism and Tech Reborn entries within the tag. Datapacks can remove entries from a tag to restrict a stock recipe. An authored recipe can set the same field to opt in. An authored exact fluid or tag uses its declared matches by default. Processing consumes the fluid that actually arrived in the tank and emits the recipe's declared products.
+
+All 218 local GameTests passed. The packaged JAR completed a 333 mB fluorite-water and 500 mB sulfuric-acid batch on clean Forge 47.4.10. Ender IO 8.2.22-beta Fluid Conduits and Mekanism 10.4.16.80 Mechanical Pipes each supplied 500 mB of Mekanism sulfuric acid to the stock Chemical Reactor. Each reactor consumed 333 mB of fluorite water and 4,000 FE, and delivered 1,000 mB of hydrofluoric acid. The 333 mB calcium sulfate product stayed in the Ender IO reactor or in the Mekanism outlet pipe.
+
+Disabling the Mekanism aliases kept the 500 mB acid in the Ender IO supply tank or in the Mechanical Pipe's buffer. Both reactors kept their fluorite water and energy. Re-enabling aliases let both saved batches finish. A subsequent restart confirmed both chunks were unloaded before force-loading them and recovered the exact products and retained buffers. With aliases disabled and the gas capability enabled, a Pressurized Tube still fed 250 units of hydrogen into a reactor and produced 250 mB of hydrogen chloride.
+
+In a separate Forge test with Sinytra Connector beta 47, Tech Reborn 5.8.13 supplied sulfuric acid to the exact-fluid stock recipe and hydrogen to the tagged stock recipe through Ender IO conduits. The Tech Reborn switch stopped the acid route while its feed and energy remained in place. Tech Reborn 5.8.15 requires Fabric Loader 0.18.4 or later. The installed Connector build exposes 0.16.x.
+
+The isolated 539-mod Auram client on Forge 47.4.10 retained NuclearCraft's world settings when Forge applied its vanilla login fallback to the integrated server connection. With the Mekanism aliases disabled, JEI omitted Mekanism sulfuric acid and oxygen from the stock recipes. It still showed both the exact Mekanism acid and shared Forge oxygen tag in the explicit KubeJS recipes. A Mechanical Pipe fed the exact-acid KubeJS recipe and delivered 1,000 mB of hydrofluoric acid to an Ender IO tank, with 333 mB of calcium sulfate solution buffered in the outlet pipe. The saved region contained both quantities, and the saved NuclearCraft config retained the two expansion settings. The client used master volume zero and OpenAL No Output. The native observer recorded zero activations, foreground samples, and visible window samples.
+
+Forge 47.4.10 still reported an in-memory config cast error during Auram shutdown after the save. This run verified NuclearCraft's world settings and circuit data on disk.
 
 ## Auram targets
 

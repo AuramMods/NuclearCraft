@@ -7,7 +7,8 @@
         },
         {
             "fluid": "nuclearcraft:potassium",
-            "amount": 72
+            "amount": 72,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

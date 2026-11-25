@@ -5,12 +5,10 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.NCTurbine;
 import nc.init.TurbineConfig;
 import net.minecraft.core.RegistryAccess;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
@@ -26,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean inputTag, int inputAmount,
+public record TurbineRecipe(ResourceLocation id, FluidIngredient input,
                             FluidStack output, double powerPerMb, double expansion, double spinUp,
                             ResourceLocation particle, double particleSpeed,
                             @Nullable Profile profile) implements Recipe<Container> {
@@ -49,8 +47,7 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
     }
 
     public boolean accepts(FluidStack stack) {
-        return !stack.isEmpty() && (inputTag ? stack.getFluid().is(TagKey.create(Registries.FLUID, input))
-                : stack.getFluid() == ForgeRegistries.FLUIDS.getValue(input));
+        return input.accepts(stack);
     }
 
     @Override
@@ -101,13 +98,10 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
     public static final class Serializer implements RecipeSerializer<TurbineRecipe> {
         @Override
         public TurbineRecipe fromJson(ResourceLocation id, JsonObject json) {
-            JsonObject input = GsonHelper.getAsJsonObject(json, "input");
+            FluidIngredient input = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "input"), id);
             JsonObject output = GsonHelper.getAsJsonObject(json, "output");
-            boolean tag = input.has("tag");
-            ResourceLocation source = location(input, tag ? "tag" : "fluid");
             ResourceLocation destination = location(output, "fluid");
             Fluid product = ForgeRegistries.FLUIDS.getValue(destination);
-            int inputAmount = GsonHelper.getAsInt(input, "amount");
             int outputAmount = GsonHelper.getAsInt(output, "amount");
             Profile profile = profile(json);
             double power = number(json, "power_per_mb", profile, 0D);
@@ -115,13 +109,12 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
             double spinUp = json.has("spin_up") ? number(json, "spin_up", profile, 0D) : profile != null ? -1D : 1D;
             ResourceLocation particle = json.has("particle") ? location(json, "particle") : CLOUD;
             double speed = GsonHelper.getAsDouble(json, "particle_speed", 5D / 116D);
-            if (input.has("fluid") == tag || (!tag && !ForgeRegistries.FLUIDS.containsKey(source))
-                    || product == null || product == Fluids.EMPTY || inputAmount <= 0 || outputAmount <= 0
+            if (product == null || product == Fluids.EMPTY || outputAmount <= 0
                     || !Double.isFinite(speed) || speed < 0
                     || !(BuiltInRegistries.PARTICLE_TYPE.get(particle) instanceof SimpleParticleType)) {
                 throw new JsonSyntaxException("Invalid turbine recipe " + id);
             }
-            return new TurbineRecipe(id, source, tag, inputAmount, new FluidStack(product, outputAmount),
+            return new TurbineRecipe(id, input, new FluidStack(product, outputAmount),
                     power, expansion, spinUp, particle, speed, profile);
         }
 
@@ -158,16 +151,14 @@ public record TurbineRecipe(ResourceLocation id, ResourceLocation input, boolean
 
         @Override
         public TurbineRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new TurbineRecipe(id, buffer.readResourceLocation(), buffer.readBoolean(), buffer.readVarInt(),
+            return new TurbineRecipe(id, FluidIngredient.fromNetwork(buffer),
                     buffer.readFluidStack(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
                     buffer.readResourceLocation(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, TurbineRecipe recipe) {
-            buffer.writeResourceLocation(recipe.input);
-            buffer.writeBoolean(recipe.inputTag);
-            buffer.writeVarInt(recipe.inputAmount);
+            recipe.input.toNetwork(buffer);
             buffer.writeFluidStack(recipe.output);
             buffer.writeDouble(recipe.powerPerMb());
             buffer.writeDouble(recipe.expansion());

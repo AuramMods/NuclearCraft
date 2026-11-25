@@ -3,11 +3,13 @@
     "fluid_inputs": [
         {
             "tag": "forge:sulfur_dioxide",
-            "amount": 500
+            "amount": 500,
+            "legacy_fluid_aliases": true
         },
         {
             "tag": "forge:oxygen",
-            "amount": 250
+            "amount": 250,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

@@ -3,11 +3,13 @@
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:sodium",
-            "amount": 72
+            "amount": 72,
+            "legacy_fluid_aliases": true
         },
         {
             "fluid": "nuclearcraft:potassium",
-            "amount": 288
+            "amount": 288,
+            "legacy_fluid_aliases": true
         }
     ],
     "result": {

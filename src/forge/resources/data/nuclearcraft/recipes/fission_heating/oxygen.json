@@ -2,7 +2,8 @@
     "type": "nuclearcraft:fission_heating",
     "input": {
         "tag": "forge:oxygen",
-        "amount": 1
+        "amount": 1,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "fluid": "nuclearcraft:oxygen_hot",

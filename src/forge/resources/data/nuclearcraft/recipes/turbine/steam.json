@@ -2,7 +2,8 @@
     "type": "nuclearcraft:turbine",
     "input": {
         "tag": "forge:steam",
-        "amount": 1
+        "amount": 1,
+        "legacy_fluid_aliases": true
     },
     "output": {
         "fluid": "nuclearcraft:low_quality_steam",

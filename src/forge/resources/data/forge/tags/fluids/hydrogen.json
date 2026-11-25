@@ -2,6 +2,14 @@
     "replace": false,
     "values": [
         "nuclearcraft:hydrogen",
-        "nuclearcraft:flowing_hydrogen"
+        "nuclearcraft:flowing_hydrogen",
+        {
+            "id": "techreborn:hydrogen",
+            "required": false
+        },
+        {
+            "id": "techreborn:hydrogen_flowing",
+            "required": false
+        }
     ]
 }

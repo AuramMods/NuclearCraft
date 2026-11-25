@@ -323,10 +323,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.condenser",
                         decimal(recipe.cooling()), recipe.inputTemperature(), recipe.outputTemperature())),
                 new Category<>(TURBINE, NCTurbine.CONTROLLER.get(), gui, (layout, recipe) -> {
-                    var fluids = ForgeRegistries.FLUIDS.getValues().stream()
-                            .filter(fluid -> fluid.isSource(fluid.defaultFluidState()))
-                            .map(fluid -> new FluidStack(fluid, recipe.inputAmount())).filter(recipe::accepts).toList();
-                    fluidSlot(layout, INPUT, 20, fluids);
+                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.turbine", recipe.powerPerMb(), recipe.expansion())))
                 .filter(category -> stockCategoryEnabled(category.getRecipeType()))

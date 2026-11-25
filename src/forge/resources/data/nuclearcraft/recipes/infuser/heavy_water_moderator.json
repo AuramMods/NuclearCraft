@@ -10,7 +10,8 @@
     ],
     "fluid_input": {
         "tag": "forge:heavy_water",
-        "amount": 1000
+        "amount": 1000,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "item": "nuclearcraft:heavy_water_moderator",

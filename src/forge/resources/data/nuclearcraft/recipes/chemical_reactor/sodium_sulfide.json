@@ -3,11 +3,13 @@
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:sodium",
-            "amount": 144
+            "amount": 144,
+            "legacy_fluid_aliases": true
         },
         {
             "fluid": "nuclearcraft:sulfur",
-            "amount": 333
+            "amount": 333,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [

@@ -10,7 +10,8 @@
     ],
     "fluid_input": {
         "tag": "forge:oxygen",
-        "amount": 1000
+        "amount": 1000,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "item": "nuclearcraft:heb_248_oxide",

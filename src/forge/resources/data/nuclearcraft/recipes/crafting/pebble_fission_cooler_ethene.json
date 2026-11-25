@@ -6,7 +6,8 @@
     },
     "fluid_input": {
         "tag": "forge:ethene",
-        "amount": 1000
+        "amount": 1000,
+        "legacy_fluid_aliases": true
     },
     "result": {
         "item": "nuclearcraft:pebble_fission_cooler_ethene"

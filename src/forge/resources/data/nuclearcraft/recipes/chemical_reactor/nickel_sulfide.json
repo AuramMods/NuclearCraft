@@ -7,7 +7,8 @@
         },
         {
             "fluid": "nuclearcraft:sulfur",
-            "amount": 333
+            "amount": 333,
+            "legacy_fluid_aliases": true
         }
     ],
     "results": [
