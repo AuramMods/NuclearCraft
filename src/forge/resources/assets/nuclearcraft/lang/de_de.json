@@ -1,4 +1,6 @@
 {
+    "item.nuclearcraft.depleted_ic2_uranium": "Erschöpfter Urankernbrennstoff",
+    "item.nuclearcraft.depleted_ic2_mox": "Erschöpfter MOX Kernbrennstoff",
     "advancement.nuclearcraft.root.name": "NuclearCraft",
     "advancement.nuclearcraft.root.desc": "Atomphysik, Minecraft Style",
     "advancement.nuclearcraft.manufactory.name": "Industrialisierung",

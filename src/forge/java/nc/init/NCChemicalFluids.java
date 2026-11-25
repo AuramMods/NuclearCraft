@@ -64,6 +64,7 @@ final class NCChemicalFluids {
         NCFluids.molten("sodium_sulfide", 0x9A8B0B);
         NCFluids.soul("soul", 0xFF7B6F68, SoundEvents.GHAST_HURT, SoundEvents.GHAST_SCREAM);
         NCFluids.liquid("sulfuric_acid", "liquid", 1000, 0x454500, 300, 1000);
+        NCFluids.gas("tetrafluoroethene", 0xFF7EA542, 300);
         NCFluids.molten("zirconium", 0xE0E0B8);
     }
 }

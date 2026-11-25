@@ -357,6 +357,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/items/ingot/*.png'
         include 'assets/nuclearcraft/textures/items/dust/*.png'
         include 'assets/nuclearcraft/textures/items/fission_dust/*.png'
+        include 'assets/nuclearcraft/textures/items/depleted_fuel_ic2/*.png'
         include 'assets/nuclearcraft/textures/items/alloy/*.png'
         include 'assets/nuclearcraft/textures/items/gem/*.png'
         include 'assets/nuclearcraft/textures/items/gem_dust/*.png'

@@ -77,16 +77,26 @@ public final class LegacyFissionFuelConfig {
     }
 
     public enum Profile {
-        STANDARD, YELLORIUM;
+        STANDARD, YELLORIUM, IC2_URANIUM, IC2_MOX;
 
         private double scale(Setting setting, double value) {
-            if (this != YELLORIUM) {
-                return value;
-            }
-            return switch (setting) {
-                case FUEL_TIME -> value * 9D / 16D;
-                case HEAT_GENERATION, RADIATION -> value * 8D / 9D;
-                default -> value;
+            return switch (this) {
+                case STANDARD -> value;
+                case YELLORIUM -> switch (setting) {
+                    case FUEL_TIME -> value * 9D / 16D;
+                    case HEAT_GENERATION, RADIATION -> value * 8D / 9D;
+                    default -> value;
+                };
+                case IC2_URANIUM -> switch (setting) {
+                    case FUEL_TIME -> value * 19D / 6D;
+                    case HEAT_GENERATION, RADIATION -> value * 18D / 19D;
+                    default -> value;
+                };
+                case IC2_MOX -> switch (setting) {
+                    case FUEL_TIME -> value * 21D;
+                    case HEAT_GENERATION, RADIATION -> value * 9D / 7D;
+                    default -> value;
+                };
             };
         }
     }
@@ -108,7 +118,7 @@ public final class LegacyFissionFuelConfig {
         }
 
         public boolean selfPriming(boolean fallback) {
-            if (profile == Profile.YELLORIUM) {
+            if (profile != Profile.STANDARD) {
                 return false;
             }
             Object value = NCFission.legacyFuelValue(this, Setting.SELF_PRIMING);

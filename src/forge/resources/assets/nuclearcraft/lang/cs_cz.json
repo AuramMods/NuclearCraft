@@ -1,4 +1,6 @@
 {
+    "item.nuclearcraft.depleted_ic2_uranium": "Ochuzené uranové jaderné palivo",
+    "item.nuclearcraft.depleted_ic2_mox": "Ochuzené jaderné MOX palivo",
     "advancement.nuclearcraft.root.name": "NuclearCraft",
     "advancement.nuclearcraft.root.desc": "Jaderná fyzika v Minecraftu",
     "advancement.nuclearcraft.manufactory.name": "Začátky",

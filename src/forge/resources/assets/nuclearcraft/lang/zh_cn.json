@@ -1,4 +1,9 @@
 {
+    "item.nuclearcraft.depleted_ic2_uranium": "枯竭铀核燃料",
+    "item.nuclearcraft.depleted_ic2_mox": "枯竭混合氧化物核燃料",
+    "fluid_type.nuclearcraft.tetrafluoroethene": "四氟乙烯",
+    "block.nuclearcraft.tetrafluoroethene": "四氟乙烯",
+    "item.nuclearcraft.tetrafluoroethene_bucket": "四氟乙烯桶",
     "message.nuclearcraft.multiblock.no_controller": "完成多方块结构必须要有一个控制器。",
     "info.nuclearcraft.multitool.save_processor_config": "已将%s的配置保存到多功能工具。",
     "info.nuclearcraft.multitool.load_processor_config": "已从多功能工具加载%s的配置。",

@@ -1041,6 +1041,14 @@ The same JAR rendered both blocks and passed the bucket and menu checks in a fre
 
 ## Registry migration references
 
+The [legacy registry table](legacy-registry-ids.csv) maps the stock 2o.9.7 item, block, and fluid definitions at `ef28c65`, the two ghoul entities, and block entity IDs that have a fixed target. Filter by `legacy_registry`, `legacy_id`, and `legacy_metadata`. Rows marked `block_and_item` apply to both a placed block and its corresponding inventory item. A blank metadata field means the ID is independent of metadata. For rows with a numeric metadata value, use that subtype to select the Forge ID. Copy tool and armor wear into the modern damage field separately.
+
+The table maps names and subtypes. Chunk conversion also needs the block-state properties, block entity type and data, and any coordinates stored inside that data. The machine sections below cover the corresponding field layouts. For fluids, use the source registry ID and carry the stored volume forward in mB. Older Forge packs could share one unnamespaced fluid name between mods. The table gives NuclearCraft's modern ID, and a converter should preserve a different provider when the old pack identifies it. A legacy inventory item representing a fluid block maps to the corresponding filled bucket. Preserve the type, amount, and tags when converting fluid stored inside other containers.
+
+For legacy generic `battery`, `rtg`, and `solar_panel` block entities, use the modern type associated with the converted block's tier or isotope. For `basic_energy_processor_dyn` and `basic_upgradable_energy_processor_dyn`, reconstruct the scripted machine definition and use that machine's registered ID. Before removing obsolete part records, recover any `multiblockData` saved on their legacy delegate and move its converted fields to the modern controller. Plain casing, heat sinks, exchanger tubes, and turbine rotor parts can then use their converted block states.
+
+The table contains 812 block entries, 1,428 item entries, 457 fluid entries, 237 fixed block entity entries, and two entity entries. It combines rows where a block and item share both IDs. Every target was present in the corresponding registry of the packaged JAR on clean Forge 47.4.10. The block entity entries use the types that the converted blocks create.
+
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
 | --- | --- |
 | `nuclearcraft:pebble_fission_cooler`, 0–15 | `nuclearcraft:pebble_fission_cooler_<gas>` |
@@ -1926,6 +1934,14 @@ The Mekanism item line fed two Blutonium ingots. The reactor held its two Cyanit
 
 The isolated 539-mod Auram client found both Extreme Reactors ingots in the same JEI recipe and displayed Cyanite as the result. It showed the default 2,700 ticks, 106 heat, and 6.5% decay factor. The client used master volume zero and OpenAL No Output. The native observer recorded zero desktop activations, foreground samples, and visible window samples.
 
+### IndustrialCraft fuel conversion
+
+Convert legacy `nuclearcraft:depleted_fuel_ic2` metadata 0 and 1 to `nuclearcraft:depleted_ic2_uranium` and `nuclearcraft:depleted_ic2_mox`. Both IDs retain their legacy artwork and item radiation rates. Converted stacks remain readable on clean Forge and in Auram. The creative tab and JEI show the items when IC2 is installed.
+
+The optional solid-fission recipes accept `ic2:uran` and `ic2:mox`. They apply the original IC2 profiles to uranium array index 11 and mixed fuel index 1. Both fuels need priming. Each Fuel Reprocessor batch takes 400 ticks and 8,000 FE. Uranium returns four Uranium-238 items and one Tiny Pile of Plutonium across four slots. MOX returns seven Tiny Piles of Plutonium in each of its first four outputs. The optional recipes load when their external ingredients or results are registered. [Industrial Craft FE 1.2.8](https://www.curseforge.com/minecraft/mc-mods/industrial-craft-fe/files/9778385)
+
+On packaged Forge 47.4.10 with Industrial Craft FE 1.2.8, both fuels remained reserved at zero progress until the reactors received a neutron source. Both produced their depleted items. Separate Fuel Reprocessors used exactly 8,000 FE per batch and produced the expected items in all four slots. The products survived a confirmed chunk unload followed by a dedicated restart. On clean Forge the reprocessor retained the depleted item and its charge while the IC2 outputs were unavailable.
+
 ### Shared fission settings and vent recipes
 
 Copy the legacy `fission_min_size` and `fission_max_size` values into `world/serverconfig/nuclearcraft-fission.toml`. Size limits apply to each interior dimension. The same file retains `fission_fuel_time_multiplier`, `fission_fuel_heat_multiplier`, `fission_fuel_efficiency_multiplier`, and `fission_fuel_radiation_multiplier`. These settings apply to the three reactor types and multiply any molten-salt-specific overrides already in the Forge configuration. Fuel heat rounds down to whole heat units. Solid and pebble fuel durations round down and have a minimum of one tick. Molten-salt duration keeps its fractional precision. JEI shows scaled duration and heat.
@@ -2204,6 +2220,8 @@ All 109 local GameTests passed, including mob dose persistence, Geiger interacti
 The Forge liquid blocks apply their own contact and temperature effects, including acid, molten fuel, hot coolant, steam, plasma, and cryogenic liquids. The Hazmat Suit absorbs tagged chemical damage by 20 percent for the helmet, leggings, or boots and 40 percent for the chestplate. Direct damage, status effects, and fire are applied separately. Datapacks can extend the `nuclearcraft:hazmat_protected` damage-type tag.
 
 Water touching the side or top of a hot fluid can cool the local block, while flowing coolant or nuclear fuel can replace water directly below it. Corium can form `nuclearcraft:solidified_corium`, and fission fuel flowing into water below can form `nuclearcraft:wasteland_earth`. Cryotheum freezes water to ice and liquid helium freezes it to `nuclearcraft:supercold_ice`. Corium adds radiation as it ticks. Steam and gases rise and dissipate, and chemical liquids retain Forge buckets and fluid types. Ignition follows the `doFireTick` gamerule.
+
+Tetrafluoroethylene keeps its legacy tint and rising behavior. Convert its placed block to `nuclearcraft:tetrafluoroethene` and its filled bucket to `nuclearcraft:tetrafluoroethene_bucket`. Datapacks can use `forge:tetrafluoroethene`. On packaged Forge 47.4.10, Ender IO 8.2.22-beta moved 623 mB and Mekanism 10.4.16.80 moved 1,171 mB between tanks. Both exact quantities survived chunk unload and dedicated restart. The isolated 540-mod Auram client loaded JEI, moved 417 mB through an Ender IO fluid conduit, and recovered the restored bucket and fuel IDs from a barrel. It saved and exited with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows. All 277 local GameTests passed.
 
 The `corium_solidification`, `corium_solidification_list_type`, and `fusion_plasma_craziness` options are in `world/serverconfig/nuclearcraft-fluids.toml`. Convert the old numeric dimension list to Forge registry IDs. The default list includes the Overworld, the End, and NuclearCraft's Wasteland ID. Setting `corium_solidification_list_type` to true treats the list as a blacklist.
 

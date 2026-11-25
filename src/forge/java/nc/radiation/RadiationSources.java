@@ -170,6 +170,8 @@ public final class RadiationSources {
         item("tritium_lamp", TRITIUM / 256);
         item("solidified_corium", CORIUM * FLUID_MULTIPLIER);
         tag("dusts/irradiated_borax", CAESIUM_137 / 4);
+        item("depleted_ic2_uranium", 4D * URANIUM_238 + PLUTONIUM_239 / 9D);
+        item("depleted_ic2_mox", PLUTONIUM_239 * 28D / 9D);
 
         isotope("uranium_233", URANIUM_233);
         isotope("uranium_235", URANIUM_235);

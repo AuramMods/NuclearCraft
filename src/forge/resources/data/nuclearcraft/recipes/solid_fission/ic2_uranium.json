@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:solid_fission",
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "ic2:uran"
+        }
+    ],
+    "fuel": {
+        "item": "ic2:uran"
+    },
+    "result": {
+        "item": "nuclearcraft:depleted_ic2_uranium"
+    },
+    "legacy_fuel": {
+        "family": "uranium",
+        "index": 11,
+        "profile": "ic2_uranium"
+    },
+    "ticks": 15200,
+    "heat": 113,
+    "efficiency": 1,
+    "criticality": 102,
+    "intrinsic_flux": 0,
+    "self_priming": false,
+    "decay_factor": 0.065,
+    "radiation": 0.00001387648708881579
+}

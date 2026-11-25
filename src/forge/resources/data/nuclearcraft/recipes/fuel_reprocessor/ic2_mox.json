@@ -1,0 +1,41 @@
+{
+    "type": "nuclearcraft:fuel_reprocessor",
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "ic2:plutoniumsmall"
+        }
+    ],
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:depleted_ic2_mox"
+            },
+            "count": 1
+        }
+    ],
+    "results": [
+        {
+            "item": "ic2:plutoniumsmall",
+            "count": 7
+        },
+        {
+            "item": "ic2:plutoniumsmall",
+            "count": 7
+        },
+        {
+            "item": "ic2:plutoniumsmall",
+            "count": 7
+        },
+        {
+            "item": "ic2:plutoniumsmall",
+            "count": 7
+        },
+        null,
+        null,
+        null,
+        null
+    ],
+    "ticks": 400,
+    "energy_per_tick": 20
+}

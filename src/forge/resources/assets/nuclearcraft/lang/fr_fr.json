@@ -1,4 +1,6 @@
 {
+    "item.nuclearcraft.depleted_ic2_uranium": "Combustible nucléaire d'uranium appauvri",
+    "item.nuclearcraft.depleted_ic2_mox": "Combustible nucléaire mixte appauvri",
     "advancement.nuclearcraft.root.name": "NuclearCraft",
     "advancement.nuclearcraft.root.desc": "Physique nucléaire, style Minecraft",
     "advancement.nuclearcraft.manufactory.name": "Ere industrielle",

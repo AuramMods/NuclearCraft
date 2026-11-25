@@ -1,4 +1,6 @@
 {
+    "item.nuclearcraft.depleted_ic2_uranium": "Обеднённое урановое ядерное топливо",
+    "item.nuclearcraft.depleted_ic2_mox": "Обеднённое MOX ядерное топливо",
     "advancement.nuclearcraft.root.name": "NuclearCraft",
     "advancement.nuclearcraft.root.desc": "Ядерная физика в стиле Minecraft",
     "advancement.nuclearcraft.manufactory.name": "Индустриализация",

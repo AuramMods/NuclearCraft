@@ -2,13 +2,18 @@ package nc.init;
 
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
-final class NCFissionFuels {
+public final class NCFissionFuels {
     private static final List<RegistryObject<Item>> ITEMS = new ArrayList<>();
+    public static final RegistryObject<Item> DEPLETED_IC2_URANIUM =
+            NCRegistries.ITEMS.register("depleted_ic2_uranium", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DEPLETED_IC2_MOX =
+            NCRegistries.ITEMS.register("depleted_ic2_mox", () -> new Item(new Item.Properties()));
 
     private NCFissionFuels() {}
 
@@ -44,6 +49,10 @@ final class NCFissionFuels {
 
     static void displayItems(CreativeModeTab.Output output) {
         ITEMS.forEach(item -> output.accept(item.get()));
+        if (ModList.get().isLoaded("ic2")) {
+            output.accept(DEPLETED_IC2_URANIUM.get());
+            output.accept(DEPLETED_IC2_MOX.get());
+        }
     }
 
     static void registerItem(String id) {

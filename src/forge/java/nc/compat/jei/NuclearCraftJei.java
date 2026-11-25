@@ -35,6 +35,7 @@ import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
+import nc.init.NCFissionFuels;
 import nc.init.NCSaltCoolants;
 import nc.multiblock.fission.FissionMaterials;
 import nc.init.NCSaltFission;
@@ -101,6 +102,7 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
@@ -439,6 +441,10 @@ public final class NuclearCraftJei implements IModPlugin {
     @Override
     public void onRuntimeAvailable(IJeiRuntime runtime) {
         var disabled = new ArrayList<ItemStack>();
+        if (!ModList.get().isLoaded("ic2")) {
+            disabled.add(NCFissionFuels.DEPLETED_IC2_URANIUM.get().getDefaultInstance());
+            disabled.add(NCFissionFuels.DEPLETED_IC2_MOX.get().getDefaultInstance());
+        }
         if (!NCProcessorAvailability.nuclearFurnaceEnabled()) {
             disabled.add(new ItemStack(NCRegistries.NUCLEAR_FURNACE.get()));
         }
