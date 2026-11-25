@@ -141,15 +141,15 @@ public final class LargeElectrolyzerGameTests {
                             "The recipe accepts its fluid in the second input");
                     energy(helper).receiveEnergy(10_000, false);
                     var tag = machine.saveWithoutMetadata();
-                    tag.put("output_3", stock("nuclearcraft:steam", 80_000).writeToNBT(new CompoundTag()));
+                    tag.put("output_3", stock("nuclearcraft:steam", 79_901).writeToNBT(new CompoundTag()));
                     machine.load(tag);
                 })
                 .thenIdle(10)
                 .thenExecute(() -> {
                     helper.assertTrue(energy(helper).getEnergyStored() == 10_000 && machine.radiationEmission() == 0
                                     && items(helper, ITEM_OUTPUT, Direction.EAST).getStackInSlot(0).isEmpty(),
-                            "A full fluid output also blocks the item product and FE consumption");
-                    fluid(helper, PRODUCTS[3], Direction.SOUTH).drain(80_000, EXECUTE);
+                            "99 mB of room against a 100 mB maximum also blocks the item product and FE consumption");
+                    fluid(helper, PRODUCTS[3], Direction.SOUTH).drain(1, EXECUTE);
                 })
                 .thenWaitUntil(() -> helper.assertTrue(Math.abs(machine.radiationEmission() - 0.9216) < 1E-9,
                         "Electrode geometry and electrolyte efficiency scale the recipe's radiation rate"))
@@ -157,10 +157,12 @@ public final class LargeElectrolyzerGameTests {
                         "The datapack recipe produces an item in product slot four"))
                 .thenExecute(() -> {
                     helper.assertTrue(items(helper, ITEM_OUTPUT, Direction.EAST).extractItem(0, 1, false).is(Items.CHARCOAL)
-                                    && fluid(helper, PRODUCTS[3], Direction.SOUTH).drain(50, EXECUTE).isFluidStackIdentical(
-                                            stock("nuclearcraft:steam", 50))
+                                    && items(helper, ITEM_OUTPUT, Direction.EAST).getStackInSlot(0).isEmpty()
+                                    && fluid(helper, PRODUCTS[3], Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(
+                                            stock("nuclearcraft:steam", 79_950))
+                                    && fluid(helper, SECOND_INLET, Direction.NORTH).getFluidInTank(0).isEmpty()
                                     && energy(helper).getEnergyStored() == 8_720,
-                            "Both sparse outputs are delivered exactly once at the scripted cost");
+                            "Both sparse outputs produce only their minimums at the scripted cost");
                 }).thenSucceed();
     }
 

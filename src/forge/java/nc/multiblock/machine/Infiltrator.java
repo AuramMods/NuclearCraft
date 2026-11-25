@@ -190,7 +190,7 @@ public final class Infiltrator extends MachineController {
 
         if (!recipe.id().equals(activeRecipe)) reset(recipe.id());
         var match = recipe.match(firstItem, secondItem, firstFluid, secondFluid);
-        var product = recipe.product();
+        var product = recipe.result();
         var stored = inventory.getStackInSlot(ITEM_INPUTS);
         double fraction = Math.min(1D, (double) pressure.getFluidAmount() / pressure.getCapacity());
         heatingBonus = chambers == 0 ? 0 : (double) heatedChambers * recipe.heatingBonus() / chambers;
@@ -198,27 +198,33 @@ public final class Infiltrator extends MachineController {
         double speed = chambers * pressureEfficiency * (1 + heatingBonus) * fraction;
         double power = NCMachines.infiltratorPower() * recipe.power() * (chambers + heaters.size()) * fraction;
         energyPerTick = (long) Math.ceil(power);
-        if (speed <= 0 || blockedByRedstone(server) || !stored.isEmpty() && !ItemStack.isSameItemSameTags(stored, product)) return false;
-        int possible = (product.getMaxStackSize() - stored.getCount()) / product.getCount();
-        if (match.firstItems() > 0) possible = Math.min(possible, firstItem.getCount() / match.firstItems());
-        if (match.secondItems() > 0) possible = Math.min(possible, secondItem.getCount() / match.secondItems());
-        if (match.firstFluid() > 0) possible = Math.min(possible, firstFluid.getAmount() / match.firstFluid());
-        if (match.secondFluid() > 0) possible = Math.min(possible, secondFluid.getAmount() / match.secondFluid());
-        if (possible <= 0 || power() < energyPerTick || progress <= batchStart
+        int room = product.batchesIn(stored);
+        int available = match.available(firstItem, secondItem, firstFluid, secondFluid);
+        if (speed <= 0 || blockedByRedstone(server) || room == 0 || power() < energyPerTick || progress <= batchStart
                 && power() < Math.min(energyCapacity(), (long) Math.ceil(duration / speed * power))) return false;
 
         setPower(power() - energyPerTick);
         emitRadiation(recipe.radiation(), speed);
         soundVolume = (float) (NCMachines.infiltratorSoundVolume() * Math.log1p(Math.cbrt(speed)) / 128);
         progress += speed;
-        int batches = Math.min(possible, (int) (progress / duration));
+        int batches = Math.min(available, (int) (progress / duration));
         if (batches > 0) {
-            inventory.extractItem(0, batches * match.firstItems(), false);
-            inventory.extractItem(1, batches * match.secondItems(), false);
-            inputs.get(0).drain(batches * match.firstFluid(), EXECUTE);
-            inputs.get(1).drain(batches * match.secondFluid(), EXECUTE);
-            inventory.setStackInSlot(ITEM_INPUTS, product.copyWithCount(stored.getCount() + batches * product.getCount()));
-            progress = batches == possible ? 0 : Math.max(0, progress - batches * duration);
+            int finished = 0;
+            while (finished < batches && room > 0) {
+                int count = Math.min(batches - finished, room);
+                int produced = product.totalCount(count, server.random);
+                if (produced > 0) {
+                    stored = product.stack().copyWithCount(stored.getCount() + produced);
+                    inventory.setStackInSlot(ITEM_INPUTS, stored);
+                }
+                finished += count;
+                room = product.batchesIn(stored);
+            }
+            inventory.extractItem(0, finished * match.firstItems(), false);
+            inventory.extractItem(1, finished * match.secondItems(), false);
+            inputs.get(0).drain(finished * match.firstFluid(), EXECUTE);
+            inputs.get(1).drain(finished * match.secondFluid(), EXECUTE);
+            progress = finished == available || room == 0 ? 0 : Math.max(0, progress - finished * duration);
             batchStart = progress;
         }
         setChanged();

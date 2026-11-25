@@ -14,6 +14,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -145,6 +146,36 @@ public final class InfiltratorGameTests {
                                 && items(helper, ITEM_FIRST, Direction.NORTH).getStackInSlot(0).is(material("sic_fiber", 1).getItem())
                                 && !helper.getBlockState(HEATER).getValue(BlockStateProperties.LIT),
                         "The redstone hold preserves progress, feed and partial pressure through reassembly"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void chanceProductRequiresMaximumRoom(GameTestHelper helper) {
+        var controller = build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The Infiltrator assembles"))
+                .thenExecute(() -> {
+                    items(helper, ITEM_SECOND, Direction.NORTH).insertItem(0, new ItemStack(Items.GRAVEL, 3), false);
+                    fluid(helper, PRESSURE, Direction.DOWN)
+                            .fill(new FluidStack(NCGasCoolants.HELIUM.cold(), 64_000), EXECUTE);
+                    energy(helper).receiveEnergy(10_000, false);
+                    var state = controller.saveWithoutMetadata();
+                    state.getCompound("inventory").getList("Items", Tag.TAG_COMPOUND)
+                            .add(new ItemStack(Items.FLINT, 61).save(new CompoundTag()).merge(slot(2)));
+                    controller.load(state);
+                })
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    helper.assertTrue(energy(helper).getEnergyStored() == 10_000
+                                    && items(helper, ITEM_SECOND, Direction.NORTH).getStackInSlot(0).getCount() == 3,
+                            "Three free spaces against a maximum of four leaves both feed and FE intact");
+                    items(helper, PRODUCT, Direction.EAST).extractItem(0, 1, false);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(items(helper, PRODUCT, Direction.EAST).getStackInSlot(0).getCount() == 62,
+                        "The batch adds exactly two flint to the 60 retained in its output"))
+                .thenExecute(() -> helper.assertTrue(items(helper, ITEM_SECOND, Direction.NORTH).getStackInSlot(0).isEmpty()
+                                && fluid(helper, PRESSURE, Direction.DOWN).getFluidInTank(0).getAmount() == 64_000,
+                        "Only the counted feed is used, and the pressure charge is retained"))
                 .thenSucceed();
     }
 

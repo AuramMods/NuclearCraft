@@ -1,16 +1,18 @@
 {
     "type": "nuclearcraft:multiblock_electrolyzer",
     "item_inputs": [
+        {},
         { "ingredient": { "item": "minecraft:coal" }, "count": 2 }
     ],
     "fluid_inputs": [
+        {},
         { "fluid": "minecraft:lava", "amount": 100 }
     ],
     "item_outputs": [
-        null, null, null, { "item": "minecraft:charcoal" }
+        {}, null, {}, { "item": "minecraft:charcoal", "count": 2, "min_count": 1, "chance_percent": 0 }
     ],
     "fluid_outputs": [
-        null, null, null, { "fluid": "nuclearcraft:steam", "amount": 50 }
+        null, {}, null, { "fluid": "nuclearcraft:steam", "amount": 100, "min_amount": 50, "step": 25, "chance_percent": 0 }
     ],
     "time_multiplier": 0.05,
     "power_multiplier": 0.1,

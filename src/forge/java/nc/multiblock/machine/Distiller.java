@@ -362,14 +362,7 @@ public final class Distiller extends MachineController {
         for (int slot = 0; slot < products.size(); slot++) {
             FluidProduct product = products.get(slot);
             if (product.isEmpty()) continue;
-            int amount = product.rollAmount(random) / factor;
-            if (product.varies()) {
-                for (int batch = 1; batch < batches; batch++) {
-                    amount += product.rollAmount(random) / factor;
-                }
-            } else {
-                amount *= batches;
-            }
+            int amount = product.totalAmount(batches, factor, random);
             if (amount > 0) outputs.get(slot).fill(new FluidStack(product.stack(), amount), EXECUTE);
         }
     }

@@ -6,12 +6,15 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.ElectrolyzerElectrolyteRecipe;
 import nc.recipe.LargeElectrolyzerRecipe;
+import nc.recipe.FluidProduct;
+import nc.recipe.ItemProcessorRecipe.Product;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -188,15 +191,9 @@ public final class LargeElectrolyzer extends MachineController {
         if (speed <= 0 || blockedByRedstone(server) || power() < energyPerTick
                 || progress <= batchStart && power() < Math.min(energyCapacity(), (long) Math.ceil(duration / speed * power))) return false;
 
-        int possible = Integer.MAX_VALUE;
-        if (match.firstItems() > 0) possible = Math.min(possible, firstItem.getCount() / match.firstItems());
-        if (match.secondItems() > 0) possible = Math.min(possible, secondItem.getCount() / match.secondItems());
-        if (match.firstFluid() > 0) possible = Math.min(possible, firstFluid.getAmount() / match.firstFluid());
-        if (match.secondFluid() > 0) possible = Math.min(possible, secondFluid.getAmount() / match.secondFluid());
-        var itemResults = recipe.itemOutputs();
-        var fluidResults = recipe.fluidOutputs();
-        possible = Math.min(possible, outputBatches(itemResults, fluidResults));
-        if (possible <= 0) return false;
+        int available = match.available(firstItem, secondItem, firstFluid, secondFluid);
+        int room = outputBatches(recipe.itemProducts(), recipe.fluidProducts());
+        if (room == 0) return false;
 
         setPower(power() - energyPerTick);
         emitRadiation(recipe.radiation(), speed);
@@ -204,31 +201,34 @@ public final class LargeElectrolyzer extends MachineController {
         soundVolume = (float) (NCMachines.electrolyzerSoundVolume() * Math.log1p(
                 Math.sqrt(speed) / (4D * Math.sqrt(bounds.yLength() - 1D) * terminals * terminals)));
         progress += speed;
-        int batches = Math.min(possible, (int) (progress / duration));
+        int batches = Math.min(available, (int) (progress / duration));
         if (batches > 0) {
-            inventory.extractItem(0, batches * match.firstItems(), false);
-            inventory.extractItem(1, batches * match.secondItems(), false);
-            inputs.get(0).drain(batches * match.firstFluid(), EXECUTE);
-            inputs.get(1).drain(batches * match.secondFluid(), EXECUTE);
-            produce(itemResults, fluidResults, batches);
-            progress = batches == possible ? 0 : Math.max(0, progress - batches * duration);
+            int finished = 0;
+            while (finished < batches && room > 0) {
+                int count = Math.min(batches - finished, room);
+                produce(recipe.itemProducts(), recipe.fluidProducts(), count, server.random);
+                finished += count;
+                room = outputBatches(recipe.itemProducts(), recipe.fluidProducts());
+            }
+            inventory.extractItem(0, finished * match.firstItems(), false);
+            inventory.extractItem(1, finished * match.secondItems(), false);
+            inputs.get(0).drain(finished * match.firstFluid(), EXECUTE);
+            inputs.get(1).drain(finished * match.secondFluid(), EXECUTE);
+            progress = finished == available || room == 0 ? 0 : Math.max(0, progress - finished * duration);
             batchStart = progress;
         }
         setChanged();
         return true;
     }
 
-    private int outputBatches(List<ItemStack> itemResults, List<FluidStack> fluidResults) {
+    private int outputBatches(List<Product> itemResults, List<FluidProduct> fluidResults) {
         int batches = Integer.MAX_VALUE;
         for (int slot = 0; slot < itemResults.size(); slot++) {
-            var result = itemResults.get(slot);
-            if (result.isEmpty()) continue;
             var stored = inventory.getStackInSlot(ITEM_INPUTS + slot);
-            if (!stored.isEmpty() && !ItemStack.isSameItemSameTags(stored, result)) return 0;
-            batches = Math.min(batches, (result.getMaxStackSize() - stored.getCount()) / result.getCount());
+            batches = Math.min(batches, itemResults.get(slot).batchesIn(stored));
         }
         for (int slot = 0; slot < fluidResults.size(); slot++) {
-            var result = fluidResults.get(slot);
+            var result = fluidResults.get(slot).stack();
             if (result.isEmpty()) continue;
             var tank = outputs.get(slot);
             if (!tank.isEmpty() && !tank.getFluid().isFluidEqual(result)) return 0;
@@ -237,16 +237,19 @@ public final class LargeElectrolyzer extends MachineController {
         return batches;
     }
 
-    private void produce(List<ItemStack> itemResults, List<FluidStack> fluidResults, int batches) {
+    private void produce(List<Product> itemResults, List<FluidProduct> fluidResults, int batches, RandomSource random) {
         for (int slot = 0; slot < itemResults.size(); slot++) {
             var result = itemResults.get(slot);
             if (result.isEmpty()) continue;
             int index = ITEM_INPUTS + slot;
-            inventory.setStackInSlot(index, result.copyWithCount(inventory.getStackInSlot(index).getCount() + result.getCount() * batches));
+            int count = result.totalCount(batches, random);
+            if (count > 0) inventory.setStackInSlot(index, result.stack().copyWithCount(inventory.getStackInSlot(index).getCount() + count));
         }
         for (int slot = 0; slot < fluidResults.size(); slot++) {
             var result = fluidResults.get(slot);
-            if (!result.isEmpty()) outputs.get(slot).fill(new FluidStack(result, result.getAmount() * batches), EXECUTE);
+            if (result.isEmpty()) continue;
+            int amount = result.totalAmount(batches, 1, random);
+            if (amount > 0) outputs.get(slot).fill(new FluidStack(result.stack(), amount), EXECUTE);
         }
     }
 

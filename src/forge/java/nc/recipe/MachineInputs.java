@@ -1,6 +1,7 @@
 package nc.recipe;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonSyntaxException;
 import nc.recipe.ItemProcessorRecipe.Input;
 import net.minecraft.network.FriendlyByteBuf;
@@ -21,7 +22,16 @@ public interface MachineInputs {
     List<Input> items();
     List<FluidIngredient> fluids();
 
-    record Match(int firstItems, int secondItems, int firstFluid, int secondFluid) {}
+    record Match(int firstItems, int secondItems, int firstFluid, int secondFluid) {
+        public int available(ItemStack first, ItemStack second, FluidStack fluid, FluidStack other) {
+            return Math.min(Math.min(batches(first.getCount(), firstItems), batches(second.getCount(), secondItems)),
+                    Math.min(batches(fluid.getAmount(), firstFluid), batches(other.getAmount(), secondFluid)));
+        }
+
+        private static int batches(int available, int required) {
+            return required == 0 ? Integer.MAX_VALUE : available / required;
+        }
+    }
 
     default @Nullable Match match(ItemStack first, ItemStack second, FluidStack fluid, FluidStack other) {
         Input firstItem = item(0);
@@ -70,10 +80,14 @@ public interface MachineInputs {
         return ingredient != null && (partial ? ingredient.accepts(stack) : ingredient.matches(stack));
     }
 
+    static boolean unusedSlot(JsonElement element) {
+        return element.isJsonNull() || element.isJsonObject() && element.getAsJsonObject().size() == 0;
+    }
+
     static List<Input> readItems(JsonArray entries, ResourceLocation id) {
         var items = new ArrayList<Input>(ITEM_INPUTS);
         for (var entry : entries) {
-            if (entry.isJsonNull()) continue;
+            if (unusedSlot(entry)) continue;
             var input = GsonHelper.convertToJsonObject(entry, "item input");
             int count = GsonHelper.getAsInt(input, "count", 1);
             if (count <= 0 || count > 64) throw new JsonSyntaxException("Invalid machine item count for " + id);
@@ -86,7 +100,7 @@ public interface MachineInputs {
     static List<FluidIngredient> readFluids(JsonArray entries, ResourceLocation id) {
         var fluids = new ArrayList<FluidIngredient>(FLUID_INPUTS);
         for (var entry : entries) {
-            if (!entry.isJsonNull()) fluids.add(FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entry, "fluid input"), id));
+            if (!unusedSlot(entry)) fluids.add(FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entry, "fluid input"), id));
         }
         if (fluids.size() > FLUID_INPUTS) throw new JsonSyntaxException("Too many fluid inputs for " + id);
         return fluids;

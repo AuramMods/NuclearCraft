@@ -793,7 +793,7 @@ public final class NuclearCraftJei implements IModPlugin {
         for (int slot = 0; slot < recipe.fluids().size(); slot++) {
             fluidSlot(layout, INPUT, 20 + slot * 20, 33, recipe.fluids().get(slot).alternatives());
         }
-        layout.addSlot(OUTPUT, 112, 22).setOutputSlotBackground().addItemStack(recipe.product());
+        itemProduct(layout.addSlot(OUTPUT, 112, 22).setOutputSlotBackground(), recipe.result());
     }
 
     private static RecipeType<MachineMaterialRecipe> materialType(Kind kind) {
@@ -819,12 +819,14 @@ public final class NuclearCraftJei implements IModPlugin {
             fluidSlot(layout, INPUT, 15 + slot * 20, 33, recipe.fluids().get(slot).alternatives());
         }
         for (int slot = 0; slot < LargeElectrolyzerRecipe.ITEM_OUTPUTS; slot++) {
-            var item = recipe.itemOutput(slot);
-            if (!item.isEmpty()) layout.addSlot(OUTPUT, 99 + slot * 18, 12).setOutputSlotBackground().addItemStack(item);
+            var item = recipe.itemProducts().get(slot);
+            if (!item.isEmpty()) itemProduct(layout.addSlot(OUTPUT, 99 + slot * 18, 12).setOutputSlotBackground(), item);
         }
         for (int slot = 0; slot < LargeElectrolyzerRecipe.FLUID_OUTPUTS; slot++) {
-            var fluid = recipe.fluidOutput(slot);
-            if (!fluid.isEmpty()) fluidSlot(layout, OUTPUT, 99 + slot * 18, 33, List.of(fluid));
+            var fluid = recipe.fluidProducts().get(slot);
+            if (fluid.isEmpty()) continue;
+            var maximum = fluid.stack();
+            addFluidChance(fluidSlot(layout, OUTPUT, 99 + slot * 18, 33, List.of(maximum)), fluid, 1, maximum.getAmount());
         }
     }
 

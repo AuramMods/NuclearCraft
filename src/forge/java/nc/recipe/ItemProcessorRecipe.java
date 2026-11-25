@@ -34,7 +34,6 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                                   double ticks, int energyPerTick, double radiation,
                                   @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
                                   @Nullable ProcessorRecipeDefaults defaults) implements ProcessingRecipe {
-    private static final Product EMPTY_PRODUCT = new Product(ItemStack.EMPTY, 100, 0);
     private static final int[] EMPTY_AMOUNTS = new int[0];
 
     public ItemProcessorRecipe {
@@ -252,6 +251,8 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
     }
 
     public record Product(ItemStack stack, int chancePercent, int minCount) {
+        static final Product EMPTY = new Product(ItemStack.EMPTY, 100, 0);
+
         public Product {
             stack = stack.copy();
         }
@@ -262,9 +263,33 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         }
 
         public ItemStack roll(RandomSource random) {
+            return stack.copyWithCount(rollCount(random));
+        }
+
+        public boolean isEmpty() {
+            return stack.isEmpty();
+        }
+
+        public int batchesIn(ItemStack stored) {
+            if (isEmpty()) return Integer.MAX_VALUE;
+            if (!stored.isEmpty() && !ItemStack.isSameItemSameTags(stored, stack)) return 0;
+            return Math.max(0, stack.getMaxStackSize() - stored.getCount()) / stack.getCount();
+        }
+
+        public int totalCount(int batches, RandomSource random) {
+            if (chancePercent == 100) return stack.getCount() * batches;
+            if (chancePercent == 0 || minCount == stack.getCount()) return minCount * batches;
+            int total = 0;
+            for (int batch = 0; batch < batches; batch++) {
+                total += rollCount(random);
+            }
+            return total;
+        }
+
+        private int rollCount(RandomSource random) {
             int maximum = stack.getCount();
             if (chancePercent == 100 || minCount == maximum) {
-                return stack.copy();
+                return maximum;
             }
             int count = minCount;
             for (int roll = minCount; roll < maximum; roll++) {
@@ -272,7 +297,28 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                     count++;
                 }
             }
-            return stack.copyWithCount(count);
+            return count;
+        }
+
+        static Product fromJson(JsonObject json, ICondition.IContext context) {
+            var stack = ItemRecipeResult.read(json, context);
+            int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
+            int minimum = GsonHelper.getAsInt(json, "min_count", 0);
+            if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize() || chance < 0 || chance > 100
+                    || minimum < 0 || minimum > stack.getCount()) {
+                throw new JsonSyntaxException("Invalid item processor output " + json);
+            }
+            return new Product(stack, chance, minimum);
+        }
+
+        static Product fromNetwork(FriendlyByteBuf buffer) {
+            return new Product(buffer.readItem(), buffer.readUnsignedByte(), buffer.readUnsignedByte());
+        }
+
+        void toNetwork(FriendlyByteBuf buffer) {
+            buffer.writeItem(stack);
+            buffer.writeByte(chancePercent);
+            buffer.writeByte(minCount);
         }
     }
 
@@ -302,7 +348,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             var fluidProducts = readFluids(id, json, "fluid_result", "fluid_results", machine.fluidOutputs()).stream()
                     .map(fluid -> FluidIngredient.readResult(fluid, id)).toList();
             List<Product> results = json.has("results") ? readResults(id, json, "results", context)
-                    : json.has("result") ? validateResults(id, List.of(readProduct(GsonHelper.getAsJsonObject(json, "result"), context)))
+                    : json.has("result") ? validateResults(id, List.of(Product.fromJson(GsonHelper.getAsJsonObject(json, "result"), context)))
                     : validateResults(id, List.of());
             List<Product> alternate = List.of();
             if (json.has("alternate_results")) {
@@ -364,20 +410,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             List<Product> results = new ArrayList<>(machine.outputs());
             for (var entry : GsonHelper.getAsJsonArray(json, key)) {
                 results.add(entry.isJsonNull() && (machine == Machine.FUEL_REPROCESSOR || machine.scripted())
-                        ? EMPTY_PRODUCT : readProduct(GsonHelper.convertToJsonObject(entry, "result"), context));
+                        ? Product.EMPTY : Product.fromJson(GsonHelper.convertToJsonObject(entry, "result"), context));
             }
             return validateResults(id, results);
-        }
-
-        private static Product readProduct(JsonObject json, ICondition.IContext context) {
-            var stack = ItemRecipeResult.read(json, context);
-            int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
-            int minimum = GsonHelper.getAsInt(json, "min_count", 0);
-            if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize() || chance < 0 || chance > 100
-                    || minimum < 0 || minimum > stack.getCount()) {
-                throw new JsonSyntaxException("Invalid item processor output " + json);
-            }
-            return new Product(stack, chance, minimum);
         }
 
         private List<Product> validateResults(ResourceLocation id, List<Product> results) {
@@ -442,16 +477,14 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         private List<Product> readProducts(FriendlyByteBuf buffer) {
             List<Product> results = new ArrayList<>(machine.outputs());
             for (int index = 0; index < machine.outputs(); index++) {
-                results.add(new Product(buffer.readItem(), buffer.readUnsignedByte(), buffer.readUnsignedByte()));
+                results.add(Product.fromNetwork(buffer));
             }
             return results;
         }
 
         private static void writeProducts(FriendlyByteBuf buffer, List<Product> products) {
             for (Product result : products) {
-                buffer.writeItem(result.stack);
-                buffer.writeByte(result.chancePercent);
-                buffer.writeByte(result.minCount);
+                result.toNetwork(buffer);
             }
         }
     }

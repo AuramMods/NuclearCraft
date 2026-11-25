@@ -43,6 +43,15 @@ public record FluidProduct(FluidStack stack, int minAmount, int step, int chance
         return amount;
     }
 
+    public int totalAmount(int batches, int factor, RandomSource random) {
+        if (!varies()) return (rollAmount(random) / factor) * batches;
+        int total = 0;
+        for (int batch = 0; batch < batches; batch++) {
+            total += rollAmount(random) / factor;
+        }
+        return total;
+    }
+
     int factor(int current) {
         if (isEmpty()) {
             return current;

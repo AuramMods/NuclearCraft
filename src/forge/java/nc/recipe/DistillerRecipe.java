@@ -1,6 +1,5 @@
 package nc.recipe;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors;
@@ -76,18 +75,13 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         @Override public DistillerRecipe fromJson(ResourceLocation id, JsonObject json) {
             var fluidInputs = GsonHelper.getAsJsonArray(json, "fluid_inputs");
             if (fluidInputs.size() > INPUT_COUNT) throw new JsonSyntaxException("Too many Distiller inputs for " + id);
-            var inputs = new ArrayList<FluidIngredient>(fluidInputs.size());
-            for (var input : fluidInputs) {
-                if (!unusedSlot(input)) {
-                    inputs.add(FluidIngredient.fromJson(GsonHelper.convertToJsonObject(input, "fluid input"), id));
-                }
-            }
+            var inputs = MachineInputs.readFluids(fluidInputs, id);
             var products = GsonHelper.getAsJsonArray(json, "fluid_outputs");
             if (products.size() > OUTPUT_COUNT) throw new JsonSyntaxException("Too many Distiller outputs for " + id);
             var outputs = new ArrayList<>(Collections.nCopies(OUTPUT_COUNT, FluidProduct.EMPTY));
             for (int slot = 0; slot < products.size(); slot++) {
                 var product = products.get(slot);
-                if (!unusedSlot(product)) outputs.set(slot, FluidProduct.fromJson(id,
+                if (!MachineInputs.unusedSlot(product)) outputs.set(slot, FluidProduct.fromJson(id,
                         GsonHelper.convertToJsonObject(product, "fluid output")));
             }
             double time = GsonHelper.getAsDouble(json, "time_multiplier", 1D);
@@ -100,10 +94,6 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             return new DistillerRecipe(id, inputs, outputs, time, power, trays,
                     GsonHelper.getAsBoolean(json, "nuclearcraft_stock_batch", false),
                     ProcessingRecipe.readRadiation(json, id));
-        }
-
-        private static boolean unusedSlot(JsonElement element) {
-            return element.isJsonNull() || element.isJsonObject() && element.getAsJsonObject().size() == 0;
         }
 
         @Override public DistillerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {

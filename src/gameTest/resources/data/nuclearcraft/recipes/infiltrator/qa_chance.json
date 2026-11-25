@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:multiblock_infiltrator",
+    "item_inputs": [{}, { "ingredient": { "item": "minecraft:gravel" }, "count": 3 }],
+    "fluid_inputs": [{}],
+    "result": { "item": "minecraft:flint", "count": 4, "min_count": 2, "chance_percent": 0 },
+    "time_multiplier": 0.002,
+    "power_multiplier": 0.1
+}
