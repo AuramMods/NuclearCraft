@@ -3,6 +3,7 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity;
+import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -21,6 +22,39 @@ import net.minecraftforge.registries.ForgeRegistries;
 @PrefixGameTestTemplate(false)
 public final class ItemProcessorGameTests {
     private static final BlockPos POS = new BlockPos(2, 1, 2);
+
+    @GameTest(template = "empty", timeoutTicks = 550)
+    public static void manufactoryDiscoversMaterialRecipesFromBothTagNamespaces(GameTestHelper helper) {
+        var recipes = helper.getLevel().getRecipeManager();
+        String root = "manufactory/grinding_qa_dust_from_";
+        var ingot = (ItemProcessorRecipe) recipes.byKey(NuclearCraft.id(root + "ingot")).orElseThrow();
+        var ore = (ItemProcessorRecipe) recipes.byKey(NuclearCraft.id(root + "ore")).orElseThrow();
+        var raw = (ItemProcessorRecipe) recipes.byKey(NuclearCraft.id(root + "raw")).orElseThrow();
+        helper.assertTrue(ingot.acceptsItem(Items.AMETHYST_SHARD.getDefaultInstance())
+                        && ingot.products().get(0).stack().getCount() == 1
+                        && ingot.ticks() == 400 && ingot.energyPerTick() == 20,
+                "Make one dust from an ingot in the common tag namespace");
+        helper.assertTrue(ore.acceptsItem(Items.DEEPSLATE.getDefaultInstance())
+                        && !ore.acceptsItem(Items.CALCITE.getDefaultInstance())
+                        && ore.defaults().ore() && raw.defaults().ore()
+                        && raw.acceptsItem(Items.TUFF.getDefaultInstance())
+                        && raw.products().get(0).stack().getCount() == 1 && raw.ticks() == 500,
+                "Discover the two ore forms and honor the automatic grinding exclusion");
+
+        helper.setBlock(POS, Machine.MANUFACTORY.block());
+        var processor = (ItemProcessorBlockEntity) helper.getBlockEntity(POS);
+        var inventory = items(processor, Direction.UP);
+        var energy = processor.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        helper.assertTrue(inventory.insertItem(0, Items.DEEPSLATE.getDefaultInstance(), false).isEmpty(),
+                "Insert an ore from a discovered family through Forge's item capability");
+        energy.receiveEnergy(10_000, false);
+        helper.succeedWhen(() -> {
+            var result = inventory.getStackInSlot(1);
+            helper.assertTrue(result.is(Items.INK_SAC) && result.getCount() == 2
+                            && inventory.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                    "The Manufactory uses one ore and 10,000 FE to produce two tagged dusts");
+        });
+    }
 
     @GameTest(template = "empty", timeoutTicks = 380)
     public static void manufactoryDiscoversSingleLogCraftingAndMakesSticks(GameTestHelper helper) {

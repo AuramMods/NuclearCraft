@@ -111,6 +111,26 @@ The clean multiplayer client saw the same-ID Melter replacement in JEI while sto
 
 The isolated 539-mod Auram client listed one Melter recipe with the global switch off. KubeJS reused the original ice recipe ID, and its batch produced 781 mB of water while a packed-ice batch preserved its input and charge. This client also ran muted with zero focus activations, foreground samples, or visible windows.
 
+### Manufactory metal processing
+
+The Manufactory discovers a metal when the server has populated `ingots/<material>` and `dusts/<material>` tags. Discovery accepts the `forge` and `c` namespaces and leaves silicon to its own recipe. The output uses the configured material priority, including Almost Unified's preference for a configured Forge tag. Processor modifiers apply to the base rates below.
+
+| Input | Output | Duration | Energy per tick |
+| --- | --- | --- | --- |
+| One ingot | One dust | 400 ticks | 20 FE |
+| One ore block | Two dusts | 500 ticks | 20 FE |
+| One raw metal | One dust | 500 ticks | 20 FE |
+
+Discovered IDs follow `nuclearcraft:manufactory/<material>_dust_from_<form>`, where `<form>` is `ingot`, `ore`, or `raw`. Loaded recipes and their pack overrides take precedence. Discovery reserves the IDs of recipe files so that script removals and load conditions stay effective. Add an item to `nuclearcraft:exclude_automatic_grinding` to leave it out of discovery. The global and per-processor default switches control discovery, and `ore_processing` controls the ore and raw metal forms. Reloading datapacks updates the catalog and sends it to clients. [Forge item tags](https://docs.minecraftforge.net/en/1.20.1/resources/server/tags/)
+
+All 216 tests passed with the local `runGameTestServer` task. On dedicated Forge 47.4.18, the Manufactory accepted Immersive Engineering nickel and silver and the AllTheOres Nether and End nickel variants. The gold, iron, and sintered steel recipes loaded from shared dust tags in the profile without Mekanism. AllTheOres logged errors for its own Mekanism-specific recipes in that profile. A tag reload changed the nickel dust output and excluded one ore variant. The explicit replacement survived both the ore and default recipe switches.
+
+Ender IO 8.2.22-beta supplied one Immersive Engineering nickel ore and 10,000 FE. Mekanism 10.4.16.80 supplied one raw nickel and 10,000 FE. The machines held two dusts and one dust respectively while their destination barrels were full. Both delivered their saved output after restart, and the barrels retained those counts after chunk unload and reload.
+
+A muted multiplayer client showed the discovered ingot and ore recipes in JEI. A server datapack reload changed the dust from ink sacs to redstone and kept the yields of one and two. The first loopback login disconnected during the Forge handshake. The retry completed login and reload with zero observed focus changes or visible windows.
+
+In the isolated 539-mod Auram instance, the Manufactory converted Immersive Engineering nickel ore into two Thermal nickel dusts, a Thermal nickel ingot into one dust, Create zinc ore into two AllTheOres zinc dusts, and AllTheOres raw silver into one Thermal silver dust. KubeJS removed the shipped tin ore recipe and replaced the discovered raw nickel recipe with three clay balls for 120 FE. The machines used the same recipes that the client received and JEI displayed. The client saved and exited with master volume zero, OpenAL No Output, and zero observed focus changes or visible windows.
+
 ### Manufactory wood processing
 
 Copy the legacy `manufactory_wood` array to `world/serverconfig/nuclearcraft-processors.toml`. The first value controls the output from one log and the second controls sticks from one plank. The defaults are `[6, 4]`. Both values accept 1 through 64, subject to the output item's stack limit. Use `defaultconfigs` to seed new worlds and restart after changing a world's setting. The stock log and stick recipes take 200 and 100 ticks respectively at 10 FE/t before processor modifiers.

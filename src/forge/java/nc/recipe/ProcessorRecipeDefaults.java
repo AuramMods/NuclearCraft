@@ -10,6 +10,7 @@ import nc.init.NCItemProcessors.Rate;
 import nc.init.NCRegistries;
 import nc.processor.FluidProcessorBlockEntity;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
@@ -53,7 +54,7 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     @SubscribeEvent
     public static void onServerStart(ServerAboutToStartEvent event) {
         // Forge loads the world's server config after the initial datapack load.
-        applyCatalogs(event.getServer().getRecipeManager());
+        applyCatalogs(event.getServer());
     }
 
     @SubscribeEvent
@@ -65,15 +66,17 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         if (event.getPlayer() == null) {
             var server = event.getPlayerList().getServer();
-            applyCatalogs(server.getRecipeManager());
+            applyCatalogs(server);
             ManufactoryWoodRecipes.apply(server);
         }
     }
 
-    private static void applyCatalogs(RecipeManager manager) {
+    private static void applyCatalogs(MinecraftServer server) {
+        var manager = server.getRecipeManager();
         removeDisabledRecipes(manager);
         IngotFormerMaterialRecipes.addDiscoveredRecipes(manager);
         PressurizerPlateRecipes.addDiscoveredRecipes(manager);
+        ManufactoryMaterialRecipes.addDiscoveredRecipes(manager, server.getResourceManager());
     }
 
     static void addRecipes(RecipeManager manager, RecipeType<ItemProcessorRecipe> type, List<ItemProcessorRecipe> additions) {

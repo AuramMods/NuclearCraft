@@ -9,15 +9,31 @@
         }
     ],
     "result": {
-        "item": "mekanism:dust_steel",
+        "preferred_tag": "forge:dusts/steel",
+        "tag": "c:dusts/steel",
         "count": 1
     },
     "ticks": 400,
     "energy_per_tick": 20,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "mekanism:dust_steel"
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/steel"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/steel"
+                    }
+                }
+            ]
         }
     ]
 }

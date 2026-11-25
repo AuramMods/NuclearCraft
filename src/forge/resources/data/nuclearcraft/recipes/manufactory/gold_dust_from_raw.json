@@ -9,15 +9,31 @@
         }
     ],
     "result": {
-        "item": "mekanism:dust_gold",
+        "preferred_tag": "forge:dusts/gold",
+        "tag": "c:dusts/gold",
         "count": 1
     },
     "ticks": 500,
     "energy_per_tick": 20,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "mekanism:dust_gold"
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/gold"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/gold"
+                    }
+                }
+            ]
         }
     ]
 }
