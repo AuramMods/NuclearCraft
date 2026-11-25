@@ -1,0 +1,28 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:condenser_controller"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.condenser_controller.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.condenser_controller.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/salt_fission_reactor_assembled",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:condenser_controller"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

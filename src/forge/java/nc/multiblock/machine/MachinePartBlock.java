@@ -271,7 +271,7 @@ public class MachinePartBlock extends Block {
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
             if (level.getBlockEntity(pos) instanceof MachineController controller) {
-                if (!level.isClientSide) controller.open(player);
+                if (!level.isClientSide) controller.open(player, hand);
                 return InteractionResult.sidedSuccess(level.isClientSide);
             }
 

@@ -8,6 +8,7 @@ import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
 import nc.init.HeatExchangerConfig;
 import nc.init.TurbineConfig;
+import nc.init.NCAdvancements;
 import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCComputerPorts;
@@ -48,6 +49,7 @@ public final class NuclearCraft {
     }
 
     public NuclearCraft(FMLJavaModLoadingContext context) {
+        context.getModEventBus().addListener(NCAdvancements::setup);
         NCBatteries.register(context);
         NCCollectors.register(context);
         NCComputerPorts.register(context);

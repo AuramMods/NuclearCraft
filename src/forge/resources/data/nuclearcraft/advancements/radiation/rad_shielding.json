@@ -1,0 +1,28 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:rad_shielding_heavy"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.rad_shielding.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.rad_shielding.desc"
+        }
+    },
+    "parent": "nuclearcraft:radiation/geiger_counter",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:rad_shielding_heavy"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,0 +1,37 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:neptunium_237_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.neptunium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.neptunium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/solid_fission_reactor_assembled",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:neptunium_236_ingot",
+                            "nuclearcraft:neptunium_236_carbide_ingot",
+                            "nuclearcraft:neptunium_236_oxide_ingot",
+                            "nuclearcraft:neptunium_236_nitride_ingot",
+                            "nuclearcraft:neptunium_236_za_ingot",
+                            "nuclearcraft:neptunium_237_ingot",
+                            "nuclearcraft:neptunium_237_carbide_ingot",
+                            "nuclearcraft:neptunium_237_oxide_ingot",
+                            "nuclearcraft:neptunium_237_nitride_ingot",
+                            "nuclearcraft:neptunium_237_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

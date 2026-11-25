@@ -1,0 +1,28 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:decay_hastener"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.decay_hastener.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.decay_hastener.desc"
+        }
+    },
+    "parent": "nuclearcraft:processors/separator",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:decay_hastener"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

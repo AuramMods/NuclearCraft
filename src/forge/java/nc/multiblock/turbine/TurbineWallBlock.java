@@ -1,5 +1,6 @@
 package nc.multiblock.turbine;
 
+import nc.init.NCAdvancements;
 import nc.init.NCTurbine;
 import nc.init.TurbineConfig;
 import net.minecraft.ChatFormatting;
@@ -130,6 +131,7 @@ public final class TurbineWallBlock extends TurbinePartBlock implements EntityBl
         if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof TurbineController controller) {
             var diagnostic = controller.diagnostic(server);
             if (diagnostic == null) {
+                NCAdvancements.inspectAssembly(player, hand, state);
                 player.openMenu(controller);
             } else {
                 diagnostic.show(player, true);

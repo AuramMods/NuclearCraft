@@ -1,0 +1,47 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:californium_251_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.californium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.californium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/curium",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:californium_249_ingot",
+                            "nuclearcraft:californium_249_carbide_ingot",
+                            "nuclearcraft:californium_249_oxide_ingot",
+                            "nuclearcraft:californium_249_nitride_ingot",
+                            "nuclearcraft:californium_249_za_ingot",
+                            "nuclearcraft:californium_250_ingot",
+                            "nuclearcraft:californium_250_carbide_ingot",
+                            "nuclearcraft:californium_250_oxide_ingot",
+                            "nuclearcraft:californium_250_nitride_ingot",
+                            "nuclearcraft:californium_250_za_ingot",
+                            "nuclearcraft:californium_251_ingot",
+                            "nuclearcraft:californium_251_carbide_ingot",
+                            "nuclearcraft:californium_251_oxide_ingot",
+                            "nuclearcraft:californium_251_nitride_ingot",
+                            "nuclearcraft:californium_251_za_ingot",
+                            "nuclearcraft:californium_252_ingot",
+                            "nuclearcraft:californium_252_carbide_ingot",
+                            "nuclearcraft:californium_252_oxide_ingot",
+                            "nuclearcraft:californium_252_nitride_ingot",
+                            "nuclearcraft:californium_252_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

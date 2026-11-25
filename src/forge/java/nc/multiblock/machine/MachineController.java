@@ -1,5 +1,6 @@
 package nc.multiblock.machine;
 
+import nc.init.NCAdvancements;
 import nc.init.NCMachines;
 import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
@@ -12,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
@@ -267,11 +269,15 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
         return assembled() ? null : validation;
     }
 
-    final void open(Player player) {
+    final void open(Player player, InteractionHand hand) {
         if (!(level instanceof ServerLevel server)) return;
         var diagnostic = diagnostic(server);
-        if (diagnostic == null) openMenu(player);
-        else diagnostic.show(player, true);
+        if (diagnostic == null) {
+            NCAdvancements.inspectAssembly(player, hand, getBlockState());
+            openMenu(player);
+        } else {
+            diagnostic.show(player, true);
+        }
     }
 
     @Override

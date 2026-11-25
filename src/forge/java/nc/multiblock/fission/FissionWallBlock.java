@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.init.NCAdvancements;
 import nc.init.NCFission;
 import nc.init.NCHeatExchangers;
 import org.jetbrains.annotations.Nullable;
@@ -162,6 +163,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             } else if (entity instanceof SolidFissionController controller) {
                 var diagnostic = controller.diagnostic(server);
                 if (diagnostic == null) {
+                    NCAdvancements.inspectAssembly(player, hand, state);
                     player.openMenu(controller);
                 } else {
                     diagnostic.show(player, true);

@@ -1,0 +1,37 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:berkelium_247_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.berkelium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.berkelium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/curium",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:berkelium_247_ingot",
+                            "nuclearcraft:berkelium_247_carbide_ingot",
+                            "nuclearcraft:berkelium_247_oxide_ingot",
+                            "nuclearcraft:berkelium_247_nitride_ingot",
+                            "nuclearcraft:berkelium_247_za_ingot",
+                            "nuclearcraft:berkelium_248_ingot",
+                            "nuclearcraft:berkelium_248_carbide_ingot",
+                            "nuclearcraft:berkelium_248_oxide_ingot",
+                            "nuclearcraft:berkelium_248_nitride_ingot",
+                            "nuclearcraft:berkelium_248_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

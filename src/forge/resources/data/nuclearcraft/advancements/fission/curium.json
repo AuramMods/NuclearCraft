@@ -1,0 +1,47 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:curium_245_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.curium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.curium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/plutonium",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:curium_243_ingot",
+                            "nuclearcraft:curium_243_carbide_ingot",
+                            "nuclearcraft:curium_243_oxide_ingot",
+                            "nuclearcraft:curium_243_nitride_ingot",
+                            "nuclearcraft:curium_243_za_ingot",
+                            "nuclearcraft:curium_245_ingot",
+                            "nuclearcraft:curium_245_carbide_ingot",
+                            "nuclearcraft:curium_245_oxide_ingot",
+                            "nuclearcraft:curium_245_nitride_ingot",
+                            "nuclearcraft:curium_245_za_ingot",
+                            "nuclearcraft:curium_246_ingot",
+                            "nuclearcraft:curium_246_carbide_ingot",
+                            "nuclearcraft:curium_246_oxide_ingot",
+                            "nuclearcraft:curium_246_nitride_ingot",
+                            "nuclearcraft:curium_246_za_ingot",
+                            "nuclearcraft:curium_247_ingot",
+                            "nuclearcraft:curium_247_carbide_ingot",
+                            "nuclearcraft:curium_247_oxide_ingot",
+                            "nuclearcraft:curium_247_nitride_ingot",
+                            "nuclearcraft:curium_247_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

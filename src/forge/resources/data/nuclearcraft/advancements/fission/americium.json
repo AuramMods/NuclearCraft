@@ -1,0 +1,42 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:americium_243_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.americium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.americium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/plutonium",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:americium_241_ingot",
+                            "nuclearcraft:americium_241_carbide_ingot",
+                            "nuclearcraft:americium_241_oxide_ingot",
+                            "nuclearcraft:americium_241_nitride_ingot",
+                            "nuclearcraft:americium_241_za_ingot",
+                            "nuclearcraft:americium_242_ingot",
+                            "nuclearcraft:americium_242_carbide_ingot",
+                            "nuclearcraft:americium_242_oxide_ingot",
+                            "nuclearcraft:americium_242_nitride_ingot",
+                            "nuclearcraft:americium_242_za_ingot",
+                            "nuclearcraft:americium_243_ingot",
+                            "nuclearcraft:americium_243_carbide_ingot",
+                            "nuclearcraft:americium_243_oxide_ingot",
+                            "nuclearcraft:americium_243_nitride_ingot",
+                            "nuclearcraft:americium_243_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

@@ -1,5 +1,6 @@
 package nc.multiblock.hx;
 
+import nc.init.NCAdvancements;
 import nc.init.NCHeatExchangers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -75,6 +76,7 @@ public final class ExchangerWallBlock extends ExchangerPartBlock implements Enti
         if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof ExchangerController controller) {
             var diagnostic = controller.diagnostic(server);
             if (diagnostic == null) {
+                NCAdvancements.inspectAssembly(player, hand, state);
                 player.openMenu(controller);
             } else {
                 diagnostic.show(player, true);

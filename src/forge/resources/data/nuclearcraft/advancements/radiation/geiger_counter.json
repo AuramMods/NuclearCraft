@@ -1,0 +1,28 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:geiger_counter"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.geiger_counter.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.geiger_counter.desc"
+        }
+    },
+    "parent": "nuclearcraft:root",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:geiger_block"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

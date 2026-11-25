@@ -1,0 +1,47 @@
+{
+    "display": {
+        "icon": {
+            "item": "nuclearcraft:plutonium_239_za_ingot"
+        },
+        "title": {
+            "translate": "advancement.nuclearcraft.plutonium.name"
+        },
+        "description": {
+            "translate": "advancement.nuclearcraft.plutonium.desc"
+        }
+    },
+    "parent": "nuclearcraft:fission/solid_fission_reactor_assembled",
+    "criteria": {
+        "has_item": {
+            "trigger": "minecraft:inventory_changed",
+            "conditions": {
+                "items": [
+                    {
+                        "items": [
+                            "nuclearcraft:plutonium_238_ingot",
+                            "nuclearcraft:plutonium_238_carbide_ingot",
+                            "nuclearcraft:plutonium_238_oxide_ingot",
+                            "nuclearcraft:plutonium_238_nitride_ingot",
+                            "nuclearcraft:plutonium_238_za_ingot",
+                            "nuclearcraft:plutonium_239_ingot",
+                            "nuclearcraft:plutonium_239_carbide_ingot",
+                            "nuclearcraft:plutonium_239_oxide_ingot",
+                            "nuclearcraft:plutonium_239_nitride_ingot",
+                            "nuclearcraft:plutonium_239_za_ingot",
+                            "nuclearcraft:plutonium_241_ingot",
+                            "nuclearcraft:plutonium_241_carbide_ingot",
+                            "nuclearcraft:plutonium_241_oxide_ingot",
+                            "nuclearcraft:plutonium_241_nitride_ingot",
+                            "nuclearcraft:plutonium_241_za_ingot",
+                            "nuclearcraft:plutonium_242_ingot",
+                            "nuclearcraft:plutonium_242_carbide_ingot",
+                            "nuclearcraft:plutonium_242_oxide_ingot",
+                            "nuclearcraft:plutonium_242_nitride_ingot",
+                            "nuclearcraft:plutonium_242_za_ingot"
+                        ]
+                    }
+                ]
+            }
+        }
+    }
+}

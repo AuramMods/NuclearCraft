@@ -867,6 +867,18 @@ All 163 local GameTests passed. The packaged Forge 47.4.18 JAR launched with CC:
 
 The packaged JAR also loaded all four assemblies in the isolated 539-mod Auram instance. Its background client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible-window samples. The first implicit world save omitted block entities from two test chunks. An explicit integrated-server save in a fresh Auram world wrote all four ports and their controllers to disk. A fresh run using the ordinary exit path also retained all four ports and the contents of four vanilla chests.
 
+### Advancements
+
+The Forge datapack restores all 65 advancements from Overhauled 2o.9.7 with their original IDs, parents, and criterion names. Entering the Overworld earns the root. Inventory goals for neptunium, plutonium, americium, curium, berkelium, and californium accept every NuclearCraft isotope and ingot form covered by the original item metadata. The radiation shielding goal requires Heavy Radiation Shielding.
+
+To earn an assembly goal, stand and right-click the assembled controller with the main hand. There are goals for all three fission variants, the Heat Exchanger, Condenser, Steam Turbine, Decay Pool, Distiller, Infiltrator, and Large Electrolyzer.
+
+When converting a save, carry over `advancements/<UUID>.json` for each player. Players must keep their original UUIDs, or the filenames must match their UUIDs on the destination server. The NuclearCraft keys and criteria can be copied as written. Update custom advancement JSON to use Forge item IDs and the 1.20.1 predicate format. The original ten `nuclearcraft:…_assembled` trigger IDs remain available.
+
+All 226 local GameTests passed. In packaged Forge 47.4.10 multiplayer, a player earned every assembly goal by opening its controller menu. A reactor with a broken frame withheld the goal until repaired. The inventory checks covered neptunium oxide, the Centrifuge, and all three shielding tiers. The server loaded original inventory and assembly progress from a 1.12.2-format fixture and wrote the new progress under the original keys. All ten assembly goals and the checked inventory goals survived a dedicated-server restart.
+
+The isolated client with all 541 installed Auram mod JARs started JEI, earned the plutonium and solid-fission assembly goals, and saved both to disk. The clients used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible window samples.
+
 ### NuclearCraft Guide
 
 With Patchouli installed, `nuclearcraft:guide` has all 20 legacy entries, six categories, original page anchors, and English and Simplified Chinese text. Item and block diagrams use Forge registry IDs. The reactor, heat exchanger, and condenser entries explain how to run the ported machines. The Spaxelhoe chapter displays all four ported versions. The Tokamak chapter retains its legacy work-in-progress status.
