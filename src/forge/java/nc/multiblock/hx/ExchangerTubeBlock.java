@@ -285,13 +285,16 @@ public final class ExchangerTubeBlock extends ExchangerPartBlock {
         };
     }
 
+    public static Direction multitoolFace(Player player, Direction hitFace) {
+        return player.isShiftKeyDown() ? hitFace.getOpposite() : hitFace;
+    }
+
     public InteractionResult configure(BlockState state, UseOnContext context) {
         Player player = context.getPlayer();
         Level level = context.getLevel();
         BlockPos pos = context.getClickedPos();
         if (level instanceof ServerLevel server && player != null) {
-            Direction clicked = context.getClickedFace();
-            Direction side = player.isShiftKeyDown() ? clicked.getOpposite() : clicked;
+            Direction side = multitoolFace(player, context.getClickedFace());
             Setting setting = setting(state, side).next();
             level.setBlockAndUpdate(pos, withSetting(state, side, setting));
             BlockPos otherPos = pos.relative(side);

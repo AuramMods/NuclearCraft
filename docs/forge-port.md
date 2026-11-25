@@ -1098,6 +1098,14 @@ On clean packaged Forge 47.4.10, a condenser processed 1,600 mB of exhaust into 
 
 The same JAR ran in the isolated 540-mod Auram client on Forge 47.4.10. Normal right-click placement connected six tubes across two condensers. Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each delivered 16,000 mB of water and collected 100 mB of condensate. Breaking each middle tube closed both exposed faces and preserved the collected output. The client loaded JEI, used master volume zero and OpenAL No Output, and exited with zero focus activations, foreground samples, or visible windows.
 
+### Exchanger Multitool face preview
+
+Hold the Multitool in the main hand and aim at a stock or scripted tube. The red outline marks the face a right-click will cycle. Sneaking moves the outline to the opposite face, where it remains visible through the tube. The client preview and server click use the same face selection.
+
+All 235 local GameTests passed. In clean packaged Forge, normal and sneaking previews aligned with the near and far faces in both Fancy and Fabulous graphics. The preview stayed hidden with the Multitool in the offhand or when aiming at stone. The server changed the previewed faces, mirrored the connection onto the adjoining tube, and retained the block states after restart. The fission marker also aligned with its block using the shared world renderer.
+
+The isolated 540-mod Auram copy registered a scripted tube through KubeJS. With AuramBliss enabled at midnight, both face previews stayed bright and lined up with the tube. Both clicks matched the preview, and the stock tube next to it received the mirrored face setting. The muted background clients used OpenAL No Output and recorded zero focus activations, foreground samples, and visible windows.
+
 ### Scripted heat-exchanger tubes
 
 Migrate `Registration.registerHeatExchangerTube` to a KubeJS startup script. Keep the legacy `nuclearcraft:heat_exchanger_tube_<id>` block and item IDs on the server and client.
