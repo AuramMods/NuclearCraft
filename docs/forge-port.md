@@ -1765,11 +1765,17 @@ The legacy entity IDs are `nuclearcraft:feral_ghoul` and `nuclearcraft:glowing_g
 
 Feral and glowing attacks add 0.33 and 3.8 Rad respectively at the base difficulty multiplier. Successful attacks on nonhostile living targets inflict poison and add radiation to the victim's buffered exposure. The amount increases with local difficulty and absorbs over `radiation_poison_time`. The two legacy attack settings retain their names in `world/serverconfig/nuclearcraft-radiation.toml`. Ghouls retain radiation buffs at a fatal dose. Villagers and other NPCs can convert to feral ghouls at a fatal dose or on entering the Wasteland. Conversion preserves their name, AI setting, and persistence and uses Forge's conversion and spawn events.
 
-Move the two `register_entity` booleans to `world/serverconfig/nuclearcraft-entities.toml`, in feral then glowing order. Registered entity IDs remain available to saves and datapacks. A disabled type cannot spawn naturally and discards any loaded instances. The legacy 64-block default tracking range maps to four Forge tracking chunks.
+Move the two `register_entity` booleans to `world/serverconfig/nuclearcraft-entities.toml`, in feral then glowing order. Registered entity IDs remain available to saves and datapacks. A disabled type cannot spawn naturally and discards any loaded instances.
+
+Copy `entity_tracking_range` to the same file. It controls both ghoul variants in horizontal blocks and takes values from 1 to 255. The default is 64 blocks. The server applies its entity broadcast distance scaling and view distance limit. A vehicle can track farther when a passenger has a longer range. [Forge entity tracking configuration](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/patches/minecraft/net/minecraft/world/entity/EntityType.java.patch)
 
 All 120 local GameTests passed. On a packaged Forge 47.4.18 multiplayer server, a feral ghoul's AI landed a two-damage hit on a test player. Saved player data showed poison and the expected 0.33 Rad split between absorbed and buffered dose. A separate headless run disabled feral ghouls and retained the glowing type. Both legacy textures rendered in-game, and the glowing layer was visible in a dark chamber. The observing multiplayer client ran muted with zero activation, foreground, or visible-window samples.
 
 The same packaged JAR loaded with all 539 installed JARs in the isolated Auram instance on Forge 47.4.18. Player login and JEI startup completed, and TerraBlender registered the Wasteland region alongside the other Overworld regions. The server spawned and saved both ghoul types at their expected 16 and 32 health. The muted client exited with zero activation, foreground, or visible-window samples.
+
+On clean packaged Forge 47.4.10, a multiplayer client received both ghoul variants at 25 blocks and removed them at 25.125. Changing the setting to 113 and then to the default 64 affected the same entities without restarting. A vanilla zombie kept its own range. A ghoul carrying a pig kept the pig's longer range, and an arrow carrying a ghoul was tracked out to the ghoul's longer configured range. At 50 percent server broadcast distance, a 25-block setting tracked both variants through 12 blocks and removed them at 12.125. The offline build passed all 227 GameTests.
+
+The same JAR loaded JEI with all 541 installed Auram mod JARs and repeated the 25-block cutoff and passenger checks. Both dedicated test clients and the Auram client used master volume zero and OpenAL No Output. The native observers recorded zero focus activations, foreground samples, and visible-window samples.
 
 ### Ore, mob, and dungeon loot
 

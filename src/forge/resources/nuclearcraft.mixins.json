@@ -5,6 +5,7 @@
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "IntegratedServerHandshake",
+        "GhoulEntityTracking",
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",

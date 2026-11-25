@@ -23,6 +23,7 @@ import net.minecraftforge.registries.RegistryObject;
 import java.util.List;
 
 public final class NCEntities {
+    public static final int DEFAULT_GHOUL_TRACKING_RANGE = 64;
     private static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, NuclearCraft.MOD_ID);
 
@@ -37,6 +38,9 @@ public final class NCEntities {
     private static final ForgeConfigSpec.ConfigValue<List<? extends Boolean>> REGISTER_ENTITY = CONFIG
             .comment("Enable the feral ghoul and glowing ghoul, in that order.")
             .defineList("register_entity", List.of(true, true), value -> value instanceof Boolean);
+    private static final ForgeConfigSpec.IntValue TRACKING_RANGE = CONFIG
+            .comment("Horizontal entity tracking distance in blocks for feral and glowing ghouls.")
+            .defineInRange("entity_tracking_range", DEFAULT_GHOUL_TRACKING_RANGE, 1, 255);
     private static final ForgeConfigSpec SPEC = CONFIG.build();
 
     private NCEntities() {}
@@ -59,9 +63,14 @@ public final class NCEntities {
         return index >= values.size() || values.get(index);
     }
 
+    public static int ghoulTrackingRange() {
+        return SPEC.isLoaded() ? TRACKING_RANGE.get() : DEFAULT_GHOUL_TRACKING_RANGE;
+    }
+
     private static RegistryObject<EntityType<FeralGhoul>> ghoul(String name, EntityType.EntityFactory<FeralGhoul> factory) {
         return ENTITIES.register(name, () -> EntityType.Builder.of(factory, MobCategory.MONSTER)
-                .sized(0.6F, 1.95F).clientTrackingRange(4).updateInterval(1).build(NuclearCraft.id(name).toString()));
+                .sized(0.6F, 1.95F).clientTrackingRange(DEFAULT_GHOUL_TRACKING_RANGE / 16)
+                .updateInterval(1).build(NuclearCraft.id(name).toString()));
     }
 
     private static RegistryObject<Item> egg(RegistryObject<EntityType<FeralGhoul>> type, int base, int spots) {
