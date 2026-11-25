@@ -89,6 +89,9 @@ public final class RadiationConfig {
             BUILDER.defineInRange("radiation_block_effect_max_rate", 0, 0, 15);
     static final ForgeConfigSpec.BooleanValue CHECK_BLOCKS = BUILDER.define("radiation_check_blocks", true);
     static final ForgeConfigSpec.BooleanValue MACHINE_SOURCES = BUILDER.define("radiation_tile_entities", true);
+    private static final ForgeConfigSpec.DoubleValue INDUSTRIAL_CRAFT_REACTOR_MULTIPLIER =
+            BUILDER.comment("Radiation emitted per EU/t of Industrial Craft reactor output.")
+                    .defineInRange("radiation_ic2_reactor_mult", 1E-5, 0D, 1E6);
     static final ForgeConfigSpec.BooleanValue INVENTORY_SOURCES = BUILDER.define("radiation_hardcore_stacks", true);
     static final ForgeConfigSpec.BooleanValue DROPPED_SOURCES = BUILDER.define("radiation_dropped_items", true);
     static final ForgeConfigSpec.DoubleValue CONTAINER_SOURCES =
@@ -130,6 +133,10 @@ public final class RadiationConfig {
 
     static boolean loaded() {
         return SPEC.isLoaded();
+    }
+
+    public static double industrialCraftReactorMultiplier() {
+        return INDUSTRIAL_CRAFT_REACTOR_MULTIPLIER.get();
     }
 
     private RadiationConfig() {}
