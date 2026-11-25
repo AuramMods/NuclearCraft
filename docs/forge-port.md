@@ -352,6 +352,8 @@ The isolated Auram client loaded all 539 installed mod JARs and ran the same Che
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
+| XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
+| Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
 | Industrial Foregoing | 3.5.21 | Automation through standard capabilities |
@@ -511,6 +513,16 @@ An AE2 network and a Refined Storage network each supplied a solid-fuel reactor 
 Active Refined Storage 1.12.4 External Storage kept its target chunk resident after the administrative force-load was removed. The server-thread trace identified `ItemExternalStorageProvider` refreshing the target block entity and renewing Forge's transient chunk ticket. A server with Refined Storage alone reproduced this with an ordinary barrel. Disconnecting the test controllers released the chunk. A read-only observer then confirmed unloading and a new chunk instance. AE2 stayed connected throughout. After restoring the Refined Storage controllers, all four processor routes kept the earlier products and completed another batch. Natural eviction with that Refined Storage network active requires its external-storage refresh to look up already loaded chunks without creating chunk tickets.
 
 A fresh isolated copy with all 539 installed Auram mod JARs loaded the same processor routes and completed a second batch on each. The two fluid tanks reached 50 mB of liquid nitrogen apiece. Each item destination kept one coal dust from the dedicated test and received one Mekanism coal dust under Auram's unification rules. All sources and processor buffers saved empty. The client used master volume zero and OpenAL No Output, and the observer recorded zero desktop activations, foreground samples, and visible windows. Reopening the earlier test copy reproduced Psychedelicraft 1.20.1-port.4's missing player drug capability during login.
+
+### XNet and Integrated Dynamics
+
+On dedicated Forge 47.4.18, Auram's XNet 6.1.6 transferred one ice and 4,000 FE from a barrel and a Voltaic Pile to a NuclearCraft Melter. The Melter held its 1,000 mB of water while the destination Mekanism Basic Fluid Tank was full and while its output face was closed. Once the tank had room and the face reopened, the XNet fluid channel delivered the entire batch. The network delivered two further batches through the same connectors after a confirmed chunk unload and reload and after a dedicated restart. [XNet documentation](https://www.mcjty.eu/docs/mods/xnet/)
+
+A second XNet network supplied an Infuser with one white concrete powder, 1,000 mB of water from a Mekanism tank, and 1,500 FE. The Infuser held the resulting concrete while the destination barrel was full. Freeing one slot let XNet extract exactly one white concrete and left the Infuser empty.
+
+Auram's Integrated Dynamics 1.29.11 Fluid, Inventory, and Machine Readers measured 2,234 mB of water, three ice blocks, and 5,120 FE on separate Melter faces. Closing the fluid face made the Fluid Reader report zero while the other readers kept their values. Reopening the face restored the fluid reading, and all three readings persisted across a dedicated restart. [Integrated Dynamics](https://github.com/CyclopsMC/IntegratedDynamics)
+
+The isolated client with all 539 installed Auram mod JARs repeated the XNet Melter transfer and the three Integrated Dynamics readings. The client used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, or on-screen window samples.
 
 ### Tools and Armor
 
