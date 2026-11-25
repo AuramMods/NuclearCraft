@@ -66,6 +66,29 @@ public final class MobRadiationGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void disabledHorseArmorKeepsSavedShieldingWithoutReducingExposure(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var horse = EntityType.HORSE.create(level);
+        var shielded = RadiationShielding.upgrade(Items.IRON_HORSE_ARMOR.getDefaultInstance(), 2);
+        var equipped = horse.saveWithoutId(new CompoundTag());
+        equipped.put("ArmorItem", shielded.save(new CompoundTag()));
+        horse.load(equipped);
+
+        var restored = EntityType.HORSE.create(level);
+        restored.load(horse.saveWithoutId(new CompoundTag()));
+        var armorTag = restored.getArmor().getTag();
+        helper.assertTrue(armorTag != null && armorTag.getDouble("ncRadiationResistance") == 2,
+                "Saving a horse preserves its installed armor shielding");
+
+        MobRadiation.tick(restored, 4, 1);
+        helper.assertTrue(MobRadiation.reading(restored).rate() == 4
+                        && RadiationShielding.armorResistance(restored.getArmor()) == 0
+                        && !RadiationShielding.canUpgrade(restored.getArmor(), 3),
+                "The disabled horse armor option keeps the full exposure rate and hides shielding");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void mobsStoreFoodRadiationAndApplyInternalResistanceAfterReload(GameTestHelper helper) {
         var level = helper.getLevel();
         var cow = new EatingCow(level);

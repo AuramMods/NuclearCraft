@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -95,10 +94,7 @@ public final class PlayerRadiation {
         }
 
         double internalResistance = data.getDouble(RESISTANCE);
-        double resistance = internalResistance;
-        for (ItemStack armor : player.getArmorSlots()) {
-            resistance += RadiationShielding.armorResistance(armor);
-        }
+        double resistance = internalResistance + RadiationShielding.equippedResistance(player);
         double multiplier = player.isInWater() ? RadiationConfig.WATER_MULTIPLIER.get()
                 : player.isInWaterOrRain() ? RadiationConfig.RAIN_MULTIPLIER.get() : 1;
         double rate = RadiationShielding.attenuate(

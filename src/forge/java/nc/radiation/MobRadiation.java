@@ -21,10 +21,7 @@ final class MobRadiation {
         CompoundTag data = tag.getCompound(DATA);
         double multiplier = mob.isInWater() ? RadiationConfig.WATER_MULTIPLIER.get()
                 : mob.isInWaterOrRain() ? RadiationConfig.RAIN_MULTIPLIER.get() : 1;
-        double resistance = data.getDouble(RadiationTreatment.RESISTANCE);
-        for (var armor : mob.getArmorSlots()) {
-            resistance += RadiationShielding.armorResistance(armor);
-        }
+        double resistance = data.getDouble(RadiationTreatment.RESISTANCE) + RadiationShielding.equippedResistance(mob);
         double rate = RadiationShielding.attenuate(ambient * multiplier, resistance);
         double maximum = maximum(mob, data);
         double retained = data.getDouble(DOSE) * Math.pow(1 - RadiationConfig.ENTITY_DECAY.get(), ticks);

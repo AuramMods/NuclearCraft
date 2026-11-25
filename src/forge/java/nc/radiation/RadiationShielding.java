@@ -1,9 +1,11 @@
 package nc.radiation;
 
 import nc.NuclearCraft;
+import nc.compat.curios.RadiationCurios;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ElytraItem;
 import net.minecraft.world.item.HorseArmorItem;
@@ -22,7 +24,24 @@ public final class RadiationShielding {
     private RadiationShielding() {}
 
     public static double armorResistance(ItemStack stack) {
-        return stack.isEmpty() ? 0 : addedResistance(stack) + ShieldingSettings.inherent(itemId(stack));
+        if (stack.isEmpty() || stack.getItem() instanceof HorseArmorItem && !ShieldingSettings.horseArmor()) {
+            return 0;
+        }
+        return addedResistance(stack) + ShieldingSettings.inherent(itemId(stack));
+    }
+
+    static double equippedResistance(LivingEntity wearer) {
+        double resistance = 0;
+        for (ItemStack stack : wearer.getArmorSlots()) {
+            resistance += armorResistance(stack);
+        }
+        var curios = RadiationCurios.equipped(wearer);
+        if (curios != null) {
+            for (int slot = 0; slot < curios.getSlots(); slot++) {
+                resistance += armorResistance(curios.getStackInSlot(slot));
+            }
+        }
+        return resistance;
     }
 
     public static boolean canUpgrade(ItemStack stack, double resistance) {
