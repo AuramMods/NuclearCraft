@@ -1,4 +1,8 @@
 {
+    "info.nuclearcraft.multitool.save_processor_config": "已将%s的配置保存到多功能工具。",
+    "info.nuclearcraft.multitool.load_processor_config": "已从多功能工具加载%s的配置。",
+    "info.nuclearcraft.multitool.invalid_processor_config": "无法将%s的配置应用到%s。",
+    "info.nuclearcraft.multitool.clear_processor_config": "已清除保存的处理机配置。",
     "message.nuclearcraft.quantum.state_unavailable": "无法读取已保存的量子状态。请查看服务器日志。",
     "message.nuclearcraft.quantum.state_unsaved": "无法保存量子状态。请查看服务器日志。",
     "itemGroup.nuclearcraft.quantum": "核电工艺量子计算",

@@ -67,10 +67,12 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                 || MelterMaterialRecipes.find(manager, stack) != null;
     }
 
+    @Override
     ProcessorItemPorts itemPorts() {
         return inventory.ports;
     }
 
+    @Override
     ProcessorFluidTanks fluidTanks() {
         return fluids;
     }

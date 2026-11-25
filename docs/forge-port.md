@@ -133,6 +133,18 @@ A clean multiplayer client loaded 1,300 mB water and 500 FE from a Melter saved 
 
 The isolated Auram copy with all 539 installed mod JARs loaded and rendered the Chemical Reactor, Melter, Radiation Scrubber, and Infuser screens. The Chemical Reactor switched to shared inputs and cleared one tank while preserving 300 mB in the other. The Melter retained 1,234 mB through a face and overflow change, and the Scrubber and Infuser retained their contents while changing their input routing and disposal settings. The client ran with master volume zero and OpenAL’s No Output device. The native observer recorded zero focus activations, foreground samples, or visible window samples.
 
+### Copying processor settings with the multitool
+
+Sneak-right-click a powered processor with the Multitool to copy its settings. Right-click another processor of the same type and slot layout to apply them. Sneak-right-click while looking into air to clear the saved processor settings. A scripted processor can use the tool when its configuration and redstone controls are visible.
+
+The copy carries per-face and per-slot item routing, tank routing, output policies, input tank separation, and redstone control. Faces follow the target machine's orientation. Stored items, fluids, upgrades, charge, and batch progress stay with each machine. When pasted, a Void policy takes effect on the next eligible output and leaves the existing buffer recoverable until then.
+
+Converted multitools can keep their 1.12.2 `ncMultitool.processorConfig` tag. The port reads `infoName`, relative `inventoryConnections` and `fluidConnections`, `slotSettings`, `tankSettings`, and `redstoneControl`. Copying from a Forge machine writes its namespaced ID and current slot layout into the same tool tag.
+
+All 213 local GameTests passed, including settings-only paste, legacy clipboard import, and invalidation of the previous sided capabilities. The packaged Forge 47.4.18 JAR preserved the destination's charge, fluid, ice, and 101 half-ticks of Melter progress through paste and restart. A scripted processor rotated tank settings while retaining its 70,000 mB and 68,000 mB buffers. Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied an ice block and 4,000 FE and collected exactly 2,500 mB from a pasted south outlet, including 1,500 mB already stored. The settings and routed volumes persisted through restart and chunk reload.
+
+The isolated 539-mod Auram client copied from a north-facing Melter and applied the settings to an east-facing Melter. It rejected a different processor, cleared the saved profile through the air gesture, and preserved the two machines' distinct tanks and charge. The client ran muted with zero focus activations, foreground samples, or visible window samples.
+
 ### Stock processor availability
 
 Copy the 21 legacy `register_processor` booleans into `config/nuclearcraft-processor-availability.toml`. Position 0 is the Nuclear Furnace. The other 20 positions follow `processor_time`, from the Manufactory through the Electric Furnace. All switches default to `true`. Restart after editing the file and distribute the same common config to clients for matching creative and JEI listings.

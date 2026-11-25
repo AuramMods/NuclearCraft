@@ -86,6 +86,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 hasUpgrades() ? upgrades : null, false);
     }
 
+    @Override
     ProcessorItemPorts itemPorts() {
         return itemPorts;
     }
@@ -120,6 +121,12 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     public void pushInterfaceEnergy(Direction side, IEnergyStorage recipient) {
         power.pushTo(recipient);
+    }
+
+    @Override
+    boolean allowsSettingsCopy() {
+        var layout = machine.layout();
+        return layout == null || layout.config().visible() && layout.redstone().visible();
     }
 
     @Override
@@ -415,6 +422,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
     }
 
+    @Override
     @Nullable ProcessorFluidTanks fluidTanks() {
         return fluid;
     }

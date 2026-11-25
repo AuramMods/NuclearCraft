@@ -13,6 +13,7 @@ import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.multiblock.fission.FissionMultitool;
 import nc.multiblock.quantum.QuantumMultitool;
+import nc.processor.ProcessorMultitool;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -74,6 +75,8 @@ public final class NCHeatExchangers {
                     if (quantum != InteractionResult.PASS) return quantum;
                     var fission = FissionMultitool.useOn(stack, context);
                     if (fission != InteractionResult.PASS) return fission;
+                    var processor = ProcessorMultitool.useOn(stack, context);
+                    if (processor != InteractionResult.PASS) return processor;
                     if (state.getBlock() instanceof ExchangerTubeBlock tube) return tube.configure(state, context);
                     if (state.getBlock() instanceof MachinePartBlock.Wall wall && context.getPlayer() != null
                             && context.getPlayer().isShiftKeyDown()) return wall.reverseProcessPort(context);
@@ -88,9 +91,11 @@ public final class NCHeatExchangers {
                     }
                     if (level instanceof ServerLevel server && player instanceof ServerPlayer user && player.isShiftKeyDown()) {
                         var hit = getPlayerPOVHitResult(level, player, ClipContext.Fluid.NONE);
-                        if ((hit.getType() == HitResult.Type.MISS
+                        boolean clearedFission = (hit.getType() == HitResult.Type.MISS
                                 || !FissionMultitool.handles(level.getBlockState(hit.getBlockPos())))
-                                && FissionMultitool.clear(server, user, stack)) {
+                                && FissionMultitool.clear(server, user, stack);
+                        boolean clearedProcessor = hit.getType() == HitResult.Type.MISS && ProcessorMultitool.clear(user, stack);
+                        if (clearedFission || clearedProcessor) {
                             return InteractionResultHolder.consume(stack);
                         }
                     }

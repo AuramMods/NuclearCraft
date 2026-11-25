@@ -123,7 +123,9 @@ public final class ProcessorItemPorts {
     }
 
     void produce(int slot, ItemStack product) {
-        if (!product.isEmpty() && overflow(slot) != OutputMode.VOID) {
+        if (overflow(slot) == OutputMode.VOID) {
+            inventory.setStackInSlot(slot, ItemStack.EMPTY);
+        } else if (!product.isEmpty()) {
             ItemStack stored = inventory.getStackInSlot(slot);
             int added = Math.min(product.getCount(), room(slot, product, stored));
             if (added > 0) {
@@ -161,27 +163,41 @@ public final class ProcessorItemPorts {
         previous.invalidate();
     }
 
+    int inputs() {
+        return inputs;
+    }
+
+    int slots() {
+        return slots;
+    }
+
     void save(CompoundTag tag) {
         tag.put("inventory", inventory.serializeNBT());
-        if (inputOnly) {
-            int disabled = 0;
-            for (Direction side : SIDES) {
-                if (group(side) == GroupMode.OFF) {
-                    disabled |= 1 << side.ordinal();
-                }
-            }
-            tag.putInt("item_disabled_sides", disabled);
-        } else {
-            tag.putIntArray("item_sides", Arrays.stream(groups).mapToInt(GroupMode::ordinal).toArray());
-        }
+        saveSettings(tag, null);
+    }
+
+    void saveSettings(CompoundTag tag, @Nullable Direction front) {
+        int disabled = 0;
+        int[] coarse = new int[SIDES.length];
         int[] modes = new int[SIDES.length * slots];
         boolean customized = false;
         for (Direction side : SIDES) {
-            int[] row = overrides[side.ordinal()];
-            for (int slot = 0; slot < slots; slot++) {
-                modes[side.ordinal() * slots + slot] = row[slot];
-                customized |= row[slot] != DEFAULT;
+            int face = side.ordinal();
+            int actual = ProcessorMultitool.side(side, front).ordinal();
+            if (groups[actual] == GroupMode.OFF) {
+                disabled |= 1 << face;
             }
+            coarse[face] = groups[actual].ordinal();
+            int[] row = overrides[actual];
+            System.arraycopy(row, 0, modes, face * slots, slots);
+            for (int mode : row) {
+                customized |= mode != DEFAULT;
+            }
+        }
+        if (inputOnly) {
+            tag.putInt("item_disabled_sides", disabled);
+        } else {
+            tag.putIntArray("item_sides", coarse);
         }
         if (customized) {
             tag.putIntArray("item_slot_sides", modes);
@@ -195,16 +211,22 @@ public final class ProcessorItemPorts {
         CompoundTag savedInventory = tag.getCompound("inventory").copy();
         savedInventory.putInt("Size", inputs + overflow.length);
         inventory.deserializeNBT(savedInventory);
+        refreshFaces(loadSettings(tag, null));
+    }
+
+    int loadSettings(CompoundTag tag, @Nullable Direction front) {
         int[] coarse = tag.getIntArray("item_sides");
         int disabled = tag.getInt("item_disabled_sides");
         int[] modes = tag.getIntArray("item_slot_sides");
+        int changedFaces = 0;
         for (Direction side : SIDES) {
             int face = side.ordinal();
+            int actual = ProcessorMultitool.side(side, front).ordinal();
             GroupMode group = inputOnly ? ((disabled & (1 << face)) == 0 ? GroupMode.INPUT : GroupMode.OFF)
                     : coarse.length == SIDES.length ? GroupMode.byId(coarse[face]) : GroupMode.BOTH;
-            int[] row = overrides[face];
-            boolean changed = groups[face] != group;
-            groups[face] = group;
+            int[] row = overrides[actual];
+            boolean changed = groups[actual] != group;
+            groups[actual] = group;
             for (int slot = 0; slot < slots; slot++) {
                 int mode = modes.length == SIDES.length * slots ? modes[face * slots + slot] : DEFAULT;
                 int validMode = mode >= 0 && mode < SlotMode.MODES.length ? mode : DEFAULT;
@@ -212,17 +234,61 @@ public final class ProcessorItemPorts {
                 row[slot] = validMode;
             }
             if (changed) {
-                refresh(side);
+                changedFaces |= 1 << actual;
             }
         }
         int[] settings = tag.getIntArray("item_output_modes");
         for (int output = 0; output < overflow.length; output++) {
             overflow[output] = output < settings.length ? OutputMode.byId(settings[output]) : OutputMode.HOLD;
-            if (overflow[output] == OutputMode.VOID) {
-                inventory.setStackInSlot(inputs + output, ItemStack.EMPTY);
+        }
+        refreshAutoOutput();
+        return changedFaces;
+    }
+
+    int loadLegacySettings(CompoundTag connections, CompoundTag policies, Direction front) {
+        int changedFaces = 0;
+        for (Direction side : SIDES) {
+            CompoundTag connection = connections.getCompound("inventoryConnection" + side.ordinal());
+            int actual = ProcessorMultitool.side(side, front).ordinal();
+            int[] row = overrides[actual];
+            for (int slot = 0; slot < slots; slot++) {
+                String key = "sorption" + slot;
+                if (connection.contains(key)) {
+                    int mode = SlotMode.byId(connection.getInt(key)).ordinal();
+                    if (row[slot] != mode) {
+                        changedFaces |= 1 << actual;
+                        row[slot] = mode;
+                    }
+                }
+            }
+        }
+        for (int output = 0; output < overflow.length; output++) {
+            String key = "itemOutputSetting" + (inputs + output);
+            if (policies.contains(key)) {
+                overflow[output] = OutputMode.byId(policies.getInt(key));
             }
         }
         refreshAutoOutput();
+        return changedFaces;
+    }
+
+    void refreshFaces(int changedFaces) {
+        if (changedFaces == 0) {
+            return;
+        }
+        var previous = new Face[SIDES.length];
+        for (Direction side : SIDES) {
+            int index = side.ordinal();
+            if ((changedFaces & (1 << index)) != 0) {
+                previous[index] = faces[index];
+                faces[index] = new Face(side);
+            }
+        }
+        for (Face face : previous) {
+            if (face != null) {
+                face.invalidate();
+            }
+        }
     }
 
     private void refreshAutoOutput() {

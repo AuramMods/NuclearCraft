@@ -78,6 +78,10 @@ public final class ProcessorFluidTanks {
         return tanks[index].getFluid();
     }
 
+    int inputs() {
+        return inputs;
+    }
+
     int size() {
         return tanks.length;
     }
@@ -119,7 +123,9 @@ public final class ProcessorFluidTanks {
     }
 
     void produce(int index, FluidStack stack) {
-        if (outputModes[index - inputs] != OutputMode.VOID) {
+        if (outputModes[index - inputs] == OutputMode.VOID) {
+            clear(index);
+        } else {
             tanks[index].fill(stack, EXECUTE);
         }
     }
@@ -215,8 +221,12 @@ public final class ProcessorFluidTanks {
     }
 
     void refreshFaces() {
+        var previous = faces.values().toArray(Face[]::new);
         for (Direction side : SIDES) {
-            faces.put(side, new Face(side)).invalidate();
+            faces.put(side, new Face(side));
+        }
+        for (Face face : previous) {
+            face.invalidate();
         }
     }
 
@@ -228,22 +238,9 @@ public final class ProcessorFluidTanks {
 
     void loadTank(int index, CompoundTag saved, String contentKey, String modesKey, String settingKey) {
         tanks[index].readFromNBT(saved.getCompound(contentKey));
-        sideModes[index] = saved.contains(modesKey) ? saved.getInt(modesKey) : legacyModes(index, saved);
-        if (index < inputs) {
-            boolean discard = saved.contains(settingKey) ? saved.getInt(settingKey) == 1
-                    : saved.getBoolean("voidUnusableFluidInput" + index);
-            int bit = 1 << index;
-            voidUnusable = discard ? voidUnusable | bit : voidUnusable & ~bit;
-        } else {
-            int policy = saved.contains(settingKey) ? saved.getInt(settingKey)
-                    : saved.contains("voidExcessFluidOutput" + index) ? (saved.getBoolean("voidExcessFluidOutput" + index) ? 1 : 0)
-                    : saved.getInt("tankOutputSetting" + index);
-            OutputMode mode = OutputMode.byId(policy);
-            outputModes[index - inputs] = mode;
-            if (mode == OutputMode.VOID) {
-                clear(index);
-            }
-        }
+        sideModes[index] = saved.contains(modesKey) ? saved.getInt(modesKey)
+                : legacyModes(index, saved, null, defaultModes(index));
+        setSetting(index, saved.contains(settingKey) ? saved.getInt(settingKey) : legacySetting(index, saved));
     }
 
     void saveSeparation(CompoundTag tag) {
@@ -259,14 +256,80 @@ public final class ProcessorFluidTanks {
         }
     }
 
-    private int legacyModes(int index, CompoundTag tag) {
+    void saveSettings(CompoundTag tag, Direction front) {
+        int[] modes = new int[tanks.length];
+        int[] settings = new int[tanks.length];
+        for (int index = 0; index < tanks.length; index++) {
+            Mode[] relative = new Mode[SIDES.length];
+            for (Direction side : SIDES) {
+                relative[side.ordinal()] = Mode.read(sideModes[index], ProcessorMultitool.side(side, front));
+            }
+            modes[index] = Mode.pack(relative);
+            settings[index] = setting(index);
+        }
+        tag.putIntArray("fluid_sides", modes);
+        tag.putIntArray("fluid_settings", settings);
+        saveSeparation(tag);
+    }
+
+    void loadSettings(CompoundTag tag, Direction front) {
+        int[] modes = tag.getIntArray("fluid_sides");
+        int[] settings = tag.getIntArray("fluid_settings");
+        for (int index = 0; index < tanks.length; index++) {
+            if (modes.length == tanks.length) {
+                Mode[] actual = new Mode[SIDES.length];
+                for (Direction side : SIDES) {
+                    actual[ProcessorMultitool.side(side, front).ordinal()] = Mode.read(modes[index], side);
+                }
+                sideModes[index] = Mode.pack(actual);
+            }
+            if (settings.length == tanks.length) {
+                setSetting(index, settings[index]);
+            }
+        }
+        if (tag.contains("input_tanks_separated")) {
+            loadSeparation(tag);
+        }
+    }
+
+    void loadLegacySettings(CompoundTag connections, CompoundTag policies, Direction front) {
+        for (int index = 0; index < tanks.length; index++) {
+            sideModes[index] = legacyModes(index, connections, front, sideModes[index]);
+            if (policies.contains(index < inputs ? "voidUnusableFluidInput" + index : "tankOutputSetting" + index)
+                    || (index >= inputs && policies.contains("voidExcessFluidOutput" + index))) {
+                setSetting(index, legacySetting(index, policies));
+            }
+        }
+        if (policies.contains("inputTanksSeparated")) {
+            loadSeparation(policies);
+        }
+    }
+
+    private void setSetting(int index, int value) {
+        if (index < inputs) {
+            int bit = 1 << index;
+            voidUnusable = value == 1 ? voidUnusable | bit : voidUnusable & ~bit;
+        } else {
+            outputModes[index - inputs] = OutputMode.byId(value);
+        }
+    }
+
+    private int legacySetting(int index, CompoundTag tag) {
+        if (index < inputs) {
+            return tag.getBoolean("voidUnusableFluidInput" + index) ? 1 : 0;
+        }
+        return tag.contains("voidExcessFluidOutput" + index) ? (tag.getBoolean("voidExcessFluidOutput" + index) ? 1 : 0)
+                : tag.getInt("tankOutputSetting" + index);
+    }
+
+    private int legacyModes(int index, CompoundTag tag, @Nullable Direction front, int fallback) {
         Mode[] modes = new Mode[SIDES.length];
+        String key = "sorption" + index;
         for (Direction side : SIDES) {
-            int face = side.ordinal();
-            CompoundTag connection = tag.getCompound("fluidConnection" + face);
-            String key = "sorption" + index;
-            modes[face] = connection.contains(key) ? Mode.fromLegacy(connection.getInt(key))
-                    : Mode.read(defaultModes(index), side);
+            Direction actual = ProcessorMultitool.side(side, front);
+            CompoundTag connection = tag.getCompound("fluidConnection" + side.ordinal());
+            modes[actual.ordinal()] = connection.contains(key) ? Mode.fromLegacy(connection.getInt(key))
+                    : Mode.read(fallback, actual);
         }
         return Mode.pack(modes);
     }

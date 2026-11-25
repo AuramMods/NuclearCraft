@@ -215,10 +215,12 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         fluids.cycle(tank, side);
     }
 
+    @Override
     ProcessorFluidTanks fluidTanks() {
         return fluids;
     }
 
+    @Override
     ProcessorItemPorts itemPorts() {
         return itemInput.ports;
     }

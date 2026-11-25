@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import org.jetbrains.annotations.Nullable;
 
 abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     final ProcessorUpgrades upgrades = new ProcessorUpgrades(this);
@@ -50,8 +51,22 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     }
 
     final void toggleRedstoneControl() {
-        redstoneControl = !redstoneControl;
-        setChanged();
+        setRedstoneControl(!redstoneControl);
+    }
+
+    final void setRedstoneControl(boolean enabled) {
+        if (redstoneControl != enabled) {
+            redstoneControl = enabled;
+            setChanged();
+        }
+    }
+
+    abstract ProcessorItemPorts itemPorts();
+
+    abstract @Nullable ProcessorFluidTanks fluidTanks();
+
+    boolean allowsSettingsCopy() {
+        return true;
     }
 
     boolean missingRedstoneControl() {
