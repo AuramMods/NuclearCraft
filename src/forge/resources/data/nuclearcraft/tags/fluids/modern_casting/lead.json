@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_lead",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_lead",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_lead",
+            "required": false
+        },
+        {
+            "id": "embers:molten_lead",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_lead",
+            "required": false
+        }
+    ]
+}

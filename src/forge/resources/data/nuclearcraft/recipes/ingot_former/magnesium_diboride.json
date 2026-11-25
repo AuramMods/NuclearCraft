@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_magnesium_diboride",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:magnesium_diboride_ingot"
+    },
+    "ticks": 400,
+    "power_multiplier": 1
+}

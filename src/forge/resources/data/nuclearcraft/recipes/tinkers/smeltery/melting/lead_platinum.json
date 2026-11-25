@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/lead_platinum"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/lead_platinum"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lead_platinum",
+        "amount": 144
+    },
+    "temperature": 1150,
+    "time": 70
+}

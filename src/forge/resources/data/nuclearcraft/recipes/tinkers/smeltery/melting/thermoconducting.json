@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/thermoconducting"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/thermoconducting"
+    },
+    "result": {
+        "fluid": "nuclearcraft:thermoconducting",
+        "amount": 144
+    },
+    "temperature": 1250,
+    "time": 70
+}

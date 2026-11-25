@@ -1,0 +1,24 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "fluid": "nuclearcraft:tough",
+            "amount": 144
+        },
+        {
+            "fluid": "nuclearcraft:hard_carbon",
+            "amount": 144
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:extreme",
+        "amount": 144
+    },
+    "temperature": 1150
+}

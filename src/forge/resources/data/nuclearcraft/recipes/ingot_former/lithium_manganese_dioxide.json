@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "forge:molten_lithium_manganese_dioxide",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:lithium_manganese_dioxide_ingot"
+    },
+    "ticks": 400,
+    "power_multiplier": 1
+}

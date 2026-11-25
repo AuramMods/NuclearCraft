@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "nuclearcraft:modern_casting/diamond",
+        "amount": 90
+    },
+    "result": {
+        "item": "minecraft:diamond"
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "evolvedmekanism"
+        }
+    ]
+}

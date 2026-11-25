@@ -1,0 +1,12 @@
+{
+    "values": [
+        {
+            "id": "evolvedmekanism:molten_diamond",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_diamond",
+            "required": false
+        }
+    ]
+}

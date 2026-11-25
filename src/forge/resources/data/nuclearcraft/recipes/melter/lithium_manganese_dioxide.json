@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/lithium_manganese_dioxide"
+        },
+        {
+            "tag": "forge:dusts/lithium_manganese_dioxide"
+        },
+        {
+            "tag": "c:ingots/lithium_manganese_dioxide"
+        },
+        {
+            "tag": "c:dusts/lithium_manganese_dioxide"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:lithium_manganese_dioxide",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

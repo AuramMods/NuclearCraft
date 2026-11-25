@@ -1,0 +1,36 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "fluid": "nuclearcraft:coal",
+            "amount": 100
+        },
+        {
+            "match": [
+                {
+                    "fluid": "nuclearcraft:diamond",
+                    "amount": 333
+                },
+                {
+                    "tag": "tconstruct:molten_diamond",
+                    "amount": 50
+                },
+                {
+                    "tag": "nuclearcraft:modern_casting/diamond",
+                    "amount": 45
+                }
+            ]
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:hard_carbon",
+        "amount": 144
+    },
+    "temperature": 1050
+}

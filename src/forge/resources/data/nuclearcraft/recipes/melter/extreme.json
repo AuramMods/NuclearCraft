@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/extreme"
+        },
+        {
+            "tag": "forge:dusts/extreme"
+        },
+        {
+            "tag": "c:ingots/extreme"
+        },
+        {
+            "tag": "c:dusts/extreme"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:extreme",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

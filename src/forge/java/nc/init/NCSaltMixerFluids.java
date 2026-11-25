@@ -23,6 +23,7 @@ final class NCSaltMixerFluids {
         NCFluids.liquid("ender", "liquid", 4000, 0x14584D, 300, 2500);
         NCFluids.molten("enderium", 0x0B5B5C);
         NCFluids.liquid("ethanol", "liquid", 800, 0x655140, 300, 800);
+        NCFluids.molten("extreme", 0x342A46);
         NCFluids.molten("ferroboron", 0x5B6165);
         NCFluids.molten("flibe", 0xC1C8B0);
         NCFluids.molten("fluorite", 0x8AB492);
@@ -43,7 +44,9 @@ final class NCSaltMixerFluids {
         NCFluids.molten("lithium", 0xEFEFEF);
         NCFluids.molten("lithium_6", 0xE0E0E0);
         NCFluids.molten("lithium_7", 0xEDEDED);
+        NCFluids.molten("lithium_manganese_dioxide", 0x393744);
         NCFluids.molten("magnesium", 0xEED5E1);
+        NCFluids.molten("magnesium_diboride", 0xAC90A2);
         NCFluids.molten("manganese", 0x99A1CA);
         NCFluids.liquid("marshmallow", "molten", 1325, 0xE1E1E3, 330, 5000);
         NCFluids.liquid("milk", "liquid", 1030, 0xFFF9EA, 300, 1000);
@@ -65,6 +68,7 @@ final class NCSaltMixerFluids {
         NCFluids.liquid("slurry_ice", "liquid", 950, 0x7EAEB7, 270, 4000);
         NCFluids.molten("steel", 0x6F7478);
         NCFluids.liquid("sugar", "molten", 1150, 0xFFD59A, 350, 8000);
+        NCFluids.molten("thermoconducting", 0x9A493D);
         NCFluids.molten("tin", 0xD9DDF0);
         NCFluids.molten("tough", 0x3F414C);
         NCFluids.liquid("unsweetened_chocolate", "molten", 1325, 0x2C0A08, 330, 5000);

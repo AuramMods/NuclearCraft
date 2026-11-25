@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_enderium"
+    ],
+    "remove": [
+        "nuclearcraft:enderium",
+        "nuclearcraft:flowing_enderium"
+    ]
+}

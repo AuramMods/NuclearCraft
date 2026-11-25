@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_chromium"
+    ],
+    "remove": [
+        "nuclearcraft:chromium",
+        "nuclearcraft:flowing_chromium"
+    ]
+}

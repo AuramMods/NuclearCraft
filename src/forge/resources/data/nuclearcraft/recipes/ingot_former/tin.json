@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_tin",
+        "tag": "nuclearcraft:legacy_casting/tin",
         "amount": 144
     },
     "result": {

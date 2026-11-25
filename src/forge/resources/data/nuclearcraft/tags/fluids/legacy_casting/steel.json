@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_steel"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/steel"
+    ]
+}

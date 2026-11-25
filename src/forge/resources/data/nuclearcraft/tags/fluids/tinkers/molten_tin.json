@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_tin"
+    ],
+    "remove": [
+        "nuclearcraft:tin",
+        "nuclearcraft:flowing_tin"
+    ]
+}

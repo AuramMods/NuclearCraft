@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/thermoconducting"
+        },
+        {
+            "tag": "forge:dusts/thermoconducting"
+        },
+        {
+            "tag": "c:ingots/thermoconducting"
+        },
+        {
+            "tag": "c:dusts/thermoconducting"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:thermoconducting",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

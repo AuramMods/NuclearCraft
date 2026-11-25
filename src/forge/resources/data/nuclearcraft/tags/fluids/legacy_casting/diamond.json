@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_diamond"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/diamond"
+    ]
+}

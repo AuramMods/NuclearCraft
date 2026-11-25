@@ -1,0 +1,16 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_steel",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_steel",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_steel",
+            "required": false
+        }
+    ]
+}

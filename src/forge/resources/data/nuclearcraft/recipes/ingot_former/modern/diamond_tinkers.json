@@ -1,0 +1,19 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "tconstruct:molten_diamond",
+        "amount": 100
+    },
+    "result": {
+        "item": "minecraft:diamond"
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ]
+}

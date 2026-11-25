@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_aluminum"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/aluminum"
+    ]
+}

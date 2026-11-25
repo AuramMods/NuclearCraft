@@ -1,0 +1,17 @@
+{
+    "type": "tconstruct:casting_basin",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "cooling_time": 175,
+    "fluid": {
+        "fluid": "nuclearcraft:coal",
+        "amount": 900
+    },
+    "result": {
+        "item": "minecraft:coal_block"
+    }
+}

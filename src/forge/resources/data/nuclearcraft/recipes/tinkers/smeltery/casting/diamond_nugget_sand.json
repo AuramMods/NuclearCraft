@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:nuggets/diamond"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/single_use/nugget"
+    },
+    "cast_consumed": true,
+    "cooling_time": 66,
+    "fluid": {
+        "fluid": "nuclearcraft:diamond",
+        "amount": 74
+    },
+    "result": {
+        "tag": "forge:nuggets/diamond"
+    }
+}

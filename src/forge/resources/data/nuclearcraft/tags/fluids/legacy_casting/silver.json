@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_silver"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/silver"
+    ]
+}

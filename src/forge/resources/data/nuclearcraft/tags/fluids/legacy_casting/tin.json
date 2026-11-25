@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_tin"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/tin"
+    ]
+}

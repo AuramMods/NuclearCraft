@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_gold",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_gold",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_gold",
+            "required": false
+        },
+        {
+            "id": "embers:molten_gold",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_gold",
+            "required": false
+        }
+    ]
+}

@@ -1,0 +1,16 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_enderium",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_enderium",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_enderium",
+            "required": false
+        }
+    ]
+}

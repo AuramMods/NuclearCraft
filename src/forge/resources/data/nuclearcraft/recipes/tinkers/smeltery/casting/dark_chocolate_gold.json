@@ -1,0 +1,21 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/multi_use/ingot"
+    },
+    "cast_consumed": false,
+    "cooling_time": 18,
+    "fluid": {
+        "fluid": "nuclearcraft:dark_chocolate",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:dark_chocolate"
+    }
+}

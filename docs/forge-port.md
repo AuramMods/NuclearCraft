@@ -515,7 +515,7 @@ All 158 headless Forge GameTests passed. A packaged Forge 47.4.18 dedicated serv
 
 Tinkers’ Construct adds eight optional NuclearCraft materials for its modular tools, bows, and armor. In the Part Builder, use Boron Nitride gems. Cast Boron, Tough Alloy, Hard Carbon Alloy, Thorium, Uranium, Magnesium, and Chocolate parts on a casting table. The repair recipes use the corresponding Forge ingot or gem tag. Chocolate uses Milk Chocolate. Melt metal and Chocolate parts to recover their casting fluid.
 
-The NuclearCraft material recipes use 144 mB per ingot for casting and recycling. Tinkers’ Uranium parts use 90 mB of `tconstruct:molten_uranium` per ingot, matching the Tinkers’ smeltery’s Uranium recipes. NuclearCraft’s existing Uranium processor recipes retain their 144 mB amounts. Molten Thorium also works in the NuclearCraft Melter and Ingot Former.
+The NuclearCraft material recipes use 144 mB per ingot for casting and recycling. Uranium parts accept 144 mB of `nuclearcraft:uranium` or 90 mB of a standard molten Uranium source per ingot. Recycling returns the equivalent amount of Tinkers’ molten Uranium. Molten Thorium also works in the NuclearCraft Melter and Ingot Former.
 
 The old `register_tic_tool` and `register_conarm_armor` arrays move to `config/nuclearcraft-tinkers-materials.toml`. Each applies independently. Keep the order Boron, Tough Alloy, Hard Carbon Alloy, Boron Nitride, Thorium, Uranium, Magnesium, and Chocolate. Restart the game or dedicated server after changing the arrays. A material with both entries disabled disappears from the Tinkers’ catalog and loses its material recipes.
 
@@ -525,7 +525,17 @@ On packaged Forge 47.4.18 with Tinkers’ Construct 3.11.2.166 and Mantle 1.11.9
 
 In the isolated 539-mod Auram snapshot, the client loaded the colors for all eight materials and initialized JEI. The Part Builder crafted a Boron Nitride pick head. A Melter delivered 288 mB of Boron to the casting table, which produced one Boron pick head with no fluid left in either machine. The client exited normally with master volume zero, OpenAL No Output, and zero focus activations, foreground samples, or visible window samples.
 
-The remaining legacy smeltery alloy and secondary melting recipes in `TConstructExtras` still need migration and verification. The 90 mB stock Tinkers’ and 144 mB NuclearCraft Uranium ingot-casting routes also need a common-volume audit.
+### Tinkers’ smeltery recipes
+
+The legacy smeltery routes cover Coal, Graphite, Diamond, Cocoa, Sugar, Gelatin, and all 15 alloys, including food mixes. The alloy recipes are under `nuclearcraft:tinkers/smeltery/alloying`. Molten Extreme Alloy, Thermoconducting Alloy, Lithium Manganese Dioxide, and Magnesium Diboride also work in NuclearCraft’s Melter and Ingot Former. Boron Arsenide uses its existing `nuclearcraft:bas` fluid and the 666 mB gem unit.
+
+The built-in Tinkers’ casting, melting, and alloy recipes distinguish NuclearCraft’s 144 mB metals from 90 mB sources under shared Forge tags. Tinkers’ melting keeps its 90 mB outputs on fluids that use that amount. For diamonds, the casting table accepts 666 mB of NuclearCraft’s fluid or 100 mB of Tinkers’ fluid per gem. The Ingot Former recognizes those sources and Evolved Mekanism’s 90 mB diamond route. The adjustment runs against loaded stock Tinkers’ recipes after recipe scripting and leaves world datapack replacements in priority order. [Tinkers’ alloy recipe format](https://slimeknights.github.io/docs/json/recipes/alloying/)
+
+On dedicated Forge 47.4.18, a Casting Table buffered 90 mB of NuclearCraft Uranium without producing an item. Adding 54 mB produced one ingot. The Casting Table and Ingot Former each cast one ingot from 90 mB of Tinkers’ Uranium. The Scorched Alloyer produced 144 mB each of Steel, Hard Carbon Alloy, and Milk Chocolate from exact inputs. The steel and cast ingots persisted across restart. Clean Forge also started and saved with the optional Tinkers’ recipes skipped.
+
+The isolated 539-mod Auram copy cast 90 mB of Evolved Mekanism Uranium through both the Casting Table and Ingot Former. Each yielded one Immersive Engineering Uranium ingot under the pack’s unification rules. The Casting Table used 144 mB for the same output from NuclearCraft Uranium. The Scorched Alloyer used 90 mB of Evolved Mekanism iron and 400 mB of NuclearCraft coal for 144 mB of NuclearCraft steel. A 161 mB KubeJS sand-cast override remained effective, and an independent world datapack override survived server reload and restart. All 213 local GameTests passed. The muted Auram client exited normally with zero focus activations, foreground samples, or visible window samples.
+
+Other mods’ own casting and alloying machines can use their own amounts. The Embers stamping routes using shared tags still need a volume audit with the NuclearCraft fluids.
 
 ### Quantum Computer
 

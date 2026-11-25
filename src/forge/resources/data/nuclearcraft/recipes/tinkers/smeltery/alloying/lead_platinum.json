@@ -1,0 +1,32 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "match": [
+                {
+                    "fluid": "nuclearcraft:lead",
+                    "amount": 432
+                },
+                {
+                    "tag": "nuclearcraft:tinkers/molten_lead",
+                    "amount": 270
+                }
+            ]
+        },
+        {
+            "tag": "forge:molten_platinum",
+            "amount": 90
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:lead_platinum",
+        "amount": 576
+    },
+    "temperature": 1150
+}

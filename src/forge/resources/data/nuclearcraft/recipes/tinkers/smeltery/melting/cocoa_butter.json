@@ -1,0 +1,18 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "ingredient": {
+        "item": "nuclearcraft:cocoa_butter"
+    },
+    "result": {
+        "fluid": "nuclearcraft:cocoa_butter",
+        "amount": 144
+    },
+    "temperature": 45,
+    "time": 18
+}

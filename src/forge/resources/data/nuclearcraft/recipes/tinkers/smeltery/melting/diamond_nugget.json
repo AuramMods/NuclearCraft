@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:nuggets/diamond"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:nuggets/diamond"
+    },
+    "result": {
+        "fluid": "nuclearcraft:diamond",
+        "amount": 74
+    },
+    "temperature": 1450,
+    "time": 66
+}

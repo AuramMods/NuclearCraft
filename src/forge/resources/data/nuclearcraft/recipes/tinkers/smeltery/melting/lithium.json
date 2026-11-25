@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/lithium"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/lithium"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lithium",
+        "amount": 144
+    },
+    "temperature": 650,
+    "time": 70
+}

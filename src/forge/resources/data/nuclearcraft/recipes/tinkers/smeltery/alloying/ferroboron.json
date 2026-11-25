@@ -1,0 +1,32 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "match": [
+                {
+                    "fluid": "nuclearcraft:steel",
+                    "amount": 72
+                },
+                {
+                    "tag": "nuclearcraft:tinkers/molten_steel",
+                    "amount": 45
+                }
+            ]
+        },
+        {
+            "fluid": "nuclearcraft:boron",
+            "amount": 72
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:ferroboron",
+        "amount": 144
+    },
+    "temperature": 950
+}

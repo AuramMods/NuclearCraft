@@ -1,0 +1,18 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "ingredient": {
+        "item": "minecraft:sugar"
+    },
+    "result": {
+        "fluid": "nuclearcraft:sugar",
+        "amount": 144
+    },
+    "temperature": 45,
+    "time": 18
+}

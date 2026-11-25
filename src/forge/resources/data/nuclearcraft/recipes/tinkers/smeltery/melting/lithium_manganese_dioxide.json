@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/lithium_manganese_dioxide"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/lithium_manganese_dioxide"
+    },
+    "result": {
+        "fluid": "nuclearcraft:lithium_manganese_dioxide",
+        "amount": 144
+    },
+    "temperature": 850,
+    "time": 70
+}

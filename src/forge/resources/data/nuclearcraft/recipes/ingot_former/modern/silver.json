@@ -1,0 +1,32 @@
+{
+    "type": "nuclearcraft:ingot_former",
+    "ingredients": [],
+    "fluid_input": {
+        "tag": "nuclearcraft:modern_casting/silver",
+        "amount": 90
+    },
+    "result": {
+        "item": "nuclearcraft:silver_ingot"
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "tconstruct"
+                },
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "evolvedmekanism"
+                },
+                {
+                    "type": "forge:mod_loaded",
+                    "modid": "embers"
+                }
+            ]
+        }
+    ]
+}

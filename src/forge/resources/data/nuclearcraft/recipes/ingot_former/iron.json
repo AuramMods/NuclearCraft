@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_iron",
+        "tag": "nuclearcraft:legacy_casting/iron",
         "amount": 144
     },
     "result": {

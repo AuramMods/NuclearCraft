@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_aluminum"
+    ],
+    "remove": [
+        "nuclearcraft:aluminum",
+        "nuclearcraft:flowing_aluminum"
+    ]
+}

@@ -10,10 +10,16 @@
             "material": "uranium"
         }
     ],
-    "fluid": {
-        "fluid": "tconstruct:molten_uranium",
-        "amount": 90
-    },
+    "fluid": [
+        {
+            "fluid": "nuclearcraft:uranium",
+            "amount": 144
+        },
+        {
+            "tag": "nuclearcraft:tinkers/molten_uranium",
+            "amount": 90
+        }
+    ],
     "output": "nuclearcraft:uranium",
     "temperature": 830
 }

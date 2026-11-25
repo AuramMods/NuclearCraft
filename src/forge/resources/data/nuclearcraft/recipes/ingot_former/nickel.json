@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_nickel",
+        "tag": "nuclearcraft:legacy_casting/nickel",
         "amount": 144
     },
     "result": {

@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/magnesium_diboride"
+        },
+        {
+            "tag": "forge:dusts/magnesium_diboride"
+        },
+        {
+            "tag": "c:ingots/magnesium_diboride"
+        },
+        {
+            "tag": "c:dusts/magnesium_diboride"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:magnesium_diboride",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

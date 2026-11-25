@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_copper",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_copper",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_copper",
+            "required": false
+        },
+        {
+            "id": "embers:molten_copper",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_copper",
+            "required": false
+        }
+    ]
+}

@@ -1,0 +1,24 @@
+{
+    "values": [
+        {
+            "id": "#tconstruct:molten_nickel",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:molten_nickel",
+            "required": false
+        },
+        {
+            "id": "evolvedmekanism:flowing_molten_nickel",
+            "required": false
+        },
+        {
+            "id": "embers:molten_nickel",
+            "required": false
+        },
+        {
+            "id": "embers:flowing_molten_nickel",
+            "required": false
+        }
+    ]
+}

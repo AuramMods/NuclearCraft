@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/ferroboron"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/single_use/ingot"
+    },
+    "cast_consumed": true,
+    "cooling_time": 70,
+    "fluid": {
+        "fluid": "nuclearcraft:ferroboron",
+        "amount": 144
+    },
+    "result": {
+        "tag": "forge:ingots/ferroboron"
+    }
+}

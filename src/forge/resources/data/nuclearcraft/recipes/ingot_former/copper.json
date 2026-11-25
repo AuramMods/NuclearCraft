@@ -2,7 +2,7 @@
     "type": "nuclearcraft:ingot_former",
     "ingredients": [],
     "fluid_input": {
-        "tag": "forge:molten_copper",
+        "tag": "nuclearcraft:legacy_casting/copper",
         "amount": 144
     },
     "result": {

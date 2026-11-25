@@ -207,5 +207,17 @@
     "modifier.nuclearcraft.uplifting": "振奋",
     "modifier.nuclearcraft.uplifting.description": "挖掘、近战或穿戴该盔甲受伤时有机会获得生命恢复。",
     "modifier.nuclearcraft.withering": "凋零",
-    "modifier.nuclearcraft.withering.description": "近战命中和反击会使生物凋零。"
+    "modifier.nuclearcraft.withering.description": "近战命中和反击会使生物凋零。",
+    "fluid_type.nuclearcraft.extreme": "熔融极限合金",
+    "block.nuclearcraft.extreme": "熔融极限合金",
+    "item.nuclearcraft.extreme_bucket": "熔融极限合金桶",
+    "fluid_type.nuclearcraft.lithium_manganese_dioxide": "熔融锂二氧化锰",
+    "block.nuclearcraft.lithium_manganese_dioxide": "熔融锂二氧化锰",
+    "item.nuclearcraft.lithium_manganese_dioxide_bucket": "熔融锂二氧化锰桶",
+    "fluid_type.nuclearcraft.magnesium_diboride": "熔融二硼化镁",
+    "block.nuclearcraft.magnesium_diboride": "熔融二硼化镁",
+    "item.nuclearcraft.magnesium_diboride_bucket": "熔融二硼化镁桶",
+    "fluid_type.nuclearcraft.thermoconducting": "熔融导热合金",
+    "block.nuclearcraft.thermoconducting": "熔融导热合金",
+    "item.nuclearcraft.thermoconducting_bucket": "熔融导热合金桶"
 }

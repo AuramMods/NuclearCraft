@@ -1,0 +1,8 @@
+{
+    "values": [
+        "#forge:molten_enderium"
+    ],
+    "remove": [
+        "#nuclearcraft:modern_casting/enderium"
+    ]
+}

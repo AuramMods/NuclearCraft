@@ -1,0 +1,18 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "ingredient": {
+        "item": "nuclearcraft:ground_cocoa_nibs"
+    },
+    "result": {
+        "fluid": "nuclearcraft:chocolate_liquor",
+        "amount": 144
+    },
+    "temperature": 45,
+    "time": 18
+}

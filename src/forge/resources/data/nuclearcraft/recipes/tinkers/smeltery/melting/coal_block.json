@@ -1,0 +1,23 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "ingredient": [
+        {
+            "item": "minecraft:coal_block"
+        },
+        {
+            "tag": "forge:storage_blocks/graphite"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:coal",
+        "amount": 900
+    },
+    "temperature": 800,
+    "time": 175
+}

@@ -1,0 +1,32 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "match": [
+                {
+                    "fluid": "nuclearcraft:iron",
+                    "amount": 144
+                },
+                {
+                    "tag": "nuclearcraft:tinkers/molten_iron",
+                    "amount": 90
+                }
+            ]
+        },
+        {
+            "fluid": "nuclearcraft:coal",
+            "amount": 400
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:steel",
+        "amount": 144
+    },
+    "temperature": 950
+}

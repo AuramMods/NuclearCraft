@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_lead"
+    ],
+    "remove": [
+        "nuclearcraft:lead",
+        "nuclearcraft:flowing_lead"
+    ]
+}

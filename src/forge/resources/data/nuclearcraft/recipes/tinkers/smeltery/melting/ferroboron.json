@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/ferroboron"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/ferroboron"
+    },
+    "result": {
+        "fluid": "nuclearcraft:ferroboron",
+        "amount": 144
+    },
+    "temperature": 950,
+    "time": 70
+}

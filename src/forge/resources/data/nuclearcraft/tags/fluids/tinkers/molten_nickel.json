@@ -1,0 +1,9 @@
+{
+    "values": [
+        "#forge:molten_nickel"
+    ],
+    "remove": [
+        "nuclearcraft:nickel",
+        "nuclearcraft:flowing_nickel"
+    ]
+}

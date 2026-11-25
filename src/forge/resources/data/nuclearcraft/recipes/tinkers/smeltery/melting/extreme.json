@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "mantle:tag_filled",
+            "tag": "forge:ingots/extreme"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/extreme"
+    },
+    "result": {
+        "fluid": "nuclearcraft:extreme",
+        "amount": 144
+    },
+    "temperature": 1150,
+    "time": 70
+}

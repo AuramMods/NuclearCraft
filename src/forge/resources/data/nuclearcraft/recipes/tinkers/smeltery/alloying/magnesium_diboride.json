@@ -1,0 +1,24 @@
+{
+    "type": "tconstruct:alloy",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        }
+    ],
+    "inputs": [
+        {
+            "fluid": "nuclearcraft:magnesium",
+            "amount": 48
+        },
+        {
+            "fluid": "nuclearcraft:boron",
+            "amount": 96
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:magnesium_diboride",
+        "amount": 144
+    },
+    "temperature": 850
+}
