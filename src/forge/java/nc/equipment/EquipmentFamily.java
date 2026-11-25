@@ -44,13 +44,7 @@ public enum EquipmentFamily implements ArmorMaterial {
 
     @Override
     public int getDurabilityForType(ArmorItem.Type type) {
-        int base = switch (type) {
-            case BOOTS -> 13;
-            case LEGGINGS -> 15;
-            case CHESTPLATE -> 16;
-            case HELMET -> 11;
-        };
-        return base * EquipmentConfig.armorDurability(ordinal());
+        return EquipmentConfig.armorDurability(ordinal(), type);
     }
 
     @Override

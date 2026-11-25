@@ -1,5 +1,6 @@
 package nc.equipment;
 
+import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public final class EquipmentConfig {
+    private static final int HAZMAT = 4;
     private static final List<Boolean> ENABLED = List.of(true, true, true, true);
     private static final ForgeConfigSpec.Builder AVAILABILITY = new ForgeConfigSpec.Builder();
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> REGISTER_TOOL = AVAILABILITY
@@ -30,16 +32,17 @@ public final class EquipmentConfig {
     private static final Numbers TOOL_ENCHANTABILITY = new Numbers("tool_enchantability", 1, 255,
             List.of(6, 6, 15, 15, 12, 12, 20, 20));
     private static final Numbers ARMOR_DURABILITY = new Numbers("armor_durability", 1, 127,
-            List.of(22, 30, 34, 42));
+            List.of(22, 30, 34, 42, 0), 0D);
     private static final Numbers ARMOR_TOUGHNESS = new Numbers("armor_toughness", 0, 8,
-            List.of(1D, 2D, 1D, 2D));
+            List.of(1D, 2D, 1D, 2D, 0D), 0D);
     private static final Numbers ARMOR_ENCHANTABILITY = new Numbers("armor_enchantability", 1, 255,
-            List.of(6, 15, 12, 20));
+            List.of(6, 15, 12, 20, 5), 1D);
     private static final List<Numbers> ARMOR_DEFENSE = List.of(
             new Numbers("armor_boron", 1, 25, List.of(2, 5, 7, 3)),
             new Numbers("armor_tough", 1, 25, List.of(3, 6, 7, 3)),
             new Numbers("armor_hard_carbon", 1, 25, List.of(3, 5, 7, 3)),
-            new Numbers("armor_boron_nitride", 1, 25, List.of(3, 6, 8, 3)));
+            new Numbers("armor_boron_nitride", 1, 25, List.of(3, 6, 8, 3)),
+            new Numbers("armor_hazmat", 1, 25, List.of(3, 6, 7, 3)));
     private static final ForgeConfigSpec STATS_SPEC = STATS.build();
 
     private EquipmentConfig() {}
@@ -59,10 +62,24 @@ public final class EquipmentConfig {
     static float toolSpeed(int index) { return TOOL_SPEED.get(index).floatValue(); }
     static float toolDamage(int index) { return TOOL_DAMAGE.get(index).floatValue(); }
     static int toolEnchantability(int index) { return TOOL_ENCHANTABILITY.get(index).intValue(); }
-    static int armorDurability(int family) { return ARMOR_DURABILITY.get(family).intValue(); }
+    static int armorDurability(int family, ArmorItem.Type type) {
+        int base = switch (type) {
+            case BOOTS -> 13;
+            case LEGGINGS -> 15;
+            case CHESTPLATE -> 16;
+            case HELMET -> 11;
+        };
+        return base * ARMOR_DURABILITY.get(family).intValue();
+    }
+
     static float armorToughness(int family) { return ARMOR_TOUGHNESS.get(family).floatValue(); }
     static int armorEnchantability(int family) { return ARMOR_ENCHANTABILITY.get(family).intValue(); }
     static int armorDefense(int family, int slot) { return ARMOR_DEFENSE.get(family).get(slot).intValue(); }
+
+    public static int hazmatDurability(ArmorItem.Type type) { return armorDurability(HAZMAT, type); }
+    public static float hazmatToughness() { return armorToughness(HAZMAT); }
+    public static int hazmatEnchantability() { return armorEnchantability(HAZMAT); }
+    public static int hazmatDefense(ArmorItem.Type type) { return armorDefense(HAZMAT, type.getSlot().getIndex()); }
 
     private static boolean validList(Object value, int length, Predicate<Object> validEntry) {
         return value instanceof List<?> list && list.size() == length && list.stream().allMatch(validEntry);
@@ -73,15 +90,35 @@ public final class EquipmentConfig {
         private final ForgeConfigSpec.ConfigValue<List<Number>> value;
 
         private Numbers(String key, double min, double max, List<Number> defaults) {
+            this(key, min, max, defaults, null);
+        }
+
+        private Numbers(String key, double min, double max, List<Number> defaults, Double hazmatMin) {
             this.defaults = defaults;
             boolean integral = defaults.get(0) instanceof Integer;
-            value = STATS.worldRestart().define(key, defaults, candidate -> validList(candidate, defaults.size(),
-                    entry -> entry instanceof Number number && number.doubleValue() >= min && number.doubleValue() <= max
-                            && (!integral || number.doubleValue() == number.intValue())));
+            if (hazmatMin != null) {
+                STATS.comment("Order: Boron, Tough Alloy, Hard Carbon, Boron Nitride, Hazmat (optional).");
+            }
+            value = STATS.worldRestart().define(key, defaults, candidate -> {
+                Predicate<Object> validEntry = entry -> inRange(entry, min, max, integral);
+                if (hazmatMin == null) {
+                    return validList(candidate, defaults.size(), validEntry);
+                }
+                return validList(candidate, HAZMAT, validEntry)
+                        || candidate instanceof List<?> list && list.size() == HAZMAT + 1
+                        && list.subList(0, HAZMAT).stream().allMatch(validEntry)
+                        && inRange(list.get(HAZMAT), hazmatMin, max, integral);
+            });
+        }
+
+        private static boolean inRange(Object entry, double min, double max, boolean integral) {
+            return entry instanceof Number number && number.doubleValue() >= min && number.doubleValue() <= max
+                    && (!integral || number.doubleValue() == number.intValue());
         }
 
         private Number get(int index) {
-            return (STATS_SPEC.isLoaded() ? value.get() : defaults).get(index);
+            var numbers = STATS_SPEC.isLoaded() ? value.get() : defaults;
+            return index < numbers.size() ? numbers.get(index) : defaults.get(index);
         }
     }
 }

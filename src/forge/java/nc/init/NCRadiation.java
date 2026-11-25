@@ -10,7 +10,7 @@ import nc.radiation.ContainerShieldingLoot;
 import nc.radiation.GeigerCounterItem;
 import nc.radiation.GeigerBlock;
 import nc.radiation.GeigerBlockEntity;
-import nc.radiation.HazmatMaterial;
+import nc.radiation.HazmatArmor;
 import nc.radiation.MedicineItem;
 import nc.radiation.RadiationBadge;
 import nc.radiation.RadiationConfig;
@@ -124,7 +124,6 @@ public final class NCRadiation {
     }
 
     private static RegistryObject<ArmorItem> hazmat(String id, ArmorItem.Type type) {
-        return NCRegistries.ITEMS.register(id, () -> new ArmorItem(HazmatMaterial.INSTANCE, type,
-                new Item.Properties().stacksTo(1)));
+        return NCRegistries.ITEMS.register(id, () -> new HazmatArmor(type));
     }
 }

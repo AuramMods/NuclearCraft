@@ -7,16 +7,22 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 
-public final class EquipmentArmor extends ArmorItem {
-    public EquipmentArmor(EquipmentFamily material, Type type) {
+public class EquipmentArmor extends ArmorItem {
+    public EquipmentArmor(ArmorMaterial material, Type type) {
         super(material, type, new Properties());
     }
 
     @Override
     public int getMaxDamage(ItemStack stack) {
         return getMaterial().getDurabilityForType(getType());
+    }
+
+    @Override
+    public boolean isDamageable(ItemStack stack) {
+        return getMaxDamage(stack) > 0;
     }
 
     @Override

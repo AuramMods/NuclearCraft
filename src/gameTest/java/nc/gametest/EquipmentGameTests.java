@@ -100,6 +100,11 @@ public final class EquipmentGameTests {
                         && chest.getAttributeModifiers(EquipmentSlot.HEAD).isEmpty()
                         && chest.is(ItemTags.TRIMMABLE_ARMOR) && chest.is(Tags.Items.ARMORS_CHESTPLATES),
                 "Armor uses the correct slot, durability, defense, toughness, and enchantability");
+        var hazmat = stack("chest_hazmat");
+        helper.assertTrue(hazmat.getMaxDamage() == 0 && !hazmat.isDamageableItem()
+                        && hazmat.getItem().getEnchantmentValue(hazmat) == 5
+                        && attribute(hazmat, EquipmentSlot.CHEST, Attributes.ARMOR) == 7,
+                "Stock Hazmat armor preserves its legacy defense and has no durability bar");
         helper.succeed();
     }
 

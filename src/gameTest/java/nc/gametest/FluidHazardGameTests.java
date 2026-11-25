@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.damagesource.CombatRules;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -58,13 +59,21 @@ public final class FluidHazardGameTests {
         var level = helper.getLevel();
         var pos = helper.absolutePos(CELL);
         for (Zombie subject : new Zombie[]{bare, chest, fitted}) {
+            subject.tick();
             acid.entityInside(level.getBlockState(pos), level, pos, subject);
             helper.assertTrue(subject.hasEffect(MobEffects.WEAKNESS), "Acid causes weakness even in a Hazmat Suit");
         }
         helper.assertTrue(bare.getHealth() == 17F, "Acid deals three damage");
-        helper.assertTrue(Math.abs(chest.getHealth() - 18.2F) < 0.001F, "The chest piece blocks 40 percent");
-        helper.assertTrue(fitted.getHealth() == 20F && fitted.getArmorValue() == 0,
-                "A complete suit blocks the burn using its chemical protection");
+        float chestDamage = CombatRules.getDamageAfterAbsorb(1.8F, 7F, 0F);
+        helper.assertTrue(chest.getArmorValue() == 7 && Math.abs(chest.getHealth() - (20F - chestDamage)) < 0.001F,
+                "The chest piece blocks 40 percent before applying seven points of ordinary armor");
+        helper.assertTrue(fitted.getHealth() == 20F && fitted.getArmorValue() == 19,
+                "The complete suit provides 19 armor points and blocks the entire chemical burn");
+        fitted.invulnerableTime = 0;
+        fitted.hurt(level.damageSources().mobAttack(bare), 10F);
+        float ordinaryDamage = CombatRules.getDamageAfterAbsorb(10F, 19F, 0F);
+        helper.assertTrue(Math.abs(fitted.getHealth() - (20F - ordinaryDamage)) < 0.001F,
+                "Ordinary damage is reduced by the armor attributes alone");
         helper.succeed();
     }
 
@@ -157,6 +166,8 @@ public final class FluidHazardGameTests {
             throw new IllegalStateException("Could not create a fluid hazard test subject");
         }
         subject.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(0);
+        var pos = helper.absolutePos(CELL.above(3));
+        subject.setPos(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
         return subject;
     }
 

@@ -91,7 +91,6 @@ public final class RadiationGameTests {
         PlayerRadiation.tick(player, 5);
         double raw = 4 * 0.38;
         near(helper, PlayerRadiation.rate(player), raw * raw / (raw + 9), "Hazmat parts add nine intrinsic resistance");
-        helper.assertTrue(player.getArmorValue() == 0, "The legacy suit has no ordinary armor points");
         helper.succeed();
     }
 
