@@ -1,11 +1,14 @@
 package nc.gametest;
 
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Rate;
+import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.ProcessingRecipe;
 import nc.recipe.ProcessorRecipeDefaults;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -35,6 +38,29 @@ public final class ProcessorRecipeDefaultsGameTests {
                         && new ProcessorRecipeDefaults(Rate.ROCK_CRUSHER, false).equals(conditional.defaults())
                         && custom.defaults() == null,
                 "Bundled ore and conditional recipes carry their defaults, and custom recipes keep independent provenance");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void syncsBatchProvenanceForStockAndPackElectrolysis(GameTestHelper helper) {
+        var id = NuclearCraft.id("electrolyzer/water");
+        var stock = (ElectrolyzerRecipe) helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
+        var replacement = new ElectrolyzerRecipe(id, stock.input(), stock.results(), stock.ticks(),
+                stock.energyPerTick(), stock.radiation(), null);
+        var serializer = new ElectrolyzerRecipe.Serializer();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(buffer, stock);
+            serializer.toNetwork(buffer, replacement);
+            var receivedStock = serializer.fromNetwork(id, buffer);
+            var receivedReplacement = serializer.fromNetwork(id, buffer);
+            helper.assertTrue(new ProcessorRecipeDefaults(Rate.ELECTROLYZER, false).equals(receivedStock.defaults())
+                            && receivedStock.input().amount() == 500 && receivedStock.results().get(1).getAmount() == 250
+                            && receivedReplacement.defaults() == null && !buffer.isReadable(),
+                    "The recipe packet preserves stock provenance and authored volumes, including same-ID replacements");
+        } finally {
+            buffer.release();
+        }
         helper.succeed();
     }
 }

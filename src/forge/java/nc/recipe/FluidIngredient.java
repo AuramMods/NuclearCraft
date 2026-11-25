@@ -40,24 +40,33 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
     }
 
     public boolean matches(FluidStack stack) {
-        return stack.getAmount() >= amount && accepts(stack);
+        return matches(stack, 1);
+    }
+
+    public boolean matches(FluidStack stack, int factor) {
+        return stack.getAmount() >= amount / factor && accepts(stack);
     }
 
     public List<FluidStack> alternatives() {
+        return alternatives(1);
+    }
+
+    public List<FluidStack> alternatives(int factor) {
+        int batchAmount = amount / factor;
         if (!tag) {
-            var primary = new FluidStack(ForgeRegistries.FLUIDS.getValue(id), amount);
+            var primary = new FluidStack(ForgeRegistries.FLUIDS.getValue(id), batchAmount);
             if (!legacyFluidAliases) {
                 return List.of(primary);
             }
             var aliases = Arrays.stream(LegacyFluidAliases.values()).filter(LegacyFluidAliases::enabled)
                     .flatMap(source -> source.sources(id.getPath()))
-                    .map(fluid -> new FluidStack(fluid, amount));
+                    .map(fluid -> new FluidStack(fluid, batchAmount));
             return Stream.concat(Stream.of(primary), aliases).distinct().toList();
         }
         return BuiltInRegistries.FLUID.getTag(TagKey.create(Registries.FLUID, id)).stream()
                 .flatMap(holders -> holders.stream().map(Holder::value))
                 .filter(fluid -> fluid.isSource(fluid.defaultFluidState()) && accepts(fluid))
-                .map(fluid -> new FluidStack(fluid, amount)).toList();
+                .map(fluid -> new FluidStack(fluid, batchAmount)).toList();
     }
 
     public static FluidIngredient fromJson(JsonObject json, ResourceLocation recipeId) {

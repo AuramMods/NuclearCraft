@@ -2,6 +2,7 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
+import nc.init.NCItemProcessors;
 import nc.init.NCMachines;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -20,13 +21,19 @@ import java.util.Collections;
 import java.util.List;
 
 public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
-                              double timeMultiplier, double powerMultiplier, int sieveTrays) implements Recipe<Container> {
+                              double timeMultiplier, double powerMultiplier, int sieveTrays,
+                              boolean stockBatch) implements Recipe<Container> {
     public static final int INPUT_COUNT = 2;
     public static final int OUTPUT_COUNT = 8;
 
     public DistillerRecipe {
         inputs = List.copyOf(inputs);
         outputs = outputs.stream().map(FluidStack::copy).toList();
+    }
+
+    public DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
+                           double timeMultiplier, double powerMultiplier, int sieveTrays) {
+        this(id, inputs, outputs, timeMultiplier, powerMultiplier, sieveTrays, false);
     }
 
     @Override public List<FluidStack> outputs() { return outputs.stream().map(FluidStack::copy).toList(); }
@@ -47,26 +54,14 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
     }
 
     private boolean matches(int index, FluidStack stack, int factor) {
-        var input = inputs.get(index);
-        return stack.getAmount() >= input.amount() / factor && input.accepts(stack);
+        return inputs.get(index).matches(stack, factor);
     }
 
     public int batchFactor() {
-        if (!NCMachines.distillerFactorRecipes()) return 1;
-        int factor = gcd(inputs.get(0).amount(), inputs.get(1).amount());
-        for (var result : outputs) {
-            if (!result.isEmpty()) factor = gcd(factor, result.getAmount());
+        if (!NCMachines.distillerFactorRecipes() && !(stockBatch && NCItemProcessors.factorRecipes())) {
+            return 1;
         }
-        return factor;
-    }
-
-    private static int gcd(int first, int second) {
-        while (second != 0) {
-            int remainder = first % second;
-            first = second;
-            second = remainder;
-        }
-        return first;
+        return FluidBatch.outputFactor(FluidBatch.inputFactor(inputs), outputs);
     }
 
     @Override public boolean matches(Container container, Level level) { return false; }
@@ -96,14 +91,16 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
                     || power < 0 || !Double.isFinite(power) || trays < 0) {
                 throw new JsonSyntaxException("Invalid Distiller recipe " + id);
             }
-            return new DistillerRecipe(id, inputs, outputs, time, power, trays);
+            return new DistillerRecipe(id, inputs, outputs, time, power, trays,
+                    GsonHelper.getAsBoolean(json, "nuclearcraft_stock_batch", false));
         }
 
         @Override public DistillerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var inputs = FluidIngredient.readPair(buffer);
             var outputs = new ArrayList<FluidStack>(OUTPUT_COUNT);
             for (int slot = 0; slot < OUTPUT_COUNT; slot++) outputs.add(buffer.readFluidStack());
-            return new DistillerRecipe(id, inputs, outputs, buffer.readDouble(), buffer.readDouble(), buffer.readVarInt());
+            return new DistillerRecipe(id, inputs, outputs, buffer.readDouble(), buffer.readDouble(), buffer.readVarInt(),
+                    buffer.readBoolean());
         }
 
         @Override public void toNetwork(FriendlyByteBuf buffer, DistillerRecipe recipe) {
@@ -112,6 +109,7 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             buffer.writeDouble(recipe.timeMultiplier);
             buffer.writeDouble(recipe.powerMultiplier);
             buffer.writeVarInt(recipe.sieveTrays);
+            buffer.writeBoolean(recipe.stockBatch);
         }
     }
 }

@@ -69,6 +69,7 @@ import nc.recipe.MachineMaterialRecipe.Kind;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
+import nc.recipe.FluidBatch;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
@@ -250,21 +251,23 @@ public final class NuclearCraftJei implements IModPlugin {
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
                 }, recipe -> energy(Rate.MELTER, recipe.ticks(), recipe.energyPerTick())),
                 new Category<>(ELECTROLYZER, NCRegistries.ELECTROLYZER.get(), gui, (layout, recipe) -> {
-                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
+                    int factor = recipe.batchFactor();
+                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives(factor));
                     List<FluidStack> outputs = recipe.results();
                     for (int index = 0; index < outputs.size(); index++) {
                         fluidSlot(layout, OUTPUT, 98 + (index % 2) * 20, 2 + (index / 2) * 20,
-                                List.of(outputs.get(index)));
+                                List.of(FluidBatch.divide(outputs.get(index), factor)));
                     }
-                }, recipe -> energy(Rate.ELECTROLYZER, recipe.duration(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.ELECTROLYZER, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(CHEMICAL_REACTOR, NCRegistries.CHEMICAL_REACTOR.get(), gui, (layout, recipe) -> {
-                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
-                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
+                    int factor = recipe.batchFactor();
+                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives(factor));
+                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives(factor));
                     List<FluidStack> results = recipe.results();
                     for (int index = 0; index < results.size(); index++) {
-                        fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(results.get(index)));
+                        fluidSlot(layout, OUTPUT, 100 + index * 20, List.of(FluidBatch.divide(results.get(index), factor)));
                     }
-                }, recipe -> energy(Rate.CHEMICAL_REACTOR, recipe.duration(), recipe.energyPerTick())),
+                }, recipe -> energy(Rate.CHEMICAL_REACTOR, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(SCRUBBER, NCRadiation.SCRUBBER.get(), gui, NuclearCraftJei::scrubberRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.scrubber",
                                 recipe.ticks(), recipe.power(), decimal(recipe.efficiency()))),
@@ -276,16 +279,18 @@ public final class NuclearCraftJei implements IModPlugin {
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
                 }, recipe -> energy(Rate.ENRICHER, recipe.duration(), recipe.energyPerTick())),
                 new Category<>(SALT_MIXER, NCRegistries.SALT_MIXER.get(), gui, (layout, recipe) -> {
-                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives());
-                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(Rate.SALT_MIXER, recipe.duration(), recipe.energyPerTick())),
+                    int factor = recipe.batchFactor();
+                    fluidSlot(layout, INPUT, 18, recipe.inputs().get(0).alternatives(factor));
+                    fluidSlot(layout, INPUT, 40, recipe.inputs().get(1).alternatives(factor));
+                    fluidSlot(layout, OUTPUT, 104, List.of(FluidBatch.divide(recipe.product(), factor)));
+                }, recipe -> energy(Rate.SALT_MIXER, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(SUPERCOOLER, NCRegistries.SUPERCOOLER.get(), gui, (layout, recipe) -> {
-                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.product()));
-                }, recipe -> energy(Rate.SUPERCOOLER, recipe.duration(), recipe.energyPerTick())),
+                    int factor = recipe.batchFactor();
+                    fluidSlot(layout, INPUT, 20, recipe.input().alternatives(factor));
+                    fluidSlot(layout, OUTPUT, 104, List.of(FluidBatch.divide(recipe.product(), factor)));
+                }, recipe -> energy(Rate.SUPERCOOLER, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(CENTRIFUGE, NCRegistries.CENTRIFUGE.get(), gui, NuclearCraftJei::centrifugeRecipe,
-                        recipe -> energy(Rate.CENTRIFUGE, recipe.duration(), recipe.energyPerTick())),
+                        recipe -> energy(Rate.CENTRIFUGE, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(IRRADIATION, NCFission.IRRADIATOR.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 30, 12).setStandardSlotBackground().addItemStacks(
                             Arrays.stream(recipe.input().getItems())
@@ -606,10 +611,11 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void centrifugeRecipe(IRecipeLayoutBuilder layout, CentrifugeRecipe recipe) {
-        fluidSlot(layout, INPUT, 20, 12, recipe.input().alternatives());
+        int factor = recipe.batchFactor();
+        fluidSlot(layout, INPUT, 20, 12, recipe.input().alternatives(factor));
         for (int index = 0; index < recipe.products().size(); index++) {
             var product = recipe.products().get(index);
-            FluidStack maximum = product.stack();
+            FluidStack maximum = FluidBatch.divide(product.stack(), factor);
             if (!maximum.isEmpty()) {
                 int x = 98 + (index % 3) * 20;
                 int y = 2 + (index / 3) * 20;
@@ -618,8 +624,8 @@ public final class NuclearCraftJei implements IModPlugin {
                         .addIngredient(ForgeTypes.FLUID_STACK, maximum);
                 if (product.chancePercent() < 100) {
                     slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
-                            "gui.nuclearcraft.jei.fluid_product_chance", product.chancePercent(), product.step(),
-                            product.minAmount(), maximum.getAmount())));
+                            "gui.nuclearcraft.jei.fluid_product_chance", product.chancePercent(), product.step() / factor,
+                            product.minAmount() / factor, maximum.getAmount())));
                 }
             }
         }
@@ -753,13 +759,10 @@ public final class NuclearCraftJei implements IModPlugin {
     private static void distillerRecipe(IRecipeLayoutBuilder layout, DistillerRecipe recipe) {
         int factor = recipe.batchFactor();
         for (int slot = 0; slot < DistillerRecipe.INPUT_COUNT; slot++) {
-            var alternatives = recipe.inputs().get(slot).alternatives();
-            if (factor > 1) alternatives.forEach(stack -> stack.setAmount(stack.getAmount() / factor));
-            fluidSlot(layout, INPUT, 20 + 20 * slot, 22, alternatives);
+            fluidSlot(layout, INPUT, 20 + 20 * slot, 22, recipe.inputs().get(slot).alternatives(factor));
         }
         for (int slot = 0; slot < DistillerRecipe.OUTPUT_COUNT; slot++) {
-            var product = recipe.product(slot);
-            if (!product.isEmpty() && factor > 1) product.setAmount(product.getAmount() / factor);
+            var product = FluidBatch.divide(recipe.product(slot), factor);
             fluidSlot(layout, OUTPUT, 99 + (slot % 4) * 18, 12 + (slot / 4) * 20,
                     product.isEmpty() ? List.of() : List.of(product));
         }

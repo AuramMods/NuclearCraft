@@ -287,6 +287,20 @@ Each pipe network also filled an Electrolyzer with 500 mB water and 221 FE. A fu
 
 The isolated 539-mod Auram client ran two KubeJS recipes with the configured rates. A relative-power Manufactory recipe spent 40 FE, and an Ingot Former recipe with a nominal absolute cost spent 8 FE. JEI reported both durations and costs, the configured water electrolysis rates, and the configured rate for its tag-generated copper plate. The client ran with master volume zero, OpenAL No Output, and zero focus activations, foreground samples, or visible window samples.
 
+### Fluid batch factoring
+
+Set `factor_recipes = true` at the top level of `world/serverconfig/nuclearcraft-processors.toml` to use the legacy smaller batches. It defaults to false. The Supercooler, Electrolyzer, Chemical Reactor, Salt Mixer, Centrifuge, and Distiller divide their shipped fluid inputs, outputs, and batch durations by the same greatest common divisor. Centrifuge rolls also preserve their minimum amounts and step sizes in the reduced units. Each machine keeps the same FE draw per tick. JEI shows the effective quantities and durations.
+
+Datapack and KubeJS recipes keep their authored quantities and durations, including replacements that reuse a stock ID. Omit the packaged recipe's `nuclearcraft_default` or `nuclearcraft_stock_batch` field when creating an independent copy. The existing `distiller.factor_recipes` option in `nuclearcraft-machines.toml` continues to apply to every Distiller recipe. A shipped Distiller recipe is reduced once when both switches are enabled.
+
+Changing the setting preserves the fraction completed on a saved batch. The Distiller records its previous duration as `progress_duration`. An earlier Forge save without that field uses the duration implied by the standalone Distiller setting.
+
+All 225 local GameTests passed. The packaged Forge 47.4.10 JAR processed a reduced water batch on clean Forge with 520 FE. Dedicated tests ran all six affected machines, including reversed fluid inputs, Centrifuge chance outputs, and a half-completed Distiller batch loaded from the older save format. An explicit datapack recipe kept its 2 mB batch and 40-tick duration. Mekanism 10.4.16.80 supplied exactly 2 mB of water while the oxygen tank was full. After that tank was cleared, Ender IO 8.2.22-beta collected exactly 2 mB of hydrogen and the Electrolyzer retained 1 mB of oxygen. That state survived chunk unload and a dedicated-server restart.
+
+The packaged catalog has 504 stock recipes across these machines, of which 478 have a divisor greater than one. A KubeJS replacement of the original water recipe consumed its authored 4 mB and 100 FE. A custom Distiller recipe reduced to 1 mB only after enabling the standalone switch. With both switches enabled, the stock Distiller recipe still reduced to 1 mB.
+
+The dedicated multiplayer client and a disposable copy of all 541 Auram mod JARs showed the same quantities in JEI. Water electrolysis showed 2 mB in, 2 mB hydrogen and 1 mB oxygen out, and 12.8 ticks at 40 FE/t. Both Distiller inputs and outputs showed 1 mB each. The Auram region save contained the two exact electrolysis outputs and an empty input and FE buffer. Both clients ran with master volume zero and OpenAL No Output. The native watcher recorded zero focus activations, foreground samples, and visible window samples.
+
 ### Processor upgrades
 
 The 20 configurable single-block processors accept Speed Upgrades and Energy Upgrades. Install one with a use action on an input face. Sneak-use installs as many as the slot can accept. The menu has separate slots for each upgrade and supports shift-clicking from the player inventory and back. Forge item handlers expose them after the existing recipe slots. Automation can insert them on an input face, and players can recover them through the menu or by breaking the processor.
@@ -989,7 +1003,7 @@ The isolated 539-mod Auram client measured the baked tray geometry and verified 
 
 Distiller recipes use `nuclearcraft:multiblock_distiller`. Supply two shapeless `fluid_inputs`, each with a `fluid` ID or a fluid `tag` and an `amount` in mB. List up to eight entries in `fluid_outputs`, using `null` to leave a slot inactive. Each fluid result has a `fluid` ID and an `amount`. Optional `time_multiplier`, `power_multiplier`, and `sieve_trays` default to 1, 1, and 0. NuclearCraft's hydrogen sulfide and depleted hydrogen sulfide are Forge fluids.
 
-The Distiller's legacy time, power, and sound settings map to `time`, `power`, and `sound_volume` under `distiller` in `nuclearcraft-machines.toml`. The three shipped sieve recipes still read their multipliers under `distiller.sieve_efficiency`. The legacy processor switches apply to the tower through `distiller.smart_input` and `distiller.factor_recipes`. Importing a 1.12.2 tower requires converting its controller's fluid tanks to `input_0`–`input_1` and `output_0`–`output_7`, with Forge fluid IDs and mB amounts. Its power, halt state, and progress are stored on the controller. Port indices are relative to the input or output group in the modern save.
+The Distiller's legacy time, power, and sound settings map to `time`, `power`, and `sound_volume` under `distiller` in `nuclearcraft-machines.toml`. The three shipped sieve recipes still read their multipliers under `distiller.sieve_efficiency`. The tower's smart input uses `distiller.smart_input`. Its shipped batches also honor the [legacy fluid batch switch](#fluid-batch-factoring). Importing a 1.12.2 tower requires converting its controller's fluid tanks to `input_0`–`input_1` and `output_0`–`output_7`, with Forge fluid IDs and mB amounts. Its power, halt state, and progress are stored on the controller. Port indices are relative to the input or output group in the modern save.
 
 ### Scripted RTGs
 

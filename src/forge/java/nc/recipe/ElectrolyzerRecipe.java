@@ -65,7 +65,8 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
         public ElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
+            return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+                    ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
@@ -75,6 +76,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);
         }
     }
 }

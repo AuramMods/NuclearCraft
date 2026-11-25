@@ -1,5 +1,6 @@
 package nc.recipe;
 
+import nc.init.NCItemProcessors;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +22,22 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
 
     default double duration() {
         return ticks();
+    }
+
+    default int batchFactor() {
+        if (!NCItemProcessors.factorRecipes() || defaults() == null || itemInput() != null) {
+            return 1;
+        }
+        int factor = FluidBatch.inputFactor(inputs());
+        return factor == 1 ? 1 : outputFactor(factor);
+    }
+
+    default int outputFactor(int inputFactor) {
+        return FluidBatch.outputFactor(inputFactor, results());
+    }
+
+    default double batchDuration() {
+        return duration() / batchFactor();
     }
 
     default FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
@@ -65,17 +82,13 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
         return stack.isEmpty() || ingredient.accepts(stack);
     }
 
-    default boolean inOrder(ProcessorInputs processor) {
+    default boolean inOrder(ProcessorInputs processor, int factor) {
         var inputs = inputs();
-        return inputs.get(0).matches(processor.fluid())
-                && (inputs.size() == 1 || inputs.get(1).matches(processor.secondFluid()));
+        return inputs.get(0).matches(processor.fluid(), factor)
+                && (inputs.size() == 1 || inputs.get(1).matches(processor.secondFluid(), factor));
     }
 
-    @Override
-    default boolean matches(Container container, Level level) {
-        if (!(container instanceof ProcessorInputs processor)) {
-            return false;
-        }
+    default boolean matches(ProcessorInputs processor, int factor) {
         var item = itemInput();
         if (item != null) {
             ItemStack stack = processor.getItem(0);
@@ -84,8 +97,13 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
             }
         }
         var inputs = inputs();
-        return inOrder(processor) || (inputs.size() == 2 && inputs.get(0).matches(processor.secondFluid())
-                && inputs.get(1).matches(processor.fluid()));
+        return inOrder(processor, factor) || (inputs.size() == 2 && inputs.get(0).matches(processor.secondFluid(), factor)
+                && inputs.get(1).matches(processor.fluid(), factor));
+    }
+
+    @Override
+    default boolean matches(Container container, Level level) {
+        return container instanceof ProcessorInputs processor && matches(processor, batchFactor());
     }
 
     @Override

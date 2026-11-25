@@ -60,7 +60,8 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
         public ChemicalReactorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             List<FluidIngredient> inputs = FluidIngredient.readPair(buffer);
             List<FluidStack> outputs = buffer.readList(FriendlyByteBuf::readFluidStack);
-            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
+            return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+                    ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
@@ -70,6 +71,7 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);
         }
     }
 }

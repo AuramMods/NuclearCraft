@@ -44,6 +44,7 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec.BooleanValue DEFAULT_RECIPES_GLOBAL;
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DEFAULT_RECIPES;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> MANUFACTORY_WOOD;
+    private static final ForgeConfigSpec.BooleanValue FACTOR_RECIPES;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
     private static final ForgeConfigSpec.DoubleValue POWER_MULTIPLIER;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_TIMES;
@@ -75,6 +76,8 @@ public final class NCItemProcessors {
                         && values.size() == recipeDefaults.size() && values.stream().allMatch(Boolean.class::isInstance));
         MANUFACTORY_WOOD = integerArray(builder.comment("Manufactory wood yields in order: planks from a log, sticks from a plank."),
                 "manufactory_wood", List.of(6, 4), 1, 64);
+        FACTOR_RECIPES = builder.comment("Divide stock fluid-only batches and their durations by their greatest common divisor.")
+                .define("factor_recipes", false);
         builder.push("rates");
         TIME_MULTIPLIER = builder.defineInRange("processor_time_multiplier", 1D, 0.001D, 255D);
         POWER_MULTIPLIER = builder.defineInRange("processor_power_multiplier", 1D, 0D, 255D);
@@ -151,6 +154,10 @@ public final class NCItemProcessors {
 
     public static boolean processorParticles() {
         return value(PROCESSOR_PARTICLES);
+    }
+
+    public static boolean factorRecipes() {
+        return value(FACTOR_RECIPES);
     }
 
     public static boolean defaultRecipes(Rate rate) {

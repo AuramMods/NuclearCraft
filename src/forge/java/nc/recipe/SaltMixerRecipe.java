@@ -57,7 +57,8 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         @Override
         public SaltMixerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var inputs = FluidIngredient.readPair(buffer);
-            return new SaltMixerRecipe(id, inputs, buffer.readFluidStack(), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
+            return new SaltMixerRecipe(id, inputs, buffer.readFluidStack(), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+                    ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
@@ -67,6 +68,7 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);
         }
     }
 }

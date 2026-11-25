@@ -9,6 +9,7 @@ import nc.init.NCRegistries;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
+import nc.recipe.FluidBatch;
 import nc.recipe.FluidIngredient;
 import nc.recipe.FluidProcessorRecipe;
 import net.minecraft.core.BlockPos;
@@ -145,13 +146,14 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             updateRates(0, 0, 0);
             return false;
         }
-        updateRates(recipe.duration(), rate.time(recipe.duration()), rate.power(recipe.energyPerTick()));
+        int factor = recipe.batchFactor();
+        updateRates(recipe.duration(), rate.time(recipe.duration() / factor), rate.power(recipe.energyPerTick()));
         if (halted) {
             return false;
         }
         List<FluidStack> outputs = recipe.results();
         double speed = speed();
-        if (!hasOutputSpace(outputs) || !power.spend(energyPerTick())) {
+        if (!hasOutputSpace(outputs, factor) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
                 progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
                 setChanged();
@@ -167,15 +169,16 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 itemInput.extractItem(0, item.count(), false);
             }
             List<FluidIngredient> ingredients = recipe.inputs();
-            boolean inOrder = recipe.inOrder(input);
+            boolean inOrder = recipe.inOrder(input, factor);
             for (int index = 0; index < machine.inputs; index++) {
                 int ingredient = inOrder ? index : 1 - index;
-                fluids.consume(index, ingredients.get(ingredient).amount());
+                fluids.consume(index, ingredients.get(ingredient).amount() / factor);
             }
             for (int index = 0; index < outputs.size(); index++) {
                 FluidStack product = outputs.get(index);
                 if (!product.isEmpty()) {
-                    fluids.produce(index + machine.inputs, recipe.rollResult(index, product, level.random));
+                    var rolled = recipe.rollResult(index, product, level.random);
+                    fluids.produce(index + machine.inputs, FluidBatch.divide(rolled, factor));
                 }
             }
             itemInput.ports.push(level);
@@ -183,7 +186,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 fluids.push(level);
                 refreshInput();
                 FluidProcessorRecipe nextBatch = recipes.getRecipeFor(input, level).orElse(null);
-                if (nextBatch == null || !hasOutputSpace(nextBatch.results())) {
+                if (nextBatch == null || !hasOutputSpace(nextBatch.results(), nextBatch.batchFactor())) {
                     fluids.discardUnusableInputs();
                     progressHalfTicks = 0;
                     break;
@@ -192,7 +195,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             progressHalfTicks -= batchHalfTicks;
             if (progressHalfTicks > 0) {
                 refreshInput();
-                if (!recipe.matches(input, level) || !hasOutputSpace(outputs)) {
+                if (!recipe.matches(input, factor) || !hasOutputSpace(outputs, factor)) {
                     progressHalfTicks = 0;
                 }
             }
@@ -201,10 +204,10 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         return true;
     }
 
-    private boolean hasOutputSpace(List<FluidStack> outputs) {
+    private boolean hasOutputSpace(List<FluidStack> outputs, int factor) {
         for (int index = 0; index < outputs.size(); index++) {
             FluidStack product = outputs.get(index);
-            if (!product.isEmpty() && !fluids.canProduce(index + machine.inputs, product)) {
+            if (!product.isEmpty() && !fluids.canProduce(index + machine.inputs, FluidBatch.divide(product, factor))) {
                 return false;
             }
         }

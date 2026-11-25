@@ -307,7 +307,18 @@ public final class Distiller extends MachineController {
         reboilingBonus = (double) reboilers.size() * (fluidCount - gases) / ((double) area * fluidCount);
         distributionBonus = (double) liquidDistributors / ((double) area * (1 + trays));
         double speed = baseSpeed * (1 + refluxBonus) * (1 + reboilingBonus) * (1 + distributionBonus);
-        duration = NCMachines.distillerTime() * recipe.timeMultiplier() / factor;
+        double nominalDuration = NCMachines.distillerTime() * recipe.timeMultiplier();
+        double nextDuration = nominalDuration / factor;
+        if (progress > 0 && duration != nextDuration) {
+            // Earlier Forge saves used the standalone Distiller switch.
+            double previousDuration = duration > 0 ? duration
+                    : NCMachines.distillerFactorRecipes() ? nextDuration : nominalDuration;
+            double ratio = nextDuration / previousDuration;
+            progress *= ratio;
+            batchStart *= ratio;
+            setChanged();
+        }
+        duration = nextDuration;
         double power = NCMachines.distillerPower() * recipe.powerMultiplier() * basePower;
         energyPerTick = (long) Math.ceil(power);
         if (speed <= 0 || possible == 0 || recipe.sieveTrays() > trays || blockedByRedstone(server)) return false;
@@ -412,6 +423,7 @@ public final class Distiller extends MachineController {
         for (int slot = 0; slot < outputs.size(); slot++) tag.put("output_" + slot, outputs.get(slot).writeToNBT(new CompoundTag()));
         tag.putDouble("progress", progress);
         tag.putDouble("batch_start", batchStart);
+        if (progress > 0 && duration > 0) tag.putDouble("progress_duration", duration);
         if (activeRecipe != null) tag.putString("recipe", activeRecipe.toString());
     }
 
@@ -421,6 +433,7 @@ public final class Distiller extends MachineController {
         for (int slot = 0; slot < outputs.size(); slot++) outputs.get(slot).readFromNBT(tag.getCompound("output_" + slot));
         progress = finiteProgress(tag.getDouble("progress"));
         batchStart = Math.min(progress, finiteProgress(tag.getDouble("batch_start")));
+        duration = finiteProgress(tag.getDouble("progress_duration"));
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
     }
 

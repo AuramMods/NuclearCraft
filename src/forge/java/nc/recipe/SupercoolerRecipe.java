@@ -61,7 +61,8 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
         @Override
         public SupercoolerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
-                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
+                    buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+                    ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
@@ -71,6 +72,7 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);
         }
     }
 }

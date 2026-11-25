@@ -40,6 +40,20 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
     }
 
     @Override
+    public int outputFactor(int inputFactor) {
+        int factor = inputFactor;
+        for (Product product : products) {
+            if (!product.stack.isEmpty()) {
+                factor = FluidBatch.gcd(factor, product.stack.getAmount());
+                if (product.chancePercent < 100) {
+                    factor = FluidBatch.gcd(FluidBatch.gcd(factor, product.minAmount), product.step);
+                }
+            }
+        }
+        return factor;
+    }
+
+    @Override
     public FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
         Product product = products.get(slot);
         if (maximum.isEmpty() || product.chancePercent() == 100) {
@@ -120,7 +134,8 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
             var products = buffer.readList(packet -> new Product(packet.readFluidStack(),
                     packet.readVarInt(), packet.readVarInt(), packet.readUnsignedByte()));
-            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), null);
+            return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(),
+                    ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
@@ -135,6 +150,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             buffer.writeDouble(recipe.duration);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
+            ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);
         }
     }
 }

@@ -1,5 +1,6 @@
 {
     "type": "nuclearcraft:multiblock_distiller",
+    "nuclearcraft_stock_batch": true,
     "fluid_inputs": [
         {
             "fluid": "nuclearcraft:he_water",

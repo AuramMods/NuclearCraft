@@ -9,6 +9,7 @@ import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
 import nc.init.NCRegistries;
 import nc.processor.FluidProcessorBlockEntity;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.GsonHelper;
@@ -33,6 +34,17 @@ import java.util.stream.Collectors;
 
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
+    static @Nullable ProcessorRecipeDefaults fromNetwork(FriendlyByteBuf buffer) {
+        return buffer.readNullable(packet -> new ProcessorRecipeDefaults(packet.readEnum(Rate.class), packet.readBoolean()));
+    }
+
+    static void toNetwork(FriendlyByteBuf buffer, @Nullable ProcessorRecipeDefaults defaults) {
+        buffer.writeNullable(defaults, (packet, rule) -> {
+            packet.writeEnum(rule.processor);
+            packet.writeBoolean(rule.ore);
+        });
+    }
+
     static @Nullable ProcessorRecipeDefaults fromJson(JsonObject json) {
         if (!json.has("nuclearcraft_default")) {
             return null;
