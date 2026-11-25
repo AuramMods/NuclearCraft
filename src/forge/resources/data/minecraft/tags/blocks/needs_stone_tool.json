@@ -1,9 +1,6 @@
 {
     "replace": false,
     "values": [
-        "nuclearcraft:copper_ore",
-        "nuclearcraft:tin_ore",
-        "nuclearcraft:lead_ore",
         "nuclearcraft:distiller_controller",
         "nuclearcraft:distiller_sieve_tray",
         "nuclearcraft:distiller_reflux_unit",

@@ -2,6 +2,7 @@ package nc.init;
 
 import com.mojang.serialization.Codec;
 import nc.NuclearCraft;
+import nc.worldgen.LegacyOreFeature;
 import nc.worldgen.NuclearOrePlacement;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.registries.Registries;
@@ -13,6 +14,7 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.flag.FeatureFlagSet;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.event.AddPackFindersEvent;
@@ -31,8 +33,12 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 public final class NCOres {
+    private static final DeferredRegister<Feature<?>> FEATURES =
+            DeferredRegister.create(Registries.FEATURE, NuclearCraft.MOD_ID);
     private static final DeferredRegister<PlacementModifierType<?>> PLACEMENTS =
             DeferredRegister.create(Registries.PLACEMENT_MODIFIER_TYPE, NuclearCraft.MOD_ID);
+
+    private static final RegistryObject<LegacyOreFeature> LEGACY_ORE = FEATURES.register("legacy_ore", LegacyOreFeature::new);
 
     public static final RegistryObject<PlacementModifierType<NuclearOrePlacement>> PLACEMENT =
             PLACEMENTS.register("stock_ore_filter", () -> () -> NuclearOrePlacement.CODEC);
@@ -46,6 +52,7 @@ public final class NCOres {
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> RATE;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> MIN_HEIGHT;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> MAX_HEIGHT;
+    private static final ForgeConfigSpec.ConfigValue<List<Integer>> HARVEST_LEVELS;
     private static final ForgeConfigSpec.BooleanValue HIDE_DISABLED;
 
     static {
@@ -58,7 +65,7 @@ public final class NCOres {
         builder.comment("Array order: copper, tin, lead, thorium, uranium, boron, lithium, magnesium.")
                 .push("ores");
         ENABLED = array(builder, "ore_gen", Collections.nCopies(Ore.values().length, true), Boolean.class::isInstance);
-        SIZE = array(builder.comment("Vanilla vein size (1 to 64)."), "ore_size",
+        SIZE = array(builder.comment("Legacy vein size (1 to 64)."), "ore_size",
                 Arrays.stream(Ore.values()).map(ore -> ore.size).toList(), integerRange(1, 64));
         RATE = array(builder.comment("Placement attempts per chunk (0 to 256)."), "ore_rate",
                 Arrays.stream(Ore.values()).map(ore -> ore.rate).toList(), integerRange(0, 256));
@@ -66,6 +73,8 @@ public final class NCOres {
                 Collections.nCopies(Ore.values().length, 0), integerRange(DimensionType.MIN_Y, DimensionType.MAX_Y));
         MAX_HEIGHT = array(builder.comment("Maximum inclusive placement Y."), "ore_max_height",
                 Arrays.stream(Ore.values()).map(ore -> ore.maxHeight).toList(), integerRange(DimensionType.MIN_Y, DimensionType.MAX_Y));
+        HARVEST_LEVELS = array(builder.comment("Minimum pickaxe levels (0 to 15)."), "ore_harvest_levels",
+                Arrays.stream(Ore.values()).map(ore -> ore.harvestLevel).toList(), integerRange(0, OreHarvest.MAX_LEVEL));
         HIDE_DISABLED = builder.comment("Hide the ore, block, ingot, and dust of disabled stock ores in JEI.")
                 .worldRestart().define("ore_hide_disabled", false);
         builder.pop();
@@ -75,6 +84,8 @@ public final class NCOres {
     private NCOres() {}
 
     public static void register(FMLJavaModLoadingContext context) {
+        FEATURES.register(context.getModEventBus());
+        OreHarvest.register();
         PLACEMENTS.register(context.getModEventBus());
         context.getModEventBus().addListener(NCOres::addOrePack);
         context.registerConfig(ModConfig.Type.COMMON, SPEC, "nuclearcraft-ore-worldgen.toml");
@@ -101,7 +112,7 @@ public final class NCOres {
             String name = ore.getSerializedName();
             String configured = String.format(Locale.ROOT, """
                     {
-                        "type": "minecraft:ore",
+                        "type": "%s",
                         "config": {
                             "size": %d,
                             "discard_chance_on_air_exposure": 0.0,
@@ -111,7 +122,7 @@ public final class NCOres {
                             }]
                         }
                     }
-                    """, ore.size(), name);
+                    """, LEGACY_ORE.getId(), ore.size(), name);
             int attempts = ore.enabled() && ore.minHeight() <= ore.maxHeight() ? ore.rate() : 0;
             String placed = String.format(Locale.ROOT, """
                     {
@@ -137,6 +148,7 @@ public final class NCOres {
             resources.put(NuclearCraft.id("worldgen/placed_feature/ore_" + name + ".json"),
                     placed.getBytes(StandardCharsets.UTF_8));
         }
+        OreHarvest.addTags(resources);
         return resources;
     }
 
@@ -162,14 +174,14 @@ public final class NCOres {
     }
 
     public enum Ore implements StringRepresentable {
-        COPPER("copper", 6, 5, 48),
-        TIN("tin", 6, 4, 40),
-        LEAD("lead", 6, 6, 36),
-        THORIUM("thorium", 3, 3, 32),
-        URANIUM("uranium", 3, 6, 32),
-        BORON("boron", 4, 6, 28),
-        LITHIUM("lithium", 4, 6, 28),
-        MAGNESIUM("magnesium", 5, 4, 24);
+        COPPER("copper", 6, 5, 48, 1),
+        TIN("tin", 6, 4, 40, 1),
+        LEAD("lead", 6, 6, 36, 1),
+        THORIUM("thorium", 3, 3, 32, 2),
+        URANIUM("uranium", 3, 6, 32, 2),
+        BORON("boron", 4, 6, 28, 2),
+        LITHIUM("lithium", 4, 6, 28, 2),
+        MAGNESIUM("magnesium", 5, 4, 24, 2);
 
         public static final Codec<Ore> CODEC = StringRepresentable.fromEnum(Ore::values);
 
@@ -177,12 +189,14 @@ public final class NCOres {
         private final int size;
         private final int rate;
         private final int maxHeight;
+        private final int harvestLevel;
 
-        Ore(String id, int size, int rate, int maxHeight) {
+        Ore(String id, int size, int rate, int maxHeight, int harvestLevel) {
             this.id = id;
             this.size = size;
             this.rate = rate;
             this.maxHeight = maxHeight;
+            this.harvestLevel = harvestLevel;
         }
 
         @Override
@@ -204,6 +218,10 @@ public final class NCOres {
 
         public int minHeight() {
             return SPEC.isLoaded() ? MIN_HEIGHT.get().get(ordinal()) : 0;
+        }
+
+        int harvestLevel() {
+            return SPEC.isLoaded() ? HARVEST_LEVELS.get().get(ordinal()) : harvestLevel;
         }
 
         public int maxHeight() {

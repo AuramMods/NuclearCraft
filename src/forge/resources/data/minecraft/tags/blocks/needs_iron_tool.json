@@ -1,11 +1,6 @@
 {
     "replace": false,
     "values": [
-        "nuclearcraft:thorium_ore",
-        "nuclearcraft:uranium_ore",
-        "nuclearcraft:boron_ore",
-        "nuclearcraft:lithium_ore",
-        "nuclearcraft:magnesium_ore",
         "nuclearcraft:uranium_238_block",
         "nuclearcraft:neptunium_237_block",
         "nuclearcraft:plutonium_242_block",
