@@ -289,13 +289,12 @@ public final class Distiller extends MachineController {
         if (!recipe.id().equals(activeRecipe)) resetProgress(recipe.id());
         int factor = recipe.batchFactor();
         int order = recipe.firstInput(first, second, factor);
-        int firstAmount = recipe.inputAmount(order, factor);
-        int secondAmount = recipe.inputAmount(1 - order, factor);
-        int available = Math.min(firstAmount == 0 ? Integer.MAX_VALUE : first.getAmount() / firstAmount,
-                secondAmount == 0 ? Integer.MAX_VALUE : second.getAmount() / secondAmount);
+        int firstAmount = recipe.inputAmount(order, first, factor);
+        int secondAmount = recipe.inputAmount(1 - order, second, factor);
+        int available = Math.min(batchesInFeed(first, firstAmount), batchesInFeed(second, secondAmount));
         List<FluidStack> maximums = recipe.products().stream().map(product -> FluidBatch.divide(product.stack(), factor)).toList();
         int gases = (isGas(first) ? 1 : 0) + (isGas(second) ? 1 : 0);
-        int fluidCount = recipe.inputs().size();
+        int fluidCount = (firstAmount > 0 ? 1 : 0) + (secondAmount > 0 ? 1 : 0);
         for (var maximum : maximums) {
             if (maximum.isEmpty()) continue;
             fluidCount++;
@@ -328,22 +327,37 @@ public final class Distiller extends MachineController {
         emitRadiation(recipe.radiation(), speed);
         soundVolume = (float) (NCMachines.distillerSoundVolume() * Math.log1p(Math.cbrt(speed)) / 128);
         progress += speed;
-        int batches = Math.min(available, (int) (progress / duration));
+        int batches = (int) (progress / duration);
         if (batches > 0) {
             int finished = 0;
-            while (finished < batches && room > 0) {
-                int count = Math.min(batches - finished, room);
+            while (finished < batches && room > 0 && available > 0) {
+                int count = Math.min(Math.min(batches - finished, room), available);
                 produce(recipe.products(), count, factor, server.random);
+                inputs.get(0).drain(count * firstAmount, EXECUTE);
+                inputs.get(1).drain(count * secondAmount, EXECUTE);
                 finished += count;
+                available -= count;
                 room = outputSpace(maximums);
+                if (available == 0) {
+                    var remainingFirst = inputs.get(0).getFluid();
+                    var remainingSecond = inputs.get(1).getFluid();
+                    int nextOrder = recipe.firstInput(remainingFirst, remainingSecond, factor);
+                    if (nextOrder >= 0) {
+                        firstAmount = recipe.inputAmount(nextOrder, remainingFirst, factor);
+                        secondAmount = recipe.inputAmount(1 - nextOrder, remainingSecond, factor);
+                        available = Math.min(batchesInFeed(remainingFirst, firstAmount), batchesInFeed(remainingSecond, secondAmount));
+                    }
+                }
             }
-            inputs.get(0).drain(finished * firstAmount, EXECUTE);
-            inputs.get(1).drain(finished * secondAmount, EXECUTE);
-            progress = finished == available || room == 0 ? 0 : Math.max(0, progress - finished * duration);
+            progress = available == 0 || room == 0 ? 0 : Math.max(0, progress - finished * duration);
             batchStart = progress;
         }
         setChanged();
         return true;
+    }
+
+    private static int batchesInFeed(FluidStack stored, int amount) {
+        return amount == 0 ? Integer.MAX_VALUE : stored.getAmount() / amount;
     }
 
     private int outputSpace(List<FluidStack> maximums) {

@@ -13,11 +13,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, FluidProduct fluidProduct,
+public record SupercoolerRecipe(ResourceLocation id, FluidInput input, FluidProduct fluidProduct,
                                int ticks, int energyPerTick, double radiation,
                                @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     @Override
-    public List<FluidIngredient> inputs() {
+    public List<FluidInput> inputs() {
         return List.of(input);
     }
 
@@ -45,7 +45,7 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
         public SupercoolerRecipe fromJson(ResourceLocation id, JsonObject json) {
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            var input = FluidIngredient.readSlot(json.get("fluid_input"), id);
+            var input = FluidInput.readSlot(json.get("fluid_input"), id);
             var result = FluidProduct.readSlot(id, json.get("result"));
             if (ticks < 1 || energy < 0 || (input.isEmpty() && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Supercooler recipe " + id);
@@ -56,14 +56,14 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
 
         @Override
         public SupercoolerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new SupercoolerRecipe(id, FluidIngredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
+            return new SupercoolerRecipe(id, FluidInput.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, SupercoolerRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

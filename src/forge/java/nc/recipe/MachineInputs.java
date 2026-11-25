@@ -20,7 +20,7 @@ public interface MachineInputs {
     int FLUID_INPUTS = 2;
 
     List<Input> items();
-    List<FluidIngredient> fluids();
+    List<FluidInput> fluids();
 
     record Match(int firstItems, int secondItems, int firstFluid, int secondFluid) {
         public int available(ItemStack first, ItemStack second, FluidStack fluid, FluidStack other) {
@@ -43,11 +43,15 @@ public interface MachineInputs {
         }
         var firstFluid = fluid(0);
         var secondFluid = fluid(1);
-        if (matches(firstFluid, fluid, false) && matches(secondFluid, other, false)) {
-            return new Match(firstItem.count(), secondItem.count(), amount(firstFluid), amount(secondFluid));
+        int firstAmount = amount(firstFluid, fluid);
+        int secondAmount = amount(secondFluid, other);
+        if (firstAmount >= 0 && secondAmount >= 0) {
+            return new Match(firstItem.count(), secondItem.count(), firstAmount, secondAmount);
         }
-        if (matches(secondFluid, fluid, false) && matches(firstFluid, other, false)) {
-            return new Match(firstItem.count(), secondItem.count(), amount(secondFluid), amount(firstFluid));
+        firstAmount = amount(secondFluid, fluid);
+        secondAmount = amount(firstFluid, other);
+        if (firstAmount >= 0 && secondAmount >= 0) {
+            return new Match(firstItem.count(), secondItem.count(), firstAmount, secondAmount);
         }
         return null;
     }
@@ -59,25 +63,26 @@ public interface MachineInputs {
                 || matches(secondItem, first, true) && matches(firstItem, second, true);
         var firstFluid = fluid(0);
         var secondFluid = fluid(1);
-        return itemsMatch && (matches(firstFluid, fluid, true) && matches(secondFluid, other, true)
-                || matches(secondFluid, fluid, true) && matches(firstFluid, other, true));
+        return itemsMatch && (acceptsPartial(firstFluid, fluid) && acceptsPartial(secondFluid, other)
+                || acceptsPartial(secondFluid, fluid) && acceptsPartial(firstFluid, other));
     }
 
     default boolean accepts(ItemStack stack) { return !stack.isEmpty() && items().stream().anyMatch(input -> input.accepts(stack)); }
     default boolean accepts(FluidStack stack) { return fluids().stream().anyMatch(input -> input.accepts(stack)); }
 
     private Input item(int index) { return index < items().size() ? items().get(index) : new Input(Ingredient.EMPTY, 0); }
-    private @Nullable FluidIngredient fluid(int index) { return index < fluids().size() ? fluids().get(index) : null; }
-    private static int amount(@Nullable FluidIngredient fluid) { return fluid == null ? 0 : fluid.amount(); }
+    private @Nullable FluidInput fluid(int index) { return index < fluids().size() ? fluids().get(index) : null; }
+    private static int amount(@Nullable FluidInput ingredient, FluidStack stack) {
+        return ingredient == null ? (stack.isEmpty() ? 0 : -1) : ingredient.matchedAmount(stack, 1);
+    }
 
     private static boolean matches(Input ingredient, ItemStack stack, boolean partial) {
         if (stack.isEmpty()) return partial || ingredient.count() == 0;
         return ingredient.count() > 0 && ingredient.accepts(stack) && (partial || stack.getCount() >= ingredient.count());
     }
 
-    private static boolean matches(@Nullable FluidIngredient ingredient, FluidStack stack, boolean partial) {
-        if (stack.isEmpty()) return partial || ingredient == null;
-        return ingredient != null && (partial ? ingredient.accepts(stack) : ingredient.matches(stack));
+    private static boolean acceptsPartial(@Nullable FluidInput ingredient, FluidStack stack) {
+        return stack.isEmpty() || ingredient != null && ingredient.accepts(stack);
     }
 
     static boolean unusedSlot(JsonElement element) {
@@ -97,10 +102,10 @@ public interface MachineInputs {
         return items;
     }
 
-    static List<FluidIngredient> readFluids(JsonArray entries, ResourceLocation id) {
-        var fluids = new ArrayList<FluidIngredient>(FLUID_INPUTS);
+    static List<FluidInput> readFluids(JsonArray entries, ResourceLocation id) {
+        var fluids = new ArrayList<FluidInput>(FLUID_INPUTS);
         for (var entry : entries) {
-            if (!unusedSlot(entry)) fluids.add(FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entry, "fluid input"), id));
+            if (!unusedSlot(entry)) fluids.add(FluidInput.readSlot(entry, id));
         }
         if (fluids.size() > FLUID_INPUTS) throw new JsonSyntaxException("Too many fluid inputs for " + id);
         return fluids;
@@ -113,10 +118,10 @@ public interface MachineInputs {
         return items;
     }
 
-    static List<FluidIngredient> readFluids(FriendlyByteBuf buffer) {
+    static List<FluidInput> readFluids(FriendlyByteBuf buffer) {
         int count = buffer.readVarInt();
-        var fluids = new ArrayList<FluidIngredient>(count);
-        for (int i = 0; i < count; i++) fluids.add(FluidIngredient.fromNetwork(buffer));
+        var fluids = new ArrayList<FluidInput>(count);
+        for (int i = 0; i < count; i++) fluids.add(FluidInput.fromNetwork(buffer));
         return fluids;
     }
 
@@ -127,6 +132,6 @@ public interface MachineInputs {
             buffer.writeVarInt(item.count());
         }
         buffer.writeVarInt(fluids().size());
-        for (var fluid : fluids()) fluid.toNetwork(buffer);
+        for (var fluid : fluids()) FluidInput.write(buffer, fluid);
     }
 }

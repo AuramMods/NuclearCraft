@@ -1,6 +1,5 @@
 package nc.recipe;
 
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import net.minecraft.core.Holder;
@@ -19,9 +18,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-public record FluidIngredient(ResourceLocation id, boolean tag, int amount, boolean legacyFluidAliases) {
-    private static final FluidIngredient EMPTY = new FluidIngredient(new ResourceLocation("minecraft", "empty"), false, 0);
+public record FluidIngredient(ResourceLocation id, boolean tag, int amount, boolean legacyFluidAliases) implements FluidInput {
+    static final FluidIngredient EMPTY = new FluidIngredient(new ResourceLocation("minecraft", "empty"), false, 0);
 
+    @Override
     public boolean isEmpty() {
         return amount == 0;
     }
@@ -30,6 +30,7 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
         this(id, tag, amount, false);
     }
 
+    @Override
     public boolean accepts(FluidStack stack) {
         return !isEmpty() && !stack.isEmpty() && accepts(stack.getFluid());
     }
@@ -46,18 +47,26 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
         return alias == null ? tag : alias.enabled();
     }
 
-    public boolean matches(FluidStack stack) {
-        return matches(stack, 1);
+    @Override
+    public int matchedAmount(FluidStack stack, int factor) {
+        if (isEmpty()) {
+            return stack.isEmpty() ? 0 : -1;
+        }
+        int required = amount / factor;
+        return stack.getAmount() >= required && accepts(stack) ? required : -1;
     }
 
-    public boolean matches(FluidStack stack, int factor) {
-        return isEmpty() ? stack.isEmpty() : stack.getAmount() >= amount / factor && accepts(stack);
+    @Override
+    public int factor(int current) {
+        return FluidBatch.gcd(current, amount);
     }
 
-    public List<FluidStack> alternatives() {
-        return alternatives(1);
+    @Override
+    public int maxAmount() {
+        return amount;
     }
 
+    @Override
     public List<FluidStack> alternatives(int factor) {
         if (isEmpty()) {
             return List.of();
@@ -88,26 +97,6 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
             throw new JsonSyntaxException("Invalid fluid input for " + recipeId);
         }
         return new FluidIngredient(id, tag, amount, GsonHelper.getAsBoolean(json, "legacy_fluid_aliases", false));
-    }
-
-    static FluidIngredient readSlot(JsonElement element, ResourceLocation recipe) {
-        if (element == null) {
-            throw new JsonSyntaxException("Missing fluid input for " + recipe);
-        }
-        return MachineInputs.unusedSlot(element) ? EMPTY
-                : fromJson(GsonHelper.convertToJsonObject(element, "fluid input"), recipe);
-    }
-
-    static List<FluidIngredient> readPair(JsonObject json, ResourceLocation recipe) {
-        var inputs = GsonHelper.getAsJsonArray(json, "fluid_inputs");
-        if (inputs.size() != 2) {
-            throw new JsonSyntaxException("Expected two fluid inputs for " + recipe);
-        }
-        return List.of(readSlot(inputs.get(0), recipe), readSlot(inputs.get(1), recipe));
-    }
-
-    static List<FluidIngredient> readPair(FriendlyByteBuf buffer) {
-        return List.of(fromNetwork(buffer), fromNetwork(buffer));
     }
 
     static FluidStack readResult(JsonObject json, ResourceLocation recipe) {

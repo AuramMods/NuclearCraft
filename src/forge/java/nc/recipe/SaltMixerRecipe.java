@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs, FluidProduct fluidProduct,
+public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, FluidProduct fluidProduct,
                               int ticks, int energyPerTick, double radiation,
                               @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public SaltMixerRecipe {
@@ -44,9 +44,9 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         public SaltMixerRecipe fromJson(ResourceLocation id, JsonObject json) {
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            var inputs = FluidIngredient.readPair(json, id);
+            var inputs = FluidInput.readPair(json, id);
             var result = FluidProduct.readSlot(id, json.get("result"));
-            if (ticks < 1 || energy < 0 || (inputs.stream().allMatch(FluidIngredient::isEmpty) && result.isEmpty())) {
+            if (ticks < 1 || energy < 0 || (inputs.stream().allMatch(FluidInput::isEmpty) && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Salt Mixer recipe " + id);
             }
             return new SaltMixerRecipe(id, inputs, result, ticks, energy, ProcessingRecipe.readRadiation(json, id),
@@ -55,14 +55,14 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
 
         @Override
         public SaltMixerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var inputs = FluidIngredient.readPair(buffer);
+            var inputs = FluidInput.readPair(buffer);
             return new SaltMixerRecipe(id, inputs, FluidProduct.fromNetwork(buffer), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, SaltMixerRecipe recipe) {
-            recipe.inputs.forEach(input -> input.toNetwork(buffer));
+            recipe.inputs.forEach(input -> FluidInput.write(buffer, input));
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

@@ -201,20 +201,31 @@ public final class LargeElectrolyzer extends MachineController {
         soundVolume = (float) (NCMachines.electrolyzerSoundVolume() * Math.log1p(
                 Math.sqrt(speed) / (4D * Math.sqrt(bounds.yLength() - 1D) * terminals * terminals)));
         progress += speed;
-        int batches = Math.min(available, (int) (progress / duration));
+        int batches = (int) (progress / duration);
         if (batches > 0) {
             int finished = 0;
-            while (finished < batches && room > 0) {
-                int count = Math.min(batches - finished, room);
+            while (finished < batches && room > 0 && available > 0) {
+                int count = Math.min(Math.min(batches - finished, room), available);
                 produce(recipe.itemProducts(), recipe.fluidProducts(), count, server.random);
                 finished += count;
                 room = outputBatches(recipe.itemProducts(), recipe.fluidProducts());
+                inventory.extractItem(0, count * match.firstItems(), false);
+                inventory.extractItem(1, count * match.secondItems(), false);
+                inputs.get(0).drain(count * match.firstFluid(), EXECUTE);
+                inputs.get(1).drain(count * match.secondFluid(), EXECUTE);
+                available -= count;
+                if (available == 0) {
+                    var remainingFirstItem = inventory.getStackInSlot(0);
+                    var remainingSecondItem = inventory.getStackInSlot(1);
+                    var remainingFirstFluid = inputs.get(0).getFluid();
+                    var remainingSecondFluid = inputs.get(1).getFluid();
+                    match = recipe.match(remainingFirstItem, remainingSecondItem, remainingFirstFluid, remainingSecondFluid);
+                    if (match != null) {
+                        available = match.available(remainingFirstItem, remainingSecondItem, remainingFirstFluid, remainingSecondFluid);
+                    }
+                }
             }
-            inventory.extractItem(0, finished * match.firstItems(), false);
-            inventory.extractItem(1, finished * match.secondItems(), false);
-            inputs.get(0).drain(finished * match.firstFluid(), EXECUTE);
-            inputs.get(1).drain(finished * match.secondFluid(), EXECUTE);
-            progress = finished == available || room == 0 ? 0 : Math.max(0, progress - finished * duration);
+            progress = available == 0 || room == 0 ? 0 : Math.max(0, progress - finished * duration);
             batchStart = progress;
         }
         setChanged();

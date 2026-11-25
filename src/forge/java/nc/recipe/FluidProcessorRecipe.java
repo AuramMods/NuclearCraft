@@ -15,7 +15,7 @@ import java.util.List;
 
 public interface FluidProcessorRecipe extends ProcessingRecipe {
     ResourceLocation id();
-    List<FluidIngredient> inputs();
+    List<FluidInput> inputs();
     List<FluidProduct> products();
     int ticks();
     int energyPerTick();
@@ -62,8 +62,8 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
         return item != null && item.accepts(stack);
     }
 
-    default boolean hasNoFluidInputs() {
-        return inputs().stream().allMatch(FluidIngredient::isEmpty);
+    default boolean acceptsEmptyFluidInputs() {
+        return inputs().stream().allMatch(input -> input.matches(FluidStack.EMPTY));
     }
 
     default boolean acceptsFluid(FluidStack stack) {
@@ -82,16 +82,16 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
 
     private boolean canPair(FluidStack first, FluidStack second) {
         var ingredients = inputs();
-        FluidIngredient left = ingredients.get(0);
+        FluidInput left = ingredients.get(0);
         if (ingredients.size() == 1) {
             return acceptsPartial(left, first);
         }
-        FluidIngredient right = ingredients.get(1);
+        FluidInput right = ingredients.get(1);
         return (acceptsPartial(left, first) && acceptsPartial(right, second))
                 || (acceptsPartial(right, first) && acceptsPartial(left, second));
     }
 
-    private static boolean acceptsPartial(FluidIngredient ingredient, FluidStack stack) {
+    private static boolean acceptsPartial(FluidInput ingredient, FluidStack stack) {
         return stack.isEmpty() || ingredient.accepts(stack);
     }
 

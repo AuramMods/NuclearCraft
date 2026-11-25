@@ -1075,6 +1075,31 @@ Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied 12 mB of ethanol thro
 
 The isolated 540-mod Auram client loaded the same ten recipes with KubeJS. JEI showed the active inputs and outputs, and seven machines processed batches in-world. The client ran with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible window samples.
 
+### Alternative fluid feeds
+
+To migrate a legacy fluid ingredient that uses alternatives, give that input slot an `alternatives` list. Each entry takes its own `fluid` ID or `tag` and its own `amount`. The order matters when more than one entry matches. The machine uses the first matching fluid it has enough of and consumes that entry's amount. Factored recipes include every alternative volume in the common divisor.
+
+For example, a Chemical Reactor can accept 18 mB from the water tag, 10 mB of vanilla water, or 14 mB of lava as its first feed. Ethanol remains a separate counted feed.
+
+```json
+"fluid_inputs": [
+  {"alternatives": [
+    {"tag": "minecraft:water", "amount": 18},
+    {"fluid": "minecraft:water", "amount": 10},
+    {"fluid": "minecraft:lava", "amount": 14}
+  ]},
+  {"fluid": "nuclearcraft:ethanol", "amount": 4}
+]
+```
+
+This format works in single-block processor recipes, the Radiation Scrubber, scripted processors, the Distiller, the Large Electrolyzer, and the Infiltrator. Datapacks and KubeJS also accept a plain array in place of the object. Use the object form with CraftTweaker's `addJsonRecipe` so the entries in the surrounding list are all maps. An empty alternative permits an empty feed and uses zero mB. Use `new MapData()` in ZenCode or `{}` in JSON for that choice.
+
+All 254 local GameTests passed. Packaged Forge 47.4.10 processed all seven test recipes with datapacks and CraftTweaker 14.0.59. Factored recipes consumed 9 mB of water in the Chemical Reactor and 7 mB of lava in the Distiller. Both produced 4 mB of heavy water per reduced batch. With one tick of FE, the Distiller, Large Electrolyzer, and Infiltrator each processed the 18 mB alternative and then the 10 mB alternative in that tick.
+
+Ender IO 8.2.22-beta supplied water for the Chemical Reactor’s 18 mB and 10 mB batches. Mekanism 10.4.16.80 supplied 14 mB of lava for a third batch. Both reactors waited when the supplied fluid fell short. The two networks collected 14 mB and 7 mB of heavy water respectively, and both volumes survived a dedicated restart and chunk unload and reload.
+
+The isolated 540-mod Auram client loaded the seven recipes through KubeJS using the object form. JEI showed each fluid alternative with its authored volume. The Chemical Reactor, Infuser, Radiation Scrubber, Electrolyzer, and Distiller ran the recipes in-world. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
+
 The molten-salt reactor retains `nuclearcraft:salt_fission_controller`, `nuclearcraft:salt_fission_vessel`, and `nuclearcraft:fission_vessel_port`. The two legacy heater metadata blocks map to the `<material>_coolant_heater` and `fission_heater_port_<material>` IDs in legacy coolant order. The first coolant uses `standard`. Sneak-use a fuel container on an unassembled vessel or vessel port with an empty local input to select a matching fuel filter. Sneak-use an empty bucket under the same conditions to clear the filter. Sneak-use with an empty hand to switch a port between input and output.
 
 The molten-salt fuel recipe uses a counted fluid `fuel`, a fluid `result`, and a fractional `ticks` value. Set vessel intrinsic flux efficiency and any molten-salt-only fuel time, heat, and efficiency multipliers in `world/serverconfig/nuclearcraft-salt-fission.toml`. The legacy `fission_heater_cooling_rate` array maps to its named `cooling_rate` keys. The reactor and heat exchanger read the same `nak_coolant_heat_per_mb` value in `nuclearcraft-heat-exchangers.toml`.

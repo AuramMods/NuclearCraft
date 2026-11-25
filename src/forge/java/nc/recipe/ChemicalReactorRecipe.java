@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidProduct> products,
+public record ChemicalReactorRecipe(ResourceLocation id, List<FluidInput> inputs, List<FluidProduct> products,
                                     int ticks, int energyPerTick, double radiation,
                                     @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 2;
@@ -41,9 +41,9 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             if (entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
                 throw new JsonSyntaxException("Invalid Chemical Reactor recipe " + id);
             }
-            var inputs = FluidIngredient.readPair(json, id);
+            var inputs = FluidInput.readPair(json, id);
             var outputs = FluidProduct.readSlots(id, entries);
-            if (inputs.stream().allMatch(FluidIngredient::isEmpty) && outputs.stream().allMatch(FluidProduct::isEmpty)) {
+            if (inputs.stream().allMatch(FluidInput::isEmpty) && outputs.stream().allMatch(FluidProduct::isEmpty)) {
                 throw new JsonSyntaxException("Chemical Reactor recipe needs an input or output for " + id);
             }
             return new ChemicalReactorRecipe(id, inputs, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
@@ -52,7 +52,7 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
 
         @Override
         public ChemicalReactorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            List<FluidIngredient> inputs = FluidIngredient.readPair(buffer);
+            List<FluidInput> inputs = FluidInput.readPair(buffer);
             var outputs = buffer.readList(FluidProduct::fromNetwork);
             return new ChemicalReactorRecipe(id, inputs, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
@@ -60,7 +60,7 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ChemicalReactorRecipe recipe) {
-            recipe.inputs.forEach(input -> input.toNetwork(buffer));
+            recipe.inputs.forEach(input -> FluidInput.write(buffer, input));
             buffer.writeCollection(recipe.products, (packet, product) -> product.toNetwork(packet));
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, List<FluidProduct> products,
+public record ElectrolyzerRecipe(ResourceLocation id, FluidInput input, List<FluidProduct> products,
                                  int ticks, int energyPerTick, double radiation,
                                  @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 4;
@@ -22,7 +22,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
     }
 
     @Override
-    public List<FluidIngredient> inputs() {
+    public List<FluidInput> inputs() {
         return List.of(input);
     }
 
@@ -39,7 +39,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
     public static final class Serializer implements RecipeSerializer<ElectrolyzerRecipe> {
         @Override
         public ElectrolyzerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            FluidIngredient input = FluidIngredient.readSlot(json.get("fluid_input"), id);
+            FluidInput input = FluidInput.readSlot(json.get("fluid_input"), id);
             var entries = GsonHelper.getAsJsonArray(json, "results");
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
@@ -56,7 +56,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
 
         @Override
         public ElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            FluidIngredient input = FluidIngredient.fromNetwork(buffer);
+            FluidInput input = FluidInput.fromNetwork(buffer);
             var outputs = buffer.readList(FluidProduct::fromNetwork);
             return new ElectrolyzerRecipe(id, input, outputs, buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
@@ -64,7 +64,7 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ElectrolyzerRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             buffer.writeCollection(recipe.products, (packet, product) -> product.toNetwork(packet));
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

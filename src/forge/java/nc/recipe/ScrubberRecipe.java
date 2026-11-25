@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Locale;
 
 public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.Input itemInput,
-                             @Nullable FluidIngredient fluidInput, ItemProcessorRecipe.Product itemProduct,
+                             @Nullable FluidInput fluidInput, ItemProcessorRecipe.Product itemProduct,
                              FluidProduct fluidProduct, @Nullable Medium medium, int customTicks, int customPower,
                              double customEfficiency) implements Recipe<Container> {
     public ItemStack itemOutput() { return itemProduct.stack(); }
@@ -70,12 +70,12 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
             var itemEntry = json.get("item_input");
             var item = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? null : ItemProcessorRecipe.Input.readSlot(itemEntry, id);
             var fluidEntry = json.get("fluid_input");
-            var fluid = fluidEntry == null || MachineInputs.unusedSlot(fluidEntry) ? null : FluidIngredient.readSlot(fluidEntry, id);
+            var fluid = fluidEntry == null || MachineInputs.unusedSlot(fluidEntry) ? null : FluidInput.readSlot(fluidEntry, id);
             var product = ItemProcessorRecipe.Product.readSlot(json.get("item_output"), context);
             var result = json.has("fluid_output") ? FluidProduct.readSlot(id, json.get("fluid_output")) : FluidProduct.EMPTY;
             if ((item == null && fluid == null && product.isEmpty() && result.isEmpty())
                     || (item != null && item.ingredient().isEmpty())
-                    || (fluid != null && fluid.amount() > ProcessorFluidTanks.CAPACITY)
+                    || (fluid != null && fluid.maxAmount() > ProcessorFluidTanks.CAPACITY)
                     || result.stack().getAmount() > ProcessorFluidTanks.CAPACITY) {
                 throw new JsonSyntaxException("Invalid Scrubber inputs or outputs for " + id);
             }
@@ -103,7 +103,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
         @Override
         public ScrubberRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = buffer.readNullable(ItemProcessorRecipe.Input::fromNetwork);
-            var fluid = buffer.readNullable(FluidIngredient::fromNetwork);
+            var fluid = buffer.readNullable(FluidInput::fromNetwork);
             return new ScrubberRecipe(id, item, fluid, ItemProcessorRecipe.Product.fromNetwork(buffer),
                     FluidProduct.fromNetwork(buffer), null,
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble());
@@ -112,7 +112,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ScrubberRecipe recipe) {
             buffer.writeNullable(recipe.itemInput, (output, item) -> item.toNetwork(output));
-            buffer.writeNullable(recipe.fluidInput, (output, fluid) -> fluid.toNetwork(output));
+            buffer.writeNullable(recipe.fluidInput, FluidInput::write);
             recipe.itemProduct.toNetwork(buffer);
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks());

@@ -3,6 +3,7 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCRegistries;
 import nc.processor.ProcessorFluidTanks;
+import nc.recipe.FluidIngredient;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -204,7 +205,7 @@ public final class SaltMixerGameTests {
                 "The catalog must include all 49 legacy fuel and isotope fluoride mixtures");
         var iron = recipes.stream().filter(recipe -> recipe.id().equals(NuclearCraft.id("salt_mixer/iron_nak")))
                 .findFirst().orElseThrow();
-        helper.assertTrue(iron.inputs().get(0).tag() && iron.inputs().get(0).accepts(stack("iron", 144))
+        helper.assertTrue(iron.inputs().get(0) instanceof FluidIngredient input && input.tag() && input.accepts(stack("iron", 144))
                         && iron.product().isFluidEqual(stack("iron_nak", 144)), "Both native and shared tagged iron can form coolant");
         helper.assertTrue(manager.byKey(NuclearCraft.id("crafting/salt_mixer")).isPresent()
                         && manager.byKey(NuclearCraft.id("melter/naoh")).isPresent()

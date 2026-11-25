@@ -16,6 +16,8 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -62,7 +64,7 @@ public final class ProcessorRecipeDefaultsGameTests {
             var receivedStock = serializer.fromNetwork(id, buffer);
             var receivedReplacement = serializer.fromNetwork(id, buffer);
             helper.assertTrue(new ProcessorRecipeDefaults(Rate.ELECTROLYZER, false).equals(receivedStock.defaults())
-                            && receivedStock.input().amount() == 500 && receivedStock.results().get(1).getAmount() == 250
+                            && receivedStock.input().matchedAmount(new FluidStack(Fluids.WATER, 500), 1) == 500 && receivedStock.results().get(1).getAmount() == 250
                             && receivedReplacement.defaults() == null && !buffer.isReadable(),
                     "The recipe packet preserves stock provenance and authored volumes, including same-ID replacements");
         } finally {

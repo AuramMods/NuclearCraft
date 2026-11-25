@@ -266,6 +266,27 @@ public final class DistillerGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void distillerUsesBothEligibleVolumesInOnePaidTick(GameTestHelper helper) {
+        var distiller = build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "The tower assembles"))
+                .thenExecute(() -> {
+                    var power = helper.getBlockEntity(POWER).getCapability(ForgeCapabilities.ENERGY, Direction.WEST)
+                            .orElseThrow(AssertionError::new);
+                    helper.assertTrue(power.receiveEnergy(1, false) == 1
+                                    && fluid(helper, GAS_FEED, Direction.NORTH).fill(stack("nuclearcraft:ethanol", 28), EXECUTE) == 28,
+                            "Supply 28 mB and only enough FE for one tick");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, WATER_OUTPUT, Direction.SOUTH).getFluidInTank(0)
+                                .isFluidStackIdentical(stack("nuclearcraft:heavy_water", 16))
+                                && fluid(helper, GAS_FEED, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && distiller.saveWithoutMetadata().getLong("energy") == 0L,
+                        "Both the 18 mB and 10 mB alternatives finish on the same paid tick"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty")
     public static void distillerRecipeSyncKeepsEmptyFeedAndChanceFields(GameTestHelper helper) {
         var serializer = NCMachines.DISTILLER_SERIALIZER.get();
         var id = NuclearCraft.id("distiller/qa_network");

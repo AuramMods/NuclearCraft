@@ -1,0 +1,12 @@
+{
+  "type": "nuclearcraft:multiblock_distiller",
+  "fluid_inputs": [
+    {"alternatives": [
+      {"fluid": "nuclearcraft:ethanol", "amount": 18},
+      {"fluid": "nuclearcraft:ethanol", "amount": 10}
+    ]}
+  ],
+  "fluid_outputs": [{"fluid": "nuclearcraft:heavy_water", "amount": 8}],
+  "time_multiplier": 0.00001,
+  "power_multiplier": 0.0001
+}

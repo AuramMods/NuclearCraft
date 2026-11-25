@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine, List<Input> inputs,
-                                  List<FluidIngredient> fluidInputs, List<FluidProduct> fluidProducts,
+                                  List<FluidInput> fluidInputs, List<FluidProduct> fluidProducts,
                                   List<Product> results, List<Product> alternateResults,
                                   double ticks, int energyPerTick, double radiation,
                                   @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
@@ -46,14 +46,14 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
     }
 
     public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
-                               @Nullable FluidIngredient fluidInput, FluidStack fluidOutput, List<Product> results,
+                               @Nullable FluidInput fluidInput, FluidStack fluidOutput, List<Product> results,
                                List<Product> alternateResults, int ticks, int energyPerTick, double radiation) {
         this(id, machine, inputs, fluidInput, fluidOutput, results, alternateResults,
                 ticks, energyPerTick, radiation, null, false, null);
     }
 
     public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
-                               @Nullable FluidIngredient fluidInput, FluidStack fluidOutput, List<Product> results,
+                               @Nullable FluidInput fluidInput, FluidStack fluidOutput, List<Product> results,
                                List<Product> alternateResults, int ticks, int energyPerTick, double radiation,
                                @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
                                @Nullable ProcessorRecipeDefaults defaults) {
@@ -82,7 +82,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 List.of(new Product(source.getResultItem(registries), 100, 0)), List.of(), 200, 20, 0D);
     }
 
-    public @Nullable FluidIngredient fluidInput() {
+    public @Nullable FluidInput fluidInput() {
         return fluidInputs.isEmpty() ? null : fluidInputs.get(0);
     }
 
@@ -144,11 +144,14 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         }
         for (int index = 0; index < fluidInputs.size(); index++) {
             int bit = 1 << index;
-            FluidIngredient ingredient = fluidInputs.get(index);
-            if ((used & bit) == 0 && (amounts == null ? ingredient.accepts(stored) : ingredient.matches(stored))
-                    && matchFluids(input, tank + 1, used | bit, amounts, insertTank, inserted)) {
+            FluidInput ingredient = fluidInputs.get(index);
+            if ((used & bit) != 0) {
+                continue;
+            }
+            int amount = amounts == null ? (ingredient.accepts(stored) ? 0 : -1) : ingredient.matchedAmount(stored, 1);
+            if (amount >= 0 && matchFluids(input, tank + 1, used | bit, amounts, insertTank, inserted)) {
                 if (amounts != null) {
-                    amounts[tank] = ingredient.amount();
+                    amounts[tank] = amount;
                 }
                 return true;
             }
@@ -378,7 +381,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 inputs.add(Input.readSlot(entry, id));
             }
             var fluids = readFluids(id, json, "fluid_input", "fluid_inputs", machine.fluidInputs()).stream()
-                    .map(fluid -> FluidIngredient.readSlot(fluid, id)).toList();
+                    .map(fluid -> FluidInput.readSlot(fluid, id)).toList();
             var fluidProducts = readFluids(id, json, "fluid_result", "fluid_results", machine.fluidOutputs()).stream()
                     .map(fluid -> FluidProduct.readSlot(id, fluid)).toList();
             List<Product> results = json.has("results") ? readResults(id, json, "results", context)
@@ -392,7 +395,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 alternate = readResults(id, json, "alternate_results", context);
             }
             if (!machine.generator() && inputs.stream().allMatch(Input::isEmpty)
-                    && fluids.stream().allMatch(FluidIngredient::isEmpty)
+                    && fluids.stream().allMatch(FluidInput::isEmpty)
                     && results.stream().allMatch(Product::isEmpty) && alternate.stream().allMatch(Product::isEmpty)
                     && fluidProducts.stream().allMatch(FluidProduct::isEmpty)) {
                 throw new JsonSyntaxException("Processor recipe needs an input or output for " + id);
@@ -467,9 +470,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             for (int index = 0; index < machine.inputs(); index++) {
                 inputs.add(Input.fromNetwork(buffer));
             }
-            List<FluidIngredient> fluids = new ArrayList<>(machine.fluidInputs());
+            List<FluidInput> fluids = new ArrayList<>(machine.fluidInputs());
             for (int index = 0; index < machine.fluidInputs(); index++) {
-                fluids.add(FluidIngredient.fromNetwork(buffer));
+                fluids.add(FluidInput.fromNetwork(buffer));
             }
             List<FluidProduct> fluidProducts = new ArrayList<>(machine.fluidOutputs());
             for (int index = 0; index < machine.fluidOutputs(); index++) {
@@ -488,8 +491,8 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             for (Input input : recipe.inputs) {
                 input.toNetwork(buffer);
             }
-            for (FluidIngredient fluid : recipe.fluidInputs) {
-                fluid.toNetwork(buffer);
+            for (FluidInput fluid : recipe.fluidInputs) {
+                FluidInput.write(buffer, fluid);
             }
             for (FluidProduct product : recipe.fluidProducts) {
                 product.toNetwork(buffer);

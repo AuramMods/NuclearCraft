@@ -41,7 +41,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     private final ProcessorEnergy power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::capacity);
     private final ProcessorInputs input = new ProcessorInputs(1);
     private final ProcessorRecipeLookup<ScrubberRecipe> recipes = new ProcessorRecipeLookup<>(
-            NCRadiation.SCRUBBER_RECIPES.get(), recipe -> recipe.itemInput() == null && recipe.fluidInput() == null);
+            NCRadiation.SCRUBBER_RECIPES.get(), recipe -> recipe.matches(ItemStack.EMPTY, FluidStack.EMPTY));
     private final ItemStackHandler inventory = new ItemStackHandler(2) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -123,7 +123,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         if (reservedRecipe != null) {
             var existing = level.getRecipeManager().byKey(reservedRecipe).orElse(null);
             if (existing instanceof ScrubberRecipe recipe && recipe.matches(reservedItem, reservedFluid)
-                    && reservedItem.getCount() == itemAmount(recipe) && reservedFluid.getAmount() == fluidAmount(recipe)) {
+                    && reservedItem.getCount() == itemAmount(recipe) && reservedFluid.getAmount() == fluidAmount(recipe, reservedFluid)) {
                 return recipe;
             }
             if (!restoreSupplies()) {
@@ -134,7 +134,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         var recipe = findUnreservedRecipe(level);
         if (recipe != null) {
             reservedItem = inventory.extractItem(0, itemAmount(recipe), false);
-            int amount = fluidAmount(recipe);
+            int amount = fluidAmount(recipe, tanks.stored(0));
             if (amount > 0) {
                 reservedFluid = tanks.stored(0).copy();
                 reservedFluid.setAmount(amount);
@@ -185,9 +185,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         return item == null ? 0 : item.count();
     }
 
-    private static int fluidAmount(ScrubberRecipe recipe) {
+    private static int fluidAmount(ScrubberRecipe recipe, FluidStack stack) {
         var fluid = recipe.fluidInput();
-        return fluid == null ? 0 : fluid.amount();
+        return fluid == null ? 0 : fluid.matchedAmount(stack, 1);
     }
 
     private boolean canProduce(ScrubberRecipe recipe) {

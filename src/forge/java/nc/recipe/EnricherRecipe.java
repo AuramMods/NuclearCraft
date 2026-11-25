@@ -13,11 +13,11 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidIngredient fluidInput,
+public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidInput fluidInput,
                              FluidProduct fluidProduct, int ticks, int energyPerTick, double radiation,
                              @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     @Override
-    public List<FluidIngredient> inputs() {
+    public List<FluidInput> inputs() {
         return List.of(fluidInput);
     }
 
@@ -46,7 +46,7 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
             var item = ItemProcessorRecipe.Input.readSlot(json.get("item_input"), id);
-            var fluid = FluidIngredient.readSlot(json.get("fluid_input"), id);
+            var fluid = FluidInput.readSlot(json.get("fluid_input"), id);
             var result = FluidProduct.readSlot(id, json.get("result"));
             if (ticks < 1 || energy < 0 || (item.isEmpty() && fluid.isEmpty() && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Enricher recipe " + id);
@@ -58,14 +58,14 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var item = ItemProcessorRecipe.Input.fromNetwork(buffer);
-            return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
+            return new EnricherRecipe(id, item, FluidInput.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, EnricherRecipe recipe) {
             recipe.itemInput.toNetwork(buffer);
-            recipe.fluidInput.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.fluidInput);
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

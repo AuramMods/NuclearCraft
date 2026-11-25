@@ -10,7 +10,7 @@ import nc.recipe.CentrifugeRecipe;
 import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.FluidBatch;
-import nc.recipe.FluidIngredient;
+import nc.recipe.FluidInput;
 import nc.recipe.FluidProcessorRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -56,7 +56,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public FluidProcessorBlockEntity(Machine machine, BlockPos pos, BlockState state) {
         super(machine.entity(), pos, state, machine.rate, 256_000);
         this.machine = machine;
-        recipes = new ProcessorRecipeLookup<>(machine.recipes(), FluidProcessorRecipe::hasNoFluidInputs);
+        recipes = new ProcessorRecipeLookup<>(machine.recipes(), FluidProcessorRecipe::acceptsEmptyFluidInputs);
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
         itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::isIngredient, this::acceptsItem);
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, machine.inputs, machine.outputs);
@@ -175,11 +175,11 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             if (item != null && machine.hasItemInput) {
                 itemInput.extractItem(0, item.count(), false);
             }
-            List<FluidIngredient> ingredients = recipe.inputs();
+            List<FluidInput> ingredients = recipe.inputs();
             boolean inOrder = recipe.inOrder(input, factor);
             for (int index = 0; index < machine.inputs; index++) {
                 int ingredient = inOrder ? index : 1 - index;
-                fluids.consume(index, ingredients.get(ingredient).amount() / factor);
+                fluids.consume(index, ingredients.get(ingredient).matchedAmount(input.fluid(index), factor));
             }
             for (int index = 0; index < outputs.size(); index++) {
                 FluidStack product = outputs.get(index);

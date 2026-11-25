@@ -7,10 +7,10 @@ import java.util.List;
 public final class FluidBatch {
     private FluidBatch() {}
 
-    static int inputFactor(List<FluidIngredient> inputs) {
+    static int inputFactor(List<FluidInput> inputs) {
         int factor = 0;
-        for (FluidIngredient input : inputs) {
-            factor = gcd(factor, input.amount());
+        for (FluidInput input : inputs) {
+            factor = input.factor(factor);
         }
         return Math.max(1, factor);
     }

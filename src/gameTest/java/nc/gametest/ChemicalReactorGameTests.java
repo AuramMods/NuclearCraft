@@ -178,6 +178,44 @@ public final class ChemicalReactorGameTests {
         });
     }
 
+    @GameTest(template = "empty")
+    public static void alternativeFeedsUseTheFirstSufficientAmount(GameTestHelper helper) {
+        var id = new ResourceLocation("processor_chance_qa", "alternative_feeds");
+        var recipe = (ChemicalReactorRecipe) helper.getLevel().getRecipeManager().byKey(id).orElseThrow();
+        var serializer = new ChemicalReactorRecipe.Serializer();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(buffer, recipe);
+            var synced = serializer.fromNetwork(id, buffer).inputs().get(0);
+            helper.assertTrue(synced.factor(0) == 2
+                            && synced.matchedAmount(new FluidStack(Fluids.WATER, 18), 1) == 18
+                            && synced.matchedAmount(new FluidStack(Fluids.WATER, 17), 1) == 10
+                            && synced.matchedAmount(new FluidStack(Fluids.LAVA, 7), 2) == 7
+                            && synced.alternatives().stream().map(FluidStack::getAmount).toList().equals(java.util.List.of(18, 10, 14))
+                            && !buffer.isReadable(),
+                    "Recipe sync preserves alternative order, volumes, and the common divisor");
+        } finally {
+            buffer.release();
+        }
+
+        helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());
+        var reactor = helper.getBlockEntity(REACTOR);
+        var tanks = fluids(reactor, Direction.NORTH);
+        helper.assertTrue(tanks.fill(stack("ethanol", 8), EXECUTE) == 8
+                        && tanks.fill(new FluidStack(Fluids.WATER, 28), EXECUTE) == 28,
+                "Automation accepts the two feeds when they enter in reverse order");
+        energy(reactor).receiveEnergy(40, false);
+        helper.runAtTickTime(5, () -> {
+            helper.assertTrue(hasFluid(tanks, 0, "ethanol", 4) && tanks.getFluidInTank(1).getAmount() == 10
+                            && hasFluid(tanks, 2, "heavy_water", 7),
+                    "The first batch takes the preferred 18 mB alternative");
+        });
+        helper.succeedWhen(() -> helper.assertTrue(tanks.getFluidInTank(0).isEmpty()
+                        && tanks.getFluidInTank(1).isEmpty() && hasFluid(tanks, 2, "heavy_water", 14)
+                        && energy(reactor).getEnergyStored() == 0,
+                "The second batch uses the 10 mB fallback and pays the same FE cost"));
+    }
+
     @GameTest(template = "empty", timeoutTicks = 900)
     public static void chemicalReactorWaitsForBothProductsAndResumesAfterReload(GameTestHelper helper) {
         helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());

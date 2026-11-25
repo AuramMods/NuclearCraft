@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidProduct> products,
+public record DistillerRecipe(ResourceLocation id, List<FluidInput> inputs, List<FluidProduct> products,
                               double timeMultiplier, double powerMultiplier, int sieveTrays,
                               boolean stockBatch, double radiation) implements ProcessingRecipe {
     public static final int INPUT_COUNT = 2;
@@ -38,17 +38,14 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
     }
 
     public int firstInput(FluidStack first, FluidStack second, int factor) {
-        if (matches(0, first, factor) && matches(1, second, factor)) return 0;
-        if (matches(1, first, factor) && matches(0, second, factor)) return 1;
+        if (first.isEmpty() && second.isEmpty() && products.stream().allMatch(FluidProduct::isEmpty)) return -1;
+        if (inputAmount(0, first, factor) >= 0 && inputAmount(1, second, factor) >= 0) return 0;
+        if (inputAmount(1, first, factor) >= 0 && inputAmount(0, second, factor) >= 0) return 1;
         return -1;
     }
 
-    private boolean matches(int index, FluidStack stack, int factor) {
-        return index < inputs.size() ? inputs.get(index).matches(stack, factor) : stack.isEmpty();
-    }
-
-    public int inputAmount(int index, int factor) {
-        return index < inputs.size() ? inputs.get(index).amount() / factor : 0;
+    public int inputAmount(int index, FluidStack stack, int factor) {
+        return index < inputs.size() ? inputs.get(index).matchedAmount(stack, factor) : (stack.isEmpty() ? 0 : -1);
     }
 
     public int batchFactor() {
@@ -97,7 +94,7 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         }
 
         @Override public DistillerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var inputs = buffer.readList(FluidIngredient::fromNetwork);
+            var inputs = buffer.readList(FluidInput::fromNetwork);
             var outputs = new ArrayList<FluidProduct>(OUTPUT_COUNT);
             for (int slot = 0; slot < OUTPUT_COUNT; slot++) outputs.add(FluidProduct.fromNetwork(buffer));
             return new DistillerRecipe(id, inputs, outputs, buffer.readDouble(), buffer.readDouble(), buffer.readVarInt(),
@@ -105,7 +102,7 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         }
 
         @Override public void toNetwork(FriendlyByteBuf buffer, DistillerRecipe recipe) {
-            buffer.writeCollection(recipe.inputs, (packet, input) -> input.toNetwork(packet));
+            buffer.writeCollection(recipe.inputs, FluidInput::write);
             for (var output : recipe.products) output.toNetwork(buffer);
             buffer.writeDouble(recipe.timeMultiplier);
             buffer.writeDouble(recipe.powerMultiplier);

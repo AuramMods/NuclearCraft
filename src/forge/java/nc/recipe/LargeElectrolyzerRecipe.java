@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, List<FluidIngredient> fluids,
+public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, List<FluidInput> fluids,
                                      List<Product> itemProducts, List<FluidProduct> fluidProducts,
                                      double time, double power, String electrolyte, double radiation)
         implements ProcessingRecipe, MachineInputs {

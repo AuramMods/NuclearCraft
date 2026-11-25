@@ -18,7 +18,7 @@ import net.minecraftforge.common.crafting.conditions.ICondition;
 
 import java.util.List;
 
-public record InfiltratorRecipe(ResourceLocation id, List<Input> items, List<FluidIngredient> fluids, Product result,
+public record InfiltratorRecipe(ResourceLocation id, List<Input> items, List<FluidInput> fluids, Product result,
                                  double time, double power, double heatingBonus, double radiation)
         implements ProcessingRecipe, MachineInputs {
 
