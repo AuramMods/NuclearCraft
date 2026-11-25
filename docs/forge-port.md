@@ -449,6 +449,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
 | Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
 | Applied Energistics 2 | 15.4.10 | Item and fluid transfers through Import and Storage Buses, plus shared material tags |
+| Applied Flux | 1.3.4 | Forge Energy through Flux Accessors and ME FE Storage Cells |
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
@@ -627,6 +628,14 @@ The cross-chunk networks also kept one coal and 250 mB of water at their sources
 The isolated Auram instance with all 541 installed mod JARs loaded JEI and repeated the three patched circuits. The server observed all three chunks unload and verified a new chunk instance for each one on return. The saved region files held two coal in each item destination and 1,750 mB of water in the Infuser, with empty sources. The client ran with master volume zero and OpenAL No Output. The native observer saw zero focus activations, foreground samples, and visible windows.
 
 A fresh isolated copy with all 539 installed Auram mod JARs loaded the same processor routes and completed a second batch on each. The two fluid tanks reached 50 mB of liquid nitrogen apiece. Each item destination kept one coal dust from the dedicated test and received one Mekanism coal dust under Auram's unification rules. All sources and processor buffers saved empty. The client used master volume zero and OpenAL No Output, and the observer recorded zero desktop activations, foreground samples, and visible windows. Reopening the earlier test copy reproduced Psychedelicraft 1.20.1-port.4's missing player drug capability during login.
+
+### Applied Flux
+
+On dedicated Forge 47.4.10, Applied Flux 1.3.4, Glodium 1.5, and AE2 15.4.10 ran two circuits with Auram's Applied Flux configuration. Each circuit used two Flux Accessors and an ME Drive with a 1k FE Storage Cell. A separate AE2 energy cell powered the grid. Each source Voltaic Pile held its charge with its output face closed, then transferred its full charge of 4,000 or 8,500 FE into the ME cell when the face opened. The cells kept their charges across a dedicated restart, with one destination absent and the other facing a disabled battery input. [Applied Flux](https://www.curseforge.com/minecraft/mc-mods/applied-flux)
+
+The first cell supplied 4,000 FE to a Melter and emptied. Its full water tank kept the input ice and the full charge in place. Freeing 1,000 mB of output space let it consume the ice and all 4,000 FE, and restore the tank to 16,000 mB. The second cell delivered 4,000 FE to fill a Voltaic Pile across a chunk boundary and retained 4,500 FE. The balances and Melter output survived a second dedicated restart.
+
+The same JAR loaded JEI with all 541 installed Auram mod JARs and repeated both circuits. The server observed all three fixture chunks unload and load as new chunk instances. Region saves confirmed the two empty source piles, the full receiver pile, the 4,500 FE left in the second cell, and 16,000 mB of water in the Melter. All 226 local GameTests passed. The Auram client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### XNet and Integrated Dynamics
 
