@@ -1368,6 +1368,29 @@ Packaged Forge 47.4.18 tests powered both managers with vanilla redstone and wit
 
 A muted multiplayer client used the multitool on the source manager. It received the saved link and drew the linked source's outline through the opaque reactor wall. The native observer recorded zero foreground, activation, and visible window samples. [Forge render stages](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/src/main/java/net/minecraftforge/client/event/RenderLevelStageEvent.java)
 
+### Neutron moderator and reflector recipes
+
+Use `nuclearcraft:fission_moderator` or `nuclearcraft:fission_reflector` recipes to give passive blocks a neutron role inside all three fission reactors. Set `input.block` to one block ID or `input.tag` to a Forge block tag. A moderator takes integer `flux` and `efficiency`. A reflector takes `reflectivity` from 0 to 1 and `efficiency`. The original five stock recipes inherit their values from the named server-config entries above through `legacy_profile`. The stock Graphite and Beryllium recipes use the shared Forge storage-block tags.
+
+```json
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": { "block": "minecraft:iron_block" },
+  "flux": 90,
+  "efficiency": 1.5
+}
+```
+
+An exact block match takes precedence over a tag. Among matches of the same kind, the highest `priority` wins. The default priority is zero. Ties use the first recipe ID in ascending order. Replace an included recipe by reusing its ID, such as `nuclearcraft:fission_moderator/graphite`. A reflector with reflectivity 1 also blocks neutron priming from a wall source. [Forge custom recipes](https://docs.minecraftforge.net/en/1.20.1/resources/server/recipes/custom/)
+
+Migrate legacy `FissionModerator` and `FissionReflector` scripts by calling `addJsonRecipe`, `removeByName`, or `removeAll` on the matching CraftTweaker `<recipetype:nuclearcraft:fission_moderator>` or `<recipetype:nuclearcraft:fission_reflector>`. KubeJS uses the same fields through `event.custom` and can remove recipes by ID. Apply changes with `/reload`. Existing reactor and fuel saves use their current block IDs and buffers. [CraftTweaker 1.20.1 recipe managers](https://docs.blamejared.com/1.20.1/en/tutorial/Recipes/RecipeManagers/)
+
+On packaged Forge 47.4.10, a full reflector blocked a wall source in each reactor variant. A partial reflector let the source prime the fuel, and 20 flux from the moderator left the reaction below criticality. Reloading a rule with 90 flux let each reactor finish its pending batch. Both the datapack test on clean Forge and the CraftTweaker 14.0.59 test preserved exactly one depleted solid fuel item, one depleted TRISO item, and 1 mB of depleted salt through chunk unload and server restart. All 231 GameTests passed locally.
+
+A separate multiplayer client displayed the server's 47-flux Heavy Water Moderator, the 90-flux Iron Block, and the Copper Block from the custom tag in JEI. A reload changed the iron rule to 93 flux, replaced the copper with a Diamond Block, and removed the full-reflector fixture. JEI reflected all three changes. The client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
+
+The isolated 540-mod Auram instance showed the KubeJS Iron Block recipe and the tagged Copper Block in JEI. The KubeJS removal of the stock Lead Steel Reflector recipe also reached JEI. All three reactors kept their fuel behind the custom full reflector. Replacing it with the custom partial reflector allowed each reactor to finish its pending batch. The client saved and exited with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
+
 ### Scripted fission isotopes and fuels
 
 Convert the legacy `Registration.registerFissionIsotope` and `Registration.registerFissionFuel` calls to `config/nuclearcraft-fission-materials.json`. Install the same file on the server and clients, then restart to register the materials. The legacy sample add-on's XYZ-789 and HEXYZ-789 entries convert as follows.

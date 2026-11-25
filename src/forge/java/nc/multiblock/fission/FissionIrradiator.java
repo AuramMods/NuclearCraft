@@ -110,7 +110,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
             }
         }
         if (remaining < received) {
-            emission = recipe.radiation() * received / NCFission.maxModeratorLineFlux();
+            emission = recipe.radiation() * received / FissionMaterials.get(level).maxModeratorLineFlux();
         }
         setChanged();
     }

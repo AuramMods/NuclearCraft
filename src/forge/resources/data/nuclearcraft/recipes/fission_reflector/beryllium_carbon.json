@@ -1,0 +1,7 @@
+{
+  "type": "nuclearcraft:fission_reflector",
+  "input": {
+    "block": "nuclearcraft:beryllium_carbon_reflector"
+  },
+  "legacy_profile": "beryllium_carbon"
+}

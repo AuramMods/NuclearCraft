@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": {
+    "tag": "forge:storage_blocks/graphite"
+  },
+  "legacy_profile": "graphite",
+  "priority": 1
+}

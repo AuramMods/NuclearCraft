@@ -1,0 +1,7 @@
+{
+  "type": "nuclearcraft:fission_reflector",
+  "input": {
+    "block": "nuclearcraft:lead_steel_reflector"
+  },
+  "legacy_profile": "lead_steel"
+}

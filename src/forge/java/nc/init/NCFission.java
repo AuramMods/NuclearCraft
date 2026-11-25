@@ -25,12 +25,11 @@ import nc.multiblock.fission.SolidHeatSinkBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
 import nc.recipe.FissionHeatRecipe;
+import nc.recipe.FissionMaterialRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionIrradiatorRecipe.Material;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -103,13 +102,11 @@ public final class NCFission {
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_HEAT = new EnumMap<>(Material.class);
     private static final Map<Material, ForgeConfigSpec.DoubleValue> IRRADIATOR_EFFICIENCY = new EnumMap<>(Material.class);
 
-    private static final TagKey<Block> GRAPHITE_BLOCKS = storageBlocks("graphite");
-    private static final TagKey<Block> BERYLLIUM_BLOCKS = storageBlocks("beryllium");
-    public static final Moderator GRAPHITE;
-    public static final Moderator BERYLLIUM;
-    public static final Moderator HEAVY_WATER;
-    public static final Reflector BERYLLIUM_CARBON;
-    public static final Reflector LEAD_STEEL;
+    private static final Moderator GRAPHITE;
+    private static final Moderator BERYLLIUM;
+    private static final Moderator HEAVY_WATER;
+    private static final Reflector BERYLLIUM_CARBON;
+    private static final Reflector LEAD_STEEL;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
@@ -337,6 +334,27 @@ public final class NCFission {
     public static final RegistryObject<RecipeSerializer<FissionHeatRecipe>> EMERGENCY_COOLING_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("fission_emergency_cooling", () -> new FissionHeatRecipe.Serializer(true));
 
+    private static final Map<FissionMaterialRecipe.Kind, RegistryObject<RecipeType<FissionMaterialRecipe>>> MATERIAL_RECIPES =
+            new EnumMap<>(FissionMaterialRecipe.Kind.class);
+    private static final Map<FissionMaterialRecipe.Kind, RegistryObject<RecipeSerializer<FissionMaterialRecipe>>> MATERIAL_SERIALIZERS =
+            new EnumMap<>(FissionMaterialRecipe.Kind.class);
+    static {
+        for (var kind : FissionMaterialRecipe.Kind.values()) {
+            MATERIAL_RECIPES.put(kind, NCRegistries.RECIPE_TYPES.register(kind.id(),
+                    () -> RecipeType.simple(NuclearCraft.id(kind.id()))));
+            MATERIAL_SERIALIZERS.put(kind, NCRegistries.RECIPE_SERIALIZERS.register(kind.id(),
+                    () -> new FissionMaterialRecipe.Serializer(kind)));
+        }
+    }
+
+    public static RecipeType<FissionMaterialRecipe> materialRecipes(FissionMaterialRecipe.Kind kind) {
+        return MATERIAL_RECIPES.get(kind).get();
+    }
+
+    public static RecipeSerializer<FissionMaterialRecipe> materialSerializer(FissionMaterialRecipe.Kind kind) {
+        return MATERIAL_SERIALIZERS.get(kind).get();
+    }
+
     public static final RegistryObject<CreativeModeTab> TAB = NCClientPresentation.category("fission",
             () -> CONTROLLER.get().asItem().getDefaultInstance(),
             (parameters, output) -> {
@@ -428,21 +446,21 @@ public final class NCFission {
     public static int cooling(NCHeatSinks material) { return configured(COOLING.get(material)); }
     public static FissionPlacementRules<String> placementRules() { return PLACEMENT.rules(); }
 
-    public static @Nullable Moderator moderator(BlockState state) {
-        if (state.is(GRAPHITE_BLOCKS)) {
-            return GRAPHITE;
-        }
-        if (state.is(BERYLLIUM_BLOCKS)) {
-            return BERYLLIUM;
-        }
-        return state.is(HEAVY_WATER_MODERATOR.get()) ? HEAVY_WATER : null;
+    public static Moderator moderatorProfile(FissionMaterialRecipe.Profile profile) {
+        return switch (profile) {
+            case GRAPHITE -> GRAPHITE;
+            case BERYLLIUM -> BERYLLIUM;
+            case HEAVY_WATER -> HEAVY_WATER;
+            default -> throw new IllegalArgumentException("Not a moderator profile: " + profile);
+        };
     }
 
-    public static @Nullable Reflector reflector(BlockState state) {
-        if (state.is(BERYLLIUM_CARBON_REFLECTOR.get())) {
-            return BERYLLIUM_CARBON;
-        }
-        return state.is(LEAD_STEEL_REFLECTOR.get()) ? LEAD_STEEL : null;
+    public static Reflector reflectorProfile(FissionMaterialRecipe.Profile profile) {
+        return switch (profile) {
+            case BERYLLIUM_CARBON -> BERYLLIUM_CARBON;
+            case LEAD_STEEL -> LEAD_STEEL;
+            default -> throw new IllegalArgumentException("Not a reflector profile: " + profile);
+        };
     }
 
     public static int minSize() { return configured(MIN_SIZE); }
@@ -483,10 +501,6 @@ public final class NCFission {
 
     public static double intrinsicFluxEfficiency() {
         return configured(INTRINSIC_FLUX_EFFICIENCY);
-    }
-
-    private static TagKey<Block> storageBlocks(String material) {
-        return TagKey.create(Registries.BLOCK, ResourceLocation.tryBuild("forge", "storage_blocks/" + material));
     }
 
     private static Moderator moderator(ForgeConfigSpec.Builder builder, String name, int flux, double efficiency) {
@@ -540,10 +554,6 @@ public final class NCFission {
 
     public static double irradiatorEfficiency(Material material) {
         return configured(IRRADIATOR_EFFICIENCY.get(material));
-    }
-
-    public static long maxModeratorLineFlux() {
-        return Math.max(1L, (long) neutronReach() * Math.max(GRAPHITE.flux(), Math.max(BERYLLIUM.flux(), HEAVY_WATER.flux())));
     }
 
     public static boolean overheats() {

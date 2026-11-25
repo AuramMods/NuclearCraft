@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:fission_reflector",
+  "input": {
+    "block": "minecraft:gold_block"
+  },
+  "reflectivity": 1.0,
+  "efficiency": 0.5
+}

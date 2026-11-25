@@ -110,15 +110,16 @@ public final class FissionPlacementRules<C> {
 
     static BiPredicate<Part, BlockPos> neighborhood(ServerLevel level, Cuboid bounds, Part fuelPart,
                                                     Set<BlockPos> burning, Set<BlockPos> moderators) {
+        var materials = FissionMaterials.get(level);
         return (part, pos) -> switch (part) {
             case CASING -> bounds.boundaryAxes(pos) == 1;
             case CONDUCTOR -> bounds.contains(pos) && bounds.boundaryAxes(pos) == 0
                     && level.getBlockState(pos).is(NCFission.CONDUCTOR.get());
             case CELL, CHAMBER, VESSEL -> part == fuelPart && burning.contains(pos);
-            case MODERATOR -> moderators.contains(pos) && NCFission.moderator(level.getBlockState(pos)) != null;
+            case MODERATOR -> moderators.contains(pos) && materials.moderator(level.getBlockState(pos)) != null;
             case IRRADIATOR -> moderators.contains(pos) && level.getBlockState(pos).getBlock() instanceof FissionIrradiatorBlock;
             case SHIELD -> moderators.contains(pos) && level.getBlockState(pos).getBlock() instanceof FissionShieldBlock;
-            case REFLECTOR -> moderators.contains(pos) && NCFission.reflector(level.getBlockState(pos)) != null;
+            case REFLECTOR -> moderators.contains(pos) && materials.reflector(level.getBlockState(pos)) != null;
             default -> false;
         };
     }

@@ -36,6 +36,7 @@ import nc.init.NCCollectors;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
+import nc.multiblock.fission.FissionMaterials;
 import nc.init.NCSaltFission;
 import nc.multiblock.fission.SaltHeaterBlock;
 import nc.init.NCGenerators;
@@ -81,6 +82,7 @@ import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionFuelStats;
 import nc.recipe.FissionHeatRecipe;
+import nc.recipe.FissionMaterialRecipe;
 import nc.recipe.ProcessingRecipe;
 import nc.radiation.RadiationDisplay;
 import nc.recipe.SupercoolerRecipe;
@@ -351,8 +353,11 @@ public final class NuclearCraftJei implements IModPlugin {
                         .map(ItemStack::new).toList(),
                 VanillaTypes.ITEM_STACK, Component.translatable("gui.nuclearcraft.jei.armor_shielding"));
         registration.addRecipes(CollectorCategory.TYPE, NCCollectors.enabledCollectors());
-        registration.addRecipes(FissionMaterialCategory.MODERATORS, FissionMaterialCategory.moderators());
-        registration.addRecipes(FissionMaterialCategory.REFLECTORS, FissionMaterialCategory.reflectors());
+        var neutronMaterials = new FissionMaterials(recipes);
+        registration.addRecipes(FissionMaterialCategory.MODERATORS,
+                FissionMaterialCategory.materials(neutronMaterials, FissionMaterialRecipe.Kind.MODERATOR));
+        registration.addRecipes(FissionMaterialCategory.REFLECTORS,
+                FissionMaterialCategory.materials(neutronMaterials, FissionMaterialRecipe.Kind.REFLECTOR));
         for (ProcessorProfile machine : NCItemProcessors.profiles()) {
             if (!machine.jeiEnabled()) {
                 continue;
@@ -505,13 +510,9 @@ public final class NuclearCraftJei implements IModPlugin {
         for (var cooler : NCPebbleFission.coolers()) {
             registration.addRecipeCatalyst(cooler, GasCoolerCategory.TYPE);
         }
-        for (var moderator : FissionMaterialCategory.moderators()) {
-            for (var item : moderator.items()) {
-                registration.addRecipeCatalyst(item.getItem(), FissionMaterialCategory.MODERATORS);
-            }
+        for (var controller : List.of(NCFission.CONTROLLER, NCPebbleFission.CONTROLLER, NCSaltFission.CONTROLLER)) {
+            registration.addRecipeCatalyst(controller.get(), FissionMaterialCategory.MODERATORS, FissionMaterialCategory.REFLECTORS);
         }
-        registration.addRecipeCatalyst(NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
-        registration.addRecipeCatalyst(NCFission.LEAD_STEEL_REFLECTOR.get(), FissionMaterialCategory.REFLECTORS);
         registration.addRecipeCatalyst(NCHeatExchangers.CONDENSER.get(), CONDENSER);
         registration.addRecipeCatalyst(NCHeatExchangers.CONTROLLER.get(), HEAT_EXCHANGER);
         registration.addRecipeCatalyst(NCTurbine.CONTROLLER.get(), TURBINE);

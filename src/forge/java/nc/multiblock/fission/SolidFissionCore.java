@@ -288,6 +288,7 @@ final class SolidFissionCore {
     Heat tick(ServerLevel level, Map<BlockPos, Long> storedHeat,
               @Nullable PebbleCooling gasCooling, @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling,
               boolean requested, @Nullable FissionDecaySettings decaySettings, boolean telemetry) {
+        var materials = FissionMaterials.get(level);
         boolean fluidCooling = layout.variant() != FissionVariant.SOLID;
         boolean decayEnabled = decaySettings != null;
         Map<BlockPos, FissionFuelDecay> fuelDecay = new HashMap<>();
@@ -331,7 +332,7 @@ final class SolidFissionCore {
         Set<BlockPos> moderatorPositions = new HashSet<>();
         Set<BlockPos> failedSources = new HashSet<>();
         Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux = new HashMap<>();
-        while (!distributeFlux(level, reactions, irradiation, sourceTargets, moderatorPositions, shieldFlux, failedSources)) {
+        while (!distributeFlux(level, materials, reactions, irradiation, sourceTargets, moderatorPositions, shieldFlux, failedSources)) {
             moderatorPositions.clear();
             shieldFlux.clear();
             for (Irradiation target : irradiation.values()) {
@@ -368,7 +369,7 @@ final class SolidFissionCore {
                 for (Direction side : Direction.values()) {
                     BlockPos neighbor = pos.relative(side);
                     if (layout.bounds().boundaryAxes(neighbor) == 0
-                            && NCFission.moderator(level.getBlockState(neighbor)) != null) {
+                            && materials.moderator(level.getBlockState(neighbor)) != null) {
                         moderatorPositions.add(neighbor);
                     }
                 }
@@ -645,11 +646,12 @@ final class SolidFissionCore {
 
     static @Nullable BlockPos primingTarget(ServerLevel level, SolidFissionLayout layout, BlockPos wall,
                                              Predicate<BlockPos> fuel) {
+        var materials = FissionMaterials.get(level);
         Direction direction = layout.bounds().outward(wall).getOpposite();
         for (BlockPos pos = wall.relative(direction); layout.bounds().boundaryAxes(pos) == 0
                 && layout.bounds().contains(pos); pos = pos.relative(direction)) {
             BlockState state = level.getBlockState(pos);
-            var reflector = NCFission.reflector(state);
+            var reflector = materials.reflector(state);
             if (closedShield(state) || reflector != null && reflector.reflectivity() >= 1D) {
                 return null;
             }
@@ -668,7 +670,8 @@ final class SolidFissionCore {
         return state.getBlock() instanceof FissionShieldBlock && state.getValue(FissionWallBlock.ACTIVE);
     }
 
-    private boolean distributeFlux(ServerLevel level, Map<BlockPos, Reaction<?>> reactions, Map<BlockPos, Irradiation> irradiation,
+    private boolean distributeFlux(ServerLevel level, FissionMaterials materials,
+                                   Map<BlockPos, Reaction<?>> reactions, Map<BlockPos, Irradiation> irradiation,
                                    Set<BlockPos> sourceTargets, Set<BlockPos> moderatorPositions,
                                    Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux,
                                    Set<BlockPos> failedSources) {
@@ -720,7 +723,7 @@ final class SolidFissionCore {
                         efficiencySum += shield.efficiency();
                         continue;
                     }
-                    var moderator = NCFission.moderator(block);
+                    var moderator = materials.moderator(block);
                     if (moderator != null && distance <= reach) {
                         moderators++;
                         flux += moderator.flux();
@@ -733,7 +736,7 @@ final class SolidFissionCore {
                         Reaction<?> target = reactions.get(pos);
                         if (target != null) {
                             target.receive(flux, efficiency);
-                            recordModerators(level, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, false);
+                            recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, false);
                             if (target.active()) {
                                 enqueueBunch(target, pending, sources, failedSources);
                             }
@@ -741,12 +744,12 @@ final class SolidFissionCore {
                             Irradiation sink = irradiation.get(pos);
                             sink.flux += flux;
                             source.receive(0, efficiency * sink.recipe.efficiency());
-                            recordModerators(level, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, true);
+                            recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, true);
                         } else if (moderators <= reach / 2) {
-                            var reflector = NCFission.reflector(block);
+                            var reflector = materials.reflector(block);
                             if (reflector != null) {
                                 source.receive((long) (2D * flux * reflector.reflectivity()), efficiency * reflector.efficiency());
-                                recordModerators(level, moderatorPositions, shieldFlux, origin, direction, moderators,
+                                recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators,
                                         (long) (moderatorFlux * (1D + reflector.reflectivity())), false);
                                 moderatorPositions.add(pos);
                             }
@@ -850,7 +853,7 @@ final class SolidFissionCore {
         return packing;
     }
 
-    private void recordModerators(ServerLevel level, Set<BlockPos> positions,
+    private void recordModerators(ServerLevel level, FissionMaterials materials, Set<BlockPos> positions,
                                   Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux,
                                   BlockPos origin, Direction direction, int count, long flux, boolean terminalSink) {
         long prefixFlux = 0;
@@ -863,7 +866,7 @@ final class SolidFissionCore {
                     shieldFlux.computeIfAbsent(pos, ignored -> new EnumMap<>(Direction.Axis.class))
                             .putIfAbsent(direction.getAxis(), terminalSink ? prefixFlux : flux);
                 } else if (terminalSink) {
-                    var moderator = NCFission.moderator(state);
+                    var moderator = materials.moderator(state);
                     if (moderator != null) {
                         prefixFlux += moderator.flux();
                     }

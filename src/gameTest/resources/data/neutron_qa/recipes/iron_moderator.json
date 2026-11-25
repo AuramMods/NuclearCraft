@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": {
+    "block": "minecraft:iron_block"
+  },
+  "flux": 90,
+  "efficiency": 1.5
+}

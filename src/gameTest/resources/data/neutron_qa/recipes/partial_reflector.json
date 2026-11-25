@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:fission_reflector",
+  "input": {
+    "block": "minecraft:emerald_block"
+  },
+  "reflectivity": 0.75,
+  "efficiency": 0.5
+}

@@ -1,0 +1,9 @@
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": {
+    "tag": "neutron_qa:metals"
+  },
+  "flux": 20,
+  "efficiency": 1.25,
+  "priority": 10
+}

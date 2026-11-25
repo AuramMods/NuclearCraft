@@ -9,17 +9,20 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import nc.NuclearCraft;
-import nc.init.NCFission;
+import nc.multiblock.fission.FissionMaterials;
+import nc.recipe.FissionMaterialRecipe;
+import nc.recipe.FissionMaterialRecipe.Kind;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
-import java.util.function.Supplier;
 
 final class FissionMaterialCategory implements IRecipeCategory<FissionMaterialCategory.Material> {
     static final RecipeType<Material> MODERATORS = type("fission_moderator");
@@ -37,33 +40,31 @@ final class FissionMaterialCategory implements IRecipeCategory<FissionMaterialCa
         return RecipeType.create(NuclearCraft.MOD_ID, name, Material.class);
     }
 
-    static List<Material> moderators() {
-        return List.of(moderator("heavy_water", NCFission.HEAVY_WATER), moderator("graphite", NCFission.GRAPHITE),
-                moderator("beryllium", NCFission.BERYLLIUM));
+    static List<Material> materials(FissionMaterials catalog, Kind kind) {
+        var inputs = new HashMap<FissionMaterialRecipe, List<ItemStack>>();
+        catalog.entries(kind).forEach((block, recipe) -> {
+            ItemStack stack = new ItemStack(block);
+            if (!stack.isEmpty()) {
+                inputs.computeIfAbsent(recipe, ignored -> new ArrayList<>()).add(stack);
+            }
+        });
+        return inputs.entrySet().stream().sorted(Comparator.comparing(entry -> entry.getKey().id()))
+                .map(entry -> new Material(entry.getKey(), List.copyOf(entry.getValue()))).toList();
     }
 
-    static List<Material> reflectors() {
-        return List.of(reflector("beryllium_carbon", NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), NCFission.BERYLLIUM_CARBON),
-                reflector("lead_steel", NCFission.LEAD_STEEL_REFLECTOR.get(), NCFission.LEAD_STEEL));
-    }
+    record Material(FissionMaterialRecipe recipe, List<ItemStack> items) {
+        ResourceLocation id() { return recipe.id(); }
 
-    private static Material moderator(String name, NCFission.Moderator rule) {
-        List<ItemStack> items = ForgeRegistries.BLOCKS.getValues().stream()
-                .filter(block -> NCFission.moderator(block.defaultBlockState()) == rule)
-                .map(ItemStack::new).filter(stack -> !stack.isEmpty()).toList();
-        return new Material(NuclearCraft.id("fission_moderator/" + name), items,
-                () -> Component.translatable("gui.nuclearcraft.jei.neutron_flux", rule.flux()),
-                () -> Component.translatable("gui.nuclearcraft.jei.neutron_efficiency", rule.efficiency()));
-    }
+        Component flux() {
+            return recipe.kind() == Kind.MODERATOR
+                    ? Component.translatable("gui.nuclearcraft.jei.neutron_flux", recipe.flux())
+                    : Component.translatable("gui.nuclearcraft.jei.reflectivity", recipe.reflectivity());
+        }
 
-    private static Material reflector(String name, Block block, NCFission.Reflector rule) {
-        return new Material(NuclearCraft.id("fission_reflector/" + name), List.of(new ItemStack(block)),
-                () -> Component.translatable("gui.nuclearcraft.jei.reflectivity", rule.reflectivity()),
-                () -> Component.translatable("gui.nuclearcraft.jei.neutron_efficiency", rule.efficiency()));
+        Component efficiency() {
+            return Component.translatable("gui.nuclearcraft.jei.neutron_efficiency", recipe.efficiency());
+        }
     }
-
-    record Material(ResourceLocation id, List<ItemStack> items, Supplier<Component> flux,
-                    Supplier<Component> efficiency) {}
 
     @Override public RecipeType<Material> getRecipeType() { return type; }
     @Override public Component getTitle() { return Component.translatable("gui.nuclearcraft.jei." + type.getUid().getPath()); }
@@ -80,7 +81,7 @@ final class FissionMaterialCategory implements IRecipeCategory<FissionMaterialCa
     @Override
     public void draw(Material material, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
         var font = Minecraft.getInstance().font;
-        graphics.drawString(font, material.flux().get(), 35, 10, 0x404040, false);
-        graphics.drawString(font, material.efficiency().get(), 35, 23, 0x404040, false);
+        graphics.drawString(font, material.flux(), 35, 10, 0x404040, false);
+        graphics.drawString(font, material.efficiency(), 35, 23, 0x404040, false);
     }
 }

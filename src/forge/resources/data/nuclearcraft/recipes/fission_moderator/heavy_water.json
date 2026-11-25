@@ -1,0 +1,7 @@
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": {
+    "block": "nuclearcraft:heavy_water_moderator"
+  },
+  "legacy_profile": "heavy_water"
+}

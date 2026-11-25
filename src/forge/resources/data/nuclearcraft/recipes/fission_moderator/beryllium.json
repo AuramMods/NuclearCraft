@@ -1,0 +1,7 @@
+{
+  "type": "nuclearcraft:fission_moderator",
+  "input": {
+    "tag": "forge:storage_blocks/beryllium"
+  },
+  "legacy_profile": "beryllium"
+}
