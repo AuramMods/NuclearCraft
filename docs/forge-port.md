@@ -538,6 +538,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
 | Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
+| Large Ore Deposits and ForgeEndertech | 8.1.8.0 build 1850 and 11.1.10.0 build 2048 | Deposit generation during reload and saved deposits in new Overworld and Wasteland terrain |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -750,7 +751,7 @@ A 48-block wired link kept its destination chunk fully loaded after the destinat
 
 With the patch, separate 48-block wired and wireless links buffered 8,500 FE at their active sources while their destination chunks lost full status and their tickets expired. Each original link resumed transfer once its destination returned. The saved regions confirmed that both batteries accepted exactly 4,000 FE and both crystal networks retained their links and the remaining 4,500 FE. The three Refined Storage routes also passed their unload and restart checks. Clean packaged Forge completed a water electrolysis batch, and all 227 local GameTests passed.
 
-The isolated client with all 541 Auram mod JARs loaded JEI and repeated all four circuits. The four shorter-route chunks cleared Minecraft's chunk maps and loaded as new instances. The wired route then transferred another 6,000 FE, and the wireless route delivered another 2,500 FE from its buffer. Saved regions confirmed the exact balances and links for both routes and both 48-block circuits. The successful run used previously generated chunks after AdLods threw a concurrent modification exception during new chunk generation. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+The isolated client with all 541 Auram mod JARs loaded JEI and repeated all four circuits. The four shorter-route chunks cleared Minecraft's chunk maps and loaded as new instances. The wired route then transferred another 6,000 FE, and the wireless route delivered another 2,500 FE from its buffer. Saved regions confirmed the exact balances and links for both routes and both 48-block circuits. The successful run used previously generated chunks after AdLods threw a concurrent modification exception during new chunk generation. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows. See [Large Ore Deposits](#large-ore-deposits) for the later fix.
 
 ### XNet and Integrated Dynamics
 
@@ -2356,7 +2357,7 @@ All 281 local GameTests passed after the surface weather fix. On packaged Forge 
 
 The isolated 540-mod Auram client reproduced those weather rules. Its Overworld control froze 94 water blocks, accumulated snow in 110 positions, and filled 27 cauldrons. The Wasteland fixtures stayed intact. Both dimensions spawned lightning after the probe accounted for Ars Elemental's extra random draw at the start of a chunk tick. The client loaded JEI, used master volume zero and OpenAL No Output, and exited with zero focus activations, foreground samples, or visible window samples.
 
-An earlier attempt to generate test terrain in the same copy stopped in AdLods 8.1.8.0 build 1850. Its `AbstractTargetGenerator.tryGenerateNewTargets` dereferenced a null deposit target during feature placement. The successful weather run used already generated chunks.
+An earlier attempt to generate test terrain in the same copy stopped in AdLods 8.1.8.0 build 1850. Its `AbstractTargetGenerator.tryGenerateNewTargets` dereferenced a null deposit target during feature placement. The successful weather run used already generated chunks. See [Large Ore Deposits](#large-ore-deposits) for the later fix.
 
 ### Terrain radiation and Wasteland mapping
 
@@ -2499,6 +2500,16 @@ With Better Chunk Loading 5.4 on Forge 1.20.1, NuclearCraft bypasses the duplica
 The previous JAR lost the water and marker barrels in three of four control chunks in a repeat of the dedicated Forge 47.4.10 test. The patched JAR retained 500 mB of water and nine diamonds in each of the four controls through three confirmed chunk evictions and a dedicated restart. Both Chemical Reactor circuits also retained their 1,000 mB of hydrofluoric acid and 333 mB of calcium sulfate solution through the Ender IO 8.2.22-beta and Mekanism 10.4.16.80 outlets. Both configuration flags, `optimizeWaiting` and `enableFasterChunkTasks`, were true on disk for both runs. All 279 local GameTests passed. The packaged JAR also completed all 40 coolant part Infuser recipes on clean dedicated Forge.
 
 With the original configuration in the isolated 540-mod Auram copy, all six fixtures fully evicted and retained their data on reload. A fresh client reopened the save and verified the same six marker barrels, 500 mB of water, both Chemical Reactor products, 17 iron ingots, and both energy routes. The config file stayed byte-identical. Both clients loaded JEI, used master volume zero and OpenAL No Output, and recorded zero focus activations, foreground samples, or visible windows.
+
+### Large Ore Deposits
+
+AdLods 8.1.8.0 build 1850 rebuilds its deposit and geode target lists on dimension load, tag changes, and configuration reload. Chunk generation can traverse the same lists while they are being cleared. NuclearCraft guards those updates and the generation reads with a shared read-write lock for this AdLods version. Readers can run concurrently and see a complete catalog. Callers of `getTargets` receive a snapshot taken under the same lock.
+
+A local headless Forge 47.4.10 test reproduced both earlier failures with the previous JAR. Reloading during target traversal threw `ConcurrentModificationException`. Traversing just after reload cleared the list reproduced the null target in `tryGenerateNewTargets`. With the patched JAR, reload waited for the active generator, both finished, and the catalog kept all 14 targets. The two JARs saved the same seven generated deposit records from the same seed. Clean packaged Forge started and saved a world, and all 281 local GameTests passed.
+
+A second headless run used Auram's AdLods and ForgeEndertech JARs and configurations. Three `/lods reload_configs` calls completed while the server loaded new Overworld and Wasteland terrain. A test-only configuration added one Wasteland thorium target. The server saved six deposits representing 161 blocks of ore. All six deposit records and both six-diamond barrel markers survived chunk eviction and a dedicated restart.
+
+The isolated client with all 540 installed Auram mod JARs loaded JEI and 29 AdLods targets. Two `/lods reload_configs` calls completed during a run that generated 16 new chunks in each dimension. Both barrel markers survived eviction, and the region files contained all 32 full chunks and both markers after shutdown. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
 
 ### Processor radiation
 

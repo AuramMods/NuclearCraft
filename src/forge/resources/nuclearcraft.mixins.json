@@ -12,6 +12,7 @@
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
         "compat.BetterChunkLoadingWaiting",
+        "compat.AdLodsReload",
         "compat.IndustrialCraftReactorRadiation",
         "compat.EnderIoCapabilityLookups",
         "compat.RefinedStorageLookups",
