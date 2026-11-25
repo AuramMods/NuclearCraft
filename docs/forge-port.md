@@ -1063,6 +1063,18 @@ All 250 local GameTests passed. Packaged Forge 47.4.10 ran all eight processors 
 
 In the isolated 540-mod Auram profile, KubeJS supplied the same eight recipes and JEI displayed their chance ranges. The Chemical Reactor and Electrolyzer each produced 10 mB of the scripted fluid in its designated outlet. The muted client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible window samples.
 
+### Empty ports in single-block recipes
+
+Legacy empty ingredients map to `null` or an empty object. Keep each empty entry in the `ingredients` or `fluid_inputs` array. Single-slot keys such as the Melter's `ingredient`, the Enricher's `item_input`, and the Electrolyzer's `fluid_input` use the same placeholders. Each nonempty stack must match a distinct ingredient of its type. A Chemical Reactor or Salt Mixer recipe with one fluid feed can use either inlet and requires the other inlet to be empty.
+
+Use the same placeholders in output arrays and in singular result fields. Recipes can consume a feed without producing anything or use the configured FE and duration to produce a result from empty inputs. An unused output leaves any material already in that slot or tank intact. Use `new MapData()` for empty entries in CraftTweaker's `addJsonRecipe`. KubeJS and datapacks support both JSON placeholder forms.
+
+All 252 local GameTests passed, including recipe sync for a feedless Melter and a sparse Assembler. Packaged Forge 47.4.10 processed ten recipes with empty inputs or outputs on clean Forge and with CraftTweaker 14.0.59. An idle Melter picked up a new recipe after a datapack reload. The Assembler processed a single feed only after a second stack was removed.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied 12 mB of ethanol through the Chemical Reactor's second inlet. Both retained the final 7 mB of output while the destination was full, through a dedicated restart and a chunk unload and reload. Each delivered the 7 mB after room was made.
+
+The isolated 540-mod Auram client loaded the same ten recipes with KubeJS. JEI showed the active inputs and outputs, and seven machines processed batches in-world. The client ran with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible window samples.
+
 The molten-salt reactor retains `nuclearcraft:salt_fission_controller`, `nuclearcraft:salt_fission_vessel`, and `nuclearcraft:fission_vessel_port`. The two legacy heater metadata blocks map to the `<material>_coolant_heater` and `fission_heater_port_<material>` IDs in legacy coolant order. The first coolant uses `standard`. Sneak-use a fuel container on an unassembled vessel or vessel port with an empty local input to select a matching fuel filter. Sneak-use an empty bucket under the same conditions to clear the filter. Sneak-use with an empty hand to switch a port between input and output.
 
 The molten-salt fuel recipe uses a counted fluid `fuel`, a fluid `result`, and a fractional `ticks` value. Set vessel intrinsic flux efficiency and any molten-salt-only fuel time, heat, and efficiency multipliers in `world/serverconfig/nuclearcraft-salt-fission.toml`. The legacy `fission_heater_cooling_rate` array maps to its named `cooling_rate` keys. The reactor and heat exchanger read the same `nak_coolant_heat_per_mb` value in `nuclearcraft-heat-exchangers.toml`.

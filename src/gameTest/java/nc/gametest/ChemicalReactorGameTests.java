@@ -144,6 +144,40 @@ public final class ChemicalReactorGameTests {
                 "The 5 mB guarantee goes to the second outlet without touching the unused first outlet"));
     }
 
+    @GameTest(template = "empty")
+    public static void aSingleFeedCanUseTheSecondInletWhenTheFirstIsEmpty(GameTestHelper helper) {
+        helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());
+        var reactor = helper.getBlockEntity(REACTOR);
+        var saved = reactor.saveWithoutMetadata();
+        disableSide(saved, 0, Direction.NORTH);
+        saved.put("fluid_0", stack("hydrogen", 1).writeToNBT(new CompoundTag()));
+        saved.put("fluid_1", stack("ethanol", 12).writeToNBT(new CompoundTag()));
+        saved.putInt("energy", 20);
+        reactor.load(saved);
+
+        helper.runAtTickTime(8, () -> {
+            var tanks = fluids(reactor, null);
+            helper.assertTrue(energy(reactor).getEnergyStored() == 20 && hasFluid(tanks, 0, "hydrogen", 1)
+                            && hasFluid(tanks, 1, "ethanol", 12) && tanks.getFluidInTank(2).isEmpty(),
+                    "The recipe requiring an empty inlet must leave both feeds and charge intact");
+            var ready = reactor.saveWithoutMetadata();
+            ready.remove("fluid_0");
+            ready.remove("fluid_1");
+            reactor.load(ready);
+            tanks = fluids(reactor, Direction.NORTH);
+            var ethanol = stack("ethanol", 12);
+            helper.assertTrue(tanks.fill(ethanol, SIMULATE) == 12 && tanks.getFluidInTank(1).isEmpty()
+                            && tanks.fill(ethanol, EXECUTE) == 12 && hasFluid(tanks, 1, "ethanol", 12),
+                    "A sided pipe can supply the recipe through the only enabled inlet");
+        });
+        helper.succeedWhen(() -> {
+            var tanks = fluids(reactor, Direction.NORTH);
+            helper.assertTrue(energy(reactor).getEnergyStored() == 0 && tanks.getFluidInTank(0).isEmpty()
+                            && tanks.getFluidInTank(1).isEmpty() && hasFluid(tanks, 2, "heavy_water", 7),
+                    "The recipe uses the counted feed in the second tank and produces exactly 7 mB");
+        });
+    }
+
     @GameTest(template = "empty", timeoutTicks = 900)
     public static void chemicalReactorWaitsForBothProductsAndResumesAfterReload(GameTestHelper helper) {
         helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());

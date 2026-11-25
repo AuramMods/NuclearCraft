@@ -39,14 +39,17 @@ public record ElectrolyzerRecipe(ResourceLocation id, FluidIngredient input, Lis
     public static final class Serializer implements RecipeSerializer<ElectrolyzerRecipe> {
         @Override
         public ElectrolyzerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            FluidIngredient input = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id);
+            FluidIngredient input = FluidIngredient.readSlot(json.get("fluid_input"), id);
             var entries = GsonHelper.getAsJsonArray(json, "results");
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (entries.isEmpty() || entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
+            if (entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
                 throw new JsonSyntaxException("Invalid Electrolyzer recipe " + id);
             }
             var outputs = FluidProduct.readSlots(id, entries);
+            if (input.isEmpty() && outputs.stream().allMatch(FluidProduct::isEmpty)) {
+                throw new JsonSyntaxException("Electrolyzer recipe needs an input or output for " + id);
+            }
             return new ElectrolyzerRecipe(id, input, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }

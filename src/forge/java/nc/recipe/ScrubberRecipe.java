@@ -12,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -68,24 +67,14 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
 
         @Override
         public ScrubberRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
-            ItemProcessorRecipe.Input item = null;
-            if (json.has("item_input")) {
-                var entry = GsonHelper.getAsJsonObject(json, "item_input");
-                int count = GsonHelper.getAsInt(entry, "count", 1);
-                var ingredient = Ingredient.fromJson(GsonHelper.getNonNull(entry, "ingredient"));
-                if (count < 1 || count > 64 || ingredient == Ingredient.EMPTY) {
-                    throw new JsonSyntaxException("Invalid Scrubber item input " + id);
-                }
-                item = new ItemProcessorRecipe.Input(ingredient, count);
-            }
-            var fluid = json.has("fluid_input")
-                    ? FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id) : null;
-            var itemEntry = json.get("item_output");
-            var product = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? ItemProcessorRecipe.Product.EMPTY
-                    : ItemProcessorRecipe.Product.fromJson(GsonHelper.convertToJsonObject(itemEntry, "item output"), context);
-            var fluidEntry = json.get("fluid_output");
-            var result = fluidEntry == null ? FluidProduct.EMPTY : FluidProduct.readSlot(id, fluidEntry);
-            if ((item == null && fluid == null) || (product.isEmpty() && result.isEmpty())
+            var itemEntry = json.get("item_input");
+            var item = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? null : ItemProcessorRecipe.Input.readSlot(itemEntry, id);
+            var fluidEntry = json.get("fluid_input");
+            var fluid = fluidEntry == null || MachineInputs.unusedSlot(fluidEntry) ? null : FluidIngredient.readSlot(fluidEntry, id);
+            var product = ItemProcessorRecipe.Product.readSlot(json.get("item_output"), context);
+            var result = json.has("fluid_output") ? FluidProduct.readSlot(id, json.get("fluid_output")) : FluidProduct.EMPTY;
+            if ((item == null && fluid == null && product.isEmpty() && result.isEmpty())
+                    || (item != null && item.ingredient().isEmpty())
                     || (fluid != null && fluid.amount() > ProcessorFluidTanks.CAPACITY)
                     || result.stack().getAmount() > ProcessorFluidTanks.CAPACITY) {
                 throw new JsonSyntaxException("Invalid Scrubber inputs or outputs for " + id);
@@ -113,7 +102,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
 
         @Override
         public ScrubberRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var item = buffer.readNullable(input -> new ItemProcessorRecipe.Input(Ingredient.fromNetwork(input), input.readVarInt()));
+            var item = buffer.readNullable(ItemProcessorRecipe.Input::fromNetwork);
             var fluid = buffer.readNullable(FluidIngredient::fromNetwork);
             return new ScrubberRecipe(id, item, fluid, ItemProcessorRecipe.Product.fromNetwork(buffer),
                     FluidProduct.fromNetwork(buffer), null,
@@ -122,10 +111,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ScrubberRecipe recipe) {
-            buffer.writeNullable(recipe.itemInput, (output, item) -> {
-                item.ingredient().toNetwork(output);
-                output.writeVarInt(item.count());
-            });
+            buffer.writeNullable(recipe.itemInput, (output, item) -> item.toNetwork(output));
             buffer.writeNullable(recipe.fluidInput, (output, fluid) -> fluid.toNetwork(output));
             recipe.itemProduct.toNetwork(buffer);
             recipe.fluidProduct.toNetwork(buffer);

@@ -75,6 +75,9 @@ public record FluidProduct(FluidStack stack, int minAmount, int step, int chance
     }
 
     static FluidProduct readSlot(ResourceLocation id, JsonElement entry) {
+        if (entry == null) {
+            throw new JsonSyntaxException("Missing fluid result for " + id);
+        }
         return MachineInputs.unusedSlot(entry) ? EMPTY : fromJson(id, GsonHelper.convertToJsonObject(entry, "fluid result"));
     }
 
@@ -82,9 +85,6 @@ public record FluidProduct(FluidStack stack, int minAmount, int step, int chance
         List<FluidProduct> products = new ArrayList<>(entries.size());
         for (var entry : entries) {
             products.add(readSlot(id, entry));
-        }
-        if (products.stream().allMatch(FluidProduct::isEmpty)) {
-            throw new JsonSyntaxException("Expected at least one fluid result for " + id);
         }
         return products;
     }

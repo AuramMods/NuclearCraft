@@ -44,11 +44,12 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
         public SaltMixerRecipe fromJson(ResourceLocation id, JsonObject json) {
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (ticks < 1 || energy < 0) {
+            var inputs = FluidIngredient.readPair(json, id);
+            var result = FluidProduct.readSlot(id, json.get("result"));
+            if (ticks < 1 || energy < 0 || (inputs.stream().allMatch(FluidIngredient::isEmpty) && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Salt Mixer recipe " + id);
             }
-            return new SaltMixerRecipe(id, FluidIngredient.readPair(json, id),
-                    FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result")), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+            return new SaltMixerRecipe(id, inputs, result, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 

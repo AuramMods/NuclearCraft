@@ -40,6 +40,8 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     private final ProcessorFluidTanks tanks = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, 1, 1);
     private final ProcessorEnergy power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::capacity);
     private final ProcessorInputs input = new ProcessorInputs(1);
+    private final ProcessorRecipeLookup<ScrubberRecipe> recipes = new ProcessorRecipeLookup<>(
+            NCRadiation.SCRUBBER_RECIPES.get(), recipe -> recipe.itemInput() == null && recipe.fluidInput() == null);
     private final ItemStackHandler inventory = new ItemStackHandler(2) {
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
@@ -149,12 +151,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     private @Nullable ScrubberRecipe findUnreservedRecipe(Level level) {
         ItemStack items = inventory.getStackInSlot(0);
         FluidStack fluid = tanks.stored(0);
-        if (items.isEmpty() && fluid.isEmpty()) {
-            return null;
-        }
         input.setItem(0, items);
         input.setFluid(fluid);
-        return level.getRecipeManager().getRecipeFor(NCRadiation.SCRUBBER_RECIPES.get(), input, level).orElse(null);
+        return recipes.find(input, level, items.isEmpty() && fluid.isEmpty());
     }
 
     private boolean restoreSupplies() {

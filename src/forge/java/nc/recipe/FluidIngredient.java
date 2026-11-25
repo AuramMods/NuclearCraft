@@ -1,5 +1,6 @@
 package nc.recipe;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import net.minecraft.core.Holder;
@@ -19,12 +20,18 @@ import java.util.List;
 import java.util.stream.Stream;
 
 public record FluidIngredient(ResourceLocation id, boolean tag, int amount, boolean legacyFluidAliases) {
+    private static final FluidIngredient EMPTY = new FluidIngredient(new ResourceLocation("minecraft", "empty"), false, 0);
+
+    public boolean isEmpty() {
+        return amount == 0;
+    }
+
     public FluidIngredient(ResourceLocation id, boolean tag, int amount) {
         this(id, tag, amount, false);
     }
 
     public boolean accepts(FluidStack stack) {
-        return !stack.isEmpty() && accepts(stack.getFluid());
+        return !isEmpty() && !stack.isEmpty() && accepts(stack.getFluid());
     }
 
     private boolean accepts(Fluid fluid) {
@@ -44,7 +51,7 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
     }
 
     public boolean matches(FluidStack stack, int factor) {
-        return stack.getAmount() >= amount / factor && accepts(stack);
+        return isEmpty() ? stack.isEmpty() : stack.getAmount() >= amount / factor && accepts(stack);
     }
 
     public List<FluidStack> alternatives() {
@@ -52,6 +59,9 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
     }
 
     public List<FluidStack> alternatives(int factor) {
+        if (isEmpty()) {
+            return List.of();
+        }
         int batchAmount = amount / factor;
         if (!tag) {
             var primary = new FluidStack(ForgeRegistries.FLUIDS.getValue(id), batchAmount);
@@ -80,13 +90,20 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
         return new FluidIngredient(id, tag, amount, GsonHelper.getAsBoolean(json, "legacy_fluid_aliases", false));
     }
 
+    static FluidIngredient readSlot(JsonElement element, ResourceLocation recipe) {
+        if (element == null) {
+            throw new JsonSyntaxException("Missing fluid input for " + recipe);
+        }
+        return MachineInputs.unusedSlot(element) ? EMPTY
+                : fromJson(GsonHelper.convertToJsonObject(element, "fluid input"), recipe);
+    }
+
     static List<FluidIngredient> readPair(JsonObject json, ResourceLocation recipe) {
         var inputs = GsonHelper.getAsJsonArray(json, "fluid_inputs");
         if (inputs.size() != 2) {
             throw new JsonSyntaxException("Expected two fluid inputs for " + recipe);
         }
-        return List.of(fromJson(GsonHelper.convertToJsonObject(inputs.get(0), "fluid input"), recipe),
-                fromJson(GsonHelper.convertToJsonObject(inputs.get(1), "fluid input"), recipe));
+        return List.of(readSlot(inputs.get(0), recipe), readSlot(inputs.get(1), recipe));
     }
 
     static List<FluidIngredient> readPair(FriendlyByteBuf buffer) {

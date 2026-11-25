@@ -6,7 +6,6 @@ import nc.init.NCRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
@@ -44,31 +43,28 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
     public static final class Serializer implements RecipeSerializer<EnricherRecipe> {
         @Override
         public EnricherRecipe fromJson(ResourceLocation id, JsonObject json) {
-            var item = GsonHelper.getAsJsonObject(json, "item_input");
-            int count = GsonHelper.getAsInt(item, "count", 1);
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (count < 1 || count > 64 || ticks < 1 || energy < 0) {
+            var item = ItemProcessorRecipe.Input.readSlot(json.get("item_input"), id);
+            var fluid = FluidIngredient.readSlot(json.get("fluid_input"), id);
+            var result = FluidProduct.readSlot(id, json.get("result"));
+            if (ticks < 1 || energy < 0 || (item.isEmpty() && fluid.isEmpty() && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Enricher recipe " + id);
             }
-            var ingredient = Ingredient.fromJson(GsonHelper.getNonNull(item, "ingredient"));
-            return new EnricherRecipe(id, new ItemProcessorRecipe.Input(ingredient, count),
-                    FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result")), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+            return new EnricherRecipe(id, item, fluid, result, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var item = new ItemProcessorRecipe.Input(Ingredient.fromNetwork(buffer), buffer.readVarInt());
+            var item = ItemProcessorRecipe.Input.fromNetwork(buffer);
             return new EnricherRecipe(id, item, FluidIngredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, EnricherRecipe recipe) {
-            recipe.itemInput.ingredient().toNetwork(buffer);
-            buffer.writeVarInt(recipe.itemInput.count());
+            recipe.itemInput.toNetwork(buffer);
             recipe.fluidInput.toNetwork(buffer);
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);

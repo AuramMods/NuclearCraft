@@ -13,7 +13,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -21,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
@@ -37,8 +35,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
 
-    private final RecipeManager.CachedCheck<Container, MelterRecipe> recipes =
-            RecipeManager.createCheck(NCRegistries.MELTING.get());
+    private final ProcessorRecipeLookup<MelterRecipe> recipes =
+            new ProcessorRecipeLookup<>(NCRegistries.MELTING.get(), recipe -> recipe.input() == null);
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, this::acceptsItem);
     private final ProcessorFluidTanks fluids = new ProcessorFluidTanks(this, 1);
@@ -97,8 +95,10 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
             return false;
         }
         recipeInput.setItem(0, inventory.getStackInSlot(0));
-        MelterRecipe recipe = recipeInput.isEmpty() ? null : recipes.getRecipeFor(recipeInput, level)
-                .orElseGet(() -> MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0)));
+        MelterRecipe recipe = recipes.find(recipeInput, level, recipeInput.isEmpty());
+        if (recipe == null && !recipeInput.isEmpty()) {
+            recipe = MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0));
+        }
         if (recipe == null || !recipe.id().equals(activeRecipe)) {
             activeRecipe = recipe == null ? null : recipe.id();
             if (progressHalfTicks != 0) {
@@ -116,7 +116,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         }
         FluidStack product = recipe.product();
         double speed = speed();
-        if (!fluids.canProduce(0, product) || !power.spend(energyPerTick())) {
+        if (!hasOutputSpace(product) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
                 progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
                 setChanged();
@@ -128,19 +128,27 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         progressHalfTicks += 2 * speed;
         double batch = 2D * batchTicks;
         while (progressHalfTicks + 1E-9 >= batch && progressHalfTicks > 0) {
-            fluids.produce(0, recipe.fluidProduct().roll(level.random));
-            inventory.extractItem(0, 1, false);
+            if (!product.isEmpty()) {
+                fluids.produce(0, recipe.fluidProduct().roll(level.random));
+            }
+            if (recipe.input() != null) {
+                inventory.extractItem(0, 1, false);
+            }
             inventory.ports.push(level);
             progressHalfTicks = Math.max(0, progressHalfTicks - batch);
             if (progressHalfTicks > 0) {
                 recipeInput.setItem(0, inventory.getStackInSlot(0));
-                if (!recipe.matches(recipeInput, level) || !fluids.canProduce(0, product)) {
+                if (!recipe.matches(recipeInput, level) || !hasOutputSpace(product)) {
                     progressHalfTicks = 0;
                 }
             }
         }
         setChanged();
         return true;
+    }
+
+    private boolean hasOutputSpace(FluidStack product) {
+        return product.isEmpty() || fluids.canProduce(0, product);
     }
 
     @Override

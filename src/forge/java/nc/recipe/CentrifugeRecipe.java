@@ -51,12 +51,15 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             }
 
             var results = GsonHelper.getAsJsonArray(json, "results");
-            if (results.isEmpty() || results.size() > OUTPUTS) {
+            if (results.size() > OUTPUTS) {
                 throw new JsonSyntaxException("Expected up to six fluid outputs for " + id);
             }
+            var input = FluidIngredient.readSlot(json.get("fluid_input"), id);
             var products = FluidProduct.readSlots(id, results);
-            return new CentrifugeRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    products, ticks, energy, ProcessingRecipe.readRadiation(json, id),
+            if (input.isEmpty() && products.stream().allMatch(FluidProduct::isEmpty)) {
+                throw new JsonSyntaxException("Centrifuge recipe needs an input or output for " + id);
+            }
+            return new CentrifugeRecipe(id, input, products, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 

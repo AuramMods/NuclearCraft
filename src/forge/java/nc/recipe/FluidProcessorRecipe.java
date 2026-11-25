@@ -62,6 +62,10 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
         return item != null && item.accepts(stack);
     }
 
+    default boolean hasNoFluidInputs() {
+        return inputs().stream().allMatch(FluidIngredient::isEmpty);
+    }
+
     default boolean acceptsFluid(FluidStack stack) {
         return inputs().stream().anyMatch(ingredient -> ingredient.accepts(stack));
     }
@@ -99,11 +103,8 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
 
     default boolean matches(ProcessorInputs processor, int factor) {
         var item = itemInput();
-        if (item != null) {
-            ItemStack stack = processor.getItem(0);
-            if (stack.getCount() < item.count() || !item.accepts(stack)) {
-                return false;
-            }
+        if (item != null && !item.matches(processor.getItem(0))) {
+            return false;
         }
         var inputs = inputs();
         return inOrder(processor, factor) || (inputs.size() == 2 && inputs.get(0).matches(processor.secondFluid(), factor)

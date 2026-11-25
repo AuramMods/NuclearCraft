@@ -1,14 +1,21 @@
 package nc.gametest;
 
+import com.google.gson.JsonParser;
 import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
+import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
 import nc.recipe.ElectrolyzerRecipe;
+import nc.recipe.ItemProcessorRecipe;
+import nc.recipe.MelterRecipe;
 import nc.recipe.ProcessingRecipe;
 import nc.recipe.ProcessorRecipeDefaults;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -58,6 +65,44 @@ public final class ProcessorRecipeDefaultsGameTests {
                             && receivedStock.input().amount() == 500 && receivedStock.results().get(1).getAmount() == 250
                             && receivedReplacement.defaults() == null && !buffer.isReadable(),
                     "The recipe packet preserves stock provenance and authored volumes, including same-ID replacements");
+        } finally {
+            buffer.release();
+        }
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void syncsEmptyMelterAndSparseAssemblerInputs(GameTestHelper helper) {
+        var melterId = NuclearCraft.id("qa_empty_melter");
+        var melterSerializer = new MelterRecipe.Serializer();
+        var melter = melterSerializer.fromJson(melterId, JsonParser.parseString("""
+                {"ingredient": null, "result": {"fluid": "minecraft:water", "amount": 7},
+                 "ticks": 4, "energy_per_tick": 5}
+                """).getAsJsonObject());
+        var assemblerId = NuclearCraft.id("qa_sparse_assembler");
+        var assemblerSerializer = new ItemProcessorRecipe.Serializer(Machine.ASSEMBLER);
+        var assembler = assemblerSerializer.fromJson(assemblerId, JsonParser.parseString("""
+                {"ingredients": [{}, {"ingredient": {"item": "minecraft:diamond"}}, null, {}],
+                 "result": {"item": "minecraft:gold_ingot"}, "ticks": 4, "energy_per_tick": 5}
+                """).getAsJsonObject());
+
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            melterSerializer.toNetwork(buffer, melter);
+            assemblerSerializer.toNetwork(buffer, assembler);
+            var receivedMelter = melterSerializer.fromNetwork(melterId, buffer);
+            var receivedAssembler = assemblerSerializer.fromNetwork(assemblerId, buffer);
+            helper.assertTrue(receivedMelter.matches(new SimpleContainer(1), helper.getLevel())
+                            && !receivedMelter.matches(new SimpleContainer(new ItemStack(Items.DIAMOND)), helper.getLevel()),
+                    "The synced Melter recipe matches only an empty item slot");
+            var supplies = new SimpleContainer(4);
+            supplies.setItem(3, new ItemStack(Items.DIAMOND));
+            int[] consumed = receivedAssembler.match(supplies);
+            helper.assertTrue(consumed != null && consumed[0] == 0 && consumed[3] == 1,
+                    "The synced Assembler recipe can use the diamond in any input slot");
+            supplies.setItem(0, new ItemStack(Items.DIAMOND));
+            helper.assertTrue(receivedAssembler.match(supplies) == null && !buffer.isReadable(),
+                    "An extra item prevents the sparse recipe from matching");
         } finally {
             buffer.release();
         }

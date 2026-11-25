@@ -21,13 +21,14 @@ import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
-public record MelterRecipe(ResourceLocation id, Ingredient input, FluidProduct fluidProduct, double ticks,
+public record MelterRecipe(ResourceLocation id, @Nullable Ingredient input, FluidProduct fluidProduct, double ticks,
                            int energyPerTick, double radiation,
                            @Nullable ProcessorRecipeDefaults defaults) implements ProcessingRecipe {
 
     @Override
     public boolean matches(Container container, Level level) {
-        return input.test(container.getItem(0));
+        ItemStack stack = container.getItem(0);
+        return input == null ? stack.isEmpty() : !stack.isEmpty() && input.test(stack);
     }
 
     @Override
@@ -77,14 +78,18 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidProduct f
 
         @Override
         public MelterRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
-            Ingredient input = readIngredient(GsonHelper.getNonNull(json, "ingredient"), context);
-            JsonObject result = GsonHelper.getAsJsonObject(json, "result");
+            var entry = json.get("ingredient");
+            if (entry == null) {
+                throw new JsonSyntaxException("Missing Melter ingredient for " + id);
+            }
+            Ingredient input = MachineInputs.unusedSlot(entry) ? null : readIngredient(entry, context);
+            var result = FluidProduct.readSlot(id, json.get("result"));
             double ticks = GsonHelper.getAsDouble(json, "ticks");
             int energyPerTick = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (!Double.isFinite(ticks) || ticks <= 0 || energyPerTick < 0) {
+            if (!Double.isFinite(ticks) || ticks <= 0 || energyPerTick < 0 || (input == null && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Melter recipe " + id);
             }
-            return new MelterRecipe(id, input, FluidProduct.fromJson(id, result), ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
+            return new MelterRecipe(id, input, result, ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
@@ -119,13 +124,13 @@ public record MelterRecipe(ResourceLocation id, Ingredient input, FluidProduct f
 
         @Override
         public MelterRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new MelterRecipe(id, Ingredient.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
+            return new MelterRecipe(id, buffer.readNullable(Ingredient::fromNetwork), FluidProduct.fromNetwork(buffer),
                     buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, MelterRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            buffer.writeNullable(recipe.input, (packet, ingredient) -> ingredient.toNetwork(packet));
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeDouble(recipe.ticks);
             buffer.writeVarInt(recipe.energyPerTick);

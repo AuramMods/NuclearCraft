@@ -18,7 +18,6 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.Container;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -26,7 +25,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -46,7 +44,7 @@ import java.util.Objects;
 
 public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private final Machine machine;
-    private final RecipeManager.CachedCheck<Container, ? extends FluidProcessorRecipe> recipes;
+    private final ProcessorRecipeLookup<? extends FluidProcessorRecipe> recipes;
     private final ProcessorInputs input;
     private final ProcessorItemInput itemInput;
     private final ProcessorFluidTanks fluids;
@@ -58,7 +56,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public FluidProcessorBlockEntity(Machine machine, BlockPos pos, BlockState state) {
         super(machine.entity(), pos, state, machine.rate, 256_000);
         this.machine = machine;
-        recipes = RecipeManager.createCheck(machine.recipes());
+        recipes = new ProcessorRecipeLookup<>(machine.recipes(), FluidProcessorRecipe::hasNoFluidInputs);
         input = new ProcessorInputs(machine.hasItemInput ? 1 : 0);
         itemInput = new ProcessorItemInput(this, machine.hasItemInput ? 1 : 0, this::isIngredient, this::acceptsItem);
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, machine.inputs, machine.outputs);
@@ -129,13 +127,17 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         }
     }
 
+    private @Nullable FluidProcessorRecipe findRecipe(Level level) {
+        return recipes.find(input, level, input.fluid().isEmpty() && input.secondFluid().isEmpty());
+    }
+
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
         if (!rate.enabled()) {
             return false;
         }
         refreshInput();
-        FluidProcessorRecipe recipe = input.fluid().isEmpty() ? null : recipes.getRecipeFor(input, level).orElse(null);
+        FluidProcessorRecipe recipe = findRecipe(level);
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
             progressHalfTicks = 0;
@@ -190,7 +192,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             if (fluids.discardsUnusableInputs()) {
                 fluids.push(level);
                 refreshInput();
-                FluidProcessorRecipe nextBatch = recipes.getRecipeFor(input, level).orElse(null);
+                FluidProcessorRecipe nextBatch = findRecipe(level);
                 if (nextBatch == null || !hasOutputSpace(nextBatch.results(), nextBatch.batchFactor())) {
                     fluids.discardUnusableInputs();
                     progressHalfTicks = 0;

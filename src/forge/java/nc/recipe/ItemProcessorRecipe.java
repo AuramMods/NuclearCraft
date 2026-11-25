@@ -168,7 +168,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         for (int index = 0; index < inputs.size(); index++) {
             Input input = inputs.get(index);
             int bit = 1 << index;
-            if ((used & bit) == 0 && (amounts == null || stack.getCount() >= input.count()) && input.accepts(stack)
+            if ((used & bit) == 0 && (amounts == null ? input.accepts(stack) : input.matches(stack))
                     && matchInputs(container, slot + 1, used | bit, amounts, insertSlot, inserted)) {
                 if (amounts != null) {
                     amounts[slot] = input.count();
@@ -233,8 +233,42 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
     }
 
     public record Input(Ingredient ingredient, int count) {
+        private static final Input EMPTY = new Input(Ingredient.EMPTY, 0);
+
+        public boolean isEmpty() {
+            return count == 0;
+        }
+
         boolean accepts(ItemStack stack) {
-            return accepts(ingredient, stack);
+            return !isEmpty() && accepts(ingredient, stack);
+        }
+
+        boolean matches(ItemStack stack) {
+            return isEmpty() ? stack.isEmpty() : stack.getCount() >= count && accepts(stack);
+        }
+
+        static Input readSlot(JsonElement entry, ResourceLocation id) {
+            if (entry == null) {
+                throw new JsonSyntaxException("Missing item input for " + id);
+            }
+            if (MachineInputs.unusedSlot(entry)) {
+                return EMPTY;
+            }
+            JsonObject json = GsonHelper.convertToJsonObject(entry, "ingredient");
+            int count = GsonHelper.getAsInt(json, "count", 1);
+            if (count < 1 || count > 64) {
+                throw new JsonSyntaxException("Invalid ingredient count for " + id);
+            }
+            return new Input(Ingredient.fromJson(GsonHelper.getNonNull(json, "ingredient")), count);
+        }
+
+        static Input fromNetwork(FriendlyByteBuf buffer) {
+            return new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt());
+        }
+
+        void toNetwork(FriendlyByteBuf buffer) {
+            ingredient.toNetwork(buffer);
+            buffer.writeVarInt(count);
         }
 
         static boolean accepts(Ingredient ingredient, ItemStack stack) {
@@ -300,6 +334,11 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             return count;
         }
 
+        static Product readSlot(JsonElement entry, ICondition.IContext context) {
+            return entry == null || MachineInputs.unusedSlot(entry) ? EMPTY
+                    : fromJson(GsonHelper.convertToJsonObject(entry, "result"), context);
+        }
+
         static Product fromJson(JsonObject json, ICondition.IContext context) {
             var stack = ItemRecipeResult.read(json, context);
             int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
@@ -336,19 +375,14 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             }
             List<Input> inputs = new ArrayList<>(entries.size());
             for (var entry : entries) {
-                JsonObject ingredient = GsonHelper.convertToJsonObject(entry, "ingredient");
-                int count = GsonHelper.getAsInt(ingredient, "count", 1);
-                if (count < 1 || count > 64) {
-                    throw new JsonSyntaxException("Invalid ingredient count for " + id);
-                }
-                inputs.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(ingredient, "ingredient")), count));
+                inputs.add(Input.readSlot(entry, id));
             }
             var fluids = readFluids(id, json, "fluid_input", "fluid_inputs", machine.fluidInputs()).stream()
-                    .map(fluid -> FluidIngredient.fromJson(GsonHelper.convertToJsonObject(fluid, "fluid input"), id)).toList();
+                    .map(fluid -> FluidIngredient.readSlot(fluid, id)).toList();
             var fluidProducts = readFluids(id, json, "fluid_result", "fluid_results", machine.fluidOutputs()).stream()
                     .map(fluid -> FluidProduct.readSlot(id, fluid)).toList();
             List<Product> results = json.has("results") ? readResults(id, json, "results", context)
-                    : json.has("result") ? validateResults(id, List.of(Product.fromJson(GsonHelper.getAsJsonObject(json, "result"), context)))
+                    : json.has("result") ? validateResults(id, List.of(Product.readSlot(json.get("result"), context)))
                     : validateResults(id, List.of());
             List<Product> alternate = List.of();
             if (json.has("alternate_results")) {
@@ -356,6 +390,12 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                     throw new JsonSyntaxException("Unexpected alternate outputs for " + id);
                 }
                 alternate = readResults(id, json, "alternate_results", context);
+            }
+            if (!machine.generator() && inputs.stream().allMatch(Input::isEmpty)
+                    && fluids.stream().allMatch(FluidIngredient::isEmpty)
+                    && results.stream().allMatch(Product::isEmpty) && alternate.stream().allMatch(Product::isEmpty)
+                    && fluidProducts.stream().allMatch(FluidProduct::isEmpty)) {
+                throw new JsonSyntaxException("Processor recipe needs an input or output for " + id);
             }
             double ticks = machine.scripted() ? scriptedTicks(id, json) : GsonHelper.getAsInt(json, "ticks");
             Double power = json.has("power_multiplier") ? GsonHelper.getAsDouble(json, "power_multiplier") : null;
@@ -409,16 +449,13 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         private List<Product> readResults(ResourceLocation id, JsonObject json, String key, ICondition.IContext context) {
             List<Product> results = new ArrayList<>(machine.outputs());
             for (var entry : GsonHelper.getAsJsonArray(json, key)) {
-                results.add(entry.isJsonNull() && (machine == Machine.FUEL_REPROCESSOR || machine.scripted())
-                        ? Product.EMPTY : Product.fromJson(GsonHelper.convertToJsonObject(entry, "result"), context));
+                results.add(Product.readSlot(entry, context));
             }
             return validateResults(id, results);
         }
 
         private List<Product> validateResults(ResourceLocation id, List<Product> results) {
-            if (results.size() != machine.outputs()
-                    || (!machine.generator() && !machine.hasFluidOutput()
-                    && results.stream().allMatch(product -> product.stack.isEmpty()))) {
+            if (results.size() != machine.outputs()) {
                 throw new JsonSyntaxException("Expected " + machine.outputs() + " valid item outputs for " + id);
             }
             return results;
@@ -428,7 +465,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         public ItemProcessorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             List<Input> inputs = new ArrayList<>(machine.inputs());
             for (int index = 0; index < machine.inputs(); index++) {
-                inputs.add(new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
+                inputs.add(Input.fromNetwork(buffer));
             }
             List<FluidIngredient> fluids = new ArrayList<>(machine.fluidInputs());
             for (int index = 0; index < machine.fluidInputs(); index++) {
@@ -449,8 +486,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ItemProcessorRecipe recipe) {
             for (Input input : recipe.inputs) {
-                input.ingredient.toNetwork(buffer);
-                buffer.writeVarInt(input.count);
+                input.toNetwork(buffer);
             }
             for (FluidIngredient fluid : recipe.fluidInputs) {
                 fluid.toNetwork(buffer);

@@ -38,11 +38,15 @@ public record ChemicalReactorRecipe(ResourceLocation id, List<FluidIngredient> i
             var entries = GsonHelper.getAsJsonArray(json, "results");
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (entries.isEmpty() || entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
+            if (entries.size() > OUTPUTS || ticks < 1 || energy < 0) {
                 throw new JsonSyntaxException("Invalid Chemical Reactor recipe " + id);
             }
+            var inputs = FluidIngredient.readPair(json, id);
             var outputs = FluidProduct.readSlots(id, entries);
-            return new ChemicalReactorRecipe(id, FluidIngredient.readPair(json, id), outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
+            if (inputs.stream().allMatch(FluidIngredient::isEmpty) && outputs.stream().allMatch(FluidProduct::isEmpty)) {
+                throw new JsonSyntaxException("Chemical Reactor recipe needs an input or output for " + id);
+            }
+            return new ChemicalReactorRecipe(id, inputs, outputs, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 

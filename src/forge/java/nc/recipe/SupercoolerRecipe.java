@@ -45,11 +45,12 @@ public record SupercoolerRecipe(ResourceLocation id, FluidIngredient input, Flui
         public SupercoolerRecipe fromJson(ResourceLocation id, JsonObject json) {
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            if (ticks < 1 || energy < 0) {
+            var input = FluidIngredient.readSlot(json.get("fluid_input"), id);
+            var result = FluidProduct.readSlot(id, json.get("result"));
+            if (ticks < 1 || energy < 0 || (input.isEmpty() && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Supercooler recipe " + id);
             }
-            return new SupercoolerRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
-                    FluidProduct.fromJson(id, GsonHelper.getAsJsonObject(json, "result")), ticks, energy, ProcessingRecipe.readRadiation(json, id),
+            return new SupercoolerRecipe(id, input, result, ticks, energy, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
