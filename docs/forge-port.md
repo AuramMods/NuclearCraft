@@ -475,7 +475,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
 | Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
-| Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors |
+| Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors, and Energy Battery transfer in both directions |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
@@ -686,6 +686,8 @@ On dedicated Forge 47.4.18, Auram's XNet 6.1.6 transferred one ice and 4,000 FE 
 A second XNet network supplied an Infuser with one white concrete powder, 1,000 mB of water from a Mekanism tank, and 1,500 FE. The Infuser held the resulting concrete while the destination barrel was full. Freeing one slot let XNet extract exactly one white concrete and left the Infuser empty.
 
 Auram's Integrated Dynamics 1.29.11 Fluid, Inventory, and Machine Readers measured 2,234 mB of water, three ice blocks, and 5,120 FE on separate Melter faces. Closing the fluid face made the Fluid Reader report zero while the other readers kept their values. Reopening the face restored the fluid reading, and all three readings persisted across a dedicated restart. [Integrated Dynamics](https://github.com/CyclopsMC/IntegratedDynamics)
+
+On dedicated Forge 47.4.10, a Voltaic Pile supplied 5,000 FE to fill an Integrated Dynamics Energy Battery and kept 7,500 FE. A separate Energy Battery powered by a redstone signal supplied 5,000 FE to fill a Voltaic Pile and kept 5,000 FE. Closed NuclearCraft faces held the original charge in both fixtures. Both chunks fully evicted, and the exact balances and marker inventories survived reload and a dedicated restart.
 
 The isolated client with all 539 installed Auram mod JARs repeated the XNet Melter transfer and the three Integrated Dynamics readings. The client used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, or on-screen window samples.
 
@@ -1338,6 +1340,8 @@ A three-cable energy network crossed a chunk boundary and moved 24,000 FE from a
 The same JAR ran the stock Chemical Reactor hydrofluoric acid batch through both Ender IO fluid conduits and Mekanism mechanical pipes. Two additional circuits held their buffers while the Mekanism fluid aliases were disabled and completed after the aliases were restored. All four chunks fully evicted and retained their exact products and remaining buffers after reload and restart.
 
 The packaged port also passed the live transfers in the isolated 540-mod Auram instance. A KubeJS battery with the maximum signed 64-bit capacity changed its vanilla comparator from 14 to 15 when its stored charge went from one FE short to full. Both fixtures retained their exact charge and markers when force-loading was restored. The fixtures had empty direct ticket lists after removing their force-loads. The integrated server held both chunk records throughout the observation window. The client ran at master volume zero with OpenAL No Output and joined the world with JEI loaded. The native monitor recorded zero focus activations, foreground samples, or visible window samples.
+
+A follow-up with the same packaged JAR confirmed complete eviction of six fresh fixture chunks in the isolated 540-mod Auram instance. The mixed capacitor bank route kept exactly 8,500 FE with its default output enabled. A second route kept its full 1,600,000 FE Voltaic Pile and comparator signal 15. After shutting down and opening the saved world in a fresh client, both battery routes, the Ender IO and Mekanism Chemical Reactor batches, and a Mekanism item route with 17 iron ingots had their exact saved quantities. Their five marker barrels still held nine diamonds each. Both clients stayed muted and recorded zero focus activations, foreground samples, or visible windows.
 
 ### Molten-salt vessel tanks and ports
 
@@ -2087,6 +2091,14 @@ A read-only chunk event observer reproduced the loss in the installed 539-JAR sn
 A second trace moved the five fixtures to fresh chunks. All four working transfer checks and all five markers passed live. Removing the force-load tickets briefly made the chunks unavailable to the server lookup, and the same chunk instances reappeared when the tickets were restored. A clean shutdown serialized the fixtures. The region files contained all five marked barrels, and a separate muted client reopened the world, read fresh chunk instances from disk, and passed the four transfer checks and five markers. The energy-only comparator still produced no transfer result. This run establishes successful restart persistence for the new fixture and leaves the earlier block-entity loss unresolved.
 
 At the original fixture coordinates, a 1,000-tick window without force-loading again returned the same chunk instances. A 7,200-tick window let the exact pack finish unloading all five chunks. Every unload save contained the expected block entities, including the two previously affected marker barrels. Reloading the chunks produced five new instances from disk and preserved the four working transfer results and all five markers. The energy-only comparator still never powered. The earlier failure remains intermittent and its trigger is unresolved.
+
+The later 540-mod Auram run on Forge 47.4.10 reproduced the control failure with Ender IO 8.2.22-beta, Mekanism 10.4.16.80, and AuramCore 1.0.46. In the control chunk, a Mechanical Pipe delivered 500 mB of water between two Ender IO tanks, and a disconnected barrel held nine diamonds. After full eviction, the destination and barrel were empty. The region file omitted the pipe's block-entity record, and reopening the world restored the pipe with its default side configuration. Both battery routes, both Chemical Reactors, and the item route in the other five chunks survived.
+
+A dedicated Forge 47.4.10 server reproduced that loss with NuclearCraft absent. The smallest reproduced setup used Ender IO 8.2.22-beta, Mekanism 10.4.16.80, Better Chunk Loading 5.4, and Cupboard 2.7. An affected fixture lost 500 mB and reverted its pipe and barrel to their default data after the first confirmed eviction. Four fixtures with Ender IO, Mekanism, and Cupboard kept their quantities through three complete evictions and a restart.
+
+In `config/betterchunkloading.json`, setting `optimizeWaiting.optimizeWaiting` to `false` preserved all four circuits through three confirmed evictions and a dedicated restart. `enableFasterChunkTasks` remained enabled in that test. Disabling only `enableFasterChunkTasks` reproduced the loss. With `optimizeWaiting` enabled, Better Chunk Loading 5.4 can schedule a second task for a pending chunk status and take whichever future completes first.
+
+Changing just `optimizeWaiting` in the isolated 540-mod Auram copy preserved all six fresh fixtures through complete eviction and reload. The fluid-only control retained its 500 mB of water and its nine-diamond barrel. The other fixtures kept their exact charge, fluids, items, and markers. The test used the same packaged NuclearCraft JAR and installed mod versions.
 
 ### Processor radiation
 
