@@ -16,6 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
@@ -160,6 +161,20 @@ public final class PebbleFissionGameTests {
                     helper.assertTrue(menu.gasInput() != null && menu.gasInput().tag()
                                     && menu.gasInput().amount() == 18 && menu.cooling() == 210,
                             "The reactor port reports the selected counted dose and rate");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    var fractions = new ListTag();
+                    var paid = new CompoundTag();
+                    paid.putLong("pos", helper.absolutePos(CHAMBER.below()).asLong());
+                    paid.putDouble("value", 0.625D);
+                    fractions.add(paid);
+                    saved.getCompound("gas_cooling").put("fractions", fractions);
+                    controller(helper).load(saved);
+                })
+                .thenExecuteAfter(5, () -> {
+                    var fractions = controller(helper).saveWithoutMetadata().getCompound("gas_cooling")
+                            .getList("fractions", Tag.TAG_COMPOUND);
+                    helper.assertTrue(fractions.size() == 1 && fractions.getCompound(0).getDouble("value") == 0.625D,
+                            "An unpowered cooler with a valid batch keeps its saved progress");
                     items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
                     runReactor(helper);
                 })
@@ -170,6 +185,9 @@ public final class PebbleFissionGameTests {
                             "An 18 mB dose and a 10 mB dose leave 3 mB of feed and produce 6 mB of hot nitrogen");
                 })
                 .thenExecute(() -> {
+                    helper.assertTrue(controller(helper).saveWithoutMetadata().getCompound("gas_cooling")
+                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
+                            "The short remainder clears progress on every cooler sharing the circuit");
                     var player = inspector(helper);
                     helper.useBlock(COLD, player);
                     var menu = (FissionPartMenu) player.containerMenu;

@@ -173,6 +173,20 @@ public final class SaltFissionGameTests {
                     helper.assertTrue(menu.coolantInput() != null && menu.coolantInput().amount() == 18 && menu.cooling() == 180
                                     && menu.filter().getFluid() == stack("iron_nak", 1).getFluid(),
                             "The higher-priority recipe is selected and displays the actual alternative fluid");
+                    var saved = controller.saveWithoutMetadata();
+                    var fractions = new ListTag();
+                    var paid = new CompoundTag();
+                    paid.putLong("pos", helper.absolutePos(FIRST_VESSEL.below()).asLong());
+                    paid.putString("coolant_id", "qa_salt_recipe");
+                    paid.putDouble("amount", 0.75D);
+                    fractions.add(paid);
+                    saved.getCompound("salt_cooling").put("fractions", fractions);
+                    controller.load(saved);
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(controller.saveWithoutMetadata().getCompound("salt_cooling")
+                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
+                            "An unpowered heater discards progress when its selected maximum product will not fit");
                     fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 180), EXECUTE);
                     helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
                 })
@@ -193,6 +207,9 @@ public final class SaltFissionGameTests {
                             "The 18 mB recipe makes 3 mB of product and the 10 mB fallback makes no product");
                 })
                 .thenExecute(() -> {
+                    helper.assertTrue(controller.saveWithoutMetadata().getCompound("salt_cooling")
+                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
+                            "The incomplete feed left by the empty-product batch clears progress");
                     var player = saltInspector(helper);
                     helper.useBlock(NAK_IN, player);
                     var menu = (SaltFissionPartMenu) player.containerMenu;

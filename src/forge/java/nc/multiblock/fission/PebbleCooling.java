@@ -124,6 +124,14 @@ final class PebbleCooling {
         return batchesPerTick;
     }
 
+    void discardBlockedProgress(ServerLevel level) {
+        boolean removed = credit.keySet().removeIf(pos -> !(level.getBlockEntity(pos) instanceof PebbleCooler cooler)
+                || tanks(cooler).processableRecipe(cooler.filter()) == null);
+        if (removed) {
+            owner.setChanged();
+        }
+    }
+
     FissionTankTotals tankTotals(ServerLevel level, SolidFissionLayout layout) {
         var totals = new FissionTankTotals();
         for (CoolantTanks tanks : circuits.values()) {

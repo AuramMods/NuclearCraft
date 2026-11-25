@@ -112,6 +112,16 @@ final class SaltCooling {
         return batchesPerTick;
     }
 
+    void discardBlockedProgress(ServerLevel level) {
+        boolean removed = credit.entrySet().removeIf(saved ->
+                !(level.getBlockEntity(saved.getKey()) instanceof SaltHeater heater)
+                || !heater.coolant().equals(saved.getValue().coolant())
+                || heater.tanks().processableRecipe(null) == null);
+        if (removed) {
+            owner.setChanged();
+        }
+    }
+
     FissionTankTotals tankTotals(Level level, SolidFissionLayout layout) {
         var totals = new FissionTankTotals();
         for (var coolant : connected) {

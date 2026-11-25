@@ -203,6 +203,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             exchangeCasingHeat(1D);
         }
         if (layout != null) {
+            // A shared tank may have been exhausted by the last cooler or heater to run.
+            if (gasCooling != null) {
+                gasCooling.discardBlockedProgress(server);
+            }
+            if (saltCooling != null) {
+                saltCooling.discardBlockedProgress(server);
+            }
             long lost = NCFission.casingHeatLost(casingHeat, layout.bounds().exteriorSurfaceArea(), requested);
             if (lost > 0) {
                 casingHeat -= lost;
