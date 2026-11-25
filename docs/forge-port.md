@@ -418,7 +418,7 @@ In a separate Forge test with Sinytra Connector beta 47, Tech Reborn 5.8.13 supp
 
 The isolated 539-mod Auram client on Forge 47.4.10 retained NuclearCraft's world settings when Forge applied its vanilla login fallback to the integrated server connection. With the Mekanism aliases disabled, JEI omitted Mekanism sulfuric acid and oxygen from the stock recipes. It still showed both the exact Mekanism acid and shared Forge oxygen tag in the explicit KubeJS recipes. A Mechanical Pipe fed the exact-acid KubeJS recipe and delivered 1,000 mB of hydrofluoric acid to an Ender IO tank, with 333 mB of calcium sulfate solution buffered in the outlet pipe. The saved region contained both quantities, and the saved NuclearCraft config retained the two expansion settings. The client used master volume zero and OpenAL No Output. The native observer recorded zero activations, foreground samples, and visible window samples.
 
-Forge 47.4.10 still reported an in-memory config cast error during Auram shutdown after the save. This run verified NuclearCraft's world settings and circuit data on disk.
+Forge 47.4.10 still reported an in-memory config cast error during Auram shutdown after the save. A later runtime check on the same packaged JAR found all 17 NuclearCraft server configs file-backed after login. The first in-memory entry in Forge's unload order was `tinkerslevellingaddon-server.toml` from Tinkers' Levelling Addon 1.4.3.
 
 ## Auram targets
 
@@ -436,8 +436,8 @@ Forge 47.4.10 still reported an in-memory config cast error during Auram shutdow
 | Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
-| Industrial Foregoing | 3.5.21 | Automation through standard capabilities |
-| PneumaticCraft | 6.0.22 | Fluid and item automation and shared tags |
+| Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
+| PneumaticCraft | 6.0.22 | Liquid and Omnidirectional Hopper transfers on processors and fission ports |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -603,6 +603,16 @@ A second XNet network supplied an Infuser with one white concrete powder, 1,000 
 Auram's Integrated Dynamics 1.29.11 Fluid, Inventory, and Machine Readers measured 2,234 mB of water, three ice blocks, and 5,120 FE on separate Melter faces. Closing the fluid face made the Fluid Reader report zero while the other readers kept their values. Reopening the face restored the fluid reading, and all three readings persisted across a dedicated restart. [Integrated Dynamics](https://github.com/CyclopsMC/IntegratedDynamics)
 
 The isolated client with all 539 installed Auram mod JARs repeated the XNet Melter transfer and the three Integrated Dynamics readings. The client used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, or on-screen window samples.
+
+### PneumaticCraft and Industrial Foregoing
+
+All 218 local GameTests passed. The packaged JAR ran on headless Forge 47.4.10 with Auram's PneumaticCraft 6.0.22, Industrial Foregoing 3.5.21, and Titanium 3.8.32. Industrial Foregoing Pitiful Generators powered a Melter and a Manufactory directly. PneumaticCraft Omnidirectional Hoppers fed ice and coal from Black Hole Units. A Liquid Hopper sent 1,000 mB of water from the Melter to a Black Hole Tank, and an Omnidirectional Hopper sent one coal dust from the Manufactory to a Black Hole Unit.
+
+The Chemical Reactor kept 250 mB of hydrogen and 2,000 FE with its west input disabled. The upstream Liquid Hopper buffered all 250 mB of chlorine. Reopening the input let the reactor make 250 mB of hydrogen chloride. The outlet hopper held the entire batch while the Black Hole Tank held lava. When the tank was empty, the hopper delivered the batch. A separate test filled the same tier of Black Hole Tank to 64,000 mB of water. Its outlet hopper held 1,000 mB while the tank was full and delivered exactly that amount when space became available.
+
+A solid-fission reactor used Liquid Hoppers on its outward vents and Omnidirectional Hoppers on its floor and roof fuel ports. The hoppers retained all 1,000 mB of water and one LECf-251 oxide item while the shell was open. After the shell was repaired, the hoppers delivered 4,000 mB of high-pressure steam and one depleted fuel item to Industrial Foregoing storage. After a dedicated restart, the server confirmed the four circuit chunks were unloaded before force-loading them and recovered every measured output.
+
+The isolated Auram client loaded all 539 installed mod JARs on Forge 47.4.10 and repeated the generator-powered Melter and the solid-fission circuit. Its saved regions held 1,000 mB of water, 4,000 mB of high-pressure steam, and one depleted fuel item, with both sources empty. The run used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, and visible window samples.
 
 ### Tools and Armor
 
