@@ -39,6 +39,7 @@ import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
 import nc.multiblock.fission.SaltHeaterBlock;
 import nc.init.NCGenerators;
+import nc.init.NCOres;
 import nc.init.NCMachines;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
@@ -83,6 +84,7 @@ import nc.recipe.ProcessingRecipe;
 import nc.radiation.RadiationDisplay;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -440,6 +442,15 @@ public final class NuclearCraftJei implements IModPlugin {
         for (var tier : NCBatteries.Tier.values()) {
             if (!tier.enabled()) {
                 disabled.add(new ItemStack(tier.block()));
+            }
+        }
+        for (var ore : NCOres.Ore.values()) {
+            if (NCOres.hiddenInJei(ore)) {
+                String name = ore.getSerializedName();
+                for (String suffix : List.of("_ore", "_block", "_ingot", "_dust")) {
+                    var item = BuiltInRegistries.ITEM.get(NuclearCraft.id(name + suffix));
+                    disabled.add(item.getDefaultInstance());
+                }
             }
         }
         if (!disabled.isEmpty()) {
