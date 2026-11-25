@@ -5,6 +5,7 @@ import com.google.gson.JsonSyntaxException;
 import nc.init.LegacyFissionFuelConfig.Setting;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
+import nc.recipe.ItemProcessorRecipe.Product;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +18,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 
-public record SolidFissionRecipe(ResourceLocation id, ItemInput fuel, ItemStack depleted, int ticks,
+public record SolidFissionRecipe(ResourceLocation id, ItemInput fuel, Product product, int ticks,
                                  boolean pebbleBed, Parameters parameters) implements Recipe<Container>, FissionFuelStats {
     public int ticks() {
         return (int) parameters.number(Setting.FUEL_TIME, ticks);
@@ -35,17 +36,16 @@ public record SolidFissionRecipe(ResourceLocation id, ItemInput fuel, ItemStack 
 
     @Override
     public ItemStack assemble(Container input, RegistryAccess registries) {
-        return depleted.copy();
+        return depleted();
     }
 
     @Override
     public ItemStack getResultItem(RegistryAccess registries) {
-        return depleted.copy();
+        return depleted();
     }
 
-    @Override
     public ItemStack depleted() {
-        return depleted.copy();
+        return product.stack();
     }
 
     @Override
@@ -86,24 +86,24 @@ public record SolidFissionRecipe(ResourceLocation id, ItemInput fuel, ItemStack 
         @Override
         public SolidFissionRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             ItemInput fuel = ItemInput.readIngredientSlot(json.get("fuel"), id, 1);
-            ItemStack depleted = ItemRecipeResult.read(GsonHelper.getAsJsonObject(json, "result"), context);
+            Product product = Product.readSlot(json.get("result"), context);
             int ticks = GsonHelper.getAsInt(json, "ticks");
-            if (fuel.matches(ItemStack.EMPTY) || depleted.isEmpty() || ticks <= 0) {
+            if (fuel.matches(ItemStack.EMPTY) || !json.has("result") || ticks <= 0) {
                 throw new JsonSyntaxException("Invalid fission fuel recipe " + id);
             }
-            return new SolidFissionRecipe(id, fuel, depleted, ticks, pebbleBed, Parameters.fromJson(id, json));
+            return new SolidFissionRecipe(id, fuel, product, ticks, pebbleBed, Parameters.fromJson(id, json));
         }
 
         @Override
         public SolidFissionRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new SolidFissionRecipe(id, ItemInput.fromNetwork(buffer), buffer.readItem(), buffer.readVarInt(),
+            return new SolidFissionRecipe(id, ItemInput.fromNetwork(buffer), Product.fromNetwork(buffer), buffer.readVarInt(),
                     pebbleBed, Parameters.fromNetwork(buffer));
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, SolidFissionRecipe recipe) {
             ItemInput.write(buffer, recipe.fuel);
-            buffer.writeItem(recipe.depleted);
+            recipe.product.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);
             recipe.parameters.toNetwork(buffer);
         }

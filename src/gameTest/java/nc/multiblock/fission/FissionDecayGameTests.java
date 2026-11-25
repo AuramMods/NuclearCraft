@@ -90,7 +90,8 @@ public final class FissionDecayGameTests {
         var manager = helper.getLevel().getRecipeManager();
         var solid = manager.getAllRecipesFor(NCFission.FUEL_TYPE.get()).stream()
                 .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
-        var pebble = manager.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get());
+        var pebble = manager.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()).stream()
+                .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         var salt = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()).stream()
                 .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         helper.assertTrue(solid.size() == 81 && pebble.size() == 27 && salt.size() == 27,

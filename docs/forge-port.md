@@ -1150,6 +1150,22 @@ Ender IO 8.2.22-beta supplied the three-item and two-item solid-fuel batches. Me
 
 The isolated 540-mod Auram client loaded the four KubeJS recipes, showed the authored alternatives in JEI, and ran all four in-world. It used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
 
+### Chance and empty fission products
+
+Solid and pebble fuel recipes and irradiator recipes accept `chance_percent` and `min_count` in `result`. Give `count` as the maximum. A result with `count: 4`, `min_count: 2`, and `chance_percent: 25` gives two items and makes two independent 25 percent rolls for one more item each.
+
+Molten-salt fuel recipes accept `chance_percent`, `min_amount`, and `step` in the fluid `result`. Give `amount` as the maximum. Use an effective minimum that reaches the maximum in a whole number of steps. Each dose rolls separately. A small yield can open room for further doses in the same tick.
+
+Each batch checks space for its maximum and rolls when it finishes. Put `{}` or `null` in `result` to consume the feed with an empty product. Use `new MapData()` for an empty result in CraftTweaker's `addJsonRecipe`. Datapacks and KubeJS use the same JSON fields. JEI shows the authored range and chance.
+
+All 267 headless GameTests passed. The solid cell and irradiator each used two counted batches and produced four guaranteed items. The molten-salt vessel waited with seven free mB, then completed both 3 mB products in the same tick after the outlet had eleven free mB.
+
+On packaged Forge 47.4.10 with datapacks and CraftTweaker 14.0.59, all six test recipes ran in-world. The pebble chamber burned its productless dose with a full item output, the productless salt recipe ran with a full fluid output, and the productless irradiation recipe ran after the chance recipe. All measured balances survived dedicated restart.
+
+Ender IO 8.2.22-beta delivered solid fuel and collected four flint from two doses. Ender IO and Mekanism 10.4.16.80 each supplied the two molten-salt doses and collected exactly 6 mB. All three output balances survived restart and confirmed chunk unload and reload.
+
+The isolated 540-mod Auram client loaded and ran all six KubeJS recipes. JEI showed the authored chance ranges and the three empty products. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
+
 The molten-salt reactor retains `nuclearcraft:salt_fission_controller`, `nuclearcraft:salt_fission_vessel`, and `nuclearcraft:fission_vessel_port`. The two legacy heater metadata blocks map to the `<material>_coolant_heater` and `fission_heater_port_<material>` IDs in legacy coolant order. The first coolant uses `standard`. Sneak-use a fuel container on an unassembled vessel or vessel port with an empty local input to select a matching fuel filter. Sneak-use an empty bucket under the same conditions to clear the filter. Sneak-use with an empty hand to switch a port between input and output.
 
 The molten-salt fuel recipe uses a counted fluid `fuel`, a fluid `result`, and a fractional `ticks` value. Set vessel intrinsic flux efficiency and any molten-salt-only fuel time, heat, and efficiency multipliers in `world/serverconfig/nuclearcraft-salt-fission.toml`. The legacy `fission_heater_cooling_rate` array maps to its named `cooling_rate` keys. The reactor and heat exchanger read the same `nak_coolant_heat_per_mb` value in `nuclearcraft-heat-exchangers.toml`.

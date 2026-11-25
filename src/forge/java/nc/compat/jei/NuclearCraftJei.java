@@ -302,7 +302,7 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(IRRADIATION, NCFission.IRRADIATOR.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 30, 12).setStandardSlotBackground().addItemStacks(
                             recipe.input().alternatives());
-                    layout.addSlot(OUTPUT, 108, 12).setStandardSlotBackground().addItemStack(recipe.result());
+                    itemProduct(layout.addSlot(OUTPUT, 108, 12).setStandardSlotBackground(), recipe.product());
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.irradiation", recipe.fluxRequired())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", (int) recipe.runtimeTicks(), recipe.runtimeHeat())),
@@ -310,7 +310,7 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.fission", (int) recipe.runtimeTicks(), recipe.runtimeHeat())),
                 new Category<>(SALT_FISSION, NCSaltFission.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.fuel().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(recipe.depleted()));
+                    fluidProductSlot(layout, 104, 12, recipe.product(), 1);
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.fission",
                         decimal(recipe.runtimeTicks()), recipe.runtimeHeat())),
                 new Category<>(FISSION_HEATING, NCFission.VENT.get(), gui, NuclearCraftJei::fissionHeat,
@@ -615,7 +615,7 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static void fissionFuel(IRecipeLayoutBuilder layout, SolidFissionRecipe recipe) {
         layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(recipe.fuel().alternatives());
-        layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.depleted());
+        itemProduct(layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground(), recipe.product());
     }
 
     private static void centrifugeRecipe(IRecipeLayoutBuilder layout, CentrifugeRecipe recipe) {

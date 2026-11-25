@@ -78,6 +78,30 @@ public final class SolidFissionGameTests {
         }).thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 130)
+    public static void solidDosesCommitOnlyTheirRolledProducts(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var input = items(helper, FUEL_IN, Direction.DOWN);
+                    helper.assertTrue(input.insertItem(0, new ItemStack(Items.TARGET, 5), false).isEmpty(),
+                            "The inlet accepts both counted doses");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var result = items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0);
+                    helper.assertTrue(result.is(Items.FLINT) && result.getCount() == 2,
+                            "The first dose must produce its two guaranteed items");
+                })
+                .thenWaitUntil(() -> {
+                    var result = items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0);
+                    helper.assertTrue(result.getCount() == 4 && items(helper, FUEL_IN, Direction.DOWN).getStackInSlot(0).isEmpty(),
+                            "The fallback dose independently produces two items");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 1800)
     public static void reactorBurnsFuelAndHeatsCoolant(GameTestHelper helper) {
         buildReactor(helper);

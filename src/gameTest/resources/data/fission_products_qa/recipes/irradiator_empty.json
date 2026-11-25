@@ -1,0 +1,8 @@
+{
+    "type": "nuclearcraft:fission_irradiator",
+    "input": {
+        "item": "minecraft:lodestone"
+    },
+    "result": {},
+    "flux_required": 1
+}

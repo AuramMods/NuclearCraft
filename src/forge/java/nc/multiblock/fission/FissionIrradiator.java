@@ -108,7 +108,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
             progress += used;
             if (progress >= recipe.fluxRequired()) {
                 inventory.extractItem(0, count, false);
-                inventory.insertItem(1, result.copy(), false);
+                inventory.insertItem(1, recipe.product().roll(level.random), false);
                 progress = 0;
             }
         }

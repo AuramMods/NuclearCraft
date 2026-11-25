@@ -15,6 +15,7 @@ import nc.multiblock.turbine.TurbineController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.world.Container;
@@ -22,6 +23,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -295,6 +297,37 @@ public final class PebbleFissionGameTests {
                 .thenWaitUntil(() -> helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 0
                                 && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 14,
                         "The next 18 casing heat must use the preferred dose"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 110)
+    public static void pebbleFuelWithNoProductPreservesExistingOutput(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var saved = controller(helper).saveWithoutMetadata();
+                    var result = new ItemStack(Items.DIAMOND, 5).save(new CompoundTag());
+                    result.putByte("Slot", (byte) 1);
+                    var contents = new ListTag();
+                    contents.add(result);
+                    saved.getCompound("inventory").put("Items", contents);
+                    controller(helper).load(saved);
+                    var input = items(helper, FUEL_IN, Direction.DOWN);
+                    helper.assertTrue(input.insertItem(0, new ItemStack(Items.LODESTONE), false).isEmpty(),
+                            "The chamber accepts fuel with an empty product");
+                    runReactor(helper);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(helper.getBlockEntity(CHAMBER).saveWithoutMetadata()
+                        .getString("reserved_recipe").equals("fission_products_qa:pebble"), "Wait for the fuel reservation"))
+                .thenWaitUntil(() -> helper.assertTrue(!helper.getBlockEntity(CHAMBER).saveWithoutMetadata()
+                        .contains("reserved_recipe"), "The productless dose must finish"))
+                .thenExecute(() -> {
+                    var output = items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0);
+                    helper.assertTrue(output.is(Items.DIAMOND) && output.getCount() == 5
+                                    && items(helper, FUEL_IN, Direction.DOWN).getStackInSlot(0).isEmpty(),
+                            "An empty result keeps the existing output and spends the input");
+                })
                 .thenSucceed();
     }
 
@@ -577,7 +610,8 @@ public final class PebbleFissionGameTests {
     public static void pebbleUsesLegacyFuelCatalogAndReturnsCraftingBuckets(GameTestHelper helper) {
         var level = helper.getLevel();
         var recipes = level.getRecipeManager();
-        var fuels = recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get());
+        var fuels = recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()).stream()
+                .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         var leu = fuels.stream().filter(recipe -> recipe.getId().equals(NuclearCraft.id("pebble_fission/leu_235_triso")))
                 .findFirst().orElseThrow();
         helper.assertTrue(fuels.size() == 27 && leu.ticks() == 4800 && leu.heat() == 120

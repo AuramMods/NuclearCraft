@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:salt_fission",
+    "fuel": {
+        "fluid": "nuclearcraft:benzene",
+        "amount": 10
+    },
+    "result": {},
+    "ticks": 0.1,
+    "heat": 1,
+    "efficiency": 1,
+    "criticality": 1,
+    "self_priming": true
+}

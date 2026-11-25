@@ -2,6 +2,7 @@ package nc.multiblock.fission;
 
 import nc.init.NCSaltFission;
 import nc.processor.ProcessorInputs;
+import nc.recipe.FluidBatch;
 import nc.recipe.SaltFissionRecipe;
 import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
@@ -20,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
-import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
 
 public final class SaltVessel extends BlockEntity implements ChunkRadiationSource {
     private final RecipeManager.CachedCheck<Container, SaltFissionRecipe> recipes =
@@ -223,46 +223,57 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         FluidTank output = tanks.tank(true);
         FluidTank input = tanks.tank(false);
         FluidStack product = recipe.depleted();
-        int productSize = product.getAmount();
         boolean sameFeed = feedTanks(bank) == tanks && Objects.equals(filter, reservedCircuit)
                 && reserved.isFluidEqual(input.getFluid());
-        FluidStack offered = product.copy();
-        offered.setAmount(output.getCapacity());
-        int outputRoom = output.fill(offered, SIMULATE) / productSize;
-        int limit = (int) Math.min(outputRoom, Math.floor(progress / ticks));
-        if (limit == 0) {
+        int pending = (int) Math.floor(progress / ticks);
+        int room = outputRoom(product, output);
+        if (room == 0) {
             progress = ticks;
             return;
         }
 
-        // One dose is already reserved. Additional doses can use a smaller alternative after the tank drains.
-        int doses = 1;
-        int inputSize = sameFeed ? recipe.fuel().matchedAmount(input.getFluid(), 1) : -1;
-        while (doses < limit && inputSize > 0) {
-            int extra = Math.min(limit - doses, input.getFluidAmount() / inputSize);
-            input.drain(extra * inputSize, EXECUTE);
-            doses += extra;
-            inputSize = recipe.fuel().matchedAmount(input.getFluid(), 1);
+        // Check room for the maximum of each dose. A smaller roll can free room for more doses this tick.
+        int completed = 0;
+        while (completed < pending && room > 0) {
+            int inclReserved = completed == 0 ? 1 : 0;
+            int extraLimit = Math.min(pending - completed, room) - inclReserved;
+            int available = sameFeed ? input.getFluidAmount() : 0;
+            var extra = FluidBatch.fit(recipe.fuel(), input.getFluid(), available, extraLimit);
+            int doses = inclReserved + extra.batches();
+            if (doses == 0) {
+                break;
+            }
+            int produced = recipe.product().totalAmount(doses, 1, level.random);
+            input.drain(extra.consumed(), EXECUTE);
+            if (produced > 0) {
+                output.fill(new FluidStack(product, produced), EXECUTE);
+            }
+            completed += doses;
+            room = outputRoom(product, output);
         }
-        product.setAmount(doses * productSize);
-        output.fill(product, EXECUTE);
-        if (inputSize > 0 && outputRoom > doses) {
+        int inputSize = sameFeed ? recipe.fuel().matchedAmount(input.getFluid(), 1) : -1;
+        if (inputSize > 0 && room > 0) {
             reserved = input.drain(inputSize, EXECUTE);
-            progress = Math.max(0, progress - doses * ticks);
+            progress = Math.max(0, progress - completed * ticks);
         } else {
             resetReservation();
         }
     }
 
+    private static int outputRoom(FluidStack product, FluidTank tank) {
+        if (product.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        return tank.isEmpty() || tank.getFluid().isFluidEqual(product) ? tank.getSpace() / product.getAmount() : 0;
+    }
+
     private static boolean hasOutputSpace(SaltFissionRecipe recipe, FluidTank tank) {
-        FluidStack product = recipe.depleted();
-        return tank.fill(product, SIMULATE) == product.getAmount();
+        return outputRoom(recipe.depleted(), tank) > 0;
     }
 
     private void discharge(SaltFissionRecipe recipe, FluidTank tank) {
-        FluidStack product = recipe.depleted();
-        if (tank.fill(product, SIMULATE) == product.getAmount()) {
-            tank.fill(product, EXECUTE);
+        if (hasOutputSpace(recipe, tank)) {
+            tank.fill(recipe.product().roll(level.random), EXECUTE);
             resetReservation();
             setChanged();
         }

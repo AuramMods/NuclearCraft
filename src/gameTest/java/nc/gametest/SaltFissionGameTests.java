@@ -179,6 +179,43 @@ public final class SaltFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission")
+    public static void moltenSaltUsesSpaceFreedByAChanceProductInTheSameTick(GameTestHelper helper) {
+        String fuel = "methanol";
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, fuel, FUEL_IN, FUEL_OUT);
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var stored = controller.saveWithoutMetadata();
+        var circuits = new ListTag();
+        var circuit = new CompoundTag();
+        circuit.putString("fuel_filter", NuclearCraft.id(fuel).toString());
+        circuit.put("input", stack(fuel, 28).writeToNBT(new CompoundTag()));
+        circuit.put("output", stack("heavy_water", 1289).writeToNBT(new CompoundTag()));
+        circuits.add(circuit);
+        stored.put("salt_fuel", circuits);
+        controller.load(stored);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The counted fuel circuit assembles"))
+                .thenExecute(() -> helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK))
+                .thenExecuteAfter(4, () -> {
+                    var input = fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0);
+                    var output = fluids(helper, FUEL_OUT, Direction.SOUTH);
+                    helper.assertTrue(input.getAmount() == 28 && output.getFluidInTank(0).getAmount() == 1289,
+                            "Seven open mB cannot hold the maximum 8 mB product");
+                    helper.assertTrue(output.drain(4, EXECUTE).getAmount() == 4,
+                            "Open enough room for the maximum and one guaranteed product");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0).getAmount() > 1285,
+                        "The first product must leave the vessel"))
+                .thenExecute(() -> helper.assertTrue(
+                        fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(stack("heavy_water", 1291))
+                                && fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && FluidStack.loadFluidStackFromNBT(vesselTag(helper).getCompound("fuel")).isEmpty(),
+                        "The 3 mB roll leaves room for the second maximum and both doses finish in one tick"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 270)
     public static void saltFissionResumesAfterFullOutputAndReassembly(GameTestHelper helper) {
         shell(helper);

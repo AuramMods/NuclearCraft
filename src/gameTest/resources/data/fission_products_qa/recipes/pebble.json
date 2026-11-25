@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:pebble_fission",
+    "fuel": {
+        "item": "minecraft:lodestone"
+    },
+    "result": {},
+    "ticks": 35,
+    "heat": 1,
+    "efficiency": 1,
+    "criticality": 1,
+    "self_priming": true
+}

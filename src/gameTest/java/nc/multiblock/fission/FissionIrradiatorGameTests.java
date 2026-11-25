@@ -80,6 +80,30 @@ public final class FissionIrradiatorGameTests {
           }).thenSucceed();
     }
 
+    @GameTest(template = "fission")
+    public static void irradiationUsesMaximumRoomAndKeepsExistingOutputOnEmptyResult(GameTestHelper helper) {
+        shell(helper, NCFission.CONTROLLER.get(), NCFission.CELL.get(), false);
+        var target = irradiator(helper);
+        var supplies = target.localItems();
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper)).thenExecute(() -> {
+            supplies.insertItem(0, new ItemStack(Items.TARGET, 5), false);
+            supplies.setStackInSlot(1, new ItemStack(Items.DIAMOND, 61));
+            controller(helper).inventory().setStackInSlot(0, stack("hep_239_za"));
+            controller(helper).toggle();
+        }).thenExecuteAfter(4, () -> {
+            helper.assertTrue(supplies.getStackInSlot(0).getCount() == 5 && supplies.getStackInSlot(1).getCount() == 61,
+                    "Three remaining slots cannot accommodate a maximum of four diamonds");
+            supplies.extractItem(1, 3, false);
+        }).thenWaitUntil(() -> helper.assertTrue(supplies.getStackInSlot(0).isEmpty()
+                        && supplies.getStackInSlot(1).getCount() == 62,
+                "A single irradiation tick must roll two guaranteed diamonds for each counted batch"))
+          .thenExecute(() -> supplies.insertItem(0, new ItemStack(Items.LODESTONE), false))
+          .thenWaitUntil(() -> helper.assertTrue(supplies.getStackInSlot(0).isEmpty()
+                        && supplies.getStackInSlot(1).getCount() == 62,
+                "The empty product must finish without consuming output space or changing the stock"))
+          .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 130)
     public static void solidIrradiatorFeedsFilteredPortsAndExportAcrossReassembly(GameTestHelper helper) {
         shell(helper, NCFission.CONTROLLER.get(), NCFission.CELL.get(), false);

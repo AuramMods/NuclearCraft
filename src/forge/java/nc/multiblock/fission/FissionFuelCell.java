@@ -192,7 +192,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         var output = items(true);
         ItemStack depleted = recipe.depleted();
         if (output.insertBulk(1, depleted, true).isEmpty()) {
-            output.insertBulk(1, depleted, false);
+            output.insertBulk(1, recipe.product().roll(level.random), false);
             reservedFuel = ItemStack.EMPTY;
             reservedRecipe = null;
             progress = 0;
