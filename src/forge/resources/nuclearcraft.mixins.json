@@ -11,6 +11,9 @@
         "compat.CyclicFluidPersistence",
         "compat.RefinedStorageLookups",
         "compat.DraconicCrystalLookups",
+        "compat.EslEnergyAdapter",
+        "compat.EslForgeEnergyAdapter",
+        "compat.NewAgeElectricalNetwork",
         "compat.ForegoingFluidPlacement",
         "compat.MekanismFluidPlacement"
     ]

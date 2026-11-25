@@ -462,6 +462,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
+| Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
 | Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
@@ -712,6 +713,16 @@ A dedicated-server restart preserved the held concrete item and the Melter's buf
 A Voltaic Pile held its 300,000 FE with the face toward an Electric Motor disabled. Opening that face as an output transferred Forge Energy and spun the motor and its attached shaft at 64 RPM. [Create Crafts & Additions](https://github.com/mrh0/createaddition)
 
 The same packaged JAR repeated both processor routes in the isolated instance with all 541 installed Auram mod JARs. JEI loaded, and the saved region files held one concrete, 8,000 mB of water, and empty processor inventories and fluid buffers. The dedicated-server test client and isolated Auram client ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
+### Create: New Age electrical connectors
+
+Mount a Pull connector on a battery's output face and an Inert connector on the receiver's input face. Copper wire connects the two across chunk boundaries. In 1.1.7f, the bundled ESL 1.1.3 adapter probes extraction by drawing charge and trying to reinsert it. An output-only Forge face rejects the reinsertion. The reverse probe can add charge to an input-only face and fail to undo the insertion. The compatibility patch uses Forge simulation for the wrapped endpoints and counts reserved room across repeated visits to the same receiver within one probe. [Create: New Age 1.1.7f](https://www.curseforge.com/minecraft/mc-mods/create-new-age/files/7452740)
+
+On dedicated Forge 47.4.10, a Voltaic Pile charged a Melter with exactly 8,500 FE. Its full output held the ice until after a restart. Freeing 1,000 mB of tank space let the Melter spend exactly 4,000 FE on one batch. A second source kept all 8,500 FE against a full battery. After restart, drawing 4,000 FE through the receiver's separate output let the original wire replace exactly that amount. Both routes kept their balances through full chunk eviction. Closing the battery input held its remaining charge at the source. Reopening it transferred precisely 2,000 FE into the available space.
+
+Three direct Forge simulations each reported 300 FE of free room through the wire and left the receiving battery unchanged. A committed transfer then inserted exactly 300 FE. A separate test expanded both connected battery banks. The original wire moved 13,500 FE into the expanded receiver after the stale Forge handlers were refreshed. The refresh checks already loaded endpoints so it does not renew tickets for unloaded chunks. All 228 local GameTests passed, including a new test for repeated requests against one input. The packaged JAR also completed water electrolysis on clean Forge.
+
+The isolated client with all 541 Auram mod JARs loaded JEI and repeated both wired routes. All four fixture chunks unloaded and returned as new chunk instances. The saved regions held 9,500 FE and 16,000 mB of water in the Melter and a total of 1,602,500 FE in the expanded receiver bank. Both source piles were empty and the original wire links persisted. A third circuit repeated the three simulations and the committed 300 FE transfer. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### Cyclic
 

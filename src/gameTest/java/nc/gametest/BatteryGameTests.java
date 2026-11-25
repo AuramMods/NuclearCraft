@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.compat.EslTransferProbe;
 import nc.energy.BatteryBlock;
 import nc.energy.BatteryBlock.Mode;
 import nc.energy.BatteryBlockEntity;
@@ -120,6 +121,29 @@ public final class BatteryGameTests {
                             "Setting the face off invalidates previously acquired handlers");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void repeatedWireProbesReserveEachEnergyInputOnlyOnce(GameTestHelper helper) {
+        helper.setBlock(CENTER, Tier.VOLTAIC_PILE_BASIC.block());
+        var battery = battery(helper, CENTER);
+        long almostFull = battery.capacity() - 300;
+        seed(battery, almostFull);
+        IEnergyStorage inlet = energy(battery, Direction.WEST);
+
+        long accepted = EslTransferProbe.simulate(() -> {
+            int first = EslTransferProbe.receive(inlet, 200);
+            int second = EslTransferProbe.receive(inlet, 1_000);
+            helper.assertTrue(first == 200 && second == 100 && EslTransferProbe.receive(inlet, 1_000) == 0,
+                    "Repeated requests within a single probe share the battery's remaining room");
+            return first + second;
+        });
+        helper.assertTrue(accepted == 300 && battery.stored() == almostFull
+                        && EslTransferProbe.simulate(() -> EslTransferProbe.receive(inlet, 1_000)) == 300,
+                "Each probe starts with the same room and leaves the real battery unchanged");
+        helper.assertTrue(inlet.receiveEnergy(1_000, false) == 300 && battery.stored() == battery.capacity(),
+                "The real transfer can still fill the battery after probing");
+        helper.succeed();
     }
 
     @GameTest(template = "empty")

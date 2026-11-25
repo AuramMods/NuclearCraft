@@ -62,6 +62,9 @@ minecraft {
 }
 
 repositories {
+    mavenCentral {
+        content { includeGroup 'io.github.llamalad7' }
+    }
     maven {
         url = 'https://maven.minecraftforge.net/'
         content { includeGroup 'com.github.glitchfiend' }
@@ -99,6 +102,7 @@ repositories {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    compileOnly 'io.github.llamalad7:mixinextras-common:0.5.5'
     compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-forge-api:${cc_tweaked_version}"
     compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-common-api:${cc_tweaked_version}"
     compileOnly "cc.tweaked:cc-tweaked-${minecraft_version}-core-api:${cc_tweaked_version}"
