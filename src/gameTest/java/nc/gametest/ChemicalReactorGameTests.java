@@ -2,6 +2,7 @@ package nc.gametest;
 
 import nc.NuclearCraft;
 import nc.init.NCRegistries;
+import nc.processor.FluidProcessorBlockEntity;
 import nc.processor.ProcessorFluidTanks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -11,11 +12,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fml.config.ConfigTracker;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -40,6 +43,54 @@ public final class ChemicalReactorGameTests {
         helper.assertTrue(manager.byKey(NuclearCraft.id("crafting/chemical_reactor")).isPresent(),
                 "The Chemical Reactor can be crafted");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void factoredHydrogenChlorideUsesTheExactBatchCharge(GameTestHelper helper) {
+        helper.setBlock(REACTOR, NCRegistries.CHEMICAL_REACTOR.get());
+        var reactor = (FluidProcessorBlockEntity) helper.getBlockEntity(REACTOR);
+        var spec = (ForgeConfigSpec) ConfigTracker.INSTANCE.fileMap().get("nuclearcraft-processors.toml").getSpec();
+        ForgeConfigSpec.BooleanValue factorRecipes = spec.getValues().get("factor_recipes");
+        ForgeConfigSpec.DoubleValue timeMultiplier = spec.getValues().get("rates.processor_time_multiplier");
+        boolean previousFactoring = factorRecipes.get();
+        double previousMultiplier = timeMultiplier.get();
+        factorRecipes.set(true);
+        try {
+            CompoundTag fresh = reactor.saveWithoutMetadata();
+            fresh.put("fluid_0", stack("hydrogen", 250).writeToNBT(new CompoundTag()));
+            fresh.put("fluid_1", stack("chlorine", 250).writeToNBT(new CompoundTag()));
+            CompoundTag saved = fresh.copy();
+            saved.putString("recipe", NuclearCraft.id("chemical_reactor/hydrogen_chloride").toString());
+            // The earlier Forge format saved one paid tick as two half ticks toward the 1.6-tick batch.
+            saved.putLong("progress_half_ticks", 2);
+            saved.putDouble("progress_duration", 1.6);
+            saved.putInt("energy", 1_995);
+            timeMultiplier.set(1D);
+            reactor.load(saved);
+            assertFactoredBatch(helper, reactor, 399);
+
+            timeMultiplier.set(1.1D);
+            fresh.putInt("energy", 2_200);
+            reactor.load(fresh);
+            assertFactoredBatch(helper, reactor, 440);
+        } finally {
+            timeMultiplier.set(previousMultiplier);
+            factorRecipes.set(previousFactoring);
+        }
+        helper.succeed();
+    }
+
+    private static void assertFactoredBatch(GameTestHelper helper, FluidProcessorBlockEntity reactor, int ticks) {
+        var level = helper.getLevel();
+        var pos = helper.absolutePos(REACTOR);
+        for (int tick = 0; tick < ticks; tick++) {
+            FluidProcessorBlockEntity.tick(level, pos, level.getBlockState(pos), reactor);
+        }
+        var tanks = fluids(reactor, null);
+        helper.assertTrue(energy(reactor).getEnergyStored() == 0
+                        && tanks.getFluidInTank(0).isEmpty() && tanks.getFluidInTank(1).isEmpty()
+                        && hasFluid(tanks, 2, "hydrogen_chloride", 250),
+                "The final paid tick must finish all 250 mB of the factored batch");
     }
 
     @GameTest(template = "empty", timeoutTicks = 900)

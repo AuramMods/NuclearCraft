@@ -147,23 +147,28 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             return false;
         }
         int factor = recipe.batchFactor();
-        updateRates(recipe.duration(), rate.time(recipe.duration() / factor), rate.power(recipe.energyPerTick()));
+        double duration = recipe.duration();
+        // Keep work in the original recipe's units so factoring does not repeatedly subtract a rounded duration.
+        updateRates(duration, rate.time(duration), rate.power(recipe.energyPerTick()));
         if (halted) {
             return false;
         }
         List<FluidStack> outputs = recipe.results();
         double speed = speed();
+        double progressPerTick = 2 * speed * factor;
         if (!hasOutputSpace(outputs, factor) || !power.spend(energyPerTick())) {
             if (progressHalfTicks > 0) {
-                progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
+                progressHalfTicks = Math.max(0, progressHalfTicks - 1.5 * progressPerTick);
                 setChanged();
             }
             return false;
         }
         radiationEmission = recipe.radiation() * speed;
-        progressHalfTicks += 2 * speed;
+        progressHalfTicks += progressPerTick;
         double batchHalfTicks = 2 * batchTicks;
-        while (progressHalfTicks >= batchHalfTicks) {
+        // Config multipliers can round the nominal duration. Allow that error across one original batch.
+        double rounding = 4 * Math.ulp(batchHalfTicks) * factor;
+        while (progressHalfTicks > 0 && progressHalfTicks + rounding >= batchHalfTicks) {
             var item = recipe.itemInput();
             if (item != null && machine.hasItemInput) {
                 itemInput.extractItem(0, item.count(), false);
@@ -192,7 +197,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                     break;
                 }
             }
-            progressHalfTicks -= batchHalfTicks;
+            progressHalfTicks = Math.max(0, progressHalfTicks - batchHalfTicks);
             if (progressHalfTicks > 0) {
                 refreshInput();
                 if (!recipe.matches(input, factor) || !hasOutputSpace(outputs, factor)) {

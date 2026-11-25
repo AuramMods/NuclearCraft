@@ -295,6 +295,12 @@ Datapack and KubeJS recipes keep their authored quantities and durations, includ
 
 Changing the setting preserves the fraction completed on a saved batch. The Distiller records its previous duration as `progress_duration`. An earlier Forge save without that field uses the duration implied by the standalone Distiller setting.
 
+Single-block fluid processors accumulate progress against the full recipe duration, even when they produce smaller batches. They use the saved `progress_duration` to carry forward progress recorded in the earlier factored units. The Chemical Reactor completes all 250 mB of the hydrogen chloride recipe with 2,000 FE at the stock rate, or 2,200 FE with the time multiplier at 1.1.
+
+All 227 local GameTests passed with the corrected progress accounting. On clean packaged Forge 47.4.10, a fresh reactor used exactly 2,000 FE. A second reactor loaded one paid tick from the earlier save format, kept that progress through a dedicated restart, and used the remaining 1,995 FE. Both produced exactly 250 mB.
+
+The corrected JAR repeated the six reduced-batch machine checks on dedicated Forge with Ender IO 8.2.22-beta and Mekanism 10.4.16.80. It preserved the Electrolyzer's quarter-complete batch and exact 400 FE remaining cost. The transfer through the Mechanical Pipe and Ender IO conduit preserved the measured products after unload and restart.
+
 All 225 local GameTests passed. The packaged Forge 47.4.10 JAR processed a reduced water batch on clean Forge with 520 FE. Dedicated tests ran all six affected machines, including reversed fluid inputs, Centrifuge chance outputs, and a half-completed Distiller batch loaded from the older save format. An explicit datapack recipe kept its 2 mB batch and 40-tick duration. Mekanism 10.4.16.80 supplied exactly 2 mB of water while the oxygen tank was full. After that tank was cleared, Ender IO 8.2.22-beta collected exactly 2 mB of hydrogen and the Electrolyzer retained 1 mB of oxygen. That state survived chunk unload and a dedicated-server restart.
 
 The packaged catalog has 504 stock recipes across these machines, of which 478 have a divisor greater than one. A KubeJS replacement of the original water recipe consumed its authored 4 mB and 100 FE. A custom Distiller recipe reduced to 1 mB only after enabling the standalone switch. With both switches enabled, the stock Distiller recipe still reduced to 1 mB.
@@ -450,6 +456,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
 | Applied Energistics 2 | 15.4.10 | Item and fluid transfers through Import and Storage Buses, plus shared material tags |
 | Applied Flux | 1.3.4 | Forge Energy through Flux Accessors and ME FE Storage Cells |
+| Applied Mekanistics | 1.4.3 | Gas transfer through AE2 buses and ME chemical cells on sided processors |
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
@@ -636,6 +643,16 @@ On dedicated Forge 47.4.10, Applied Flux 1.3.4, Glodium 1.5, and AE2 15.4.10 ran
 The first cell supplied 4,000 FE to a Melter and emptied. Its full water tank kept the input ice and the full charge in place. Freeing 1,000 mB of output space let it consume the ice and all 4,000 FE, and restore the tank to 16,000 mB. The second cell delivered 4,000 FE to fill a Voltaic Pile across a chunk boundary and retained 4,500 FE. The balances and Melter output survived a second dedicated restart.
 
 The same JAR loaded JEI with all 541 installed Auram mod JARs and repeated both circuits. The server observed all three fixture chunks unload and load as new chunk instances. Region saves confirmed the two empty source piles, the full receiver pile, the 4,500 FE left in the second cell, and 16,000 mB of water in the Melter. All 226 local GameTests passed. The Auram client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
+### Applied Mekanistics
+
+Dedicated Forge 47.4.10 ran Auram’s Applied Mekanistics 1.4.3 with Applied Energistics 2 15.4.10 and Mekanism 10.4.16.80. Two ME Import Buses transferred 250 units each of hydrogen and chlorine from Mekanism chemical tanks into a 1k ME Chemical Storage Cell. The cell held both gases through restart while the Chemical Reactor’s input faces were closed. Opening the west and north inputs let two filtered ME Export Buses supply the reactants through NuclearCraft’s gas capability. [Applied Mekanistics 1.4.3](https://modrinth.com/mod/applied-mekanistics/version/1.4.3)
+
+The Chemical Reactor spent 2,000 FE to make 250 mB of hydrogen chloride. Its closed east face kept the product in the reactor. Opening that face let an Import Bus across the chunk boundary store all 250 units in a second grid’s chemical cell. The cell held the product through another restart while the destination contained 1,000 units of oxygen. Emptying the tank let a filtered Export Bus deliver exactly 250 units of hydrogen chloride.
+
+A second batch stayed in the output cell while the destination held its full 64,000 units of hydrogen chloride. Freeing 50 units of capacity delivered exactly 50 and left 200 in the cell. After a dedicated restart, freeing another 200 units of capacity emptied the cell.
+
+The isolated instance with all 541 installed Auram mod JARs loaded JEI and repeated the circuit with recipe factoring enabled. The reactor used 2,000 FE and the output cell held all 250 units while both fixture chunks unloaded. After the server loaded new chunk instances, the Export Bus delivered all 250 units to the cleared tank. Region saves confirmed the delivered product, both empty cells, both empty feed tanks, and empty reactor buffers. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### XNet and Integrated Dynamics
 
