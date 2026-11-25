@@ -29,6 +29,27 @@ public sealed interface ItemInput permits Input, ItemInput.Alternatives {
 
     List<ItemStack> alternatives();
 
+    static ItemInput readIngredientSlot(JsonElement entry, ResourceLocation id, int count) {
+        return readIngredientSlot(entry, id, count, Ingredient::fromJson);
+    }
+
+    static ItemInput readIngredientSlot(JsonElement entry, ResourceLocation id, int count,
+                                        Function<JsonElement, Ingredient> readIngredient) {
+        if (entry == null) {
+            throw new JsonSyntaxException("Missing item input for " + id);
+        }
+        if (MachineInputs.unusedSlot(entry)) {
+            return Input.EMPTY;
+        }
+        if (entry.isJsonObject()) {
+            var object = entry.getAsJsonObject();
+            if (object.has("alternatives") || (object.has("ingredient") && !object.has("type"))) {
+                return readSlot(entry, id, readIngredient);
+            }
+        }
+        return new Input(readIngredient.apply(entry), count);
+    }
+
     static ItemInput readSlot(JsonElement entry, ResourceLocation id) {
         return readSlot(entry, id, Ingredient::fromJson);
     }

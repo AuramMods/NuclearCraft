@@ -143,7 +143,7 @@ public final class SaltFissionGameTests {
     public static void saltFissionLoadsTheLegacyFluidFuelsAndHeaters(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
         var recipes = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get());
-        helper.assertTrue(recipes.size() == 27, "All 27 legacy molten-salt fuels must load");
+        helper.assertTrue(recipes.stream().filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).count() == 27, "All 27 legacy molten-salt fuels must load");
         var sample = recipes.stream().filter(recipe -> recipe.id().equals(NuclearCraft.id("salt_fission/lecf_251")))
                 .findFirst().orElseThrow();
         helper.assertTrue(sample.fuel().matches(stack(FUEL, 1)) && sample.depleted().isFluidStackIdentical(stack(DEPLETED, 1))
@@ -155,6 +155,28 @@ public final class SaltFissionGameTests {
                     "Every legacy coolant heater and port has a crafting recipe");
         }
         helper.succeed();
+    }
+
+    @GameTest(template = "fission")
+    public static void saltVesselUsesTheFallbackAmountWithinTheSameTick(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, "ethanol", FUEL_IN, FUEL_OUT);
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The counted fuel circuit assembles"))
+                .thenExecute(() -> {
+                    var in = fluids(helper, FUEL_IN, Direction.NORTH);
+                    helper.assertTrue(in.fill(stack("ethanol", 28), EXECUTE) == 28, "Fill both counted doses");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(!fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0).isEmpty(),
+                        "Wait for the first active tick"))
+                .thenExecute(() -> helper.assertTrue(
+                        fluids(helper, FUEL_OUT, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(stack("heavy_water", 12))
+                                && fluids(helper, FUEL_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && FluidStack.loadFluidStackFromNBT(vesselTag(helper).getCompound("fuel")).isEmpty(),
+                        "Consume 18 mB and then 10 mB and discharge exactly two 6 mB products"))
+                .thenSucceed();
     }
 
     @GameTest(template = "fission", timeoutTicks = 270)

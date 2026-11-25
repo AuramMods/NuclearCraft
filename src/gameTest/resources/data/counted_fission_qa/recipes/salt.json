@@ -1,0 +1,13 @@
+{
+  "type": "nuclearcraft:salt_fission",
+  "fuel": {"alternatives": [
+    {"fluid": "nuclearcraft:ethanol", "amount": 18},
+    {"fluid": "nuclearcraft:ethanol", "amount": 10}
+  ]},
+  "result": {"fluid": "nuclearcraft:heavy_water", "amount": 6},
+  "ticks": 0.1,
+  "heat": 1,
+  "efficiency": 1,
+  "criticality": 1,
+  "self_priming": true
+}

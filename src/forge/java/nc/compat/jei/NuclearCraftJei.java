@@ -101,7 +101,6 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -302,8 +301,7 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> energy(Rate.CENTRIFUGE, recipe.batchDuration(), recipe.energyPerTick())),
                 new Category<>(IRRADIATION, NCFission.IRRADIATOR.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 30, 12).setStandardSlotBackground().addItemStacks(
-                            Arrays.stream(recipe.input().getItems())
-                                    .filter(recipe::accepts).map(stack -> stack.copyWithCount(recipe.count())).toList());
+                            recipe.input().alternatives());
                     layout.addSlot(OUTPUT, 108, 12).setStandardSlotBackground().addItemStack(recipe.result());
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.irradiation", recipe.fluxRequired())),
                 new Category<>(FISSION, NCFission.CONTROLLER.get(), gui, NuclearCraftJei::fissionFuel,
@@ -408,7 +406,7 @@ public final class NuclearCraftJei implements IModPlugin {
         addStockRecipes(registration, SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(IRRADIATION, recipes.getAllRecipesFor(NCFission.IRRADIATION.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()).stream()
-                .filter(recipe -> !ForgeHooks.hasNoElements(recipe.fuel())).toList());
+                .filter(recipe -> !recipe.fuel().alternatives().isEmpty()).toList());
         registration.addRecipes(PEBBLE, recipes.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get()));
         registration.addRecipes(SALT_FISSION, recipes.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()));
         registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));
@@ -616,7 +614,7 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void fissionFuel(IRecipeLayoutBuilder layout, SolidFissionRecipe recipe) {
-        layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.fuel());
+        layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(recipe.fuel().alternatives());
         layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.depleted());
     }
 

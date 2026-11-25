@@ -1,0 +1,9 @@
+{
+  "type": "nuclearcraft:fission_irradiator",
+  "input": {"alternatives": [
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 3},
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 2}
+  ]},
+  "result": {"item": "minecraft:diamond"},
+  "flux_required": 1
+}

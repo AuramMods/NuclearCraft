@@ -77,11 +77,8 @@ public record MelterRecipe(ResourceLocation id, ItemInput input, FluidProduct fl
 
         @Override
         public MelterRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
-            var entry = json.get("ingredient");
-            if (entry == null) {
-                throw new JsonSyntaxException("Missing Melter ingredient for " + id);
-            }
-            ItemInput input = readInput(entry, id, context);
+            ItemInput input = ItemInput.readIngredientSlot(json.get("ingredient"), id, 1,
+                    entry -> readIngredient(entry, context));
             var result = FluidProduct.readSlot(id, json.get("result"));
             double ticks = GsonHelper.getAsDouble(json, "ticks");
             int energyPerTick = GsonHelper.getAsInt(json, "energy_per_tick");
@@ -90,19 +87,6 @@ public record MelterRecipe(ResourceLocation id, ItemInput input, FluidProduct fl
             }
             return new MelterRecipe(id, input, result, ticks, energyPerTick, ProcessingRecipe.readRadiation(json, id),
                     ProcessorRecipeDefaults.fromJson(json));
-        }
-
-        private static ItemInput readInput(JsonElement entry, ResourceLocation id, ICondition.IContext context) {
-            if (MachineInputs.unusedSlot(entry)) {
-                return ItemProcessorRecipe.Input.EMPTY;
-            }
-            if (entry.isJsonObject()) {
-                var object = entry.getAsJsonObject();
-                if (object.has("alternatives") || (object.has("ingredient") && !object.has("type"))) {
-                    return ItemInput.readSlot(entry, id, choice -> readIngredient(choice, context));
-                }
-            }
-            return new ItemProcessorRecipe.Input(readIngredient(entry, context), 1);
         }
 
         private static Ingredient readIngredient(JsonElement json, ICondition.IContext context) {

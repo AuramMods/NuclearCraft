@@ -88,9 +88,11 @@ public final class FissionDecayGameTests {
     @GameTest(template = "empty")
     public static void fissionFuelCatalogKeepsItsLegacyArraySlotsAcrossNetworkSync(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();
-        var solid = manager.getAllRecipesFor(NCFission.FUEL_TYPE.get());
+        var solid = manager.getAllRecipesFor(NCFission.FUEL_TYPE.get()).stream()
+                .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         var pebble = manager.getAllRecipesFor(NCPebbleFission.FUEL_TYPE.get());
-        var salt = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get());
+        var salt = manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()).stream()
+                .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         helper.assertTrue(solid.size() == 81 && pebble.size() == 27 && salt.size() == 27,
                 "Load every legacy fuel form");
         helper.assertTrue(manager.byKey(NuclearCraft.id("solid_fission/yellorium")).isEmpty(),

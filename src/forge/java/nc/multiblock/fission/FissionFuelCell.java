@@ -11,17 +11,20 @@ import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 public final class FissionFuelCell extends BlockEntity implements ChunkRadiationSource {
+    private final RecipeType<SolidFissionRecipe> fuelType;
     private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private final FissionFuelItems localItems;
     private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation reservedFilter;
+    private @Nullable ResourceLocation reservedRecipe;
     private boolean reservedLocal;
     private ItemStack reservedFuel = ItemStack.EMPTY;
     private final FissionFuelDecay decay = new FissionFuelDecay(this);
@@ -35,7 +38,8 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
                 ? NCPebbleFission.CHAMBER_ENTITY.get() : NCFission.CELL_ENTITY.get(), pos, state);
         FissionVariant variant = FissionPartBlock.role(state) == FissionPartBlock.Role.PEBBLE_CHAMBER
                 ? FissionVariant.PEBBLE : FissionVariant.SOLID;
-        recipes = RecipeManager.createCheck(variant.itemFuelType());
+        fuelType = variant.itemFuelType();
+        recipes = RecipeManager.createCheck(fuelType);
         localItems = new FissionFuelItems(this, variant, null);
     }
 
@@ -78,7 +82,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (feed == localItems && filter() == null && feed.getStackInSlot(0).isEmpty() && current != null) {
             feed = current.fuelItems(null);
         }
-        ItemStack input = needsFuel ? feed.getStackInSlot(0) : reservedFuel;
+        ItemStack input = needsFuel ? feed.bulkStack(0) : reservedFuel;
         if (input.isEmpty()) {
             if (sourceEfficiency >= 0) {
                 sourceEfficiency = -1;
@@ -86,16 +90,18 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
             }
             return null;
         }
-        recipeInput.setItem(0, input);
-        SolidFissionRecipe recipe = recipes.getRecipeFor(recipeInput, level).orElse(null);
+        SolidFissionRecipe recipe = needsFuel ? findRecipe(level, input) : findReservation(level);
         if (recipe == null) {
             return null;
         }
         decay.remember(recipe, recipe.runtimeHeat());
         if (needsFuel) {
-            reservedFuel = feed.extractItem(0, 1, false);
+            reservedFuel = feed.takeFuel(recipe.fuel().matchedCount(input));
             reservedLocal = feed == localItems;
             reservedFilter = filter();
+        }
+        if (needsFuel || reservedRecipe == null) {
+            reservedRecipe = recipe.id();
             setChanged();
         }
         if (progress >= recipe.runtimeTicks()) {
@@ -113,8 +119,30 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (level == null || reservedFuel.isEmpty()) {
             return 0D;
         }
-        recipeInput.setItem(0, reservedFuel);
-        return recipes.getRecipeFor(recipeInput, level).map(recipe -> Math.min(1D, progress / recipe.runtimeTicks())).orElse(0D);
+        var recipe = findReservation(level);
+        return recipe == null ? 0D : Math.min(1D, progress / recipe.runtimeTicks());
+    }
+
+    private @Nullable SolidFissionRecipe findRecipe(Level level, ItemStack input) {
+        recipeInput.setItem(0, input);
+        return recipes.getRecipeFor(recipeInput, level).orElse(null);
+    }
+
+    private @Nullable SolidFissionRecipe findReservation(Level level) {
+        var manager = level.getRecipeManager();
+        if (reservedRecipe != null) {
+            var recipe = manager.byKey(reservedRecipe).orElse(null);
+            return recipe instanceof SolidFissionRecipe fuel && fuel.getType() == fuelType && matchesReservation(fuel) ? fuel : null;
+        }
+        var recipe = findRecipe(level, reservedFuel);
+        if (recipe != null && matchesReservation(recipe)) {
+            return recipe;
+        }
+        return manager.getAllRecipesFor(fuelType).stream().filter(this::matchesReservation).findFirst().orElse(null);
+    }
+
+    private boolean matchesReservation(SolidFissionRecipe recipe) {
+        return recipe.fuel().matchedCount(reservedFuel) == reservedFuel.getCount();
     }
 
     double computerProgress() {
@@ -123,6 +151,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
 
     void clearMaterial() {
         reservedFuel = ItemStack.EMPTY;
+        reservedRecipe = null;
         progress = 0D;
         localItems.clear();
         setChanged();
@@ -165,6 +194,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (output.insertBulk(1, depleted, true).isEmpty()) {
             output.insertBulk(1, depleted, false);
             reservedFuel = ItemStack.EMPTY;
+            reservedRecipe = null;
             progress = 0;
             setChanged();
         }
@@ -178,6 +208,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         tag.putDouble("progress", progress);
         localItems.save(tag);
         if (!reservedFuel.isEmpty()) {
+            if (reservedRecipe != null) tag.putString("reserved_recipe", reservedRecipe.toString());
             tag.putBoolean("reserved_local", reservedLocal);
             if (reservedFilter != null) {
                 tag.putString("reserved_filter", reservedFilter.toString());
@@ -195,6 +226,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         reservedFuel = ItemStack.of(tag.getCompound("fuel"));
         localItems.load(tag);
         reservedLocal = tag.getBoolean("reserved_local");
+        reservedRecipe = tag.contains("reserved_recipe") ? ResourceLocation.tryParse(tag.getString("reserved_recipe")) : null;
         reservedFilter = tag.contains("reserved_filter") ? ResourceLocation.tryParse(tag.getString("reserved_filter")) : null;
         double stored = tag.getDouble("progress");
         progress = Double.isFinite(stored) ? Math.max(0, stored) : 0;

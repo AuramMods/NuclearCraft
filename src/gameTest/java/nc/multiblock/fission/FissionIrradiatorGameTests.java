@@ -46,12 +46,38 @@ public final class FissionIrradiatorGameTests {
         checkRecipe(helper, "tbp", "protactinium_233_dust", 2_720_000, 0);
         checkRecipe(helper, "bismuth", "polonium_dust", 1_920_000, 0.5);
         var recipes = helper.getLevel().getRecipeManager();
-        helper.assertTrue(recipes.getAllRecipesFor(NCFission.IRRADIATION.get()).size() == 3
+        helper.assertTrue(recipes.getAllRecipesFor(NCFission.IRRADIATION.get()).stream()
+                                .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).count() == 3
                         && recipes.byKey(NuclearCraft.id("crafting/fission_irradiator")).isPresent()
                         && recipes.byKey(NuclearCraft.id("crafting/fission_irradiator_port")).isPresent()
                         && recipes.byKey(NuclearCraft.id("crafting/fission_source_polonium_beryllium")).isPresent(),
                 "The three legacy products and the original three crafting recipes must be available");
         helper.succeed();
+    }
+
+    @GameTest(template = "fission")
+    public static void irradiationUsesEachCountedAlternativeWithTheAvailableFlux(GameTestHelper helper) {
+        shell(helper, NCFission.CONTROLLER.get(), NCFission.CELL.get(), false);
+        var target = irradiator(helper);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper)).thenExecute(() -> {
+            var supplies = target.localItems();
+            helper.assertTrue(supplies.insertItem(0, new ItemStack(Items.STRUCTURE_VOID), false).isEmpty(),
+                    "The irradiator accepts part of a counted input");
+            controller(helper).inventory().setStackInSlot(0, stack("hep_239_za"));
+            controller(helper).toggle();
+        }).thenIdle(5).thenExecute(() -> {
+            var supplies = target.localItems();
+            helper.assertTrue(supplies.getStackInSlot(0).getCount() == 1 && supplies.getStackInSlot(1).isEmpty(),
+                    "One item cannot make an irradiation batch");
+            supplies.insertItem(0, new ItemStack(Items.STRUCTURE_VOID, 4), false);
+        }).thenWaitUntil(() -> helper.assertTrue(!target.localItems().getStackInSlot(1).isEmpty(),
+                "Wait for the first dose of flux"))
+          .thenExecute(() -> {
+              var supplies = target.localItems();
+              var result = supplies.getStackInSlot(1);
+              helper.assertTrue(result.is(Items.DIAMOND) && result.getCount() == 2 && supplies.getStackInSlot(0).isEmpty(),
+                      "The same dose of flux processes the three-item and two-item alternatives");
+          }).thenSucceed();
     }
 
     @GameTest(template = "fission", timeoutTicks = 130)

@@ -30,6 +30,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation filter;
     private @Nullable ResourceLocation reservedCircuit;
+    private @Nullable ResourceLocation reservedRecipe;
     private FluidStack reserved = FluidStack.EMPTY;
     private boolean reservedLocal;
     private final FissionFuelDecay decay = new FissionFuelDecay(this);
@@ -100,8 +101,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             }
             return null;
         }
-        recipeInput.setFluid(fuel);
-        SaltFissionRecipe recipe = recipes.getRecipeFor(recipeInput, level).orElse(null);
+        SaltFissionRecipe recipe = fromTank ? findRecipe(level, fuel) : findReservation(level);
         if (recipe == null) {
             return null;
         }
@@ -112,9 +112,12 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             if (!hasOutputSpace(recipe, feed.tank(true))) {
                 return null;
             }
-            reserved = input.drain(recipe.fuel().amount(), EXECUTE);
+            reserved = input.drain(recipe.fuel().matchedAmount(fuel, 1), EXECUTE);
             reservedCircuit = filter;
             reservedLocal = feed == local;
+        }
+        if (fromTank || reservedRecipe == null) {
+            reservedRecipe = recipe.id();
             setChanged();
         }
         var output = fuelTank(bank, true);
@@ -136,9 +139,30 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         if (level == null || reserved.isEmpty()) {
             return 0;
         }
-        recipeInput.setFluid(reserved);
-        return recipes.getRecipeFor(recipeInput, level).map(recipe ->
-                Math.min(1, progress / recipe.runtimeTicks())).orElse(0D);
+        var recipe = findReservation(level);
+        return recipe == null ? 0D : Math.min(1, progress / recipe.runtimeTicks());
+    }
+
+    private @Nullable SaltFissionRecipe findRecipe(Level level, FluidStack fuel) {
+        recipeInput.setFluid(fuel);
+        return recipes.getRecipeFor(recipeInput, level).orElse(null);
+    }
+
+    private @Nullable SaltFissionRecipe findReservation(Level level) {
+        var manager = level.getRecipeManager();
+        if (reservedRecipe != null) {
+            var recipe = manager.byKey(reservedRecipe).orElse(null);
+            return recipe instanceof SaltFissionRecipe fuel && matchesReservation(fuel) ? fuel : null;
+        }
+        var recipe = findRecipe(level, reserved);
+        if (recipe != null && matchesReservation(recipe)) {
+            return recipe;
+        }
+        return manager.getAllRecipesFor(NCSaltFission.FUEL_TYPE.get()).stream().filter(this::matchesReservation).findFirst().orElse(null);
+    }
+
+    private boolean matchesReservation(SaltFissionRecipe recipe) {
+        return recipe.fuel().matchedAmount(reserved, 1) == reserved.getAmount();
     }
 
     boolean sameFuel(SaltVessel other) {
@@ -158,6 +182,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     private void resetReservation() {
         reserved = FluidStack.EMPTY;
         reservedCircuit = null;
+        reservedRecipe = null;
         reservedLocal = false;
         progress = 0;
     }
@@ -199,25 +224,29 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         FluidTank input = tanks.tank(false);
         FluidStack product = recipe.depleted();
         int productSize = product.getAmount();
-        int inputSize = recipe.fuel().amount();
         boolean sameFeed = feedTanks(bank) == tanks && Objects.equals(filter, reservedCircuit)
                 && reserved.isFluidEqual(input.getFluid());
-        int available = sameFeed ? input.getFluidAmount() / inputSize : 0;
         FluidStack offered = product.copy();
         offered.setAmount(output.getCapacity());
         int outputRoom = output.fill(offered, SIMULATE) / productSize;
-        int doses = (int) Math.min(1L + available, Math.min(outputRoom, Math.floor(progress / ticks)));
-        if (doses == 0) {
+        int limit = (int) Math.min(outputRoom, Math.floor(progress / ticks));
+        if (limit == 0) {
             progress = ticks;
             return;
         }
 
-        if (doses > 1) {
-            input.drain((doses - 1) * inputSize, EXECUTE);
+        // One dose is already reserved. Additional doses can use a smaller alternative after the tank drains.
+        int doses = 1;
+        int inputSize = sameFeed ? recipe.fuel().matchedAmount(input.getFluid(), 1) : -1;
+        while (doses < limit && inputSize > 0) {
+            int extra = Math.min(limit - doses, input.getFluidAmount() / inputSize);
+            input.drain(extra * inputSize, EXECUTE);
+            doses += extra;
+            inputSize = recipe.fuel().matchedAmount(input.getFluid(), 1);
         }
         product.setAmount(doses * productSize);
         output.fill(product, EXECUTE);
-        if (available >= doses && outputRoom > doses) {
+        if (inputSize > 0 && outputRoom > doses) {
             reserved = input.drain(inputSize, EXECUTE);
             progress = Math.max(0, progress - doses * ticks);
         } else {
@@ -253,6 +282,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             tag.putBoolean("reserved_local", true);
         }
         tag.put("fuel_tanks", local.save());
+        if (reservedRecipe != null) tag.putString("reserved_recipe", reservedRecipe.toString());
         tag.put("fuel", reserved.writeToNBT(new CompoundTag()));
         tag.putDouble("progress", progress);
         if (sourceEfficiency >= 0) {
@@ -268,6 +298,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         filter = tag.contains("fuel_filter") ? ResourceLocation.tryParse(tag.getString("fuel_filter")) : null;
         local.load(tag.getCompound("fuel_tanks"));
         reservedLocal = tag.getBoolean("reserved_local");
+        reservedRecipe = tag.contains("reserved_recipe") ? ResourceLocation.tryParse(tag.getString("reserved_recipe")) : null;
         reservedCircuit = tag.contains("reserved_circuit") ? ResourceLocation.tryParse(tag.getString("reserved_circuit")) : null;
         reserved = FluidStack.loadFluidStackFromNBT(tag.getCompound("fuel"));
         double storedTime = tag.getDouble("progress");

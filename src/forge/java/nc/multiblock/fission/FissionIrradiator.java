@@ -98,13 +98,16 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         workingRecipe = recipe.id();
         workingInput = input.copyWithCount(1);
         long remaining = received;
-        while (remaining > 0 && recipe.matchesInput(inventory.getStackInSlot(0))
-                && inventory.insertItem(1, result, true).isEmpty()) {
+        while (remaining > 0 && inventory.insertItem(1, result, true).isEmpty()) {
+            int count = recipe.input().matchedCount(inventory.getStackInSlot(0));
+            if (count < 0) {
+                break;
+            }
             long used = Math.min(remaining, Math.max(0, recipe.fluxRequired() - progress));
             remaining -= used;
             progress += used;
             if (progress >= recipe.fluxRequired()) {
-                inventory.extractItem(0, recipe.count(), false);
+                inventory.extractItem(0, count, false);
                 inventory.insertItem(1, result.copy(), false);
                 progress = 0;
             }

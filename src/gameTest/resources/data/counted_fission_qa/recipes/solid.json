@@ -1,0 +1,13 @@
+{
+  "type": "nuclearcraft:solid_fission",
+  "fuel": {"alternatives": [
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 3},
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 2}
+  ]},
+  "result": {"item": "minecraft:flint"},
+  "ticks": 12,
+  "heat": 1,
+  "efficiency": 1,
+  "criticality": 1,
+  "self_priming": true
+}

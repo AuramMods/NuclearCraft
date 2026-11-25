@@ -18,7 +18,7 @@ import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fluids.FluidStack;
 
-public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, FluidStack depleted, double ticks,
+public record SaltFissionRecipe(ResourceLocation id, FluidInput fuel, FluidStack depleted, double ticks,
                                 Parameters parameters) implements Recipe<Container>, FissionFuelStats {
     private static final int INGOT_VOLUME = 144;
 
@@ -95,10 +95,10 @@ public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, Fluid
     public static final class Serializer implements RecipeSerializer<SaltFissionRecipe> {
         @Override
         public SaltFissionRecipe fromJson(ResourceLocation id, JsonObject json) {
-            var fuel = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fuel"), id);
+            var fuel = FluidInput.readSlot(json.get("fuel"), id);
             var depleted = FluidIngredient.readResult(GsonHelper.getAsJsonObject(json, "result"), id);
             double ticks = GsonHelper.getAsDouble(json, "ticks");
-            if (!Double.isFinite(ticks) || ticks <= 0D) {
+            if (fuel.matches(FluidStack.EMPTY) || !Double.isFinite(ticks) || ticks <= 0D) {
                 throw new JsonSyntaxException("Invalid molten-salt fission fuel " + id);
             }
             return new SaltFissionRecipe(id, fuel, depleted, ticks, Parameters.fromJson(id, json));
@@ -106,13 +106,13 @@ public record SaltFissionRecipe(ResourceLocation id, FluidIngredient fuel, Fluid
 
         @Override
         public SaltFissionRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new SaltFissionRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
+            return new SaltFissionRecipe(id, FluidInput.fromNetwork(buffer), buffer.readFluidStack(),
                     buffer.readDouble(), Parameters.fromNetwork(buffer));
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, SaltFissionRecipe recipe) {
-            recipe.fuel.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.fuel);
             buffer.writeFluidStack(recipe.depleted);
             buffer.writeDouble(recipe.ticks);
             recipe.parameters.toNetwork(buffer);

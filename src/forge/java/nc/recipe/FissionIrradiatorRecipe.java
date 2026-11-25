@@ -9,7 +9,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -19,7 +18,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public record FissionIrradiatorRecipe(ResourceLocation id, Ingredient input, int count, ItemStack result,
+public record FissionIrradiatorRecipe(ResourceLocation id, ItemInput input, ItemStack result,
                                      long fluxRequired, long minFlux, long maxFlux, double rawHeatPerFlux,
                                      double rawEfficiency, double radiation, @Nullable Material material)
         implements Recipe<Container> {
@@ -50,11 +49,11 @@ public record FissionIrradiatorRecipe(ResourceLocation id, Ingredient input, int
     }
 
     public boolean accepts(ItemStack stack) {
-        return !stack.isEmpty() && ItemProcessorRecipe.Input.accepts(input, stack);
+        return input.accepts(stack);
     }
 
     public boolean matchesInput(ItemStack stack) {
-        return accepts(stack) && stack.getCount() >= count;
+        return input.matches(stack);
     }
 
     @Override public boolean matches(Container container, Level level) { return matchesInput(container.getItem(0)); }
@@ -70,8 +69,8 @@ public record FissionIrradiatorRecipe(ResourceLocation id, Ingredient input, int
     public static final class Serializer implements RecipeSerializer<FissionIrradiatorRecipe> {
         @Override
         public FissionIrradiatorRecipe fromJson(ResourceLocation id, JsonObject json) {
-            Ingredient input = Ingredient.fromJson(GsonHelper.getNonNull(json, "input"));
             int count = GsonHelper.getAsInt(json, "count", 1);
+            ItemInput input = ItemInput.readIngredientSlot(json.get("input"), id, count);
             ItemStack result = CraftingHelper.getItemStack(GsonHelper.getAsJsonObject(json, "result"), true);
             long required = GsonHelper.getAsLong(json, "flux_required");
             long min = GsonHelper.getAsLong(json, "min_flux", 0);
@@ -87,13 +86,14 @@ public record FissionIrradiatorRecipe(ResourceLocation id, Ingredient input, int
             double heat = GsonHelper.getAsDouble(json, "heat_per_flux", material == null ? 0 : -1);
             double efficiency = GsonHelper.getAsDouble(json, "efficiency", material == null ? 0 : -1);
             double radiation = GsonHelper.getAsDouble(json, "radiation", 0);
-            if (input.isEmpty() || result.isEmpty() || result.getCount() > result.getMaxStackSize()
+            if (input.matches(ItemStack.EMPTY)
+                    || (input instanceof ItemProcessorRecipe.Input single && single.ingredient().isEmpty()) || result.isEmpty() || result.getCount() > result.getMaxStackSize()
                     || count < 1 || count > 64 || required < 1 || min < -1 || max < -1 || max >= 0 && max < min
                     || !stat(heat, json.has("heat_per_flux")) || !stat(efficiency, json.has("efficiency"))
                     || !Double.isFinite(radiation) || radiation < 0) {
                 throw new JsonSyntaxException("Invalid irradiation recipe " + id);
             }
-            return new FissionIrradiatorRecipe(id, input, count, result, required, min, max, heat, efficiency, radiation, material);
+            return new FissionIrradiatorRecipe(id, input, result, required, min, max, heat, efficiency, radiation, material);
         }
 
         private static boolean stat(double value, boolean explicit) {
@@ -102,15 +102,14 @@ public record FissionIrradiatorRecipe(ResourceLocation id, Ingredient input, int
 
         @Override
         public FissionIrradiatorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new FissionIrradiatorRecipe(id, Ingredient.fromNetwork(buffer), buffer.readVarInt(),
+            return new FissionIrradiatorRecipe(id, ItemInput.fromNetwork(buffer),
                     buffer.readItem(), buffer.readVarLong(), buffer.readVarLong(), buffer.readVarLong(),
                     buffer.readDouble(), buffer.readDouble(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, FissionIrradiatorRecipe recipe) {
-            recipe.input.toNetwork(buffer);
-            buffer.writeVarInt(recipe.count);
+            ItemInput.write(buffer, recipe.input);
             buffer.writeItem(recipe.result);
             buffer.writeVarLong(recipe.fluxRequired);
             buffer.writeVarLong(recipe.minFlux);

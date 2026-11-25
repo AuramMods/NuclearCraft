@@ -49,6 +49,35 @@ public final class SolidFissionGameTests {
     private static final BlockPos FUEL_OUT = new BlockPos(3, 5, 3);
     private static final BlockPos FRAME = new BlockPos(1, 1, 1);
 
+    @GameTest(template = "fission", timeoutTicks = 175)
+    public static void countedSolidFuelKeepsItsBatchAfterReload(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper)).thenExecute(() -> {
+            var fuel = items(helper, FUEL_IN, Direction.DOWN);
+            helper.assertTrue(fuel.insertItem(0, new ItemStack(Items.STRUCTURE_VOID), false).isEmpty(),
+                    "The fuel port accepts the first item of a counted batch");
+            helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+        }).thenIdle(5).thenExecute(() -> {
+            var saved = helper.getBlockEntity(CELL).saveWithoutMetadata();
+            helper.assertTrue(ItemStack.of(saved.getCompound("fuel")).isEmpty(),
+                    "A short input may not be reserved");
+            items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(Items.STRUCTURE_VOID, 4), false);
+        }).thenWaitUntil(() -> {
+            var cell = helper.getBlockEntity(CELL);
+            var saved = cell.saveWithoutMetadata();
+            helper.assertTrue(ItemStack.of(saved.getCompound("fuel")).getCount() == 3
+                            && saved.getString("reserved_recipe").equals("counted_fission_qa:solid")
+                            && items(helper, FUEL_IN, Direction.DOWN).getStackInSlot(0).getCount() == 2,
+                    "Reserve three items and retain the second dose in the original circuit");
+            cell.load(saved);
+        }).thenWaitUntil(() -> {
+            var depleted = items(helper, FUEL_OUT, Direction.UP).getStackInSlot(0);
+            helper.assertTrue(depleted.is(Items.FLINT) && depleted.getCount() == 2
+                            && items(helper, FUEL_IN, Direction.DOWN).getStackInSlot(0).isEmpty(),
+                    "The reloaded batch and the two-item alternative each discharge once");
+        }).thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 1800)
     public static void reactorBurnsFuelAndHeatsCoolant(GameTestHelper helper) {
         buildReactor(helper);

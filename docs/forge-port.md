@@ -1122,6 +1122,20 @@ Ender IO 8.2.22-beta item conduits supplied five items for the Manufactory's thr
 
 The isolated 540-mod Auram client loaded and ran all seven recipes through KubeJS. JEI showed the authored counts, including both counts for the same item in the Melter and Manufactory. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
 
+### Counted fuel and irradiation inputs
+
+Solid and pebble-bed fuel recipes accept a counted item choice or an `alternatives` object in `fuel`. Irradiation recipes accept the same choices in `input`. The older Forge ingredient syntax still uses one item for fuel and the top-level `count` for irradiation. Use the existing Forge item or tag matcher inside each choice.
+
+Molten-salt fuel recipes accept the same counted fluid choices as processors in `fuel`. Fuel and irradiation inputs require material. Each batch uses the first matching choice with enough stock. If a salt vessel finishes multiple doses in one tick, it can change to a smaller amount from the same fluid as its original circuit empties.
+
+A solid cell, pebble chamber, or salt vessel saves the reserved quantity, recipe ID, and original output circuit. A dose stays reserved when its recipe is missing or its saved quantity no longer matches. Restoring a compatible recipe under the same ID lets the batch resume. An earlier Forge save with a reserved dose and no recipe ID resolves a recipe using that dose's exact quantity.
+
+All 258 local GameTests passed. On packaged Forge 47.4.10, all three reactor variants kept their counted reservations through dedicated restart. Removing their recipes held those reservations, and restoring the recipes completed the original doses and their smaller alternatives. CraftTweaker 14.0.59 ran the same counted recipes. One irradiation tick used the three-item and two-item choices and produced exactly two diamonds.
+
+Ender IO 8.2.22-beta supplied the three-item and two-item solid-fuel batches. Mekanism 10.4.16.80 supplied the four-item pebble-fuel batch. Both also supplied the 18 mB and 10 mB salt doses. All four external output collectors kept their exact balances through restart and chunk unload and reload.
+
+The isolated 540-mod Auram client loaded the four KubeJS recipes, showed the authored alternatives in JEI, and ran all four in-world. It used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
+
 The molten-salt reactor retains `nuclearcraft:salt_fission_controller`, `nuclearcraft:salt_fission_vessel`, and `nuclearcraft:fission_vessel_port`. The two legacy heater metadata blocks map to the `<material>_coolant_heater` and `fission_heater_port_<material>` IDs in legacy coolant order. The first coolant uses `standard`. Sneak-use a fuel container on an unassembled vessel or vessel port with an empty local input to select a matching fuel filter. Sneak-use an empty bucket under the same conditions to clear the filter. Sneak-use with an empty hand to switch a port between input and output.
 
 The molten-salt fuel recipe uses a counted fluid `fuel`, a fluid `result`, and a fractional `ticks` value. Set vessel intrinsic flux efficiency and any molten-salt-only fuel time, heat, and efficiency multipliers in `world/serverconfig/nuclearcraft-salt-fission.toml`. The legacy `fission_heater_cooling_rate` array maps to its named `cooling_rate` keys. The reactor and heat exchanger read the same `nak_coolant_heat_per_mb` value in `nuclearcraft-heat-exchangers.toml`.

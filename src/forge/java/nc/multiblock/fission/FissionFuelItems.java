@@ -4,7 +4,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.ItemStackHandler;
@@ -41,8 +40,8 @@ final class FissionFuelItems extends ItemStackHandler {
 
     boolean acceptsRecipe(ItemStack stack) {
         var level = owner.getLevel();
-        return level != null && !stack.isEmpty() && level.getRecipeManager()
-                .getRecipeFor(variant.itemFuelType(), new SimpleContainer(stack), level).isPresent();
+        return level != null && !stack.isEmpty() && level.getRecipeManager().getAllRecipesFor(variant.itemFuelType())
+                .stream().anyMatch(recipe -> recipe.fuel().accepts(stack));
     }
 
     static ResourceLocation id(ItemStack stack) {
@@ -62,6 +61,17 @@ final class FissionFuelItems extends ItemStackHandler {
     ItemStack bulkStack(int slot) {
         var stack = getStackInSlot(slot);
         return stack.isEmpty() ? overflow[slot].copy() : stack.copyWithCount(total(slot));
+    }
+
+    ItemStack takeFuel(int count) {
+        ItemStack stored = getStackInSlot(0);
+        int available = total(0);
+        if (count <= 0 || count > available) {
+            return ItemStack.EMPTY;
+        }
+        var fuel = stored.copyWithCount(count);
+        store(0, stored, available - count);
+        return fuel;
     }
 
     ItemStack insertBulk(int slot, ItemStack incoming, boolean simulate) {
