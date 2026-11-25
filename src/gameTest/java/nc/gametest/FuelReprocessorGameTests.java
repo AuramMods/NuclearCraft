@@ -39,7 +39,7 @@ public final class FuelReprocessorGameTests {
         var triso = recipe(recipes, "leu_235_triso");
         var zircaloy = recipe(recipes, "leu_235_za");
         var high = recipe(recipes, "hecm_245_nitride");
-        helper.assertTrue(oxide.inputs().get(0).count() == 9 && oxide.ticks() == 400 && oxide.energyPerTick() == 20,
+        helper.assertTrue(oxide.inputs().get(0).matchedCount(material("depleted_leu_235_oxide", 9)) == 9 && oxide.ticks() == 400 && oxide.energyPerTick() == 20,
                 "The default batch uses nine depleted fuels and consumes 8,000 FE");
         helper.assertTrue(oxide.result(3).isEmpty() && oxide.result(7).isEmpty()
                         && oxide.result(2).getCount() == 2 && oxide.products().get(2).chancePercent() == 25

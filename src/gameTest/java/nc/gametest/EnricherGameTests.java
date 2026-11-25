@@ -37,7 +37,7 @@ public final class EnricherGameTests {
         helper.assertTrue(recipes.size() == 21, "All 21 Enricher recipes must load in clean Forge");
         var cryotheum = recipes.stream().filter(recipe -> recipe.id().equals(NuclearCraft.id("enricher/cryotheum")))
                 .findFirst().orElseThrow();
-        helper.assertTrue(cryotheum.itemInput().count() == 4 && cryotheum.itemInput().ingredient().test(new ItemStack(Items.SNOWBALL))
+        helper.assertTrue(cryotheum.itemInput().matchedCount(new ItemStack(Items.SNOWBALL, 4)) == 4
                         && cryotheum.product().isFluidStackIdentical(stack("cryotheum", 25)),
                 "The native Cryotheum recipe retains the four-snowball input and exact fluid yield");
         helper.assertTrue(manager.byKey(NuclearCraft.id("crafting/enricher")).isPresent(),

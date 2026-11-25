@@ -84,7 +84,11 @@ public final class ProcessorRecipeDefaultsGameTests {
         var assemblerId = NuclearCraft.id("qa_sparse_assembler");
         var assemblerSerializer = new ItemProcessorRecipe.Serializer(Machine.ASSEMBLER);
         var assembler = assemblerSerializer.fromJson(assemblerId, JsonParser.parseString("""
-                {"ingredients": [{}, {"ingredient": {"item": "minecraft:diamond"}}, null, {}],
+                {"ingredients": [{}, {"alternatives": [
+                   {"ingredient": {"item": "minecraft:diamond"}, "count": 3},
+                   {"ingredient": {"item": "minecraft:diamond"}, "count": 2},
+                   {"ingredient": {"item": "minecraft:emerald"}, "count": 1}
+                 ]}, null, {}],
                  "result": {"item": "minecraft:gold_ingot"}, "ticks": 4, "energy_per_tick": 5}
                 """).getAsJsonObject());
 
@@ -98,9 +102,9 @@ public final class ProcessorRecipeDefaultsGameTests {
                             && !receivedMelter.matches(new SimpleContainer(new ItemStack(Items.DIAMOND)), helper.getLevel()),
                     "The synced Melter recipe matches only an empty item slot");
             var supplies = new SimpleContainer(4);
-            supplies.setItem(3, new ItemStack(Items.DIAMOND));
+            supplies.setItem(3, new ItemStack(Items.DIAMOND, 2));
             int[] consumed = receivedAssembler.match(supplies);
-            helper.assertTrue(consumed != null && consumed[0] == 0 && consumed[3] == 1,
+            helper.assertTrue(consumed != null && consumed[0] == 0 && consumed[3] == 2,
                     "The synced Assembler recipe can use the diamond in any input slot");
             supplies.setItem(0, new ItemStack(Items.DIAMOND));
             helper.assertTrue(receivedAssembler.match(supplies) == null && !buffer.isReadable(),

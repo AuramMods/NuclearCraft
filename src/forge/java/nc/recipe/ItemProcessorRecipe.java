@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine, List<Input> inputs,
+public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine, List<ItemInput> inputs,
                                   List<FluidInput> fluidInputs, List<FluidProduct> fluidProducts,
                                   List<Product> results, List<Product> alternateResults,
                                   double ticks, int energyPerTick, double radiation,
@@ -45,14 +45,14 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         alternateResults = List.copyOf(alternateResults);
     }
 
-    public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
+    public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<ItemInput> inputs,
                                @Nullable FluidInput fluidInput, FluidStack fluidOutput, List<Product> results,
                                List<Product> alternateResults, int ticks, int energyPerTick, double radiation) {
         this(id, machine, inputs, fluidInput, fluidOutput, results, alternateResults,
                 ticks, energyPerTick, radiation, null, false, null);
     }
 
-    public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<Input> inputs,
+    public ItemProcessorRecipe(ResourceLocation id, Machine machine, List<ItemInput> inputs,
                                @Nullable FluidInput fluidInput, FluidStack fluidOutput, List<Product> results,
                                List<Product> alternateResults, int ticks, int energyPerTick, double radiation,
                                @Nullable Double powerMultiplier, boolean decayTimeFromRadiation,
@@ -169,12 +169,15 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             return matchInputs(container, slot + 1, used, null, insertSlot, inserted);
         }
         for (int index = 0; index < inputs.size(); index++) {
-            Input input = inputs.get(index);
             int bit = 1 << index;
-            if ((used & bit) == 0 && (amounts == null ? input.accepts(stack) : input.matches(stack))
-                    && matchInputs(container, slot + 1, used | bit, amounts, insertSlot, inserted)) {
+            if ((used & bit) != 0) {
+                continue;
+            }
+            ItemInput input = inputs.get(index);
+            int count = amounts == null ? (input.accepts(stack) ? 0 : -1) : input.matchedCount(stack);
+            if (count >= 0 && matchInputs(container, slot + 1, used | bit, amounts, insertSlot, inserted)) {
                 if (amounts != null) {
-                    amounts[slot] = input.count();
+                    amounts[slot] = count;
                 }
                 return true;
             }
@@ -235,34 +238,31 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         return machine.recipes();
     }
 
-    public record Input(Ingredient ingredient, int count) {
-        private static final Input EMPTY = new Input(Ingredient.EMPTY, 0);
+    public record Input(Ingredient ingredient, int count) implements ItemInput {
+        static final Input EMPTY = new Input(Ingredient.EMPTY, 0);
 
+        @Override
         public boolean isEmpty() {
             return count == 0;
         }
 
-        boolean accepts(ItemStack stack) {
-            return !isEmpty() && accepts(ingredient, stack);
+        @Override
+        public boolean accepts(ItemStack stack) {
+            return !isEmpty() && !stack.isEmpty() && accepts(ingredient, stack);
         }
 
-        boolean matches(ItemStack stack) {
-            return isEmpty() ? stack.isEmpty() : stack.getCount() >= count && accepts(stack);
+        @Override
+        public int matchedCount(ItemStack stack) {
+            if (isEmpty()) {
+                return stack.isEmpty() ? 0 : -1;
+            }
+            return stack.getCount() >= count && accepts(stack) ? count : -1;
         }
 
-        static Input readSlot(JsonElement entry, ResourceLocation id) {
-            if (entry == null) {
-                throw new JsonSyntaxException("Missing item input for " + id);
-            }
-            if (MachineInputs.unusedSlot(entry)) {
-                return EMPTY;
-            }
-            JsonObject json = GsonHelper.convertToJsonObject(entry, "ingredient");
-            int count = GsonHelper.getAsInt(json, "count", 1);
-            if (count < 1 || count > 64) {
-                throw new JsonSyntaxException("Invalid ingredient count for " + id);
-            }
-            return new Input(Ingredient.fromJson(GsonHelper.getNonNull(json, "ingredient")), count);
+        @Override
+        public List<ItemStack> alternatives() {
+            return isEmpty() ? List.of() : Arrays.stream(ingredient.getItems()).filter(this::accepts)
+                    .map(stack -> stack.copyWithCount(count)).toList();
         }
 
         static Input fromNetwork(FriendlyByteBuf buffer) {
@@ -376,9 +376,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             if (entries.size() != machine.inputs()) {
                 throw new JsonSyntaxException("Expected " + machine.inputs() + " item inputs for " + id);
             }
-            List<Input> inputs = new ArrayList<>(entries.size());
+            List<ItemInput> inputs = new ArrayList<>(entries.size());
             for (var entry : entries) {
-                inputs.add(Input.readSlot(entry, id));
+                inputs.add(ItemInput.readSlot(entry, id));
             }
             var fluids = readFluids(id, json, "fluid_input", "fluid_inputs", machine.fluidInputs()).stream()
                     .map(fluid -> FluidInput.readSlot(fluid, id)).toList();
@@ -394,7 +394,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 }
                 alternate = readResults(id, json, "alternate_results", context);
             }
-            if (!machine.generator() && inputs.stream().allMatch(Input::isEmpty)
+            if (!machine.generator() && inputs.stream().allMatch(ItemInput::isEmpty)
                     && fluids.stream().allMatch(FluidInput::isEmpty)
                     && results.stream().allMatch(Product::isEmpty) && alternate.stream().allMatch(Product::isEmpty)
                     && fluidProducts.stream().allMatch(FluidProduct::isEmpty)) {
@@ -466,9 +466,9 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
 
         @Override
         public ItemProcessorRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            List<Input> inputs = new ArrayList<>(machine.inputs());
+            List<ItemInput> inputs = new ArrayList<>(machine.inputs());
             for (int index = 0; index < machine.inputs(); index++) {
-                inputs.add(Input.fromNetwork(buffer));
+                inputs.add(ItemInput.fromNetwork(buffer));
             }
             List<FluidInput> fluids = new ArrayList<>(machine.fluidInputs());
             for (int index = 0; index < machine.fluidInputs(); index++) {
@@ -488,8 +488,8 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ItemProcessorRecipe recipe) {
-            for (Input input : recipe.inputs) {
-                input.toNetwork(buffer);
+            for (ItemInput input : recipe.inputs) {
+                ItemInput.write(buffer, input);
             }
             for (FluidInput fluid : recipe.fluidInputs) {
                 FluidInput.write(buffer, fluid);

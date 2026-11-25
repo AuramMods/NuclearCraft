@@ -253,8 +253,8 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool_source",
                                 decimal(recipe.heat()), decimal(recipe.lifetime()))),
                 new Category<>(MELTER, NCRegistries.MELTER.get(), gui, (layout, recipe) -> {
-                    if (recipe.input() != null) {
-                        layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addIngredients(recipe.input());
+                    if (!recipe.input().isEmpty()) {
+                        layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(recipe.input().alternatives());
                     }
                     fluidProductSlot(layout, 104, 12, recipe.fluidProduct(), 1);
                 }, recipe -> energy(Rate.MELTER, recipe.ticks(), recipe.energyPerTick())),
@@ -279,10 +279,10 @@ public final class NuclearCraftJei implements IModPlugin {
                         recipe -> Component.translatable("gui.nuclearcraft.jei.scrubber",
                                 recipe.ticks(), recipe.power(), decimal(recipe.efficiency()))),
                 new Category<>(ENRICHER, NCRegistries.ENRICHER.get(), gui, (layout, recipe) -> {
-                    ItemProcessorRecipe.Input item = recipe.itemInput();
+                    var item = recipe.itemInput();
                     if (!item.isEmpty()) {
                         layout.addSlot(INPUT, 18, 12).setStandardSlotBackground().addItemStacks(
-                                Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+                                item.alternatives());
                     }
                     fluidSlot(layout, INPUT, 40, recipe.fluidInput().alternatives());
                     fluidProductSlot(layout, 104, 12, recipe.fluidProduct(), 1);
@@ -395,7 +395,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         registration.addRecipes(DECAY_POOL_SOURCE, recipes.getAllRecipesFor(NCMachines.HEAT_SOURCES.get()));
         var melterRecipes = new ArrayList<MelterRecipe>();
-        recipes.getAllRecipesFor(NCRegistries.MELTING.get()).stream().filter(recipe -> recipe.input() == null || !recipe.input().isEmpty())
+        recipes.getAllRecipesFor(NCRegistries.MELTING.get()).stream().filter(recipe -> recipe.input().isEmpty() || !recipe.input().alternatives().isEmpty())
                 .forEach(melterRecipes::add);
         melterRecipes.addAll(MelterMaterialRecipes.fromSyncedTags(recipes));
         addStockRecipes(registration, MELTER, melterRecipes);
@@ -656,7 +656,7 @@ public final class NuclearCraftJei implements IModPlugin {
         var item = recipe.itemInput();
         if (item != null) {
             layout.addSlot(INPUT, 18, 12).setStandardSlotBackground().addItemStacks(
-                    Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+                    item.alternatives());
         }
         if (recipe.fluidInput() != null) {
             fluidSlot(layout, INPUT, 40, recipe.fluidInput().alternatives());
@@ -676,12 +676,12 @@ public final class NuclearCraftJei implements IModPlugin {
         }
         boolean extended = machine.menuExtension() > 0 && !machine.hasFluidOutput();
         for (int index = 0; index < recipe.inputs().size(); index++) {
-            ItemProcessorRecipe.Input input = recipe.inputs().get(index);
+            var input = recipe.inputs().get(index);
             if (input.isEmpty()) continue;
             int x = extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
             int y = extended ? machine.inputY(index) - 19 : 12;
             layout.addSlot(INPUT, x, y).setStandardSlotBackground().addItemStacks(
-                    Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
+                    input.alternatives());
         }
         var fluid = recipe.fluidInput();
         if (fluid != null && !fluid.isEmpty()) {
@@ -710,7 +710,7 @@ public final class NuclearCraftJei implements IModPlugin {
             if (drawSlots) {
                 slot.setStandardSlotBackground();
             }
-            slot.addItemStacks(Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
+            slot.addItemStacks(input.alternatives());
         }
         var products = recipe.products();
         for (int index = 0; index < products.size(); index++) {
@@ -803,7 +803,7 @@ public final class NuclearCraftJei implements IModPlugin {
         for (int slot = 0; slot < recipe.items().size(); slot++) {
             var input = recipe.items().get(slot);
             layout.addSlot(INPUT, 20 + slot * 20, 12).setStandardSlotBackground().addItemStacks(
-                    Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
+                    input.alternatives());
         }
         for (int slot = 0; slot < recipe.fluids().size(); slot++) {
             fluidSlot(layout, INPUT, 20 + slot * 20, 33, recipe.fluids().get(slot).alternatives());
@@ -828,7 +828,7 @@ public final class NuclearCraftJei implements IModPlugin {
         for (int slot = 0; slot < recipe.items().size(); slot++) {
             var item = recipe.items().get(slot);
             layout.addSlot(INPUT, 15 + slot * 20, 12).setStandardSlotBackground().addItemStacks(
-                    Arrays.stream(item.ingredient().getItems()).map(stack -> stack.copyWithCount(item.count())).toList());
+                    item.alternatives());
         }
         for (int slot = 0; slot < recipe.fluids().size(); slot++) {
             fluidSlot(layout, INPUT, 15 + slot * 20, 33, recipe.fluids().get(slot).alternatives());

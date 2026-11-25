@@ -3,7 +3,6 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCMachines;
-import nc.recipe.ItemProcessorRecipe.Input;
 import nc.recipe.ItemProcessorRecipe.Product;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -20,7 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, List<FluidInput> fluids,
+public record LargeElectrolyzerRecipe(ResourceLocation id, List<ItemInput> items, List<FluidInput> fluids,
                                      List<Product> itemProducts, List<FluidProduct> fluidProducts,
                                      double time, double power, String electrolyte, double radiation)
         implements ProcessingRecipe, MachineInputs {

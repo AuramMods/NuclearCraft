@@ -173,7 +173,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         while (progressHalfTicks > 0 && progressHalfTicks + rounding >= batchHalfTicks) {
             var item = recipe.itemInput();
             if (item != null && machine.hasItemInput) {
-                itemInput.extractItem(0, item.count(), false);
+                itemInput.extractItem(0, item.matchedCount(input.getItem(0)), false);
             }
             List<FluidInput> ingredients = recipe.inputs();
             boolean inOrder = recipe.inOrder(input, factor);

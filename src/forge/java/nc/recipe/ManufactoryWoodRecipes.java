@@ -94,13 +94,13 @@ final class ManufactoryWoodRecipes {
             ItemStack product = plankResults.get(preferred);
             List<Item> sameOutput = members.stream()
                     .filter(item -> ItemStack.isSameItemSameTags(plankResults.get(item), product)).toList();
-            additions.add(withWoodOutput(recipe, Ingredient.of(sameOutput.toArray(Item[]::new)), product));
+            additions.add(withWoodOutput(recipe, new ItemProcessorRecipe.Input(Ingredient.of(sameOutput.toArray(Item[]::new)), 1), product));
             sameOutput.forEach(plankResults::remove);
         }
         if (manager.byKey(STICKS).orElse(null) instanceof ItemProcessorRecipe recipe && recipe.defaults() != null) {
             removed.add(STICKS);
             ItemStack sticks = recipe.getResultItem(level.registryAccess());
-            additions.add(withWoodOutput(recipe, recipe.inputs().get(0).ingredient(), sticks.copyWithCount(yields.get(1))));
+            additions.add(withWoodOutput(recipe, recipe.inputs().get(0), sticks.copyWithCount(yields.get(1))));
         }
         plankResults.forEach((item, result) -> {
             var itemId = BuiltInRegistries.ITEM.getKey(item);
@@ -115,9 +115,9 @@ final class ManufactoryWoodRecipes {
         ProcessorRecipeDefaults.updateRecipes(manager, Machine.MANUFACTORY.recipes(), removed, additions);
     }
 
-    private static ItemProcessorRecipe withWoodOutput(ItemProcessorRecipe recipe, Ingredient input, ItemStack output) {
+    private static ItemProcessorRecipe withWoodOutput(ItemProcessorRecipe recipe, ItemInput input, ItemStack output) {
         return new ItemProcessorRecipe(recipe.id(), recipe.machine(),
-                List.of(new ItemProcessorRecipe.Input(input, 1)), recipe.fluidInputs(), recipe.fluidProducts(),
+                List.of(input), recipe.fluidInputs(), recipe.fluidProducts(),
                 List.of(new ItemProcessorRecipe.Product(output, 100, 0)), recipe.alternateResults(),
                 recipe.ticks(), recipe.energyPerTick(), recipe.radiation(), recipe.powerMultiplier(),
                 recipe.decayTimeFromRadiation(), recipe.defaults());

@@ -1,0 +1,11 @@
+{
+  "type": "nuclearcraft:melter",
+  "ingredient": {"alternatives": [
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 3},
+    {"ingredient": {"item": "minecraft:structure_void"}, "count": 2},
+    {"ingredient": {"item": "minecraft:sponge"}, "count": 4}
+  ]},
+  "result": {"fluid": "minecraft:water", "amount": 13},
+  "ticks": 4,
+  "energy_per_tick": 5
+}

@@ -53,7 +53,7 @@ public interface FluidProcessorRecipe extends ProcessingRecipe {
         return maximum.isEmpty() || product.chancePercent() == 100 ? maximum : product.roll(random);
     }
 
-    default @Nullable ItemProcessorRecipe.Input itemInput() {
+    default @Nullable ItemInput itemInput() {
         return null;
     }
 

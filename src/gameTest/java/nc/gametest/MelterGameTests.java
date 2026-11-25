@@ -67,6 +67,34 @@ public final class MelterGameTests {
         });
     }
 
+    @GameTest(template = "empty")
+    public static void melterUsesCountedAlternativesFromSidedItemInsertion(GameTestHelper helper) {
+        helper.setBlock(MACHINE, NCRegistries.MELTER.get());
+        var melter = helper.getBlockEntity(MACHINE);
+        var items = melter.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var energy = melter.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        var output = melter.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.EAST).orElseThrow(AssertionError::new);
+        var first = new ItemStack(Items.STRUCTURE_VOID);
+        helper.assertTrue(items.insertItem(0, first, true).isEmpty() && items.getStackInSlot(0).isEmpty()
+                        && items.insertItem(0, first, false).isEmpty(),
+                "The Melter accepts a partial delivery, and simulation leaves its input empty");
+        energy.receiveEnergy(40, false);
+
+        helper.startSequence().thenIdle(8).thenExecute(() -> {
+            helper.assertTrue(energy.getEnergyStored() == 40 && items.getStackInSlot(0).getCount() == 1
+                            && output.getFluidInTank(0).isEmpty(),
+                    "One item leaves the input and charge intact");
+            helper.assertTrue(items.insertItem(0, new ItemStack(Items.STRUCTURE_VOID, 4), false).isEmpty(),
+                    "The next delivery completes both batches");
+        }).thenWaitUntil(() -> helper.assertTrue(output.getFluidInTank(0).getAmount() == 13
+                        && items.getStackInSlot(0).getCount() == 2,
+                "The first batch consumes the preferred count of three"))
+          .thenWaitUntil(() -> helper.assertTrue(output.getFluidInTank(0).getAmount() == 26
+                          && items.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
+                  "The second batch uses the remaining two items and the same required FE"))
+          .thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 250)
     public static void melterProcessesIceWithSidedAutomation(GameTestHelper helper) {
         helper.setBlock(MACHINE, NCRegistries.MELTER.get());

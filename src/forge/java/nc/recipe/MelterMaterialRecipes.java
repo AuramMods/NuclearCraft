@@ -60,7 +60,7 @@ public final class MelterMaterialRecipes {
                     var catalog = new Catalog(recipes, context.getAllTags(Registries.ITEM), context.getAllTags(Registries.FLUID));
                     Map<Item, MelterRecipe> byItem = new LinkedHashMap<>();
                     for (MelterRecipe recipe : catalog.discover()) {
-                        for (ItemStack stack : recipe.input().getItems()) {
+                        for (ItemStack stack : recipe.input().alternatives()) {
                             byItem.putIfAbsent(stack.getItem(), recipe);
                         }
                     }
@@ -197,7 +197,7 @@ public final class MelterMaterialRecipes {
                          int amount, double ticks, int power, Set<Item> inputs) {
             ResourceLocation id = NuclearCraft.id("melter/" + path);
             if (fluid != null && !inputs.isEmpty() && recipes.byKey(id).isEmpty()) {
-                result.put(id, new MelterRecipe(id, Ingredient.of(inputs.stream().map(Item::getDefaultInstance)),
+                result.put(id, new MelterRecipe(id, new ItemProcessorRecipe.Input(Ingredient.of(inputs.stream().map(Item::getDefaultInstance)), 1),
                         FluidProduct.fixed(new FluidStack(fluid, amount)), ticks, power, 0D, null));
             }
         }

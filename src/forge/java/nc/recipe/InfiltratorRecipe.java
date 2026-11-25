@@ -3,7 +3,6 @@ package nc.recipe;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCMachines;
-import nc.recipe.ItemProcessorRecipe.Input;
 import nc.recipe.ItemProcessorRecipe.Product;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,7 +17,7 @@ import net.minecraftforge.common.crafting.conditions.ICondition;
 
 import java.util.List;
 
-public record InfiltratorRecipe(ResourceLocation id, List<Input> items, List<FluidInput> fluids, Product result,
+public record InfiltratorRecipe(ResourceLocation id, List<ItemInput> items, List<FluidInput> fluids, Product result,
                                  double time, double power, double heatingBonus, double radiation)
         implements ProcessingRecipe, MachineInputs {
 

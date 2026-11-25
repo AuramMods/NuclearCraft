@@ -6,9 +6,7 @@ import com.google.gson.JsonSyntaxException;
 import nc.recipe.ItemProcessorRecipe.Input;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.fluids.FluidStack;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,7 +17,7 @@ public interface MachineInputs {
     int ITEM_INPUTS = 2;
     int FLUID_INPUTS = 2;
 
-    List<Input> items();
+    List<ItemInput> items();
     List<FluidInput> fluids();
 
     record Match(int firstItems, int secondItems, int firstFluid, int secondFluid) {
@@ -34,24 +32,26 @@ public interface MachineInputs {
     }
 
     default @Nullable Match match(ItemStack first, ItemStack second, FluidStack fluid, FluidStack other) {
-        Input firstItem = item(0);
-        Input secondItem = item(1);
-        if (!matches(firstItem, first, false) || !matches(secondItem, second, false)) {
-            if (!matches(secondItem, first, false) || !matches(firstItem, second, false)) return null;
-            firstItem = item(1);
-            secondItem = item(0);
+        ItemInput firstItem = item(0);
+        ItemInput secondItem = item(1);
+        int firstCount = firstItem.matchedCount(first);
+        int secondCount = secondItem.matchedCount(second);
+        if (firstCount < 0 || secondCount < 0) {
+            firstCount = secondItem.matchedCount(first);
+            secondCount = firstItem.matchedCount(second);
+            if (firstCount < 0 || secondCount < 0) return null;
         }
         var firstFluid = fluid(0);
         var secondFluid = fluid(1);
         int firstAmount = amount(firstFluid, fluid);
         int secondAmount = amount(secondFluid, other);
         if (firstAmount >= 0 && secondAmount >= 0) {
-            return new Match(firstItem.count(), secondItem.count(), firstAmount, secondAmount);
+            return new Match(firstCount, secondCount, firstAmount, secondAmount);
         }
         firstAmount = amount(secondFluid, fluid);
         secondAmount = amount(firstFluid, other);
         if (firstAmount >= 0 && secondAmount >= 0) {
-            return new Match(firstItem.count(), secondItem.count(), firstAmount, secondAmount);
+            return new Match(firstCount, secondCount, firstAmount, secondAmount);
         }
         return null;
     }
@@ -59,8 +59,8 @@ public interface MachineInputs {
     default boolean canMatch(ItemStack first, ItemStack second, FluidStack fluid, FluidStack other) {
         var firstItem = item(0);
         var secondItem = item(1);
-        boolean itemsMatch = matches(firstItem, first, true) && matches(secondItem, second, true)
-                || matches(secondItem, first, true) && matches(firstItem, second, true);
+        boolean itemsMatch = acceptsPartial(firstItem, first) && acceptsPartial(secondItem, second)
+                || acceptsPartial(secondItem, first) && acceptsPartial(firstItem, second);
         var firstFluid = fluid(0);
         var secondFluid = fluid(1);
         return itemsMatch && (acceptsPartial(firstFluid, fluid) && acceptsPartial(secondFluid, other)
@@ -70,15 +70,14 @@ public interface MachineInputs {
     default boolean accepts(ItemStack stack) { return !stack.isEmpty() && items().stream().anyMatch(input -> input.accepts(stack)); }
     default boolean accepts(FluidStack stack) { return fluids().stream().anyMatch(input -> input.accepts(stack)); }
 
-    private Input item(int index) { return index < items().size() ? items().get(index) : new Input(Ingredient.EMPTY, 0); }
+    private ItemInput item(int index) { return index < items().size() ? items().get(index) : Input.EMPTY; }
     private @Nullable FluidInput fluid(int index) { return index < fluids().size() ? fluids().get(index) : null; }
     private static int amount(@Nullable FluidInput ingredient, FluidStack stack) {
         return ingredient == null ? (stack.isEmpty() ? 0 : -1) : ingredient.matchedAmount(stack, 1);
     }
 
-    private static boolean matches(Input ingredient, ItemStack stack, boolean partial) {
-        if (stack.isEmpty()) return partial || ingredient.count() == 0;
-        return ingredient.count() > 0 && ingredient.accepts(stack) && (partial || stack.getCount() >= ingredient.count());
+    private static boolean acceptsPartial(ItemInput ingredient, ItemStack stack) {
+        return stack.isEmpty() || ingredient.accepts(stack);
     }
 
     private static boolean acceptsPartial(@Nullable FluidInput ingredient, FluidStack stack) {
@@ -89,14 +88,10 @@ public interface MachineInputs {
         return element.isJsonNull() || element.isJsonObject() && element.getAsJsonObject().size() == 0;
     }
 
-    static List<Input> readItems(JsonArray entries, ResourceLocation id) {
-        var items = new ArrayList<Input>(ITEM_INPUTS);
+    static List<ItemInput> readItems(JsonArray entries, ResourceLocation id) {
+        var items = new ArrayList<ItemInput>(ITEM_INPUTS);
         for (var entry : entries) {
-            if (unusedSlot(entry)) continue;
-            var input = GsonHelper.convertToJsonObject(entry, "item input");
-            int count = GsonHelper.getAsInt(input, "count", 1);
-            if (count <= 0 || count > 64) throw new JsonSyntaxException("Invalid machine item count for " + id);
-            items.add(new Input(Ingredient.fromJson(GsonHelper.getNonNull(input, "ingredient")), count));
+            if (!unusedSlot(entry)) items.add(ItemInput.readSlot(entry, id));
         }
         if (items.size() > ITEM_INPUTS) throw new JsonSyntaxException("Too many item inputs for " + id);
         return items;
@@ -111,10 +106,10 @@ public interface MachineInputs {
         return fluids;
     }
 
-    static List<Input> readItems(FriendlyByteBuf buffer) {
+    static List<ItemInput> readItems(FriendlyByteBuf buffer) {
         int count = buffer.readVarInt();
-        var items = new ArrayList<Input>(count);
-        for (int i = 0; i < count; i++) items.add(new Input(Ingredient.fromNetwork(buffer), buffer.readVarInt()));
+        var items = new ArrayList<ItemInput>(count);
+        for (int i = 0; i < count; i++) items.add(ItemInput.fromNetwork(buffer));
         return items;
     }
 
@@ -127,10 +122,7 @@ public interface MachineInputs {
 
     default void writeInputs(FriendlyByteBuf buffer) {
         buffer.writeVarInt(items().size());
-        for (var item : items()) {
-            item.ingredient().toNetwork(buffer);
-            buffer.writeVarInt(item.count());
-        }
+        for (var item : items()) ItemInput.write(buffer, item);
         buffer.writeVarInt(fluids().size());
         for (var fluid : fluids()) FluidInput.write(buffer, fluid);
     }

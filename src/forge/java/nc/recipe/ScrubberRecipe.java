@@ -22,7 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.Input itemInput,
+public record ScrubberRecipe(ResourceLocation id, @Nullable ItemInput itemInput,
                              @Nullable FluidInput fluidInput, ItemProcessorRecipe.Product itemProduct,
                              FluidProduct fluidProduct, @Nullable Medium medium, int customTicks, int customPower,
                              double customEfficiency) implements Recipe<Container> {
@@ -42,7 +42,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
     }
 
     public boolean matches(ItemStack items, FluidStack fluid) {
-        return (itemInput == null ? items.isEmpty() : acceptsItem(items) && items.getCount() >= itemInput.count())
+        return (itemInput == null ? items.isEmpty() : itemInput.matches(items))
                 && (fluidInput == null ? fluid.isEmpty() : fluidInput.matches(fluid));
     }
 
@@ -68,13 +68,13 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
         @Override
         public ScrubberRecipe fromJson(ResourceLocation id, JsonObject json, ICondition.IContext context) {
             var itemEntry = json.get("item_input");
-            var item = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? null : ItemProcessorRecipe.Input.readSlot(itemEntry, id);
+            var item = itemEntry == null || MachineInputs.unusedSlot(itemEntry) ? null : ItemInput.readSlot(itemEntry, id);
             var fluidEntry = json.get("fluid_input");
             var fluid = fluidEntry == null || MachineInputs.unusedSlot(fluidEntry) ? null : FluidInput.readSlot(fluidEntry, id);
             var product = ItemProcessorRecipe.Product.readSlot(json.get("item_output"), context);
             var result = json.has("fluid_output") ? FluidProduct.readSlot(id, json.get("fluid_output")) : FluidProduct.EMPTY;
             if ((item == null && fluid == null && product.isEmpty() && result.isEmpty())
-                    || (item != null && item.ingredient().isEmpty())
+                    || (item instanceof ItemProcessorRecipe.Input input && input.ingredient().isEmpty())
                     || (fluid != null && fluid.maxAmount() > ProcessorFluidTanks.CAPACITY)
                     || result.stack().getAmount() > ProcessorFluidTanks.CAPACITY) {
                 throw new JsonSyntaxException("Invalid Scrubber inputs or outputs for " + id);
@@ -102,7 +102,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
 
         @Override
         public ScrubberRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var item = buffer.readNullable(ItemProcessorRecipe.Input::fromNetwork);
+            var item = buffer.readNullable(ItemInput::fromNetwork);
             var fluid = buffer.readNullable(FluidInput::fromNetwork);
             return new ScrubberRecipe(id, item, fluid, ItemProcessorRecipe.Product.fromNetwork(buffer),
                     FluidProduct.fromNetwork(buffer), null,
@@ -111,7 +111,7 @@ public record ScrubberRecipe(ResourceLocation id, @Nullable ItemProcessorRecipe.
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, ScrubberRecipe recipe) {
-            buffer.writeNullable(recipe.itemInput, (output, item) -> item.toNetwork(output));
+            buffer.writeNullable(recipe.itemInput, ItemInput::write);
             buffer.writeNullable(recipe.fluidInput, FluidInput::write);
             recipe.itemProduct.toNetwork(buffer);
             recipe.fluidProduct.toNetwork(buffer);

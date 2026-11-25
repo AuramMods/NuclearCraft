@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input itemInput, FluidInput fluidInput,
+public record EnricherRecipe(ResourceLocation id, ItemInput itemInput, FluidInput fluidInput,
                              FluidProduct fluidProduct, int ticks, int energyPerTick, double radiation,
                              @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     @Override
@@ -45,7 +45,7 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
         public EnricherRecipe fromJson(ResourceLocation id, JsonObject json) {
             int ticks = GsonHelper.getAsInt(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
-            var item = ItemProcessorRecipe.Input.readSlot(json.get("item_input"), id);
+            var item = ItemInput.readSlot(json.get("item_input"), id);
             var fluid = FluidInput.readSlot(json.get("fluid_input"), id);
             var result = FluidProduct.readSlot(id, json.get("result"));
             if (ticks < 1 || energy < 0 || (item.isEmpty() && fluid.isEmpty() && result.isEmpty())) {
@@ -57,14 +57,14 @@ public record EnricherRecipe(ResourceLocation id, ItemProcessorRecipe.Input item
 
         @Override
         public EnricherRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var item = ItemProcessorRecipe.Input.fromNetwork(buffer);
+            var item = ItemInput.fromNetwork(buffer);
             return new EnricherRecipe(id, item, FluidInput.fromNetwork(buffer), FluidProduct.fromNetwork(buffer),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, EnricherRecipe recipe) {
-            recipe.itemInput.toNetwork(buffer);
+            ItemInput.write(buffer, recipe.itemInput);
             FluidInput.write(buffer, recipe.fluidInput);
             recipe.fluidProduct.toNetwork(buffer);
             buffer.writeVarInt(recipe.ticks);

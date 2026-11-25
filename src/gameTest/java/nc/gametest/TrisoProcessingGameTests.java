@@ -75,13 +75,13 @@ public final class TrisoProcessingGameTests {
                 NuclearCraft.id("pressurizer/dense_plates/pressurizer_qa_metal"))).findFirst().orElseThrow();
         var gem = recipes.stream().filter(recipe -> recipe.id().equals(
                 NuclearCraft.id("pressurizer/plates/pressurizer_qa_gem"))).findFirst().orElseThrow();
-        helper.assertTrue(metal.inputs().get(0).ingredient().test(new ItemStack(Items.IRON_INGOT))
-                        && !metal.inputs().get(0).ingredient().test(new ItemStack(Items.DIAMOND))
+        helper.assertTrue(metal.inputs().get(0).accepts(new ItemStack(Items.IRON_INGOT))
+                        && !metal.inputs().get(0).accepts(new ItemStack(Items.DIAMOND))
                         && metal.products().get(0).stack().is(Items.PAPER),
                 "Use the ingot tag and the first item in the ordered plate tag");
-        helper.assertTrue(gem.inputs().get(0).ingredient().test(new ItemStack(Items.DIAMOND)),
+        helper.assertTrue(gem.inputs().get(0).accepts(new ItemStack(Items.DIAMOND)),
                 "Use the gem tag when the ingot tag is absent");
-        helper.assertTrue(dense.inputs().get(0).count() == 9 && dense.products().get(0).stack().is(Items.BOOK),
+        helper.assertTrue(dense.inputs().get(0).alternatives().stream().allMatch(stack -> stack.getCount() == 9) && dense.products().get(0).stack().is(Items.BOOK),
                 "The canonical dense plate tag selects the output and nine matching plates supply the input");
         var override = recipes.stream().filter(recipe -> recipe.id().equals(
                 NuclearCraft.id("pressurizer/plates/pressurizer_qa_override"))).findFirst().orElseThrow();

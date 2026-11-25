@@ -1100,6 +1100,28 @@ Ender IO 8.2.22-beta supplied water for the Chemical Reactor’s 18 mB and 10 mB
 
 The isolated 540-mod Auram client loaded the seven recipes through KubeJS using the object form. JEI showed each fluid alternative with its authored volume. The Chemical Reactor, Infuser, Radiation Scrubber, Electrolyzer, and Distiller ran the recipes in-world. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
 
+### Alternative item inputs
+
+Use an `alternatives` object to give an item slot several counted Forge ingredients. Each choice takes an `ingredient` and a `count`. The machine processes the first choice that matches the stack and has enough items. An item pipe can add part of the required stack and the machine will wait for the rest. Shapeless recipes still assign each required input to a distinct slot.
+
+For example, the following single input uses three coal by preference, then two coal, or four charcoal.
+
+```json
+{"alternatives": [
+  {"ingredient": {"item": "minecraft:coal"}, "count": 3},
+  {"ingredient": {"item": "minecraft:coal"}, "count": 2},
+  {"ingredient": {"item": "minecraft:charcoal"}, "count": 4}
+]}
+```
+
+Use the same object in `ingredients`, `item_inputs`, `item_input`, or the Melter's `ingredient` field. The Melter also accepts a single counted choice with `ingredient` and `count`. Its original Forge ingredient syntax continues to load as one item. The object form works in datapacks, KubeJS, and CraftTweaker's `addJsonRecipe`. For other processor inputs, datapacks and KubeJS may also give the alternatives as an array. Use an empty map as a choice to permit an empty slot.
+
+All 255 local GameTests passed. Packaged Forge 47.4.10 processed seven recipes with item alternatives on clean Forge and with CraftTweaker 14.0.59. The Radiation Scrubber kept its three reserved items and two loose items through a restart, then used only the reserved three. A scripted processor finished the same three-item reservation with the remaining 95 FE after restart. Changing its recipe to require three items returned the next batch's reserved two items. A second reload preserved that balance.
+
+Ender IO 8.2.22-beta item conduits supplied five items for the Manufactory's three-item and two-item batches. Mekanism 10.4.16.80 Basic Logistical Transporters supplied four items for the other alternative. Both machines waited when given a single item. Their collectors retained two and one gold ingots respectively after restart and chunk unload and reload.
+
+The isolated 540-mod Auram client loaded and ran all seven recipes through KubeJS. JEI showed the authored counts, including both counts for the same item in the Melter and Manufactory. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
+
 The molten-salt reactor retains `nuclearcraft:salt_fission_controller`, `nuclearcraft:salt_fission_vessel`, and `nuclearcraft:fission_vessel_port`. The two legacy heater metadata blocks map to the `<material>_coolant_heater` and `fission_heater_port_<material>` IDs in legacy coolant order. The first coolant uses `standard`. Sneak-use a fuel container on an unassembled vessel or vessel port with an empty local input to select a matching fuel filter. Sneak-use an empty bucket under the same conditions to clear the filter. Sneak-use with an empty hand to switch a port between input and output.
 
 The molten-salt fuel recipe uses a counted fluid `fuel`, a fluid `result`, and a fractional `ticks` value. Set vessel intrinsic flux efficiency and any molten-salt-only fuel time, heat, and efficiency multipliers in `world/serverconfig/nuclearcraft-salt-fission.toml`. The legacy `fission_heater_cooling_rate` array maps to its named `cooling_rate` keys. The reactor and heat exchanger read the same `nak_coolant_heat_per_mb` value in `nuclearcraft-heat-exchangers.toml`.

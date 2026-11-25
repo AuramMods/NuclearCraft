@@ -123,7 +123,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         if (reservedRecipe != null) {
             var existing = level.getRecipeManager().byKey(reservedRecipe).orElse(null);
             if (existing instanceof ScrubberRecipe recipe && recipe.matches(reservedItem, reservedFluid)
-                    && reservedItem.getCount() == itemAmount(recipe) && reservedFluid.getAmount() == fluidAmount(recipe, reservedFluid)) {
+                    && reservedItem.getCount() == itemAmount(recipe, reservedItem) && reservedFluid.getAmount() == fluidAmount(recipe, reservedFluid)) {
                 return recipe;
             }
             if (!restoreSupplies()) {
@@ -133,7 +133,7 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
 
         var recipe = findUnreservedRecipe(level);
         if (recipe != null) {
-            reservedItem = inventory.extractItem(0, itemAmount(recipe), false);
+            reservedItem = inventory.extractItem(0, itemAmount(recipe, inventory.getStackInSlot(0)), false);
             int amount = fluidAmount(recipe, tanks.stored(0));
             if (amount > 0) {
                 reservedFluid = tanks.stored(0).copy();
@@ -180,9 +180,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
         progress = 0;
     }
 
-    private static int itemAmount(ScrubberRecipe recipe) {
+    private static int itemAmount(ScrubberRecipe recipe, ItemStack stack) {
         var item = recipe.itemInput();
-        return item == null ? 0 : item.count();
+        return item == null ? 0 : item.matchedCount(stack);
     }
 
     private static int fluidAmount(ScrubberRecipe recipe, FluidStack stack) {

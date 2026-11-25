@@ -36,7 +36,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     private static final int PROGRESS_SCALE = 1000;
 
     private final ProcessorRecipeLookup<MelterRecipe> recipes =
-            new ProcessorRecipeLookup<>(NCRegistries.MELTING.get(), recipe -> recipe.input() == null);
+            new ProcessorRecipeLookup<>(NCRegistries.MELTING.get(), recipe -> recipe.input().matches(ItemStack.EMPTY));
     private final SimpleContainer recipeInput = new SimpleContainer(1);
     private final ProcessorItemInput inventory = new ProcessorItemInput(this, 1, this::acceptsItem);
     private final ProcessorFluidTanks fluids = new ProcessorFluidTanks(this, 1);
@@ -61,7 +61,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
             return true;
         }
         var manager = level.getRecipeManager();
-        return manager.getRecipeFor(NCRegistries.MELTING.get(), new SimpleContainer(stack), level).isPresent()
+        return manager.getAllRecipesFor(NCRegistries.MELTING.get()).stream().anyMatch(recipe -> recipe.input().accepts(stack))
                 || MelterMaterialRecipes.find(manager, stack) != null;
     }
 
@@ -131,9 +131,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
             if (!product.isEmpty()) {
                 fluids.produce(0, recipe.fluidProduct().roll(level.random));
             }
-            if (recipe.input() != null) {
-                inventory.extractItem(0, 1, false);
-            }
+            inventory.extractItem(0, recipe.input().matchedCount(recipeInput.getItem(0)), false);
             inventory.ports.push(level);
             progressHalfTicks = Math.max(0, progressHalfTicks - batch);
             if (progressHalfTicks > 0) {
