@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_bronze"
+        {
+            "id": "#forge:molten_bronze",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/bronze"

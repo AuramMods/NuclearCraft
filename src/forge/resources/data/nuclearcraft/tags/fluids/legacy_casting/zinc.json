@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_zinc"
+        {
+            "id": "#forge:molten_zinc",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/zinc"

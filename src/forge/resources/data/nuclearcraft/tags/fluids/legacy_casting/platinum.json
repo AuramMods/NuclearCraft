@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_platinum"
+        {
+            "id": "#forge:molten_platinum",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/platinum"

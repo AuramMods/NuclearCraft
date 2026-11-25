@@ -20,6 +20,7 @@ import nc.init.NCSaltFission;
 import nc.init.NCFluids;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors;
+import nc.init.NCLoot;
 import nc.init.NCProcessorAvailability;
 import nc.init.NCMachines;
 import nc.init.NCRadiation;
@@ -48,6 +49,7 @@ public final class NuclearCraft {
         NCCollectors.register(context);
         NCComputerPorts.register(context);
         NCEntities.register(context);
+        NCLoot.register(context);
         NCEquipment.register(context);
         NCGenerators.register(context);
         NCQuantum.register(context);

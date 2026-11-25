@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_electrum"
+        {
+            "id": "#forge:molten_electrum",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/electrum"

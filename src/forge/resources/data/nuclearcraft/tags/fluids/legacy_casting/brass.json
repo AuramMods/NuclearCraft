@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_brass"
+        {
+            "id": "#forge:molten_brass",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/brass"

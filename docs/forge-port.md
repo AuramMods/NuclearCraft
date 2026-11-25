@@ -1494,6 +1494,16 @@ All 120 local GameTests passed. On a packaged Forge 47.4.18 multiplayer server, 
 
 The same packaged JAR loaded with all 539 installed JARs in the isolated Auram instance on Forge 47.4.18. Player login and JEI startup completed, and TerraBlender registered the Wasteland region alongside the other Overworld regions. The server spawned and saved both ghoul types at their expected 16 and 32 health. The muted client exited with zero activation, foreground, or visible-window samples.
 
+### Ore, mob, and dungeon loot
+
+Move the legacy `ore_drops`, `rare_drops`, and `dungeon_loot` settings to `config/nuclearcraft-loot.toml`. Each is off by default. The `ore_drops` array keeps its original order of Rhodochrosite, Beryllium dust, Zirconium dust, Fluorite, Sulfur dust, Villiaumite, and Carobbiite. The stone and deepslate variants share their bonuses, and Silk Touch suppresses them. The rare drop setting gives monsters and NPCs the original 1% Dominos chance. Feral ghouls retain their Husk loot and have independent 2% rolls for each of their three isotope dusts. Glowing ghouls have 4% rolls for each of their seven dusts. Successful isotope rolls yield one or two items. The corresponding vanilla loot gamerules apply. [Forge global loot modifiers](https://docs.minecraftforge.net/en/1.20.1/resources/server/glm/)
+
+The dungeon setting adds the original weighted food and disc entries to the primary loot pool of the simple dungeon, village weaponsmith, abandoned mineshaft, three stronghold chest types, and woodland mansion. The village weaponsmith is the modern counterpart of the old blacksmith chest. World datapack replacements retain their own entries. The four music discs keep their legacy item and sound IDs and reuse the artwork and audio supplied with the legacy mod. Their new comparator signals are 1 for The Wanderer, 2 for The End of the World, 3 for Money for Nothing, and 4 for Hyperspace.
+
+Packaged Forge 47.4.18 verified disabled defaults, all seven enabled ore bonuses, Silk Touch, both mob drop lists, the loot gamerules, and the seven chest tables. It accepted all four discs in jukeboxes and saved the discs and a world loot table replacement across restart. The clean server loaded the seven optional Ingot Former casting tags without missing-reference errors. All 213 local GameTests passed.
+
+The isolated 539-mod Auram copy logged in and initialized JEI. Its configured ore bonuses produced the expected materials, all four records registered with their sound events, and the server accepted Hyperspace in a jukebox. The client used master volume zero and OpenAL No Output, and exited with zero focus activations, foreground samples, or visible window samples.
+
 ### Radiation Scrubber
 
 The block, item, recipe type, and menu use `nuclearcraft:radiation_scrubber`. It reserves the inputs for a batch and keeps them, along with partial progress, when the chunk unloads or the server stops. With output set to Hold, a full output tank or slot stops energy use and radiation removal. The redstone control in the menu enables pausing when powered. Sneak-use the block with an empty hand to read its measured removal rate and effective efficiency.

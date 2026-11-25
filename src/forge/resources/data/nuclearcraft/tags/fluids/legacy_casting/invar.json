@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_invar"
+        {
+            "id": "#forge:molten_invar",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/invar"

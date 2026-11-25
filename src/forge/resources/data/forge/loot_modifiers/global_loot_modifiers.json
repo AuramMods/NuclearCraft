@@ -1,6 +1,7 @@
 {
     "replace": false,
     "entries": [
-        "nuclearcraft:container_shielding"
+        "nuclearcraft:container_shielding",
+        "nuclearcraft:ore_bonus"
     ]
 }

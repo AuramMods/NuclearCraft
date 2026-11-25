@@ -1,10 +1,12 @@
 package nc.init;
 
+import nc.NuclearCraft;
 import nc.item.PortableEnderChestItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -12,6 +14,8 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -51,6 +55,10 @@ final class NCMaterials {
                 .requiresCorrectToolForDrops().lightLevel(state -> 15).noOcclusion());
         MATERIALS.add(NCRegistries.ITEMS.register("portable_ender_chest",
                 () -> new PortableEnderChestItem(new Item.Properties())));
+        musicDisc("wanderer", 1, 3323);
+        musicDisc("end_of_the_world", 2, 3587);
+        musicDisc("money_for_nothing", 3, 6294);
+        musicDisc("hyperspace", 4, 3687);
         food("dominos", 16, 1.8F, true, 600, 1, true, MobEffects.MOVEMENT_SPEED, MobEffects.DIG_SPEED);
         item("flour");
         item("roasted_cocoa_beans");
@@ -144,6 +152,14 @@ final class NCMaterials {
         if (display) {
             MATERIALS.add(item);
         }
+    }
+
+    private static void musicDisc(String name, int signal, int duration) {
+        String soundName = "music.nc." + name;
+        var sound = NCRegistries.SOUNDS.register(soundName,
+                () -> SoundEvent.createVariableRangeEvent(NuclearCraft.id(soundName)));
+        MATERIALS.add(NCRegistries.ITEMS.register("record_" + name,
+                () -> new RecordItem(signal, sound, new Item.Properties().stacksTo(1).rarity(Rarity.EPIC), duration)));
     }
 
     private static RegistryObject<Item> item(String id) {

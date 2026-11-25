@@ -1,6 +1,9 @@
 {
     "values": [
-        "#forge:molten_constantan"
+        {
+            "id": "#forge:molten_constantan",
+            "required": false
+        }
     ],
     "remove": [
         "#nuclearcraft:modern_casting/constantan"

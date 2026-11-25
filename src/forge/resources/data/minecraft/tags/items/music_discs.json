@@ -1,0 +1,9 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:record_wanderer",
+        "nuclearcraft:record_end_of_the_world",
+        "nuclearcraft:record_money_for_nothing",
+        "nuclearcraft:record_hyperspace"
+    ]
+}

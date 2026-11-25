@@ -47,6 +47,42 @@
             "nuclearcraft:entity/feral_ghoul_death"
         ]
     },
+    "music.nc.wanderer": {
+        "subtitle": "subtitles.nuclearcraft.record_wanderer",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/wanderer",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.end_of_the_world": {
+        "subtitle": "subtitles.nuclearcraft.record_end_of_the_world",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/end_of_the_world",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.money_for_nothing": {
+        "subtitle": "subtitles.nuclearcraft.record_money_for_nothing",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/money_for_nothing",
+                "stream": true
+            }
+        ]
+    },
+    "music.nc.hyperspace": {
+        "subtitle": "subtitles.nuclearcraft.record_hyperspace",
+        "sounds": [
+            {
+                "name": "nuclearcraft:music/hyperspace",
+                "stream": true
+            }
+        ]
+    },
     "music.nc.wasteland_ambience_1": {
         "subtitle": "subtitles.nuclearcraft.wasteland_ambience",
         "sounds": [
