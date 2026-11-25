@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:iridium_oxide_dust"
     },
+    "input_tag": "forge:dusts/iridium_oxide",
     "result_tag": "forge:ingots/iridium_oxide",
     "result": "nuclearcraft:iridium_oxide_ingot",
     "experience": 0.0,

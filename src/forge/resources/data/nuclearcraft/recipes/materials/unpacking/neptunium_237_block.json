@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:neptunium_237_block"
+            "tag": "forge:storage_blocks/neptunium_237"
         }
     ],
     "result_tag": "forge:ingots/neptunium_237",

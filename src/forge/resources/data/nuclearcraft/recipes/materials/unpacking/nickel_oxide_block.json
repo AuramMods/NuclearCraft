@@ -6,6 +6,7 @@
             "item": "nuclearcraft:nickel_oxide_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/nickel_oxide",
     "result_tag": "forge:ingots/nickel_oxide",
     "result": {
         "item": "nuclearcraft:nickel_oxide_ingot",

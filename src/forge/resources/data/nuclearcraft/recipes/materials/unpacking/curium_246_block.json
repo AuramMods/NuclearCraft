@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:curium_246_block"
+            "tag": "forge:storage_blocks/curium_246"
         }
     ],
     "result_tag": "forge:ingots/curium_246",

@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:silver_dust"
     },
+    "input_tag": "forge:dusts/silver",
     "result_tag": "forge:ingots/silver",
     "result": "nuclearcraft:silver_ingot",
     "experience": 0.0,

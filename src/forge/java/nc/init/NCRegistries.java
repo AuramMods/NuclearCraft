@@ -18,6 +18,7 @@ import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
 import nc.recipe.FluidContainerRecipe;
+import nc.recipe.MaterialPackingRecipe;
 import nc.recipe.MaterialRecipeSerializer;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
@@ -31,6 +32,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -61,11 +63,12 @@ public final class NCRegistries {
 
     public static final RegistryObject<RecipeSerializer<FluidContainerRecipe>> FLUID_CONTAINER_CRAFTING =
             RECIPE_SERIALIZERS.register("fluid_container_crafting", FluidContainerRecipe.Serializer::new);
+    public static final RegistryObject<RecipeSerializer<ShapedRecipe>> MATERIAL_SHAPED =
+            RECIPE_SERIALIZERS.register("material_shaped", MaterialPackingRecipe.Serializer::new);
 
     static {
         RECIPE_SERIALIZERS.register("material_smelting", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SMELTING_RECIPE));
         RECIPE_SERIALIZERS.register("material_blasting", () -> new MaterialRecipeSerializer<>(RecipeSerializer.BLASTING_RECIPE));
-        RECIPE_SERIALIZERS.register("material_shaped", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SHAPED_RECIPE));
         RECIPE_SERIALIZERS.register("material_shapeless", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SHAPELESS_RECIPE));
     }
 

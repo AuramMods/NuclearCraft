@@ -6,6 +6,7 @@
             "item": "nuclearcraft:iridium_oxide_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/iridium_oxide",
     "result_tag": "forge:ingots/iridium_oxide",
     "result": {
         "item": "nuclearcraft:iridium_oxide_ingot",

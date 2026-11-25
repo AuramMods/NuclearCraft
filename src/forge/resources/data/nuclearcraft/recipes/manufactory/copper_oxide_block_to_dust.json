@@ -1,0 +1,30 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:storage_blocks/copper_oxide"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "forge:dusts/copper_oxide",
+        "count": 9
+    },
+    "ticks": 3600,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:tag_empty",
+            "tag": "forge:ingots/copper_oxide"
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/copper_oxide"
+            }
+        }
+    ]
+}

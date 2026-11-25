@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:ruthenium_oxide_dust"
     },
+    "input_tag": "forge:dusts/ruthenium_oxide",
     "result_tag": "forge:ingots/ruthenium_oxide",
     "result": "nuclearcraft:ruthenium_oxide_ingot",
     "experience": 0.0,

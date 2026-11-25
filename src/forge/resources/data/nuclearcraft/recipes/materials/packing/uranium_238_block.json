@@ -8,7 +8,7 @@
     ],
     "key": {
         "I": {
-            "item": "nuclearcraft:uranium_238_ingot"
+            "tag": "forge:ingots/uranium_238"
         }
     },
     "result_tag": "forge:storage_blocks/uranium_238",

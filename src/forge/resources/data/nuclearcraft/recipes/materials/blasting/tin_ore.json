@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:tin_ore"
     },
+    "input_tag": "forge:ores/tin",
     "result_tag": "forge:ingots/tin",
     "result": "nuclearcraft:tin_ingot",
     "experience": 0.5,

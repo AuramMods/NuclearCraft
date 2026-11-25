@@ -6,6 +6,7 @@
             "item": "nuclearcraft:palladium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/palladium",
     "result_tag": "forge:ingots/palladium",
     "result": {
         "item": "nuclearcraft:palladium_ingot",

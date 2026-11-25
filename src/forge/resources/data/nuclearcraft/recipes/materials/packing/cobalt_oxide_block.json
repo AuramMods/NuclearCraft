@@ -11,6 +11,7 @@
             "item": "nuclearcraft:cobalt_oxide_ingot"
         }
     },
+    "input_tag": "forge:ingots/cobalt_oxide",
     "result_tag": "forge:storage_blocks/cobalt_oxide",
     "result": {
         "item": "nuclearcraft:cobalt_oxide_block",

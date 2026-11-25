@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:manganese_dust"
     },
+    "input_tag": "forge:dusts/manganese",
     "result_tag": "forge:ingots/manganese",
     "result": "nuclearcraft:manganese_ingot",
     "experience": 0.0,

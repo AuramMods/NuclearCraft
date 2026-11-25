@@ -11,6 +11,7 @@
             "item": "nuclearcraft:lithium_ingot"
         }
     },
+    "input_tag": "forge:ingots/lithium",
     "result_tag": "forge:storage_blocks/lithium",
     "result": {
         "item": "nuclearcraft:lithium_block",

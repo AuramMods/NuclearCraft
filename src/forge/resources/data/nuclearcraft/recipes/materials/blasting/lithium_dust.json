@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:lithium_dust"
     },
+    "input_tag": "forge:dusts/lithium",
     "result_tag": "forge:ingots/lithium",
     "result": "nuclearcraft:lithium_ingot",
     "experience": 0.0,

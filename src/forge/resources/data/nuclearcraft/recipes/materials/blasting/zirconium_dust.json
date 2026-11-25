@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:zirconium_dust"
     },
+    "input_tag": "forge:dusts/zirconium",
     "result_tag": "forge:ingots/zirconium",
     "result": "nuclearcraft:zirconium_ingot",
     "experience": 0.0,

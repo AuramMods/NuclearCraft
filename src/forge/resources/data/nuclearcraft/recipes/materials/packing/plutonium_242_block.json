@@ -8,7 +8,7 @@
     ],
     "key": {
         "I": {
-            "item": "nuclearcraft:plutonium_242_ingot"
+            "tag": "forge:ingots/plutonium_242"
         }
     },
     "result_tag": "forge:storage_blocks/plutonium_242",

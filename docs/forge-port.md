@@ -125,6 +125,20 @@ A muted multiplayer client with its own default mod order showed the dedicated s
 
 The isolated client with all 539 installed Auram mod JARs used Almost Unified 0.11.0 to select Thermal tin for NuclearCraft's smelting, blasting, Manufactory, Ingot Former, and Pressurizer recipes. The Manufactory produced one Thermal tin dust and the Pressurizer produced one Thermal tin plate. Two KubeJS replacements retained the original recipe IDs and specified gold nuggets for boron smelting and three clay balls for the Manufactory. The Manufactory produced all three clay balls in-world. The client used master volume zero and OpenAL No Output and exited with zero observed focus changes or visible windows. [Almost Unified 0.11.0](https://www.curseforge.com/minecraft/mc-mods/almostunified/files/7430993)
 
+### Material recipe inputs and storage blocks
+
+Copy `ore_dict_raw_material_recipes` to `config/nuclearcraft-recipe-outputs.toml`. It defaults to false. Enable it and restart to use the matching Forge ore and dust tags for stock furnace and blast furnace recipes and shared ingot and block tags for storage conversions. The disabled setting keeps the individual NuclearCraft inputs. The tagged packing recipe takes nine ingots of one item ID, matching the separate ingot patterns in 2o.9.7. Other loaded recipes keep their own ingredients and normal Forge selection order.
+
+The five legacy optional storage conversions for molybdenum, copper oxide, cobalt, nickel, and platinum are available when their ingot tags are populated. The restored cobalt, nickel, and platinum blocks have their own IDs, original textures, and Forge storage block tags. The fertile isotope storage recipes always use their shared tags, as in 2o.9.7. Cobalt, nickel, ruthenium, and iridium oxide ingots can be smelted when the matching metal ingot tag supplies a result. The Manufactory can grind a copper oxide block into nine dust when the pack has copper oxide dust and its ingot tag is empty.
+
+All 214 local GameTests passed. Dedicated Forge 47.4.18 verified both setting values with Auram's Mekanism 10.4.16.80 ores, dust, tin ingot, and tin block. The enabled recipe packed nine matching ingots into one block, and unpacking produced nine ingots. A furnace completed NuclearCraft's smelting recipe for an item added to the boron dust tag. Reloading the datapack updated the tin dust input and removed the cobalt conversions when their input tag became empty. The furnace output persisted across restart.
+
+On clean Forge, cobalt, nickel, and platinum blocks each supplied one matching block through their mining loot tables. With a test dust tagged as copper oxide, the Manufactory converted one copper oxide block into nine dust and exhausted the 3,600 FE budget at the configured 5% recipe time.
+
+A muted multiplayer client with the option disabled locally received the enabled server's recipes. It matched a new shared dust on login and picked up the replacement dust after reload. The packing recipe kept its matching rule across both syncs. The client loaded the item models and original block textures for cobalt, nickel, and platinum and recorded zero focus changes or visible window samples.
+
+In the isolated 539-mod Auram instance, the server and client agreed on the Mekanism tin inputs, the optional storage conversions, and the KubeJS boron smelting replacement. Cobalt unpacked into nine Tinkers’ Construct ingots, nickel into nine Thermal ingots, and platinum and molybdenum into nine Crystalcraft ingots each. A furnace used NuclearCraft's cobalt oxide recipe and produced one Tinkers’ Construct cobalt ingot. The muted client saved and exited with zero focus changes or visible window samples.
+
 ### Melter material recipes
 
 The Melter now melts ore, tiny dust, nuggets, and storage blocks where the material is available. An ingot or dust gives 144 mB, a metal ore gives 288 mB, a nugget gives 16 mB, and a metal storage block gives 1,296 mB. Gems and their dusts give 666 mB, gem ores give 1,332 mB, and gem nuggets give 74 mB. The recipe duration of a nugget is 800/9 ticks. Progress carries forward between batches, so nine metal nuggets use exactly the time and power of an ingot. Sulfur dust restores the legacy 666 mB yield. Existing tank contents retain their saved amounts.
@@ -776,6 +790,11 @@ The same JAR rendered both blocks and passed the bucket and menu checks in a fre
 | `nuclearcraft:fission_source`, 2 | `nuclearcraft:fission_source_californium` |
 | `nuclearcraft:fission_shield`, 0 | `nuclearcraft:boron_silver_shield` |
 | `nuclearcraft:fission_shield`, 1 | `nuclearcraft:gadolinium_samarium_shield` |
+| `nuclearcraft:material_block`, 0 | `nuclearcraft:molybdenum_block` |
+| `nuclearcraft:material_block`, 1 | `nuclearcraft:copper_oxide_block` |
+| `nuclearcraft:material_block`, 2 | `nuclearcraft:cobalt_block` |
+| `nuclearcraft:material_block`, 3 | `nuclearcraft:nickel_block` |
+| `nuclearcraft:material_block`, 4 | `nuclearcraft:platinum_block` |
 | `nuclearcraft:material_block`, 5 | `nuclearcraft:soulless_sand` |
 | `nuclearcraft:material_block`, 6 | `nuclearcraft:soulless_sandstone` |
 | `nuclearcraft:fuel_californium`, 9 | `nuclearcraft:lecf_251_oxide` |
@@ -795,7 +814,7 @@ The pebble cooler metadata order is oxygen, hydrogen, helium, nitrogen, fluorine
 
 The legacy `fission_cooler_cooling_rate` array maps to the `cooling_rate` section of `world/serverconfig/nuclearcraft-pebble-fission.toml`, using the gas names as keys. Its `coolant_heat_per_mb` and `intrinsic_flux_efficiency` replace `fission_cooler_coolant_heat_per_mb` and `fission_chamber_intrinsic_flux_efficiency`. Gas inputs use the corresponding `forge:<gas>` fluid tag. Hot gas and turbine exhaust use the `<gas>_hot` and `<gas>_exhaust` suffixes.
 
-Legacy `nuclearcraft:material_block` metadata 0 and 1 maps to `nuclearcraft:molybdenum_block` and `nuclearcraft:copper_oxide_block`. Pressurizer and Assembler recipes use `nuclearcraft:pressurizer` and `nuclearcraft:assembler` with a single `result`. The Assembler takes four counted ingredients and matches them in any order.
+Pressurizer and Assembler recipes use `nuclearcraft:pressurizer` and `nuclearcraft:assembler` with a single `result`. The Assembler takes four counted ingredients and matches them in any order.
 
 Legacy `fertile_isotope` variants 0 through 6 map in order to `uranium_238_block`, `neptunium_237_block`, `plutonium_242_block`, `americium_243_block`, `curium_246_block`, `berkelium_247_block`, and `californium_252_block` in the `nuclearcraft` namespace.
 

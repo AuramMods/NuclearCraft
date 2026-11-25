@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:copper_dust"
     },
+    "input_tag": "forge:dusts/copper",
     "result_tag": "forge:ingots/copper",
     "result": "nuclearcraft:copper_ingot",
     "experience": 0.0,

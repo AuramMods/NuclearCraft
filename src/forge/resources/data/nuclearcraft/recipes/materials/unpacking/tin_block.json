@@ -6,6 +6,7 @@
             "item": "nuclearcraft:tin_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/tin",
     "result_tag": "forge:ingots/tin",
     "result": {
         "item": "nuclearcraft:tin_ingot",

@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:magnesium_dust"
     },
+    "input_tag": "forge:dusts/magnesium",
     "result_tag": "forge:ingots/magnesium",
     "result": "nuclearcraft:magnesium_ingot",
     "experience": 0.0,

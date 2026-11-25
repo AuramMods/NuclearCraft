@@ -6,6 +6,7 @@
             "item": "nuclearcraft:uranium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/uranium",
     "result_tag": "forge:ingots/uranium",
     "result": {
         "item": "nuclearcraft:uranium_ingot",

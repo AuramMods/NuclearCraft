@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:gadolinium_dust"
     },
+    "input_tag": "forge:dusts/gadolinium",
     "result_tag": "forge:ingots/gadolinium",
     "result": "nuclearcraft:gadolinium_ingot",
     "experience": 0.0,

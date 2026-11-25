@@ -23,11 +23,14 @@ public final class MaterialRecipeOutputs {
             "nuclearcraft", "qmd", "trinity", "immersiveengineering", "mekanism", "ic2", "appliedenergistics2",
             "refinedstorage", "actuallyadditions", "libvulpes", "advancedrocketry", "thaumcraft", "biomesoplenty");
     private static final ForgeConfigSpec.BooleanValue ENABLED;
+    private static final ForgeConfigSpec.BooleanValue TAGGED_INPUTS;
     private static final ForgeConfigSpec.ConfigValue<List<? extends String>> ORDER;
     private static final ForgeConfigSpec SPEC;
 
     static {
         var builder = new ForgeConfigSpec.Builder();
+        TAGGED_INPUTS = builder.comment("Accept shared material tags in stock ore, dust and ingot-block recipes.")
+                .define("ore_dict_raw_material_recipes", false);
         ENABLED = builder.comment("Use mod priority for material tag outputs.")
                 .define("ore_dict_priority_bool", true);
         ORDER = builder.comment("Mod IDs in descending order. Unlisted items follow the tag's order.")
@@ -40,6 +43,10 @@ public final class MaterialRecipeOutputs {
 
     public static void register(ModLoadingContext context) {
         context.registerConfig(ModConfig.Type.COMMON, SPEC, "nuclearcraft-recipe-outputs.toml");
+    }
+
+    static boolean taggedInputs() {
+        return SPEC.isLoaded() && TAGGED_INPUTS.get();
     }
 
     static Optional<Item> select(String name, ICondition.IContext context) {

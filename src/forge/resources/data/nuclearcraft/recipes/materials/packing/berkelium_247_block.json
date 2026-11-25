@@ -8,7 +8,7 @@
     ],
     "key": {
         "I": {
-            "item": "nuclearcraft:berkelium_247_ingot"
+            "tag": "forge:ingots/berkelium_247"
         }
     },
     "result_tag": "forge:storage_blocks/berkelium_247",

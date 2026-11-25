@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:uranium_238_block"
+            "tag": "forge:storage_blocks/uranium_238"
         }
     ],
     "result_tag": "forge:ingots/uranium_238",

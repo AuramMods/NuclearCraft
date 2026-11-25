@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:plutonium_242_block"
+            "tag": "forge:storage_blocks/plutonium_242"
         }
     ],
     "result_tag": "forge:ingots/plutonium_242",

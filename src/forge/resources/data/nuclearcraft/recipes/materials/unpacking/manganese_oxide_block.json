@@ -6,6 +6,7 @@
             "item": "nuclearcraft:manganese_oxide_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/manganese_oxide",
     "result_tag": "forge:ingots/manganese_oxide",
     "result": {
         "item": "nuclearcraft:manganese_oxide_ingot",

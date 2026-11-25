@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:dysprosium_dust"
     },
+    "input_tag": "forge:dusts/dysprosium",
     "result_tag": "forge:ingots/dysprosium",
     "result": "nuclearcraft:dysprosium_ingot",
     "experience": 0.0,

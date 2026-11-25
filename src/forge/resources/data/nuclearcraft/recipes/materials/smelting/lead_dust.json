@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:lead_dust"
     },
+    "input_tag": "forge:dusts/lead",
     "result_tag": "forge:ingots/lead",
     "result": "nuclearcraft:lead_ingot",
     "experience": 0.0,

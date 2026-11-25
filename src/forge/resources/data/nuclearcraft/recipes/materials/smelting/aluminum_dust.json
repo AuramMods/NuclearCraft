@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:aluminum_dust"
     },
+    "input_tag": "forge:dusts/aluminum",
     "result_tag": "forge:ingots/aluminum",
     "result": "nuclearcraft:aluminum_ingot",
     "experience": 0.0,

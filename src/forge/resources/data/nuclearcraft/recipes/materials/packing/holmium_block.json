@@ -11,6 +11,7 @@
             "item": "nuclearcraft:holmium_ingot"
         }
     },
+    "input_tag": "forge:ingots/holmium",
     "result_tag": "forge:storage_blocks/holmium",
     "result": {
         "item": "nuclearcraft:holmium_block",

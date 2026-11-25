@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:holmium_dust"
     },
+    "input_tag": "forge:dusts/holmium",
     "result_tag": "forge:ingots/holmium",
     "result": "nuclearcraft:holmium_ingot",
     "experience": 0.0,

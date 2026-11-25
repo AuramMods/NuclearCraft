@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:thorium_ore"
     },
+    "input_tag": "forge:ores/thorium",
     "result_tag": "forge:ingots/thorium",
     "result": "nuclearcraft:thorium_ingot",
     "experience": 0.5,

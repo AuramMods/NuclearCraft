@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:nickel_oxide_dust"
     },
+    "input_tag": "forge:dusts/nickel_oxide",
     "result_tag": "forge:ingots/nickel_oxide",
     "result": "nuclearcraft:nickel_oxide_ingot",
     "experience": 0.0,

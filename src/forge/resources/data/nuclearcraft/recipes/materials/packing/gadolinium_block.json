@@ -11,6 +11,7 @@
             "item": "nuclearcraft:gadolinium_ingot"
         }
     },
+    "input_tag": "forge:ingots/gadolinium",
     "result_tag": "forge:storage_blocks/gadolinium",
     "result": {
         "item": "nuclearcraft:gadolinium_block",

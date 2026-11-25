@@ -6,6 +6,7 @@
             "item": "nuclearcraft:copper_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/copper",
     "result_tag": "forge:ingots/copper",
     "result": {
         "item": "nuclearcraft:copper_ingot",

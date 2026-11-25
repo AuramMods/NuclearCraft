@@ -11,6 +11,7 @@
             "item": "nuclearcraft:manganese_ingot"
         }
     },
+    "input_tag": "forge:ingots/manganese",
     "result_tag": "forge:storage_blocks/manganese",
     "result": {
         "item": "nuclearcraft:manganese_block",

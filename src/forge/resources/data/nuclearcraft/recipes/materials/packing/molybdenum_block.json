@@ -1,0 +1,28 @@
+{
+    "type": "nuclearcraft:material_shaped",
+    "category": "misc",
+    "pattern": [
+        "III",
+        "III",
+        "III"
+    ],
+    "key": {
+        "I": {
+            "tag": "forge:ingots/molybdenum"
+        }
+    },
+    "result_tag": "forge:storage_blocks/molybdenum",
+    "result": {
+        "item": "nuclearcraft:molybdenum_block",
+        "count": 1
+    },
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:ingots/molybdenum"
+            }
+        }
+    ]
+}

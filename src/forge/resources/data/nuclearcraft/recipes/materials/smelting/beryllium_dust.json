@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:beryllium_dust"
     },
+    "input_tag": "forge:dusts/beryllium",
     "result_tag": "forge:ingots/beryllium",
     "result": "nuclearcraft:beryllium_ingot",
     "experience": 0.0,

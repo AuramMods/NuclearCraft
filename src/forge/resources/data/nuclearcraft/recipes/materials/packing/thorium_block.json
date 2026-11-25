@@ -11,6 +11,7 @@
             "item": "nuclearcraft:thorium_ingot"
         }
     },
+    "input_tag": "forge:ingots/thorium",
     "result_tag": "forge:storage_blocks/thorium",
     "result": {
         "item": "nuclearcraft:thorium_block",

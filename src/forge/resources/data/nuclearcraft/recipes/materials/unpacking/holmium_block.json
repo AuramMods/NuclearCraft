@@ -6,6 +6,7 @@
             "item": "nuclearcraft:holmium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/holmium",
     "result_tag": "forge:ingots/holmium",
     "result": {
         "item": "nuclearcraft:holmium_ingot",

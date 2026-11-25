@@ -11,6 +11,7 @@
             "item": "nuclearcraft:ruthenium_oxide_ingot"
         }
     },
+    "input_tag": "forge:ingots/ruthenium_oxide",
     "result_tag": "forge:storage_blocks/ruthenium_oxide",
     "result": {
         "item": "nuclearcraft:ruthenium_oxide_block",

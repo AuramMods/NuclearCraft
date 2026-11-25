@@ -6,6 +6,7 @@
             "item": "nuclearcraft:dysprosium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/dysprosium",
     "result_tag": "forge:ingots/dysprosium",
     "result": {
         "item": "nuclearcraft:dysprosium_ingot",

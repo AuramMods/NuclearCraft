@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:berkelium_247_block"
+            "tag": "forge:storage_blocks/berkelium_247"
         }
     ],
     "result_tag": "forge:ingots/berkelium_247",

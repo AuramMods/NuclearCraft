@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:material_smelting",
+    "category": "misc",
+    "ingredient": {
+        "item": "nuclearcraft:nickel_oxide_ingot"
+    },
+    "result_tag": "forge:ingots/nickel",
+    "result": {
+        "count": 1
+    },
+    "experience": 0.0,
+    "cookingtime": 200,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:ingots/nickel"
+            }
+        }
+    ]
+}

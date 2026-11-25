@@ -6,6 +6,7 @@
             "item": "nuclearcraft:magnesium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/magnesium",
     "result_tag": "forge:ingots/magnesium",
     "result": {
         "item": "nuclearcraft:magnesium_ingot",

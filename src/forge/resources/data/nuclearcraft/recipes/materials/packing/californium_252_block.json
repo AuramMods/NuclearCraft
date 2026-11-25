@@ -8,7 +8,7 @@
     ],
     "key": {
         "I": {
-            "item": "nuclearcraft:californium_252_ingot"
+            "tag": "forge:ingots/californium_252"
         }
     },
     "result_tag": "forge:storage_blocks/californium_252",

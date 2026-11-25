@@ -6,6 +6,7 @@
             "item": "nuclearcraft:boron_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/boron",
     "result_tag": "forge:ingots/boron",
     "result": {
         "item": "nuclearcraft:boron_ingot",

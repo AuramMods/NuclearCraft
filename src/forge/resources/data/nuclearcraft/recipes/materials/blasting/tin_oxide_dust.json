@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:tin_oxide_dust"
     },
+    "input_tag": "forge:dusts/tin_oxide",
     "result_tag": "forge:ingots/tin_oxide",
     "result": "nuclearcraft:tin_oxide_ingot",
     "experience": 0.0,

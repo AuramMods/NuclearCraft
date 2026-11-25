@@ -48,6 +48,9 @@ final class NCMaterials {
         block("soulless_sandstone", BlockBehaviour.Properties.copy(Blocks.SANDSTONE).strength(0.8F));
         block("molybdenum_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
         block("copper_oxide_block", BlockBehaviour.Properties.copy(Blocks.STONE).strength(5F));
+        for (String metal : List.of("cobalt", "nickel", "platinum")) {
+            block(metal + "_block", BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5F, 15F));
+        }
         block("tritium_lamp", BlockBehaviour.Properties.copy(Blocks.GLASS).strength(3F, 15F)
                 .requiresCorrectToolForDrops().lightLevel(state -> 15).noOcclusion());
         MATERIALS.add(NCRegistries.ITEMS.register("portable_ender_chest",

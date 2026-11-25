@@ -6,6 +6,7 @@
             "item": "nuclearcraft:aluminum_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/aluminum",
     "result_tag": "forge:ingots/aluminum",
     "result": {
         "item": "nuclearcraft:aluminum_ingot",

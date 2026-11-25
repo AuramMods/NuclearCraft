@@ -1,11 +1,15 @@
 package nc.gametest;
 
+import com.google.gson.JsonParser;
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCGasCoolants;
+import nc.init.NCRegistries;
 import nc.recipe.FluidContainerRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.player.Player;
@@ -14,6 +18,7 @@ import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
@@ -24,6 +29,33 @@ import net.minecraftforge.registries.ForgeRegistries;
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class MaterialGameTests {
+    @GameTest(template = "empty")
+    public static void taggedMaterialPackingKeepsItsMatchingRulesAfterSync(GameTestHelper helper) {
+        var id = NuclearCraft.id("materials/packing/copper_block");
+        var json = JsonParser.parseString("""
+                {"pattern":["III","III","III"],"key":{"I":{"tag":"forge:ingots/copper"}},
+                 "result":{"item":"minecraft:copper_block"}}
+                """).getAsJsonObject();
+        var packing = NCRegistries.MATERIAL_SHAPED.get();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            packing.toNetwork(buffer, RecipeSerializer.SHAPED_RECIPE.fromJson(id, json));
+            var synced = packing.fromNetwork(id, buffer);
+            var grid = craftingGrid(3, 3);
+            for (int slot = 0; slot < grid.getContainerSize(); slot++) {
+                grid.setItem(slot, Items.COPPER_INGOT.getDefaultInstance());
+            }
+            helper.assertTrue(synced.matches(grid, helper.getLevel())
+                            && synced.assemble(grid, helper.getLevel().registryAccess()).is(Items.COPPER_BLOCK),
+                    "Nine of the same tagged ingot produce the synced block");
+            grid.setItem(0, item("copper_ingot").getDefaultInstance());
+            helper.assertTrue(!synced.matches(grid, helper.getLevel()), "Mixed ingot IDs cannot craft a storage block");
+        } finally {
+            buffer.release();
+        }
+        helper.succeed();
+    }
+
     @GameTest(template = "empty")
     public static void craftingUsesSharedCopperAndLeavesWaterBucket(GameTestHelper helper) {
         var recipes = helper.getLevel().getRecipeManager();

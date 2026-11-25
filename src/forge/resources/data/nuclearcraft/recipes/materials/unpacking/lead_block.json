@@ -6,6 +6,7 @@
             "item": "nuclearcraft:lead_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/lead",
     "result_tag": "forge:ingots/lead",
     "result": {
         "item": "nuclearcraft:lead_ingot",

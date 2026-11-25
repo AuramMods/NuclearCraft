@@ -11,6 +11,7 @@
             "item": "nuclearcraft:silver_ingot"
         }
     },
+    "input_tag": "forge:ingots/silver",
     "result_tag": "forge:storage_blocks/silver",
     "result": {
         "item": "nuclearcraft:silver_block",

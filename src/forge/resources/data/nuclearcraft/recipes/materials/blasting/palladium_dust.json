@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:palladium_dust"
     },
+    "input_tag": "forge:dusts/palladium",
     "result_tag": "forge:ingots/palladium",
     "result": "nuclearcraft:palladium_ingot",
     "experience": 0.0,

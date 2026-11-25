@@ -6,6 +6,7 @@
             "item": "nuclearcraft:zirconium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/zirconium",
     "result_tag": "forge:ingots/zirconium",
     "result": {
         "item": "nuclearcraft:zirconium_ingot",

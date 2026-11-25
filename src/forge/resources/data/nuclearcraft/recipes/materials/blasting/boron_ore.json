@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:boron_ore"
     },
+    "input_tag": "forge:ores/boron",
     "result_tag": "forge:ingots/boron",
     "result": "nuclearcraft:boron_ingot",
     "experience": 0.5,

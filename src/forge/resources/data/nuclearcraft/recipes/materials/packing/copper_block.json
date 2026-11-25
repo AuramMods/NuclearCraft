@@ -11,6 +11,7 @@
             "item": "nuclearcraft:copper_ingot"
         }
     },
+    "input_tag": "forge:ingots/copper",
     "result_tag": "forge:storage_blocks/copper",
     "result": {
         "item": "nuclearcraft:copper_block",

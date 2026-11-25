@@ -3,7 +3,7 @@
     "category": "misc",
     "ingredients": [
         {
-            "item": "nuclearcraft:californium_252_block"
+            "tag": "forge:storage_blocks/californium_252"
         }
     ],
     "result_tag": "forge:ingots/californium_252",

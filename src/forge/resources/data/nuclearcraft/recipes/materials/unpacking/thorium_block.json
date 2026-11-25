@@ -6,6 +6,7 @@
             "item": "nuclearcraft:thorium_block"
         }
     ],
+    "input_tag": "forge:storage_blocks/thorium",
     "result_tag": "forge:ingots/thorium",
     "result": {
         "item": "nuclearcraft:thorium_ingot",

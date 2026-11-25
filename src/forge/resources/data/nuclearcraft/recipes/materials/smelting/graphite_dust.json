@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:graphite_dust"
     },
+    "input_tag": "forge:dusts/graphite",
     "result_tag": "forge:ingots/graphite",
     "result": "nuclearcraft:graphite_ingot",
     "experience": 0.0,

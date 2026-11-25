@@ -8,7 +8,7 @@
     ],
     "key": {
         "I": {
-            "item": "nuclearcraft:curium_246_ingot"
+            "tag": "forge:ingots/curium_246"
         }
     },
     "result_tag": "forge:storage_blocks/curium_246",

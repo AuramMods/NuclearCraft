@@ -4,6 +4,7 @@
     "ingredient": {
         "item": "nuclearcraft:uranium_dust"
     },
+    "input_tag": "forge:dusts/uranium",
     "result_tag": "forge:ingots/uranium",
     "result": "nuclearcraft:uranium_ingot",
     "experience": 0.0,

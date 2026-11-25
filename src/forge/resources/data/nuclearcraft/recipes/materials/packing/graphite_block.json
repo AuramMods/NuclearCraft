@@ -11,6 +11,7 @@
             "item": "nuclearcraft:graphite_ingot"
         }
     },
+    "input_tag": "forge:ingots/graphite",
     "result_tag": "forge:storage_blocks/graphite",
     "result": {
         "item": "nuclearcraft:graphite_block",
