@@ -10,6 +10,7 @@ import nc.init.NCGasCoolants;
 import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
+import nc.multiblock.fission.SolidFissionMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -416,6 +417,59 @@ public final class SolidFissionGameTests {
                     helper.assertTrue(port.getSlotLimit(0) == 64 && port.getStackInSlot(0).getCount() == 76
                                     && port.insertItem(0, fuel.copyWithCount(1), false).getCount() == 1,
                             "Reducing the number of cells preserves overage and blocks new input until drained");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 140)
+    public static void controllerReadsLiveHeatAndClearsOnlyMaterial(GameTestHelper helper) {
+        buildReactor(helper);
+        SolidFissionMenu[] openMenu = new SolidFissionMenu[1];
+        var player = inspector(helper);
+        var pos = helper.absolutePos(CONTROLLER);
+        player.moveTo(pos.getX() - 0.5D, pos.getY(), pos.getZ() + 0.5D);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var controller = controller(helper);
+                    var tag = controller.saveWithoutMetadata();
+                    tag.putLong("heat", 1_234_567L);
+                    tag.put("coolant", new FluidStack(Fluids.WATER, 70_001).writeToNBT(new CompoundTag()));
+                    tag.put("steam", new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 80_001)
+                            .writeToNBT(new CompoundTag()));
+                    controller.load(tag);
+                    helper.useBlock(CONTROLLER, player);
+                    var menu = (SolidFissionMenu) player.containerMenu;
+                    openMenu[0] = menu;
+                    helper.assertTrue(menu.lengthX() == 3 && menu.lengthY() == 3 && menu.lengthZ() == 3
+                                    && menu.interiorVolume() == 27 && menu.heatStored() == 1_234_567L,
+                            "Controller should show exact casing heat and interior dimensions");
+                    helper.assertTrue(menu.coldAmount() == 70_001 && menu.hotAmount() == 80_001
+                                    && menu.temperature() > 300D,
+                            "Initial menu data must include the full tank amounts and casing temperature");
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get(), 2), false);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var menu = openMenu[0];
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.active() && menu.outputRate() > 0, "Receive real steam production while processing");
+                })
+                .thenExecute(() -> {
+                    var menu = openMenu[0];
+                    helper.assertTrue(menu.clusterCount() == 1 && menu.usefulParts() > 1 && menu.heating() > 0
+                                    && menu.cooling() > 0 && menu.efficiency() > 0 && menu.heatMultiplier() > 0 && menu.sparsity() > 0,
+                            "Use the simulated cluster metrics without requiring a computer port");
+                    long heat = menu.heatStored();
+                    player.moveTo(pos.getX() - 20D, pos.getY(), pos.getZ());
+                    helper.assertTrue(!menu.clickMenuButton(player, SolidFissionMenu.CLEAR),
+                            "A player out of range cannot void the controller contents");
+                    player.moveTo(pos.getX() - 0.5D, pos.getY(), pos.getZ() + 0.5D);
+                    helper.assertTrue(menu.clickMenuButton(player, SolidFissionMenu.CLEAR),
+                            "A nearby player can clear the assembled reactor from its controller");
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.heatStored() == heat && menu.coldAmount() == 0 && menu.hotAmount() == 0
+                                    && items(helper, FUEL_IN, Direction.DOWN).getStackInSlot(0).isEmpty(),
+                            "Clearing removes the reactor's fuel and fluids while preserving casing heat");
                 })
                 .thenSucceed();
     }

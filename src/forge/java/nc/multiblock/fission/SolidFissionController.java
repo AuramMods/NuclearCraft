@@ -13,6 +13,7 @@ import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
 import nc.recipe.FissionHeatRecipe;
+import nc.util.ValueTracker;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,7 +26,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
@@ -58,6 +58,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final @Nullable PebbleCooling gasCooling;
     private final @Nullable SaltCooling saltCooling;
     private final @Nullable SaltFuelBank saltFuel;
+    private final @Nullable ValueTracker heatingRate;
     private final Map<BlockPos, Long> clusterHeat = new HashMap<>();
     private final Map<ResourceLocation, IrradiatorItems> irradiationBanks = new HashMap<>();
 
@@ -67,6 +68,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private AssemblyDiagnostic validation = new AssemblyDiagnostic(
             Component.translatable("message.nuclearcraft.fission.checking"), null);
     private long casingHeat;
+    private double heatingOutput;
     private boolean enabled;
     private boolean dirty = true;
     private long configRevision = -1;
@@ -90,6 +92,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         gasCooling = variant == FissionVariant.PEBBLE ? new PebbleCooling(this) : null;
         saltCooling = variant == FissionVariant.SALT ? new SaltCooling(this) : null;
         saltFuel = variant == FissionVariant.SALT ? new SaltFuelBank(this) : null;
+        heatingRate = variant == FissionVariant.SOLID ? new ValueTracker() : null;
     }
 
     @Override
@@ -159,6 +162,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             refresh(server);
         }
         boolean active = false;
+        int heatedOutput = 0;
         boolean requested = layout != null && (enabled || server.hasNeighborSignal(worldPosition));
         var decaySettings = layout == null ? null : NCFission.decaySettings();
         if (layout != null && (requested || decaySettings != null)) {
@@ -178,14 +182,21 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             }
             active = generated.raw() > 0;
             if (active && variant == FissionVariant.SOLID) {
-                exchangeCasingHeat(generated.effective() / generated.raw());
+                heatedOutput = exchangeCasingHeat(generated.effective() / generated.raw());
             }
             if (active || generated.storedHeatChanged()) {
                 setChanged();
             }
         }
-        if (layout != null && !requested && decaySettings == null && computerPorts.hasPorts()) {
+        if (layout != null && !requested && decaySettings == null) {
             core.resetTelemetry();
+        }
+        if (heatingRate != null && layout != null) {
+            if (requested) {
+                heatingOutput = heatingRate.update(heatedOutput);
+            } else {
+                resetHeatingOutput();
+            }
         }
         if (layout != null && !requested && variant != FissionVariant.SOLID && casingHeat > 0) {
             exchangeCasingHeat(1D);
@@ -296,6 +307,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
+        resetHeatingOutput();
         MultiblockFrame.set(server, previous.frames(), false);
         irradiationBanks.clear();
         for (BlockPos pos : previous.monitors()) {
@@ -458,13 +470,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return selected;
     }
 
-    private void exchangeCasingHeat(double efficiency) {
+    private int exchangeCasingHeat(double efficiency) {
         if (!(efficiency > 0D) || casingHeat == 0 || coolant.isEmpty()) {
-            return;
+            return 0;
         }
         FissionHeatRecipe recipe = casingRecipe(coolant.getFluid());
         if (recipe == null) {
-            return;
+            return 0;
         }
         int inputAmount = recipe.input().amount();
         long availableInput = coolant.getFluidAmount();
@@ -478,7 +490,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             }
         }
         if (!Double.isFinite(heatPerBatch)) {
-            return;
+            return 0;
         }
         FluidStack product = recipe.output();
         int outputAmount = product.getAmount();
@@ -492,7 +504,16 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 coolant.drain(batches * inputAmount, FluidAction.EXECUTE);
                 casingHeat -= Math.min(casingHeat, (long) (batches * heatPerBatch / efficiency));
                 setChanged();
+                return product.getAmount();
             }
+        }
+        return 0;
+    }
+
+    private void resetHeatingOutput() {
+        if (heatingRate != null && heatingOutput != 0D) {
+            heatingRate.reset();
+            heatingOutput = 0D;
         }
     }
 
@@ -537,6 +558,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         coolant.setFluid(FluidStack.EMPTY);
         steam.setFluid(FluidStack.EMPTY);
+        resetHeatingOutput();
         if (gasCooling != null) {
             gasCooling.clearMaterial();
             for (BlockPos pos : layout.sinks()) {
@@ -747,19 +769,16 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         dirty = true;
     }
 
-    private static int tankFill(FluidTank tank) {
-        return (int) (1000L * tank.getFluidAmount() / tank.getCapacity());
-    }
-
-    private int coolerFill(boolean output) {
+    private FissionTankTotals tankTotals(ServerLevel server) {
         if (saltCooling != null) {
-            return layout == null || level == null ? 0 : saltCooling.fill(level, layout, output);
+            return saltCooling.tankTotals(server, layout);
         }
-        if (gasCooling == null) {
-            return tankFill(output ? steam : coolant);
+        if (gasCooling != null) {
+            return gasCooling.tankTotals(server, layout);
         }
-        long capacity = gasCooling.gasCapacity(output);
-        return capacity == 0 ? 0 : (int) (1000L * gasCooling.gasAmount(output) / capacity);
+        var totals = new FissionTankTotals();
+        totals.add(coolant, steam);
+        return totals;
     }
 
     @Override
@@ -769,27 +788,37 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     @Override
     public SolidFissionMenu createMenu(int id, Inventory playerInventory, Player player) {
-        return new SolidFissionMenu(id, this, ContainerLevelAccess.create(player.level(), worldPosition), new ContainerData() {
-            @Override
-            public int get(int index) {
-                return switch (index) {
-                    case SolidFissionMenu.ENABLED -> enabled ? 1 : 0;
-                    case SolidFissionMenu.ACTIVE -> getBlockState().getValue(FissionWallBlock.ACTIVE) ? 1 : 0;
-                    case SolidFissionMenu.HEAT -> heatCapacity() == 0 ? 0 : (int) (1000 * casingHeat / heatCapacity());
-                    case SolidFissionMenu.COOLANT -> coolerFill(false);
-                    case SolidFissionMenu.STEAM -> coolerFill(true);
-                    default -> 0;
-                };
-            }
+        return new SolidFissionMenu(id, this, ContainerLevelAccess.create(player.level(), worldPosition));
+    }
 
-            @Override
-            public void set(int index, int value) {}
-
-            @Override
-            public int getCount() {
-                return SolidFissionMenu.DATA_COUNT;
-            }
-        });
+    void updateMenu(SolidFissionMenu menu) {
+        if (layout == null || !(level instanceof ServerLevel server)) {
+            menu.clearReadings();
+            return;
+        }
+        var bounds = layout.bounds();
+        var heat = core.heatStats();
+        var tanks = tankTotals(server);
+        menu.set(SolidFissionMenu.Reading.FLAGS, (enabled ? SolidFissionMenu.ENABLED : 0) | (computerOn() ? SolidFissionMenu.ACTIVE : 0));
+        menu.set(SolidFissionMenu.Reading.LENGTH_X, bounds.xLength() - 2);
+        menu.set(SolidFissionMenu.Reading.LENGTH_Y, bounds.yLength() - 2);
+        menu.set(SolidFissionMenu.Reading.LENGTH_Z, bounds.zLength() - 2);
+        menu.set(SolidFissionMenu.Reading.VOLUME, bounds.interiorVolume());
+        menu.set(SolidFissionMenu.Reading.CLUSTERS, heat.clusters());
+        menu.set(SolidFissionMenu.Reading.USEFUL_PARTS, heat.usefulParts());
+        menu.set(SolidFissionMenu.Reading.HEAT, casingHeat);
+        menu.set(SolidFissionMenu.Reading.HEAT_CAPACITY, heatCapacity());
+        menu.set(SolidFissionMenu.Reading.HEATING, heat.heating());
+        menu.set(SolidFissionMenu.Reading.COOLING, heat.cooling());
+        menu.set(SolidFissionMenu.Reading.TEMPERATURE, computerTemperature());
+        menu.set(SolidFissionMenu.Reading.EFFICIENCY, heat.efficiency());
+        menu.set(SolidFissionMenu.Reading.HEAT_MULTIPLIER, heat.heatMultiplier());
+        menu.set(SolidFissionMenu.Reading.SPARSITY, heat.sparsity());
+        menu.set(SolidFissionMenu.Reading.OUTPUT_RATE, variant == FissionVariant.SOLID ? heatingOutput : heat.coolantSpeed());
+        menu.set(SolidFissionMenu.Reading.COLD_AMOUNT, tanks.coldAmount);
+        menu.set(SolidFissionMenu.Reading.COLD_CAPACITY, tanks.coldCapacity);
+        menu.set(SolidFissionMenu.Reading.HOT_AMOUNT, tanks.hotAmount);
+        menu.set(SolidFissionMenu.Reading.HOT_CAPACITY, tanks.hotCapacity);
     }
 
     private final class ReactorTank extends FluidTank {

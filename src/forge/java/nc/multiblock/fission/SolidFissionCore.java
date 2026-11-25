@@ -40,8 +40,9 @@ final class SolidFissionCore {
     }
 
     record ClusterStats(long heatCapacity, long heatStored, long cooling, long heating, List<BlockPos> positions) {}
-    record HeatStats(long heating, long cooling, double efficiency, double heatMultiplier) {
-        static final HeatStats IDLE = new HeatStats(0, 0, 0D, 0D);
+    record HeatStats(long heating, long cooling, double efficiency, double heatMultiplier,
+                     int clusters, int usefulParts, double sparsity, double coolantSpeed) {
+        static final HeatStats IDLE = new HeatStats(0, 0, 0D, 0D, 0, 0, 0D, 0D);
     }
     record FuelStats(FissionFuelStats recipe, double ticks, double radiation, int baseHeat, double baseEfficiency,
                      boolean primed, boolean processing, double heating, double efficiency, int heatMultiplier, long flux) {}
@@ -555,9 +556,11 @@ final class SolidFissionCore {
             }
         }
         double sparsityEfficiency = NCFission.sparsityEfficiency((double) usefulParts / layout.bounds().interiorVolume());
+        double weightedCoolantSpeed = 0D;
         if (gasCooling != null) {
             for (GasLoad load : gasLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
+                weightedCoolantSpeed += speed * load.gas().cooling();
                 gasCooling.heatGas(load.pos(), load.gas(), speed);
                 if (measuredCoolers != null) {
                     measuredCoolers.put(load.pos(), new CoolerStats(speed > 0, speed));
@@ -568,6 +571,7 @@ final class SolidFissionCore {
             var heating = new HashSet<BlockPos>();
             for (SaltLoad load : saltLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
+                weightedCoolantSpeed += speed * load.coolant().cooling();
                 boolean processing = saltCooling.heat(level, load.pos(), load.coolant(), speed);
                 if (processing) {
                     heating.add(load.pos());
@@ -578,9 +582,10 @@ final class SolidFissionCore {
             }
             heatingSalts = heating;
         }
+        heatStats = new HeatStats(raw, totalCooling, totalBaseHeating > 0 ? effective * sparsityEfficiency / totalBaseHeating : 0D,
+                totalBaseHeating > 0 ? raw / totalBaseHeating : 0D, clusters.size(), usefulParts,
+                sparsityEfficiency, totalCooling > 0 ? weightedCoolantSpeed / totalCooling : 0D);
         if (measuredClusters != null) {
-            heatStats = new HeatStats(raw, totalCooling, totalBaseHeating > 0 ? effective * sparsityEfficiency / totalBaseHeating : 0D,
-                    totalBaseHeating > 0 ? raw / totalBaseHeating : 0D);
             clusterStats = measuredClusters;
             fuelStats = measuredFuel;
             shieldStats = measuredShields;

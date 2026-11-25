@@ -1588,6 +1588,16 @@ In separate Ender IO 8.2.22-beta and Mekanism 10.4.16.80 routes, each isolated s
 
 The packaged conductor rendered with its original texture in the isolated client with all 538 installed Auram mods. The saved block entities retained their exact heat values. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
 
+### Fission controller diagnostics
+
+All three fission controller screens show the reactor's interior dimensions, live cluster count, casing temperature, efficiency, useful part count, and net heating. The solid-fuel controller displays measured coolant output in mB/t. Pebble-bed and molten-salt controllers show the cooling-rate-weighted heating speed of their active coolers and heaters.
+
+Hover over the gauges for exact heat and fluid amounts. Hold Shift or the physical Ctrl key for Celsius, the heat multiplier, sparsity efficiency, and Clear. Clear uses the same material drain as the computer port to empty reactor fuel, coolant, and products while preserving stored heat.
+
+All 237 local GameTests passed. In clean packaged Forge 47.4.10 multiplayer, the solid-fuel controller received exactly 70,001 mB of water and 80,001 mB of steam. All three variants showed live readings while heating their coolants. They retained the materials when Clear was pressed with no modifier. Physical Ctrl cleared the fuel and both coolant buffers while leaving stored heat. A dedicated restart retained the empty buffers in all three reactors.
+
+The same JAR repeated all three tests against the 540 installed mod JARs in an isolated Auram instance. The regular and Shift readings rendered with JEI and Dark Mode active. Both clients used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
 ### Per-fuel fission settings
 
 Copy the legacy arrays into the `[fuel]` table in `world/serverconfig/nuclearcraft-fission.toml`. Keep the original `fission_<family>_<setting>` keys, such as `fission_uranium_heat_generation`. Each family has `fuel_time`, `heat_generation`, `efficiency`, `criticality`, `intrinsic_flux`, `decay_factor`, `self_priming`, and `radiation` arrays. Use TOML arrays and retain the legacy order. The arrays use five entries per fuel in TRISO, oxide, nitride, zirconium alloy, and molten-salt order.

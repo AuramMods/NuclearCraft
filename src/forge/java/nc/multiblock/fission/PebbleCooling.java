@@ -143,12 +143,18 @@ final class PebbleCooling {
         owner.setChanged();
     }
 
-    long gasAmount(boolean output) {
-        return circuits.values().stream().mapToLong(tanks -> (output ? tanks.hot : tanks.cold).getFluidAmount()).sum();
-    }
-
-    long gasCapacity(boolean output) {
-        return circuits.values().stream().mapToLong(tanks -> (output ? tanks.hot : tanks.cold).getCapacity()).sum();
+    FissionTankTotals tankTotals(ServerLevel level, SolidFissionLayout layout) {
+        var totals = new FissionTankTotals();
+        for (Tanks tanks : circuits.values()) {
+            totals.add(tanks.cold, tanks.hot);
+        }
+        for (BlockPos pos : layout.sinks()) {
+            if (!coolerRoutes.containsKey(pos) && level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
+                Tanks tanks = cooler.localTanks();
+                totals.add(tanks.cold, tanks.hot);
+            }
+        }
+        return totals;
     }
 
     CompoundTag save() {

@@ -121,22 +121,19 @@ final class SaltCooling {
         return true;
     }
 
-    int fill(Level level, SolidFissionLayout layout, boolean output) {
-        long amount = 0;
-        long capacity = 0;
+    FissionTankTotals tankTotals(Level level, SolidFissionLayout layout) {
+        var totals = new FissionTankTotals();
         for (var coolant : connected) {
-            var tank = tank(coolant, output);
-            amount += tank.getFluidAmount();
-            capacity += tank.getCapacity();
+            var tanks = circuit(coolant);
+            totals.add(tanks.cold, tanks.hot);
         }
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof SaltHeater heater && !connected.contains(heater.coolant())) {
-                var tank = heater.localTanks().tank(output);
-                amount += tank.getFluidAmount();
-                capacity += tank.getCapacity();
+                var tanks = heater.localTanks();
+                totals.add(tanks.cold, tanks.hot);
             }
         }
-        return capacity == 0 ? 0 : (int) (1000L * amount / capacity);
+        return totals;
     }
 
     CompoundTag save() {
