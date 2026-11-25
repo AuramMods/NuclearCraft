@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:multiblock_decay_pool",
+    "fluid_input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:chlorine",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:chlorine",
+                "amount": 10
+            }
+        ]
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 8,
+        "min_amount": 3,
+        "step": 5,
+        "chance_percent": 0
+    },
+    "heat_per_mb": 2
+}

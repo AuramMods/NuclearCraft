@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "item_input": {
+        "ingredient": {
+            "item": "minecraft:target"
+        },
+        "count": 1
+    },
+    "fluid_input": null,
+    "item_result": {},
+    "fluid_result": null,
+    "lifetime": 0,
+    "heat_per_tick": 0
+}

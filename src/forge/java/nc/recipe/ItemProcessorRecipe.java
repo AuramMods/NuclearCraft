@@ -252,11 +252,11 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
         }
 
         @Override
-        public int matchedCount(ItemStack stack) {
+        public int matchedCount(ItemStack stack, int available) {
             if (isEmpty()) {
                 return stack.isEmpty() ? 0 : -1;
             }
-            return stack.getCount() >= count && accepts(stack) ? count : -1;
+            return available >= count && accepts(stack) ? count : -1;
         }
 
         @Override

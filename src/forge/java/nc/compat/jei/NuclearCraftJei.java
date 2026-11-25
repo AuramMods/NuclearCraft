@@ -225,7 +225,8 @@ public final class NuclearCraftJei implements IModPlugin {
                 }, recipe -> Component.translatable("gui.nuclearcraft.jei.decay_generator",
                         decimal(recipe.power()), decimal(recipe.lifetime()))),
                 new Category<>(DECAY_POOL, NCMachines.block(Part.DECAY_POOL), gui, NuclearCraftJei::poolRecipe,
-                        recipe -> Component.translatable("gui.nuclearcraft.jei.decay_pool", decimal(recipe.heat()))),
+                        recipe -> Component.translatable(recipe.heatPerMb() ? "gui.nuclearcraft.jei.decay_pool_per_mb"
+                                : "gui.nuclearcraft.jei.decay_pool", decimal(recipe.heat()))),
                 new Category<>(DISTILLER, NCMachines.block(Part.DISTILLER), gui, NuclearCraftJei::distillerRecipe,
                         recipe -> Component.translatable("gui.nuclearcraft.jei.distiller",
                                 decimal(NCMachines.distillerTime() * recipe.timeMultiplier() / recipe.batchFactor()),
@@ -782,15 +783,27 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void poolRecipe(IRecipeLayoutBuilder layout, DecayPoolRecipe recipe) {
-        if (recipe.itemCount() > 0) {
-            layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(
-                    Arrays.stream(recipe.itemInput().getItems()).map(stack -> stack.copyWithCount(recipe.itemCount())).toList());
+        if (!recipe.itemInput().isEmpty()) {
+            layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(recipe.itemInput().alternatives());
         }
-        if (recipe.fluidInput() != null) fluidSlot(layout, INPUT, recipe.itemCount() > 0 ? 42 : 20, recipe.fluidInput().alternatives());
-        if (!recipe.itemResult().isEmpty()) {
-            layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground().addItemStack(recipe.itemResult());
+        if (!recipe.fluidInput().isEmpty()) {
+            fluidSlot(layout, INPUT, recipe.itemInput().isEmpty() ? 20 : 42, recipe.fluidInput().alternatives());
         }
-        if (!recipe.fluidResult().isEmpty()) fluidSlot(layout, OUTPUT, recipe.itemResult().isEmpty() ? 104 : 126, List.of(recipe.fluidResult()));
+        if (!recipe.itemProduct().isEmpty()) {
+            var item = layout.addSlot(OUTPUT, 104, 12).setOutputSlotBackground();
+            itemProduct(item, recipe.itemProduct());
+            if (recipe.source()) addDecaySourceRoll(item, recipe.itemProduct().chancePercent());
+        }
+        var fluid = fluidProductSlot(layout, recipe.itemProduct().isEmpty() ? 104 : 126, 12, recipe.fluidProduct(), 1);
+        if (recipe.source() && fluid != null) {
+            addDecaySourceRoll(fluid, recipe.fluidProduct().chancePercent());
+        }
+    }
+
+    private static void addDecaySourceRoll(IRecipeSlotBuilder slot, int chance) {
+        if (chance < 100) {
+            slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable("gui.nuclearcraft.jei.decay_source_roll")));
+        }
     }
 
     private static void distillerRecipe(IRecipeLayoutBuilder layout, DistillerRecipe recipe) {

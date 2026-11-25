@@ -71,7 +71,7 @@ public final class DecayPool extends MachineController {
     }
 
     @Override void processTick(ServerLevel server) {
-        if (reservoir.tick(sources(), fuelCapacity())) setChanged();
+        if (reservoir.tick(sources(), fuelCapacity(), server.random)) setChanged();
         processing = heatWater(server);
         setLit(processing);
     }
@@ -131,7 +131,7 @@ public final class DecayPool extends MachineController {
         if (reservoir.heatRate() <= 0 || blockedByRedstone(server)) return false;
         if (input.isEmpty()) return false;
         var recipe = server.getRecipeManager().getAllRecipesFor(NCMachines.POOL_RECIPES.get()).stream()
-                .filter(candidate -> candidate.accepts(input.getFluid()))
+                .filter(candidate -> candidate.fluidInput().matches(input.getFluid()))
                 .min(Comparator.comparing(DecayPoolRecipe::id)).orElse(null);
         if (recipe == null) return false;
         if (!recipe.id().equals(heatingRecipe)) {
@@ -139,22 +139,30 @@ public final class DecayPool extends MachineController {
             heatingRecipe = recipe.id();
             setChanged();
         }
-        processHeatRequired = recipe.heat();
-        int feed = recipe.fluidInput().amount();
-        var product = recipe.fluidResult();
-        if (!output.isEmpty() && !output.getFluid().isFluidEqual(product)) return false;
-        int possible = Math.min(input.getFluidAmount() / feed,
-                Math.max(0, output.getCapacity() - output.getFluidAmount()) / product.getAmount());
-        if (possible == 0) return false;
-        processRate = (float) (reservoir.heatRate() * product.getAmount() / recipe.heat());
-        double available = processHeat + reservoir.heatRate();
-        int batches = Math.min(possible, (int) (available / recipe.heat()));
-        processHeat = available - batches * recipe.heat();
-        if (processHeat >= recipe.heat()) processHeat %= recipe.heat();
-        if (batches > 0) {
+        int feed = recipe.fluidInput().matchedAmount(input.getFluid(), 1);
+        var product = recipe.fluidProduct();
+        int room = product.batchesIn(output.getFluid(), output.getCapacity());
+        processHeatRequired = recipe.heatFor(feed);
+        if (room == 0) return false;
+
+        double available = Math.min(Double.MAX_VALUE, processHeat + reservoir.heatRate());
+        processRate = (float) (reservoir.heatRate() * product.stack().getAmount() / processHeatRequired);
+        while (feed > 0 && room > 0) {
+            processHeatRequired = recipe.heatFor(feed);
+            int batches = Math.min(Math.min(input.getFluidAmount() / feed, room), (int) (available / processHeatRequired));
+            if (batches == 0) break;
+            int amount = product.totalAmount(batches, 1, server.random);
             input.drain(batches * feed, EXECUTE);
-            output.fill(new FluidStack(product, batches * product.getAmount()), EXECUTE);
+            if (amount > 0) {
+                var produced = product.stack();
+                produced.setAmount(amount);
+                output.fill(produced, EXECUTE);
+            }
+            available = Math.max(0, available - batches * processHeatRequired);
+            feed = recipe.fluidInput().matchedAmount(input.getFluid(), 1);
+            room = product.batchesIn(output.getFluid(), output.getCapacity());
         }
+        processHeat = available % processHeatRequired;
         setChanged();
         return true;
     }

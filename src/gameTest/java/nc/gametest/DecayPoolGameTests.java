@@ -12,6 +12,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
@@ -154,6 +156,111 @@ public final class DecayPoolGameTests {
                             "Typed simulation and extraction preserve the exact fluid mass");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void reservoirKeepsCountedSourceChoicesAndEstablishesProducts(GameTestHelper helper) {
+        build(helper);
+        for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(2, 2, 2), new BlockPos(3, 3, 3))) {
+            helper.setBlock(pos, NCMachines.block(Part.CONTAINER));
+        }
+        var pool = (DecayPool) helper.getBlockEntity(CONTROLLER);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(pool.assembled(), "Pool assembles"))
+                .thenExecute(() -> {
+                    var inlet = item(helper, RESERVOIR, Direction.WEST);
+                    var fluids = fluid(helper, RESERVOIR, Direction.WEST);
+                    helper.assertTrue(inlet.insertItem(0, new ItemStack(Items.RED_DYE, 2), false).isEmpty()
+                                    && fluids.fill(stack("benzene", 10), EXECUTE) == 10,
+                            "Both precursor types accept their partial doses");
+                })
+                .thenExecuteAfter(3, () -> {
+                    var products = fluid(helper, PRODUCTS, Direction.EAST);
+                    var feeds = pool.saveWithoutMetadata().getCompound("reservoir");
+                    helper.assertTrue(products.getFluidInTank(0).isEmpty()
+                                    && feeds.getList("item_inputs", Tag.TAG_COMPOUND).getCompound(0).getInt("amount") == 2
+                                    && fluid(helper, RESERVOIR, Direction.WEST).getFluidInTank(0).getAmount() == 10,
+                            "The reservoir assigns the first matching 3-item and 18 mB selectors even when short");
+                    item(helper, RESERVOIR, Direction.WEST).insertItem(0, new ItemStack(Items.RED_DYE), false);
+                    fluid(helper, RESERVOIR, Direction.WEST).fill(stack("benzene", 8), EXECUTE);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, PRODUCTS, Direction.EAST).getFluidInTank(0)
+                                .isFluidStackIdentical(stack("heavy_water", 8))
+                                && item(helper, PRODUCTS, Direction.EAST).getStackInSlot(0).isEmpty(),
+                        "A positive fluid roll adds its maximum and the zero item roll adds nothing"))
+                .thenExecute(() -> {
+                    item(helper, RESERVOIR, Direction.WEST).insertItem(0, new ItemStack(Items.BLUE_DYE, 2), false);
+                    fluid(helper, RESERVOIR, Direction.WEST).fill(stack("methanol", 10), EXECUTE);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, PRODUCTS, Direction.EAST).getFluidInTank(0)
+                                .isFluidStackIdentical(stack("heavy_water", 16)),
+                        "Distinct alternatives use their own two-item and 10 mB doses"))
+                .thenExecute(() -> item(helper, RESERVOIR, Direction.WEST)
+                        .insertItem(0, new ItemStack(Items.MAGENTA_DYE), false))
+                .thenWaitUntil(() -> {
+                    var items = item(helper, PRODUCTS, Direction.EAST).getStackInSlot(0);
+                    helper.assertTrue(items.is(Items.REDSTONE) && items.getCount() == 2
+                                    && fluid(helper, PRODUCTS, Direction.EAST).getFluidInTank(0).getAmount() == 16,
+                            "A positive item roll adds the maximum and a zero fluid roll leaves the existing fluid");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void emptyDecayProductsCompleteAtFullCapacity(GameTestHelper helper) {
+        build(helper);
+        var pool = (DecayPool) helper.getBlockEntity(CONTROLLER);
+        var saved = pool.saveWithoutMetadata();
+        var products = new ListTag();
+        products.add(stack("heavy_water", 288).writeToNBT(new CompoundTag()));
+        saved.getCompound("reservoir").put("fluid_outputs", products);
+        pool.load(saved);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(pool.assembled(), "Pool assembles"))
+                .thenExecute(() -> helper.assertTrue(item(helper, RESERVOIR, Direction.WEST)
+                        .insertItem(0, new ItemStack(Items.TARGET), false).isEmpty(), "The reservoir accepts a precursor with empty products"))
+                .thenWaitUntil(() -> helper.assertTrue(pool.saveWithoutMetadata().getCompound("reservoir")
+                                .getList("item_inputs", Tag.TAG_COMPOUND).isEmpty()
+                                && fluid(helper, PRODUCTS, Direction.EAST).getFluidInTank(0)
+                                .isFluidStackIdentical(stack("heavy_water", 288)),
+                        "The empty-product decay completes even with a full product reservoir"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void poolHeatsEachFluidAlternativeAtItsOwnCost(GameTestHelper helper) {
+        build(helper);
+        var pool = (DecayPool) helper.getBlockEntity(CONTROLLER);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(pool.assembled(), "Pool assembles"))
+                .thenExecute(() -> {
+                    helper.assertTrue(item(helper, RESERVOIR, Direction.WEST)
+                                    .insertItem(0, new ItemStack(Items.SPONGE), false).isEmpty()
+                                    && fluid(helper, FEED, Direction.NORTH).fill(stack("chlorine", 28), EXECUTE) == 28,
+                            "Supply one stable source and both heating doses");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(pool.saveWithoutMetadata().getDouble("process_heat") > 0D,
+                        "Wait for the first 30 units of heat"))
+                .thenExecute(() -> helper.assertTrue(pool.saveWithoutMetadata().getDouble("process_heat") == 30D
+                                && fluid(helper, FEED, Direction.NORTH).getFluidInTank(0).getAmount() == 28,
+                        "The preferred 18 mB dose holds until its 36-unit cost is met"))
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, OUTPUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 6
+                                && fluid(helper, FEED, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "The 36-unit and 20-unit doses complete once 60 units are available"))
+                .thenExecute(() -> {
+                    helper.assertTrue(pool.saveWithoutMetadata().getDouble("process_heat") == 4D,
+                            "The pool retains exactly four units of unused heat");
+                    helper.assertTrue(fluid(helper, FEED, Direction.NORTH).fill(stack("boric_acid", 10), EXECUTE) == 10,
+                            "An empty product recipe still accepts its feed");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, FEED, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && fluid(helper, OUTPUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 6,
+                        "The empty heating product completes and keeps the condensate"))
+                .thenSucceed();
+    }
+
+    private static FluidStack stack(String id, int amount) {
+        return new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id(id)), amount);
     }
 
     private static void build(GameTestHelper helper) {

@@ -21,7 +21,11 @@ public sealed interface ItemInput permits Input, ItemInput.Alternatives {
     /**
      * Returns the number of items to consume, or -1 when the input does not match.
      */
-    int matchedCount(ItemStack stack);
+    default int matchedCount(ItemStack stack) {
+        return matchedCount(stack, stack.getCount());
+    }
+
+    int matchedCount(ItemStack stack, int available);
 
     default boolean matches(ItemStack stack) {
         return matchedCount(stack) >= 0;
@@ -132,9 +136,9 @@ public sealed interface ItemInput permits Input, ItemInput.Alternatives {
         }
 
         @Override
-        public int matchedCount(ItemStack stack) {
+        public int matchedCount(ItemStack stack, int available) {
             for (var choice : choices) {
-                int count = choice.matchedCount(stack);
+                int count = choice.matchedCount(stack, available);
                 if (count >= 0) {
                     return count;
                 }

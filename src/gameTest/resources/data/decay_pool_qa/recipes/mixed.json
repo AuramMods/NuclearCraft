@@ -1,0 +1,56 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "item_input": {
+        "alternatives": [
+            {
+                "ingredient": {
+                    "item": "minecraft:red_dye"
+                },
+                "count": 3
+            },
+            {
+                "ingredient": {
+                    "item": "minecraft:red_dye"
+                },
+                "count": 2
+            },
+            {
+                "ingredient": {
+                    "item": "minecraft:blue_dye"
+                },
+                "count": 2
+            }
+        ]
+    },
+    "fluid_input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 18
+            },
+            {
+                "fluid": "nuclearcraft:benzene",
+                "amount": 10
+            },
+            {
+                "fluid": "nuclearcraft:methanol",
+                "amount": 10
+            }
+        ]
+    },
+    "item_result": {
+        "item": "minecraft:redstone",
+        "count": 2,
+        "min_count": 0,
+        "chance_percent": 0
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:heavy_water",
+        "amount": 8,
+        "min_amount": 3,
+        "step": 5,
+        "chance_percent": 0
+    },
+    "lifetime": 0,
+    "heat_per_tick": 1
+}

@@ -1,0 +1,9 @@
+{
+    "type": "nuclearcraft:multiblock_decay_pool",
+    "fluid_input": {
+        "fluid": "nuclearcraft:boric_acid",
+        "amount": 10
+    },
+    "fluid_result": {},
+    "heat_per_batch": 1
+}

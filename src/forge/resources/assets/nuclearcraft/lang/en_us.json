@@ -208,6 +208,8 @@
     "item.nuclearcraft.samarium_bucket": "Molten Samarium Bucket",
     "gui.nuclearcraft.decay_pool.title": "%s × %s × %s Decay Pool",
     "gui.nuclearcraft.jei.decay_pool": "%s H per batch",
+    "gui.nuclearcraft.jei.decay_pool_per_mb": "%s H per mB of feed",
+    "gui.nuclearcraft.jei.decay_source_roll": "A positive roll establishes this product at its maximum for the source group.",
     "gui.nuclearcraft.jei.decay_pool_source": "%s H/t · %s tick lifetime",
     "gui.nuclearcraft.decay_pool.containers": "Containers: %s",
     "gui.nuclearcraft.decay_pool.heat": "Heat: %s H/t",

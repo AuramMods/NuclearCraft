@@ -1326,6 +1326,26 @@ Distributor block and item IDs retain their legacy names. Their shared block ent
 
 Large Machine housing blocks and the Decay Pool Controller and Container retain their legacy block and item IDs. The Process Port's four settings map to the `mode` states `item_in`, `fluid_in`, `item_out`, and `fluid_out`. Reservoir and power ports use the same state to record their input or output direction. The Multitool cycles the mode. Ports expose Forge capabilities through their outward face when the shell is assembled. The legacy `machine_min_size` and `machine_max_size` settings map to `min_size` and `max_size` in `nuclearcraft-machines.toml`.
 
+### Decay Pool recipes and saves
+
+Use `nuclearcraft:decay_pool_heat_source` for reservoir decay. The `item_input` and `fluid_input` keys accept ordered counted alternatives. Either input may be empty. When both are present, each decay consumes one complete dose of each. Each stored precursor type uses its first matching selector and keeps that dose size while the reservoir collects enough material. Set `lifetime` in ticks and `heat_per_tick` per complete source dose.
+
+The reservoir rolls `item_result` and `fluid_result` when a source group starts. A positive roll establishes that product and each decay produces its maximum. A zero roll omits that product. Loading a saved pool or replacing a recipe reevaluates the roll, following the legacy source group behavior. The pool retains its stored materials and fractional decay progress. Empty results allow decay even when the product reservoir is full.
+
+Use `nuclearcraft:multiblock_decay_pool` for the heating circuit. The `fluid_input` uses the first matching dose that fits the stored feed, and `fluid_result` rolls independently for each completed batch. Convert the legacy script's heat per input mB to `heat_per_mb`. Existing Forge recipes can continue to specify `heat_per_batch`. Use an explicit empty result to spend heat and consume the feed with an empty product. Datapacks and KubeJS accept `{}` or `null`. Pass `new MapData()` for empty fields in CraftTweaker.
+
+To convert a 1.12.2 controller, move the process tanks to `feed` and `product` and `fullHalt` to `halted`. Copy `processor.time` to `process_heat` and record the matching modern recipe ID in `heating_recipe`. Move `itemIngredientGroups`, `fluidIngredientGroups`, `itemProductGroups`, and `fluidProductGroups` to the controller's `reservoir.item_inputs`, `reservoir.fluid_inputs`, `reservoir.item_outputs`, and `reservoir.fluid_outputs`. Expand each group's `stack` into a modern stack tag. Put the group quantity in `amount` for items, with `Count` set to one, or in `Amount` for fluids. Resolve each legacy `sourceRecipeGroups` entry to its modern heat-source recipe and store its `decayRemainder` under that recipe ID in `reservoir.remainders`.
+
+All 275 local headless GameTests passed. The pool held partial doses until three items and 18 mB were available, then used two items and 10 mB for different precursors. The heating circuit spent 56 of 60 units of heat and produced exactly 6 mB. Both productless decay and productless heating kept the existing outlet contents.
+
+Packaged Forge 47.4.10 ran all six recipes from datapacks and CraftTweaker 14.0.59 and retained the exact outputs after restart. A world created with the preceding Forge build carried 15 heat units of progress and a blocked reservoir decay into the new build. The upgraded pool completed both batches once their output space and heat were available. The heating tank went from 7 to 10 mB and the reservoir produced exactly two redstone.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each delivered a partial red dye and benzene dose, finished it, then delivered the blue dye and methanol dose. Both exported exactly 16 mB of heavy water and kept it through dedicated restart and confirmed chunk unload and reload.
+
+The isolated 540-mod Auram client loaded and ran all six KubeJS recipes. JEI showed the authored alternatives, chance ranges, reservoir product rule, and empty products. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
+
+### Distiller blocks and processing
+
 The Distiller Controller and its four dedicated tray and wall parts retain their legacy IDs. The three metadata values of `machine_sieve_assembly` map to `steel_sieve_assembly`, `polytetrafluoroethene_sieve_assembly`, and `hastelloy_sieve_assembly`. Each Distiller process port selects one fluid tank. Right-click a port with the Multitool to advance through the two inputs and eight outputs. Sneak and right-click to move backward. The port saves its direction in `mode` and its zero-based index within that direction in `tank_index`.
 
 Assembled tray models sit half a block higher and alternate their horizontal offset by 0.9375 texture pixels in both directions. The stage order runs from the bottom up. The steel, PTFE, and Hastelloy sieve assemblies render their original cutout textures. Each tray keeps its placed block position for collision and assembly checks. Breaking the shell restores the standalone model. A decoded tray chunk starts with the standalone model until the tower validates, so saves from earlier Forge builds use the existing block IDs and assemble normally.

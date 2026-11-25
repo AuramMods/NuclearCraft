@@ -1,0 +1,11 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "item_input": {
+        "ingredient": {
+            "item": "minecraft:sponge"
+        },
+        "count": 1
+    },
+    "lifetime": 1000000,
+    "heat_per_tick": 30
+}

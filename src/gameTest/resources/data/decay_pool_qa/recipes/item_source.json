@@ -1,0 +1,24 @@
+{
+    "type": "nuclearcraft:decay_pool_heat_source",
+    "item_input": {
+        "ingredient": {
+            "item": "minecraft:magenta_dye"
+        },
+        "count": 1
+    },
+    "item_result": {
+        "item": "minecraft:redstone",
+        "count": 2,
+        "min_count": 1,
+        "chance_percent": 0
+    },
+    "fluid_result": {
+        "fluid": "nuclearcraft:heavy_water",
+        "amount": 8,
+        "min_amount": 0,
+        "step": 8,
+        "chance_percent": 0
+    },
+    "lifetime": 0,
+    "heat_per_tick": 0
+}

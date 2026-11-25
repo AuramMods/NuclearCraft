@@ -5,6 +5,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -12,7 +13,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 final class DecayReservoir {
     static final int ITEM_VOLUME = 144;
@@ -21,6 +21,7 @@ final class DecayReservoir {
     private final List<FluidStack> fluidInputs = new ArrayList<>();
     private final List<FluidStack> fluidOutputs = new ArrayList<>();
     private final Map<ResourceLocation, Double> progress = new HashMap<>();
+    private final Map<ResourceLocation, SourceProducts> chosenProducts = new HashMap<>();
     private double heatRate;
     private double decayRate;
 
@@ -80,38 +81,64 @@ final class DecayReservoir {
         return FluidStack.EMPTY;
     }
 
-    boolean tick(List<DecayPoolRecipe> recipes, int capacity) {
+    boolean tick(List<DecayPoolRecipe> recipes, int capacity, RandomSource random) {
         heatRate = decayRate = 0;
         if (itemInputs.isEmpty() && fluidInputs.isEmpty()) {
             boolean changed = !progress.isEmpty();
             progress.clear();
+            chosenProducts.clear();
             return changed;
         }
-        boolean changed = false;
-        for (var recipe : recipes) {
-            Predicate<ItemStack> itemMatch = stack -> firstItemRecipe(recipes, stack) == recipe;
-            Predicate<FluidStack> fluidMatch = stack -> firstFluidRecipe(recipes, stack) == recipe;
-            long batches = available(recipe, itemMatch, fluidMatch);
-            if (batches == 0) {
-                // A recipe with less than a complete batch retains its fractional decay progress.
-                if (itemInputs.stream().noneMatch(itemMatch) && fluidInputs.stream().noneMatch(fluidMatch)) {
-                    changed |= progress.remove(recipe.id()) != null;
+
+        Map<ResourceLocation, SourceStock> stock = new HashMap<>();
+        for (var stack : itemInputs) {
+            for (var recipe : recipes) {
+                int amount = recipe.itemInput().matchedCount(stack, Integer.MAX_VALUE);
+                if (amount > 0) {
+                    stock.computeIfAbsent(recipe.id(), unused -> new SourceStock()).items.add(new ItemDose(stack, amount));
+                    break;
                 }
+            }
+        }
+        for (var stack : fluidInputs) {
+            for (var recipe : recipes) {
+                int amount = recipe.fluidInput().matchedAmount(stack, 1, Integer.MAX_VALUE);
+                if (amount > 0) {
+                    stock.computeIfAbsent(recipe.id(), unused -> new SourceStock()).fluids.add(new FluidDose(stack, amount));
+                    break;
+                }
+            }
+        }
+        chosenProducts.keySet().retainAll(stock.keySet());
+        boolean changed = false;
+        long room = Math.max(0, capacity - used(itemOutputs, fluidOutputs));
+        for (var recipe : recipes) {
+            var feed = stock.get(recipe.id());
+            if (feed == null) {
+                changed |= progress.remove(recipe.id()) != null;
                 continue;
             }
+            var products = chosenProducts.get(recipe.id());
+            if (products == null || products.recipe != recipe) {
+                products = SourceProducts.roll(recipe, random);
+                chosenProducts.put(recipe.id(), products);
+            }
+            long batches = feed.batches(recipe);
+            if (batches == 0) continue;
             double previous = progress.getOrDefault(recipe.id(), 0D);
             double expected = recipe.lifetime() == 0 ? batches : previous + batches / recipe.lifetime();
-            long outputCost = (long) recipe.itemResult().getCount() * ITEM_VOLUME + recipe.fluidResult().getAmount();
-            long room = Math.max(0, capacity - used(itemOutputs, fluidOutputs));
-            long decayed = Math.min(Math.min((long) expected, batches), room / outputCost);
+            long outputCost = (long) products.item.getCount() * ITEM_VOLUME + products.fluid.getAmount();
+            long decayed = Math.min((long) expected, batches);
+            if (outputCost > 0) decayed = Math.min(decayed, room / outputCost);
             if (decayed > 0) {
-                consumeItems(itemMatch, recipe.itemCount(), decayed);
-                consumeFluids(fluidMatch, recipe.fluidInput() == null ? 0 : recipe.fluidInput().amount(), decayed);
-                add(itemOutputs, recipe.itemResult(), (int) (decayed * recipe.itemResult().getCount()));
-                add(fluidOutputs, recipe.fluidResult(), (int) (decayed * recipe.fluidResult().getAmount()));
+                feed.consume(decayed);
+                add(itemOutputs, products.item, (int) (decayed * products.item.getCount()));
+                add(fluidOutputs, products.fluid, (int) (decayed * products.fluid.getAmount()));
+                room -= decayed * outputCost;
             }
-            double remainder = decayed == batches && itemInputs.stream().noneMatch(itemMatch)
-                    && fluidInputs.stream().noneMatch(fluidMatch) ? 0D : Math.min(Double.MAX_VALUE, expected - decayed);
+            boolean hasMaterial = feed.hasMaterial();
+            double remainder = hasMaterial ? Math.min(Double.MAX_VALUE, expected - decayed) : 0D;
+            if (!hasMaterial) chosenProducts.remove(recipe.id());
             if (remainder == 0D) progress.remove(recipe.id());
             else progress.put(recipe.id(), remainder);
             changed |= decayed > 0 || remainder != previous;
@@ -119,50 +146,57 @@ final class DecayReservoir {
             heatRate += remaining * recipe.heat();
             decayRate += recipe.lifetime() == 0 ? remaining : remaining / recipe.lifetime();
         }
+        if (changed) {
+            itemInputs.removeIf(ItemStack::isEmpty);
+            fluidInputs.removeIf(FluidStack::isEmpty);
+        }
         return changed;
     }
 
-    private long available(DecayPoolRecipe recipe, Predicate<ItemStack> itemMatch, Predicate<FluidStack> fluidMatch) {
-        long items = recipe.itemCount() == 0 ? Long.MAX_VALUE
-                : itemInputs.stream().filter(itemMatch).mapToLong(stack -> stack.getCount() / recipe.itemCount()).sum();
-        long fluids = recipe.fluidInput() == null ? Long.MAX_VALUE
-                : fluidInputs.stream().filter(fluidMatch).mapToLong(stack -> stack.getAmount() / recipe.fluidInput().amount()).sum();
-        return Math.min(items, fluids);
-    }
+    private record ItemDose(ItemStack stack, int size) {}
+    private record FluidDose(FluidStack stack, int size) {}
 
-    private static DecayPoolRecipe firstItemRecipe(List<DecayPoolRecipe> recipes, ItemStack stack) {
-        for (var recipe : recipes) if (recipe.accepts(stack)) return recipe;
-        return null;
-    }
+    private static final class SourceStock {
+        private final List<ItemDose> items = new ArrayList<>();
+        private final List<FluidDose> fluids = new ArrayList<>();
 
-    private static DecayPoolRecipe firstFluidRecipe(List<DecayPoolRecipe> recipes, FluidStack stack) {
-        for (var recipe : recipes) if (recipe.accepts(stack)) return recipe;
-        return null;
-    }
+        long batches(DecayPoolRecipe recipe) {
+            long itemBatches = recipe.itemInput().isEmpty() ? Long.MAX_VALUE
+                    : items.stream().mapToLong(dose -> dose.stack.getCount() / dose.size).sum();
+            long fluidBatches = recipe.fluidInput().isEmpty() ? Long.MAX_VALUE
+                    : fluids.stream().mapToLong(dose -> dose.stack.getAmount() / dose.size).sum();
+            return Math.min(itemBatches, fluidBatches);
+        }
 
-    private void consumeItems(Predicate<ItemStack> match, int count, long remaining) {
-        if (count == 0) return;
-        var iterator = itemInputs.iterator();
-        while (remaining > 0 && iterator.hasNext()) {
-            var stack = iterator.next();
-            if (!match.test(stack)) continue;
-            int batches = (int) Math.min(remaining, stack.getCount() / count);
-            stack.shrink(batches * count);
-            remaining -= batches;
-            if (stack.isEmpty()) iterator.remove();
+        boolean hasMaterial() {
+            return items.stream().anyMatch(dose -> !dose.stack.isEmpty())
+                    || fluids.stream().anyMatch(dose -> !dose.stack.isEmpty());
+        }
+
+        void consume(long batches) {
+            long remaining = batches;
+            for (var dose : items) {
+                int used = (int) Math.min(remaining, dose.stack.getCount() / dose.size);
+                dose.stack.shrink(used * dose.size);
+                remaining -= used;
+                if (remaining == 0) break;
+            }
+            remaining = batches;
+            for (var dose : fluids) {
+                int used = (int) Math.min(remaining, dose.stack.getAmount() / dose.size);
+                dose.stack.shrink(used * dose.size);
+                remaining -= used;
+                if (remaining == 0) break;
+            }
         }
     }
 
-    private void consumeFluids(Predicate<FluidStack> match, int count, long remaining) {
-        if (count == 0) return;
-        var iterator = fluidInputs.iterator();
-        while (remaining > 0 && iterator.hasNext()) {
-            var stack = iterator.next();
-            if (!match.test(stack)) continue;
-            int batches = (int) Math.min(remaining, stack.getAmount() / count);
-            stack.shrink(batches * count);
-            remaining -= batches;
-            if (stack.isEmpty()) iterator.remove();
+    private record SourceProducts(DecayPoolRecipe recipe, ItemStack item, FluidStack fluid) {
+        static SourceProducts roll(DecayPoolRecipe recipe, RandomSource random) {
+            // A positive roll establishes a product for the lifetime of this source group.
+            var item = recipe.itemProduct().roll(random).isEmpty() ? ItemStack.EMPTY : recipe.itemProduct().stack();
+            var fluid = recipe.fluidProduct().rollAmount(random) > 0 ? recipe.fluidProduct().stack() : FluidStack.EMPTY;
+            return new SourceProducts(recipe, item, fluid);
         }
     }
 
@@ -199,6 +233,7 @@ final class DecayReservoir {
         fluidInputs.clear();
         fluidOutputs.clear();
         progress.clear();
+        chosenProducts.clear();
         heatRate = decayRate = 0;
     }
 
