@@ -11,6 +11,7 @@ import nc.multiblock.fission.FissionPartMenu;
 import nc.multiblock.fission.FissionWallBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.multiblock.turbine.TurbineController;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -176,6 +177,56 @@ public final class SolidFissionGameTests {
                         "Reassembly restores the frame texture"))
                 .thenExecute(() -> helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0)
                         .getAmount() == 350, "Reformation and reading saved controller data must preserve the coolant"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 700)
+    public static void outputVentFeedsAnAdjacentTurbineAndRespectsBackpressure(GameTestHelper helper) {
+        buildReactor(helper);
+        TurbineGameTests.buildTurbine(helper, new BlockPos(1, 0, 5));
+        var rotorController = new BlockPos(2, 3, 7);
+        var turbineInlet = STEAM_OUT.south();
+        var steam = NCFluids.HIGH_PRESSURE_STEAM.source().get();
+        int[] destinationCapacity = new int[1];
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    requireAssembled(helper);
+                    helper.assertTrue(((TurbineController) helper.getBlockEntity(rotorController)).assembled(),
+                            "Turbine must assemble with its inlet directly against the reactor vent");
+                })
+                .thenExecute(() -> {
+                    var receiver = fluids(helper, turbineInlet, Direction.NORTH);
+                    destinationCapacity[0] = receiver.getTankCapacity(0);
+                    int initial = destinationCapacity[0] - 1000;
+                    helper.assertTrue(receiver.fill(new FluidStack(steam, initial), FluidAction.EXECUTE) == initial,
+                            "The turbine starts with 1,000 mB free");
+                    fluids(helper, WATER_IN, Direction.NORTH).fill(new FluidStack(Fluids.WATER, 1000), FluidAction.EXECUTE);
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    int received = fluids(helper, turbineInlet, Direction.NORTH).getFluidInTank(0).getAmount();
+                    int retained = fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0).getAmount();
+                    helper.assertTrue(received == destinationCapacity[0] && retained == 3000,
+                            "Expected a full turbine and 3,000 mB in the reactor, found " + received + " and " + retained);
+                })
+                .thenExecute(() -> {
+                    helper.setBlock(FRAME, Blocks.AIR);
+                    var turbine = helper.getBlockEntity(rotorController);
+                    var tag = turbine.saveWithoutMetadata();
+                    tag.put("steam", new FluidStack(steam, destinationCapacity[0] - 3000).writeToNBT(new CompoundTag()));
+                    turbine.load(tag);
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(controller(helper).saveWithoutMetadata().getCompound("steam").getInt("Amount") == 3000
+                                    && fluids(helper, turbineInlet, Direction.NORTH).getFluidInTank(0).getAmount() == destinationCapacity[0] - 3000,
+                            "A disassembled reactor retains its steam even after the destination makes room");
+                    helper.setBlock(FRAME, NCFission.CASING.get());
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, turbineInlet, Direction.NORTH).getFluidInTank(0).getAmount() == destinationCapacity[0]
+                                && fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0).isEmpty(),
+                        "Repair resumes the direct transfer without duplicating or losing steam"))
                 .thenSucceed();
     }
 

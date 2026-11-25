@@ -288,10 +288,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
             return;
         }
 
-        Role role = current.port.role();
         var fuel = current.port.itemFuel() ? current.controller.fuelItems(current.port.fuelFilter()) : null;
-        var output = role == Role.COOLER_PORT || role == Role.HEATER_PORT || role == Role.VESSEL_PORT
-                ? current.controller.fluidTank(current.port) : null;
+        var output = current.port.fluid() ? current.controller.fluidTank(current.port) : null;
         if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (output == null || output.isEmpty())) {
             return;
         }
