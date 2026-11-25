@@ -10,6 +10,7 @@
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
         "compat.RefinedStorageLookups",
+        "compat.DraconicCrystalLookups",
         "compat.ForegoingFluidPlacement",
         "compat.MekanismFluidPlacement"
     ]

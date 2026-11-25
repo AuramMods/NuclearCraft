@@ -458,6 +458,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Applied Flux | 1.3.4 | Forge Energy through Flux Accessors and ME FE Storage Cells |
 | Applied Mekanistics | 1.4.3 | Gas transfer through AE2 buses and ME chemical cells on sided processors |
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
+| Draconic Evolution | 3.1.2.621 | Forge Energy transfer through linked I/O, Relay, and Wireless Energy Crystals |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
@@ -653,6 +654,18 @@ The Chemical Reactor spent 2,000 FE to make 250 mB of hydrogen chloride. Its clo
 A second batch stayed in the output cell while the destination held its full 64,000 units of hydrogen chloride. Freeing 50 units of capacity delivered exactly 50 and left 200 in the cell. After a dedicated restart, freeing another 200 units of capacity emptied the cell.
 
 The isolated instance with all 541 installed Auram mod JARs loaded JEI and repeated the circuit with recipe factoring enabled. The reactor used 2,000 FE and the output cell held all 250 units while both fixture chunks unloaded. After the server loaded new chunk instances, the Export Bus delivered all 250 units to the cleared tank. Region saves confirmed the delivered product, both empty cells, both empty feed tanks, and empty reactor buffers. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
+### Draconic Evolution Energy Crystals
+
+On dedicated Forge 47.4.10 with Auram's Draconic Evolution 3.1.2.621, Brandon's Core 3.2.1.302, and CodeChickenLib 4.4.0.516, a Voltaic Pile kept 12,000 FE until its output face opened. Two I/O Crystals and a Relay Crystal supplied a Melter. The full water tank held the input ice in place, and the 12,000 FE survived a dedicated restart. Freeing 1,000 mB of tank space let the Melter spend exactly 4,000 FE on one batch. The tank returned to 16,000 mB. [Draconic Evolution 3.1.2.621](https://www.curseforge.com/minecraft/mc-mods/draconic-evolution/files/6793843)
+
+Two Wireless Energy Crystals and a relay collected 8,500 FE from a battery after its face switched from input to output. The receiving battery stayed full with its input enabled. After a dedicated restart, freeing 4,000 FE of capacity let the network fill the battery and retain 4,500 FE. Both networks kept their balances and links after their chunks fully unloaded and reloaded.
+
+A 48-block wired link kept its destination chunk fully loaded after the destination's force-load was removed. The source crystal's tick kept renewing an unknown chunk ticket. The optional compatibility mixin checks already loaded block entities when balancing crystal links or polling wired and wireless endpoints. It uses the same loaded-chunk lookup as the Refined Storage integration. [Draconic Evolution crystal balancing source](https://github.com/Draconic-Inc/Draconic-Evolution/blob/1.20/src/main/java/com/brandon3055/draconicevolution/blocks/energynet/tileentity/TileCrystalBase.java)
+
+With the patch, separate 48-block wired and wireless links buffered 8,500 FE at their active sources while their destination chunks lost full status and their tickets expired. Each original link resumed transfer once its destination returned. The saved regions confirmed that both batteries accepted exactly 4,000 FE and both crystal networks retained their links and the remaining 4,500 FE. The three Refined Storage routes also passed their unload and restart checks. Clean packaged Forge completed a water electrolysis batch, and all 227 local GameTests passed.
+
+The isolated client with all 541 Auram mod JARs loaded JEI and repeated all four circuits. The four shorter-route chunks cleared Minecraft's chunk maps and loaded as new instances. The wired route then transferred another 6,000 FE, and the wireless route delivered another 2,500 FE from its buffer. Saved regions confirmed the exact balances and links for both routes and both 48-block circuits. The successful run used previously generated chunks after AdLods threw a concurrent modification exception during new chunk generation. The client used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### XNet and Integrated Dynamics
 
