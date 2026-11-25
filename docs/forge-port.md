@@ -1100,6 +1100,20 @@ Ender IO 8.2.22-beta supplied water for the Chemical Reactor’s 18 mB and 10 mB
 
 The isolated 540-mod Auram client loaded the seven recipes through KubeJS using the object form. JEI showed each fluid alternative with its authored volume. The Chemical Reactor, Infuser, Radiation Scrubber, Electrolyzer, and Distiller ran the recipes in-world. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible window samples.
 
+### Alternative thermal fluids
+
+Use a counted `input` with `alternatives` for turbines, condenser tubes, heat exchangers, solid-reactor casing heating, and pebble-bed or molten-salt emergency vents. Each choice accepts a fluid ID or tag and a positive mB amount. The first choice that fits the current fluid, flow, and heat limits supplies the batch. If a vent or turbine can run more batches, it checks the choices again against the remaining volume and outlet space.
+
+Condenser dissipation recipes use the amount of each choice as the minimum coolant level. The shell retains the coolant, and a choice with no amount uses a 1 mB minimum. The catalog selects the coolant recipe by priority, matching selector specificity, and recipe ID. Once selected, a recipe waits if its minimum is unmet.
+
+This format works with datapacks, KubeJS, and CraftTweaker `addJsonRecipe`. Use an `alternatives` object at every group level in ZenCode. JEI shows the individual fluid amounts for each recipe, including the coolant minimums.
+
+All 263 local GameTests passed. Packaged Forge 47.4.10 ran all seven recipes with datapacks and CraftTweaker 14.0.59. The turbine, condenser, and heat exchanger processed 18 mB and 10 mB in order. The solid reactor heated both doses and produced 14 mB of steam. The idle pebble and molten-salt reactors each held their fluid with nine units of heat, ran the 10 mB choice with ten units, then ran the 18 mB choice after 18 units were made available. All measured outputs survived restart with either recipe source.
+
+Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied a condenser with 9 mB followed by 19 mB. Both held the short charge, exported exactly 6 mB of condensate after the second delivery, and retained all 10 mB of shell coolant. The external output balances survived restart and chunk unload and reload.
+
+The isolated 540-mod Auram client loaded all seven recipes through KubeJS, showed the authored amounts in JEI, and ran the recipes in-world. The client used master volume zero and OpenAL No Output. The observer recorded zero activations, foreground samples, and visible window samples.
+
 ### Alternative item inputs
 
 Use an `alternatives` object to give an item slot several counted Forge ingredients. Each choice takes an `ingredient` and a `count`. The machine processes the first choice that matches the stack and has enough items. An item pipe can add part of the required stack and the machine will wait for the rest. Shapeless recipes still assign each required input to a distinct slot.

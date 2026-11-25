@@ -21,7 +21,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 
 import java.util.Locale;
 
-public record HeatExchangerRecipe(ResourceLocation id, FluidIngredient input, FluidStack product,
+public record HeatExchangerRecipe(ResourceLocation id, FluidInput input, FluidStack product,
                                   FluidStack alternateProduct, Alternate alternate, double heat, HeatSource heatSource,
                                   int inputTemperature, int outputTemperature, boolean equalTemperatureHeating,
                                   int preferredFlow, double flowBonus) implements Recipe<Container> {
@@ -85,7 +85,7 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidIngredient input, Fl
     public static final class Serializer implements RecipeSerializer<HeatExchangerRecipe> {
         @Override
         public HeatExchangerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            FluidIngredient input = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "input"), id);
+            FluidInput input = FluidInput.readRequired(json.get("input"), id);
             FluidStack output = readOutput(id, GsonHelper.getAsJsonObject(json, "output"));
             double heat = GsonHelper.getAsDouble(json, "heat");
             int inputTemperature = GsonHelper.getAsInt(json, "input_temperature");
@@ -126,7 +126,7 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidIngredient input, Fl
 
         @Override
         public HeatExchangerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new HeatExchangerRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(),
+            return new HeatExchangerRecipe(id, FluidInput.fromNetwork(buffer), buffer.readFluidStack(),
                     buffer.readFluidStack(), buffer.readEnum(Alternate.class), buffer.readDouble(),
                     buffer.readEnum(HeatSource.class), buffer.readVarInt(), buffer.readVarInt(), buffer.readBoolean(),
                     buffer.readByte(), buffer.readDouble());
@@ -134,7 +134,7 @@ public record HeatExchangerRecipe(ResourceLocation id, FluidIngredient input, Fl
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, HeatExchangerRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             buffer.writeFluidStack(recipe.product);
             buffer.writeFluidStack(recipe.alternateProduct);
             buffer.writeEnum(recipe.alternate);

@@ -16,6 +16,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fluids.FluidStack;
 
 final class CondenserCoolantCategory implements IRecipeCategory<Entry> {
     static final RecipeType<Entry> TYPE = RecipeType.create(NuclearCraft.MOD_ID, "condenser_dissipation_fluid", Entry.class);
@@ -34,8 +35,9 @@ final class CondenserCoolantCategory implements IRecipeCategory<Entry> {
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder layout, Entry entry, IFocusGroup focus) {
+        int capacity = entry.fluids().stream().mapToInt(FluidStack::getAmount).max().orElse(1);
         layout.addSlot(RecipeIngredientRole.INPUT, (getWidth() - 16) / 2, 6).setStandardSlotBackground()
-                .setFluidRenderer(entry.recipe().input().amount(), true, 16, 16)
+                .setFluidRenderer(capacity, true, 16, 16)
                 .addIngredients(ForgeTypes.FLUID_STACK, entry.fluids());
     }
 

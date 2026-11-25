@@ -23,7 +23,7 @@ final class HeatExchange {
                 return null;
             }
             FluidStack product = recipe.output();
-            int batches = circuit.capacity(recipe.input().amount(), product);
+            int batches = circuit.capacity(recipe.input(), product);
             double heat = recipe.heatRequired();
             if (batches <= 0 || heat <= 0D || !Double.isFinite(heat)) {
                 return null;
@@ -36,7 +36,7 @@ final class HeatExchange {
         }
 
         int exchange(double rate) {
-            return circuit.process(recipe.id(), recipe.input().amount(), product, heat, batches, rate);
+            return circuit.process(recipe.id(), recipe.input(), product, heat, batches, rate);
         }
     }
 

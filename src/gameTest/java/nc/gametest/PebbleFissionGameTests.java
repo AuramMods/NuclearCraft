@@ -261,6 +261,43 @@ public final class PebbleFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission", timeoutTicks = 100)
+    public static void idleVentFitsCoolantAlternativesToTheRemainingCasingHeat(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(COLD_NITROGEN, NCFission.VENT.get());
+        helper.setBlock(HOT_NITROGEN, output(NCFission.VENT.get()));
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var coolant = new FluidStack(NCFluids.HELIUM_3.source().get(), 28);
+                    helper.assertTrue(fluids(helper, COLD_NITROGEN, Direction.NORTH).fill(coolant, FluidAction.EXECUTE) == 28,
+                            "The idle reactor must accept the alternate emergency coolant");
+                    var stored = controller(helper).saveWithoutMetadata();
+                    stored.putLong("heat", 9);
+                    controller(helper).load(stored);
+                })
+                .thenExecuteAfter(4, () -> {
+                    helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 28
+                                    && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 0,
+                            "A casing heat budget below 10 must hold all coolant");
+                    var stored = controller(helper).saveWithoutMetadata();
+                    stored.putLong("heat", 10);
+                    controller(helper).load(stored);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 18
+                                && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 7,
+                        "Ten casing heat must use only the fallback dose"))
+                .thenExecute(() -> {
+                    var stored = controller(helper).saveWithoutMetadata();
+                    stored.putLong("heat", 18);
+                    controller(helper).load(stored);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 0
+                                && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 14,
+                        "The next 18 casing heat must use the preferred dose"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 200)
     public static void filteredCoolerPortsKeepTaggedGasAlternativesInSeparateCircuits(GameTestHelper helper) {
         buildReactor(helper);

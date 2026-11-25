@@ -1,0 +1,18 @@
+{
+    "type": "nuclearcraft:fission_emergency_cooling",
+    "input": [
+        {
+            "fluid": "nuclearcraft:helium_3",
+            "amount": 18
+        },
+        {
+            "fluid": "nuclearcraft:helium_3",
+            "amount": 10
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:emergency_coolant_heated",
+        "amount": 7
+    },
+    "heat_per_mb": 1
+}

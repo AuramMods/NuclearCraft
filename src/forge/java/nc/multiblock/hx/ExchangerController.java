@@ -9,6 +9,8 @@ import nc.init.HeatExchangerConfig;
 import nc.init.NCHeatExchangers;
 import nc.recipe.CondenserCoolants;
 import nc.recipe.CondenserRecipe;
+import nc.recipe.FluidBatch;
+import nc.recipe.FluidInput;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -138,7 +140,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     private void condenseShell() {
         var coolant = shell.input.getFluid();
         var recipe = CondenserCoolants.find(level, coolant);
-        if (recipe == null || coolant.getAmount() < recipe.input().amount()) {
+        if (recipe == null || !recipe.input().matches(coolant)) {
             return;
         }
         double shellFraction = Math.min(1D, (double) coolant.getAmount() / shell.input.getCapacity());
@@ -156,7 +158,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             return;
         }
         FluidStack product = recipe.output();
-        int capacity = circuit.capacity(recipe.input().amount(), product);
+        int capacity = circuit.capacity(recipe.input(), product);
         if (capacity <= 0) {
             return;
         }
@@ -169,7 +171,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             heatRate += rate;
             shellSpeed += rate / recipe.cooling();
             temperatureDifference += mean * network.usefulTubes();
-            tubeInputRate += circuit.process(recipe.id(), recipe.input().amount(), product, recipe.cooling(), capacity, rate);
+            tubeInputRate += circuit.process(recipe.id(), recipe.input(), product, recipe.cooling(), capacity, rate);
         }
     }
 
@@ -596,31 +598,32 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             input = new Tank(1, accepts);
         }
 
-        int capacity(int inputAmount, FluidStack product) {
+        int capacity(FluidInput ingredient, FluidStack product) {
             if (!output.isEmpty() && !output.getFluid().isFluidEqual(product)) {
                 return 0;
             }
-            return Math.max(0, Math.min(input.getFluidAmount() / inputAmount, output.getSpace() / product.getAmount()));
+            return FluidBatch.fit(ingredient, input.getFluid(), input.getFluidAmount(),
+                    output.getSpace() / product.getAmount()).batches();
         }
 
         double credit(ResourceLocation id, double required) {
             return id.equals(recipe) ? Math.min(credit, Math.nextDown(required)) : 0D;
         }
 
-        int process(ResourceLocation id, int inputAmount, FluidStack product, double required, int capacity, double rate) {
+        int process(ResourceLocation id, FluidInput ingredient, FluidStack product, double required, int capacity, double rate) {
             double heat = Math.min(credit(id, required) + rate, required * capacity);
             int batches = Math.min(capacity, (int) (heat / required));
+            var usage = FluidBatch.fit(ingredient, input.getFluid(), input.getFluidAmount(), batches);
             recipe = id;
-            credit = Math.max(0D, heat - batches * required);
-            int consumed = batches * inputAmount;
-            if (consumed > 0) {
+            credit = Math.max(0D, heat - usage.batches() * required);
+            if (usage.batches() > 0) {
                 FluidStack produced = product.copy();
-                produced.setAmount(produced.getAmount() * batches);
+                produced.setAmount(produced.getAmount() * usage.batches());
                 output.fill(produced, FluidAction.EXECUTE);
-                input.drain(consumed, FluidAction.EXECUTE);
+                input.drain(usage.consumed(), FluidAction.EXECUTE);
             }
             setChanged();
-            return consumed;
+            return usage.consumed();
         }
 
         void clear() {

@@ -7,6 +7,7 @@ import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
 import nc.init.TurbineConfig;
+import nc.recipe.FluidBatch;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -156,19 +157,17 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         double factor = 1D + (TurbineConfig.tensionThroughputFactor() - 1D) * fill;
         int throughput = (int) Math.min(steam.getFluidAmount(), drive.ratedFlow(layout) * factor);
         FluidStack product = recipe.output();
-        int batches = Math.min(throughput / recipe.input().amount(),
-                exhaust.getSpace() / product.getAmount());
-        if (batches <= 0) {
+        var usage = FluidBatch.fit(recipe.input(), steam.getFluid(), throughput, exhaust.getSpace() / product.getAmount());
+        if (usage.batches() == 0) {
             return 0;
         }
-        product.setAmount(product.getAmount() * batches);
+        product.setAmount(product.getAmount() * usage.batches());
         if (exhaust.fill(product, FluidAction.SIMULATE) != product.getAmount()) {
             return 0;
         }
         exhaust.fill(product, FluidAction.EXECUTE);
-        int used = batches * recipe.input().amount();
-        steam.drain(used, FluidAction.EXECUTE);
-        return used;
+        steam.drain(usage.consumed(), FluidAction.EXECUTE);
+        return usage.consumed();
     }
 
     private TurbineRecipe recipeFor(FluidStack fluid) {

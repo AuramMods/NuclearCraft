@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "alternatives": [
+            {
+                "fluid": "nuclearcraft:ethanol",
+                "amount": 1000
+            },
+            {
+                "tag": "thermal_alternatives_qa:turbine_feeds",
+                "amount": 18
+            },
+            [
+                {
+                    "fluid": "nuclearcraft:ethanol",
+                    "amount": 10
+                }
+            ]
+        ]
+    },
+    "output": {
+        "fluid": "nuclearcraft:low_quality_steam",
+        "amount": 3
+    },
+    "power_per_mb": 8,
+    "expansion": 2
+}

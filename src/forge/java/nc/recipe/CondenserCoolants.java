@@ -12,9 +12,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,21 +21,28 @@ import java.util.WeakHashMap;
 @Mod.EventBusSubscriber(modid = NuclearCraft.MOD_ID)
 public final class CondenserCoolants {
     private static final Map<RecipeManager, CondenserCoolants> CATALOGS = new WeakHashMap<>();
-    private static final Comparator<CondenserCoolantRecipe> PRECEDENCE =
-            Comparator.comparingInt(CondenserCoolantRecipe::priority).reversed()
-                    .thenComparing(recipe -> recipe.input().tag())
-                    .thenComparing(CondenserCoolantRecipe::id);
-
     private final Map<Fluid, CondenserCoolantRecipe> fluids = new LinkedHashMap<>();
 
     public CondenserCoolants(RecipeManager manager) {
-        manager.getAllRecipesFor(NCHeatExchangers.COOLANT_RECIPES.get()).stream().sorted(PRECEDENCE).forEach(recipe -> {
+        for (var recipe : manager.getAllRecipesFor(NCHeatExchangers.COOLANT_RECIPES.get())) {
             for (FluidStack stack : recipe.input().alternatives()) {
                 if (!stack.isEmpty()) {
-                    fluids.putIfAbsent(stack.getFluid(), recipe);
+                    fluids.merge(stack.getFluid(), recipe, (first, second) -> preferred(stack, first, second));
                 }
             }
-        });
+        }
+    }
+
+    private static CondenserCoolantRecipe preferred(FluidStack stack, CondenserCoolantRecipe first, CondenserCoolantRecipe second) {
+        if (first.priority() != second.priority()) {
+            return first.priority() > second.priority() ? first : second;
+        }
+        boolean firstTag = first.input().matchingChoice(stack, 1, Integer.MAX_VALUE).tag();
+        boolean secondTag = second.input().matchingChoice(stack, 1, Integer.MAX_VALUE).tag();
+        if (firstTag != secondTag) {
+            return firstTag ? second : first;
+        }
+        return first.id().compareTo(second.id()) <= 0 ? first : second;
     }
 
     public static @Nullable CondenserCoolantRecipe find(@Nullable Level level, FluidStack stack) {
@@ -61,13 +66,11 @@ public final class CondenserCoolants {
     }
 
     public List<Entry> entries() {
-        var byRecipe = new HashMap<CondenserCoolantRecipe, List<FluidStack>>();
-        fluids.forEach((fluid, recipe) -> byRecipe.computeIfAbsent(recipe, unused -> new ArrayList<>())
-                .add(new FluidStack(fluid, recipe.input().amount())));
-        return byRecipe.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey(Comparator.comparingInt(CondenserCoolantRecipe::temperature)
-                        .thenComparing(CondenserCoolantRecipe::id)))
-                .map(entry -> new Entry(entry.getKey(), List.copyOf(entry.getValue()))).toList();
+        return fluids.values().stream().distinct()
+                .sorted(Comparator.comparingInt(CondenserCoolantRecipe::temperature).thenComparing(CondenserCoolantRecipe::id))
+                .map(recipe -> new Entry(recipe, recipe.input().alternatives().stream()
+                        .filter(stack -> fluids.get(stack.getFluid()) == recipe).toList()))
+                .toList();
     }
 
     public record Entry(CondenserCoolantRecipe recipe, List<FluidStack> fluids) {}

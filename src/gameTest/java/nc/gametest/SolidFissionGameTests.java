@@ -135,8 +135,10 @@ public final class SolidFissionGameTests {
                 .thenWaitUntil(() -> requireAssembled(helper))
                 .thenExecute(() -> {
                     var recipes = helper.getLevel().getRecipeManager();
-                    helper.assertTrue(recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()).size() == 50
-                                    && recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()).size() == 1,
+                    helper.assertTrue(recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()).stream()
+                                    .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).count() == 50
+                                    && recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()).stream()
+                                    .filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).count() == 1,
                             "Load all water, gas, NaK and emergency casing recipes");
                     var inlet = fluids(helper, WATER_IN, Direction.NORTH);
                     var water = new FluidStack(NCFluids.PREHEATED_WATER.source().get(), 20);
@@ -168,6 +170,30 @@ public final class SolidFissionGameTests {
                     helper.assertTrue(gas.getFluid() == NCGasCoolants.OXYGEN.hot() && gas.getAmount() == 40
                                     && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
                             "Gas heating resumes and produces exactly 2 mB of hot oxygen per mB");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 100)
+    public static void casingHeatProcessesBothCoolantAlternatives(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, WATER_IN, Direction.NORTH);
+                    var helium = NCFluids.HELIUM_3.source().get();
+                    helper.assertTrue(inlet.fill(new FluidStack(helium, 28), FluidAction.EXECUTE) == 28,
+                            "The vent must accept its custom coolant");
+                    items(helper, FUEL_IN, Direction.DOWN)
+                            .insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var product = fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(product.getFluid() == NCFluids.HIGH_PRESSURE_STEAM.source().get()
+                                    && product.getAmount() == 14
+                                    && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                            "Both coolant doses must use all 28 mB and produce exactly 14 mB of steam");
                 })
                 .thenSucceed();
     }

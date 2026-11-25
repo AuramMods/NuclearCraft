@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
-public record CondenserCoolantRecipe(ResourceLocation id, FluidIngredient input, int temperature, int priority)
+public record CondenserCoolantRecipe(ResourceLocation id, FluidInput input, int temperature, int priority)
         implements Recipe<Container> {
     @Override
     public boolean matches(Container container, Level level) {
@@ -32,12 +32,7 @@ public record CondenserCoolantRecipe(ResourceLocation id, FluidIngredient input,
     public static final class Serializer implements RecipeSerializer<CondenserCoolantRecipe> {
         @Override
         public CondenserCoolantRecipe fromJson(ResourceLocation id, JsonObject json) {
-            JsonObject selector = GsonHelper.getAsJsonObject(json, "input");
-            if (!selector.has("amount")) {
-                selector = selector.deepCopy();
-                selector.addProperty("amount", 1);
-            }
-            FluidIngredient input = FluidIngredient.fromJson(selector, id);
+            FluidInput input = FluidInput.readRequired(json.get("input"), id, 1);
             int temperature = GsonHelper.getAsInt(json, "temperature", 300);
             if (temperature < 0) {
                 throw new JsonSyntaxException("Condenser coolant temperature must be nonnegative for " + id);
@@ -47,12 +42,12 @@ public record CondenserCoolantRecipe(ResourceLocation id, FluidIngredient input,
 
         @Override
         public CondenserCoolantRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new CondenserCoolantRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readVarInt(), buffer.readVarInt());
+            return new CondenserCoolantRecipe(id, FluidInput.fromNetwork(buffer), buffer.readVarInt(), buffer.readVarInt());
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, CondenserCoolantRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             buffer.writeVarInt(recipe.temperature).writeVarInt(recipe.priority);
         }
     }

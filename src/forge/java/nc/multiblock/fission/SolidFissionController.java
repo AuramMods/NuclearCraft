@@ -13,6 +13,7 @@ import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
 import nc.recipe.FissionHeatRecipe;
+import nc.recipe.FluidBatch;
 import nc.util.ValueTracker;
 
 import net.minecraft.core.BlockPos;
@@ -460,11 +461,14 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         var type = variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE;
         FissionHeatRecipe selected = null;
+        boolean selectedTag = false;
         for (FissionHeatRecipe recipe : level.getRecipeManager().getAllRecipesFor(type.get())) {
-            if (recipe.input().accepts(fluid) && (selected == null
-                    || selected.input().tag() && !recipe.input().tag()
-                    || selected.input().tag() == recipe.input().tag() && recipe.id().compareTo(selected.id()) < 0)) {
+            var choice = recipe.input().matchingChoice(fluid, 1, Integer.MAX_VALUE);
+            if (choice != null && (selected == null
+                    || selectedTag && !choice.tag()
+                    || selectedTag == choice.tag() && recipe.id().compareTo(selected.id()) < 0)) {
                 selected = recipe;
+                selectedTag = choice.tag();
             }
         }
         return selected;
@@ -478,31 +482,30 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (recipe == null) {
             return 0;
         }
-        int inputAmount = recipe.input().amount();
         long availableInput = coolant.getFluidAmount();
-        double heatPerBatch = inputAmount * recipe.heatPerMb();
+        double heatPerMb = recipe.heatPerMb();
         if (recipe.emergency()) {
             long vents = layout.ports().stream().filter(port -> port.role() == Role.VENT).count();
             availableInput = Math.min(availableInput, BASE_TANK_CAPACITY * vents);
             if (recipe.baseHeat() <= 0D && recipe.profile() == FissionHeatRecipe.Profile.EMERGENCY) {
-                heatPerBatch *= variant == FissionVariant.SALT
+                heatPerMb *= variant == FissionVariant.SALT
                         ? NCSaltFission.emergencyMultiplier() : NCPebbleFission.emergencyMultiplier();
             }
         }
-        if (!Double.isFinite(heatPerBatch)) {
+        if (!Double.isFinite(heatPerMb)) {
             return 0;
         }
         FluidStack product = recipe.output();
         int outputAmount = product.getAmount();
         int outputRoom = steam.getCapacity() - steam.getFluidAmount();
-        int batches = (int) Math.min(Math.min(availableInput / inputAmount, outputRoom / outputAmount),
-                casingHeat * efficiency / heatPerBatch);
-        if (batches > 0) {
-            product.setAmount(batches * outputAmount);
+        int budget = (int) Math.min(availableInput, casingHeat * efficiency / heatPerMb);
+        var usage = FluidBatch.fit(recipe.input(), coolant.getFluid(), budget, outputRoom / outputAmount);
+        if (usage.batches() > 0) {
+            product.setAmount(usage.batches() * outputAmount);
             if (steam.fill(product, FluidAction.SIMULATE) == product.getAmount()) {
                 steam.fill(product, FluidAction.EXECUTE);
-                coolant.drain(batches * inputAmount, FluidAction.EXECUTE);
-                casingHeat -= Math.min(casingHeat, (long) (batches * heatPerBatch / efficiency));
+                coolant.drain(usage.consumed(), FluidAction.EXECUTE);
+                casingHeat -= Math.min(casingHeat, (long) (usage.consumed() * heatPerMb / efficiency));
                 setChanged();
                 return product.getAmount();
             }

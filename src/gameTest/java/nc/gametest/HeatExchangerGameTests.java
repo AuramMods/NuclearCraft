@@ -38,6 +38,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -153,6 +154,27 @@ public final class HeatExchangerGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void heatExchangerUsesOrderedBatchesOnBothSides(GameTestHelper helper) {
+        build(helper, 3);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    var fluids = ForgeRegistries.FLUIDS;
+                    fill(helper, TUBE_IN, Direction.NORTH,
+                            new FluidStack(fluids.getValue(NuclearCraft.id("hydrofluoric_acid")), 28));
+                    fill(helper, SHELL_IN, Direction.EAST,
+                            new FluidStack(fluids.getValue(NuclearCraft.id("methanol")), 28));
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 10
+                                && fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0).getAmount() == 8
+                                && fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && fluid(helper, SHELL_IN, Direction.EAST).getFluidInTank(0).isEmpty(),
+                        "Each circuit must use its 18 mB and 10 mB choices under the shared heat budget"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "turbine", timeoutTicks = 180)
     public static void heatExchangerBaffleRedirectsShellThroughTubes(GameTestHelper helper) {
         build(helper, 2);
@@ -227,11 +249,12 @@ public final class HeatExchangerGameTests {
 
     @GameTest(template = "turbine")
     public static void heatExchangerLoadsAllLegacyTransferRecipes(GameTestHelper helper) {
-        var recipes = helper.getLevel().getRecipeManager().getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get());
+        var recipes = helper.getLevel().getRecipeManager().getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get())
+                .stream().filter(recipe -> recipe.id().getNamespace().equals(NuclearCraft.MOD_ID)).toList();
         helper.assertTrue(recipes.size() == 70, "All 6 steam and water, 32 gas, and 32 NaK recipes must load");
         var oxygen = recipes.stream().filter(r -> r.input().accepts(new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 4)))
                 .findFirst().orElseThrow();
-        helper.assertTrue(oxygen.input().amount() == 4 && oxygen.output().getFluid() == NCGasCoolants.OXYGEN.cold()
+        helper.assertTrue(oxygen.input().matchedAmount(new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 4), 1) == 4 && oxygen.output().getFluid() == NCGasCoolants.OXYGEN.cold()
                 && oxygen.output().getAmount() == 1 && oxygen.heatRequired() == 16D && !oxygen.heating(),
                 "Oxygen exhaust must preserve its legacy compression, fluid, and heat values");
         helper.succeed();

@@ -1,0 +1,20 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": [
+        {
+            "fluid": "nuclearcraft:methanol",
+            "amount": 18
+        },
+        {
+            "fluid": "nuclearcraft:methanol",
+            "amount": 10
+        }
+    ],
+    "output": {
+        "fluid": "nuclearcraft:steam",
+        "amount": 4
+    },
+    "heat": 16,
+    "input_temperature": 300,
+    "output_temperature": 600
+}

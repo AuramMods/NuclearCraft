@@ -13,6 +13,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -48,12 +49,11 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
     }
 
     @Override
-    public int matchedAmount(FluidStack stack, int factor) {
+    public @Nullable FluidIngredient matchingChoice(FluidStack stack, int factor, int available) {
         if (isEmpty()) {
-            return stack.isEmpty() ? 0 : -1;
+            return stack.isEmpty() ? this : null;
         }
-        int required = amount / factor;
-        return stack.getAmount() >= required && accepts(stack) ? required : -1;
+        return available >= amount / factor && accepts(stack) ? this : null;
     }
 
     @Override
@@ -89,9 +89,13 @@ public record FluidIngredient(ResourceLocation id, boolean tag, int amount, bool
     }
 
     public static FluidIngredient fromJson(JsonObject json, ResourceLocation recipeId) {
+        return fromJson(json, recipeId, 0);
+    }
+
+    static FluidIngredient fromJson(JsonObject json, ResourceLocation recipeId, int defaultAmount) {
         boolean tag = json.has("tag");
         ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(json, tag ? "tag" : "fluid"));
-        int amount = GsonHelper.getAsInt(json, "amount");
+        int amount = GsonHelper.getAsInt(json, "amount", defaultAmount);
         if (id == null || amount < 1 || tag == json.has("fluid")
                 || (!tag && (!ForgeRegistries.FLUIDS.containsKey(id) || ForgeRegistries.FLUIDS.getValue(id) == Fluids.EMPTY))) {
             throw new JsonSyntaxException("Invalid fluid input for " + recipeId);

@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
-public record CondenserRecipe(ResourceLocation id, FluidIngredient input, FluidStack output, double cooling,
+public record CondenserRecipe(ResourceLocation id, FluidInput input, FluidStack output, double cooling,
                               int inputTemperature, int outputTemperature, int preferredFlow, double flowBonus)
         implements Recipe<Container> {
     @Override
@@ -73,7 +73,7 @@ public record CondenserRecipe(ResourceLocation id, FluidIngredient input, FluidS
     public static final class Serializer implements RecipeSerializer<CondenserRecipe> {
         @Override
         public CondenserRecipe fromJson(ResourceLocation id, JsonObject json) {
-            FluidIngredient input = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "input"), id);
+            FluidInput input = FluidInput.readRequired(json.get("input"), id);
             JsonObject output = GsonHelper.getAsJsonObject(json, "output");
             ResourceLocation fluidId = ResourceLocation.tryParse(GsonHelper.getAsString(output, "fluid"));
             var fluid = fluidId == null ? null : ForgeRegistries.FLUIDS.getValue(fluidId);
@@ -94,13 +94,13 @@ public record CondenserRecipe(ResourceLocation id, FluidIngredient input, FluidS
 
         @Override
         public CondenserRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new CondenserRecipe(id, FluidIngredient.fromNetwork(buffer), buffer.readFluidStack(), buffer.readDouble(),
+            return new CondenserRecipe(id, FluidInput.fromNetwork(buffer), buffer.readFluidStack(), buffer.readDouble(),
                     buffer.readVarInt(), buffer.readVarInt(), buffer.readByte(), buffer.readDouble());
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, CondenserRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             buffer.writeFluidStack(recipe.output);
             buffer.writeDouble(recipe.cooling);
             buffer.writeVarInt(recipe.inputTemperature);

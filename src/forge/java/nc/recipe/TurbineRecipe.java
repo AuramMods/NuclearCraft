@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 
-public record TurbineRecipe(ResourceLocation id, FluidIngredient input,
+public record TurbineRecipe(ResourceLocation id, FluidInput input,
                             FluidStack output, double powerPerMb, double expansion, double spinUp,
                             ResourceLocation particle, double particleSpeed,
                             @Nullable Profile profile) implements Recipe<Container> {
@@ -98,7 +98,7 @@ public record TurbineRecipe(ResourceLocation id, FluidIngredient input,
     public static final class Serializer implements RecipeSerializer<TurbineRecipe> {
         @Override
         public TurbineRecipe fromJson(ResourceLocation id, JsonObject json) {
-            FluidIngredient input = FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "input"), id);
+            FluidInput input = FluidInput.readRequired(json.get("input"), id);
             JsonObject output = GsonHelper.getAsJsonObject(json, "output");
             ResourceLocation destination = location(output, "fluid");
             Fluid product = ForgeRegistries.FLUIDS.getValue(destination);
@@ -151,14 +151,14 @@ public record TurbineRecipe(ResourceLocation id, FluidIngredient input,
 
         @Override
         public TurbineRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            return new TurbineRecipe(id, FluidIngredient.fromNetwork(buffer),
+            return new TurbineRecipe(id, FluidInput.fromNetwork(buffer),
                     buffer.readFluidStack(), buffer.readDouble(), buffer.readDouble(), buffer.readDouble(),
                     buffer.readResourceLocation(), buffer.readDouble(), null);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, TurbineRecipe recipe) {
-            recipe.input.toNetwork(buffer);
+            FluidInput.write(buffer, recipe.input);
             buffer.writeFluidStack(recipe.output);
             buffer.writeDouble(recipe.powerPerMb());
             buffer.writeDouble(recipe.expansion());

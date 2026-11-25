@@ -1,0 +1,20 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": [
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 18
+        },
+        {
+            "fluid": "nuclearcraft:hydrofluoric_acid",
+            "amount": 10
+        }
+    ],
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 5
+    },
+    "heat": 16,
+    "input_temperature": 800,
+    "output_temperature": 700
+}

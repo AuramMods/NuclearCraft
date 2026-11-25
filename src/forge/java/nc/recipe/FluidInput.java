@@ -7,6 +7,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraftforge.fluids.FluidStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,7 +20,16 @@ public sealed interface FluidInput permits FluidIngredient, FluidInput.Alternati
     /**
      * Returns the amount to consume, or -1 when the input does not match.
      */
-    int matchedAmount(FluidStack stack, int factor);
+    default int matchedAmount(FluidStack stack, int factor) {
+        return matchedAmount(stack, factor, stack.getAmount());
+    }
+
+    default int matchedAmount(FluidStack stack, int factor, int available) {
+        var choice = matchingChoice(stack, factor, available);
+        return choice == null ? -1 : choice.amount() / factor;
+    }
+
+    @Nullable FluidIngredient matchingChoice(FluidStack stack, int factor, int available);
 
     default boolean matches(FluidStack stack) {
         return matches(stack, 1);
@@ -39,21 +49,37 @@ public sealed interface FluidInput permits FluidIngredient, FluidInput.Alternati
 
     int maxAmount();
 
+    static FluidInput readRequired(JsonElement entry, ResourceLocation id) {
+        return readRequired(entry, id, 0);
+    }
+
+    static FluidInput readRequired(JsonElement entry, ResourceLocation id, int defaultAmount) {
+        var input = readSlot(entry, id, defaultAmount);
+        if (input.matches(FluidStack.EMPTY)) {
+            throw new JsonSyntaxException("Expected a nonempty fluid input for " + id);
+        }
+        return input;
+    }
+
     static FluidInput readSlot(JsonElement entry, ResourceLocation id) {
+        return readSlot(entry, id, 0);
+    }
+
+    private static FluidInput readSlot(JsonElement entry, ResourceLocation id, int defaultAmount) {
         if (entry == null) {
             throw new JsonSyntaxException("Missing fluid input for " + id);
         }
         if (!hasAlternatives(entry)) {
-            return readChoice(entry, id);
+            return readChoice(entry, id, defaultAmount);
         }
         List<FluidIngredient> choices = new ArrayList<>();
-        readChoices(entry, id, choices);
+        readChoices(entry, id, defaultAmount, choices);
         return choose(choices);
     }
 
-    private static void readChoices(JsonElement entry, ResourceLocation id, List<FluidIngredient> choices) {
+    private static void readChoices(JsonElement entry, ResourceLocation id, int defaultAmount, List<FluidIngredient> choices) {
         if (!hasAlternatives(entry)) {
-            choices.add(readChoice(entry, id));
+            choices.add(readChoice(entry, id, defaultAmount));
             return;
         }
         if (entry.isJsonObject() && entry.getAsJsonObject().size() != 1) {
@@ -64,7 +90,7 @@ public sealed interface FluidInput permits FluidIngredient, FluidInput.Alternati
             throw new JsonSyntaxException("Expected at least one fluid alternative for " + id);
         }
         for (var choice : entries) {
-            readChoices(choice, id, choices);
+            readChoices(choice, id, defaultAmount, choices);
         }
     }
 
@@ -72,9 +98,9 @@ public sealed interface FluidInput permits FluidIngredient, FluidInput.Alternati
         return entry.isJsonArray() || entry.isJsonObject() && entry.getAsJsonObject().has("alternatives");
     }
 
-    private static FluidIngredient readChoice(JsonElement entry, ResourceLocation id) {
+    private static FluidIngredient readChoice(JsonElement entry, ResourceLocation id, int defaultAmount) {
         return MachineInputs.unusedSlot(entry) ? FluidIngredient.EMPTY
-                : FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entry, "fluid input"), id);
+                : FluidIngredient.fromJson(GsonHelper.convertToJsonObject(entry, "fluid input"), id, defaultAmount);
     }
 
     static List<FluidInput> readPair(JsonObject json, ResourceLocation id) {
@@ -130,14 +156,13 @@ public sealed interface FluidInput permits FluidIngredient, FluidInput.Alternati
         }
 
         @Override
-        public int matchedAmount(FluidStack stack, int factor) {
+        public @Nullable FluidIngredient matchingChoice(FluidStack stack, int factor, int available) {
             for (var choice : choices) {
-                int amount = choice.matchedAmount(stack, factor);
-                if (amount >= 0) {
-                    return amount;
+                if (choice.matchingChoice(stack, factor, available) != null) {
+                    return choice;
                 }
             }
-            return -1;
+            return null;
         }
 
         @Override

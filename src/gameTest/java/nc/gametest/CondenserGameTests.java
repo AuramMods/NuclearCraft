@@ -96,6 +96,35 @@ public final class CondenserGameTests {
     }
 
     @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void condenserUsesAlternativeCoolantMinimumAndTubeBatches(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, COOLANT, Direction.NORTH))
+                .thenExecute(() -> {
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.fill(new FluidStack(NCFluids.HEAVY_WATER.source().get(), 9),
+                            FluidAction.EXECUTE) == 9, "The shell must accept a partial coolant charge");
+                    var feed = fluid(helper, FIRST_IN, Direction.WEST);
+                    helper.assertTrue(feed.fill(new FluidStack(NCFluids.DEUTERIUM.source().get(), 28),
+                            FluidAction.EXECUTE) == 28, "The tube must accept its custom feed");
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 28
+                                    && fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0).isEmpty(),
+                            "Both batches must wait while there is less than the smallest coolant minimum");
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.fill(new FluidStack(NCFluids.HEAVY_WATER.source().get(), 1),
+                            FluidAction.EXECUTE) == 1, "One more mB must enable the alternative coolant");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0).getAmount() == 6
+                                && fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).isEmpty()
+                                && fluid(helper, COOLANT, Direction.NORTH).getFluidInTank(0).getAmount() == 10,
+                        "Both tube batches must complete and all coolant must stay in the shell"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
     public static void condenserUsesReloadableCoolantRecipes(GameTestHelper helper) {
         build(helper);
         helper.startSequence()
@@ -104,16 +133,16 @@ public final class CondenserGameTests {
                     var level = helper.getLevel();
                     var water = CondenserCoolants.find(level, new FluidStack(Fluids.WATER, 1));
                     helper.assertTrue(water != null && water.temperature() == 300
-                                    && water.input().amount() == 1 && water.priority() == -1,
+                                    && water.input().matchedAmount(new FluidStack(Fluids.WATER, 1), 1) == 1 && water.priority() == -1,
                             "Vanilla water must have a generated, editable 300 K recipe");
                     var helium = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("liquid_helium"));
                     var tagged = CondenserCoolants.find(level, new FluidStack(helium, 1));
-                    helper.assertTrue(tagged != null && tagged.temperature() == 285 && tagged.input().tag(),
+                    helper.assertTrue(tagged != null && tagged.temperature() == 285 && tagged.input().matchingChoice(new FluidStack(helium, 1), 1, Integer.MAX_VALUE).tag(),
                             "Custom tags must override generated exact results at their default priority");
                     var coolant = fluid(helper, COOLANT, Direction.NORTH);
                     var lava = new FluidStack(Fluids.LAVA, 299999);
                     var exact = CondenserCoolants.find(level, lava);
-                    helper.assertTrue(exact != null && exact.temperature() == 275 && exact.input().amount() == 300000,
+                    helper.assertTrue(exact != null && exact.temperature() == 275 && exact.input().matchedAmount(new FluidStack(Fluids.LAVA, 300000), 1) == 300000,
                             "At the same priority, an exact recipe must override a matching tag recipe");
                     helper.assertTrue(coolant.fill(lava, FluidAction.SIMULATE) == lava.getAmount()
                                     && coolant.getFluidInTank(0).isEmpty(),

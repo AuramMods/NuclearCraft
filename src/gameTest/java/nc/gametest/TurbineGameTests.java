@@ -238,6 +238,40 @@ public final class TurbineGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 80)
+    public static void turbineFitsOrderedAlternativesIntoFlowAndExhaustLimits(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    var inlet = fluid(helper, INLET, Direction.NORTH);
+                    var ethanol = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ethanol"));
+                    helper.assertTrue(inlet.fill(new FluidStack(ethanol, 1108), FluidAction.EXECUTE) == 1108,
+                            "The turbine must accept a fluid from the custom expansion recipe");
+                    int capacity = fluid(helper, OUTLET, Direction.SOUTH).getTankCapacity(0);
+                    var controller = controller(helper, CONTROLLER);
+                    var tag = controller.saveWithoutMetadata();
+                    var product = new FluidStack(NCFluids.LOW_QUALITY_STEAM.source().get(), capacity);
+                    tag.put("exhaust", product.writeToNBT(new CompoundTag()));
+                    controller.load(tag);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(4, () -> {
+                    helper.assertTrue(fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 1108,
+                            "A full outlet must hold every alternative in the inlet");
+                    var output = fluid(helper, OUTLET, Direction.SOUTH);
+                    helper.assertTrue(output.drain(3, FluidAction.EXECUTE).getAmount() == 3,
+                            "Opening room for one product permits one alternative");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 1090,
+                        "The rated flow budget must skip the 1000 mB choice and use the 18 mB tagged choice"))
+                .thenExecute(() -> fluid(helper, OUTLET, Direction.SOUTH).drain(Integer.MAX_VALUE, FluidAction.EXECUTE))
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 183
+                                && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "Sixty 18 mB batches and one 10 mB batch must use all remaining input"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "turbine", timeoutTicks = 150)
     public static void turbineRetainsBuffersAcrossBackpressureAndReassembly(GameTestHelper helper) {
         buildTurbine(helper, BlockPos.ZERO);
