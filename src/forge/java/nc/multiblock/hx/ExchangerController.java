@@ -1,5 +1,6 @@
 package nc.multiblock.hx;
 
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
-public final class ExchangerController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
+public final class ExchangerController extends BlockEntity implements MenuProvider, ComputerPort.Controller, AssemblyDiagnostic.Controller {
     private static final int SHELL_CAPACITY_PER_BLOCK = 4000;
     private final boolean condenser;
     private final Circuit shell;
@@ -48,7 +49,8 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     private final Map<BlockPos, Circuit> legacyCircuits = new LinkedHashMap<>();
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private ExchangerLayout layout;
-    private Component validation = Component.translatable("message.nuclearcraft.exchanger.checking");
+    private AssemblyDiagnostic validation = new AssemblyDiagnostic(
+            Component.translatable("message.nuclearcraft.exchanger.checking"), null);
     private boolean dirty = true;
     private boolean enabled;
     private boolean computerActivated;
@@ -81,8 +83,12 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         return layout != null && !isRemoved() && level instanceof ServerLevel server && layout.bounds().isLoaded(server);
     }
 
-    Component validationMessage() {
-        return validation;
+    @Override
+    public @Nullable AssemblyDiagnostic diagnostic(ServerLevel server) {
+        if (dirty) {
+            refresh(server);
+        }
+        return assembled() ? null : validation;
     }
 
     void tick(ServerLevel server) {
@@ -222,8 +228,8 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         dirty = false;
         ExchangerLayout.Validation result = ExchangerLayout.find(server, worldPosition, condenser);
         if (result.layout() == null) {
-            validation = Component.translatable("message.nuclearcraft.exchanger." + result.error(),
-                    result.position().getX(), result.position().getY(), result.position().getZ());
+            validation = result.diagnostic();
+            disassemble();
             return;
         }
         layout = result.layout();
@@ -266,7 +272,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         for (ExchangerLayout.Port port : layout.ports()) {
             notifyPipe(server, port, server.getBlockState(port.pos()).getBlock());
         }
-        validation = Component.empty();
+        validation = new AssemblyDiagnostic(Component.empty(), null);
         if (layout != null && layout.glass()) {
             syncRender(server);
         }

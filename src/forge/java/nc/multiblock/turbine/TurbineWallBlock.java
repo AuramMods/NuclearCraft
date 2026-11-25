@@ -125,13 +125,14 @@ public final class TurbineWallBlock extends TurbinePartBlock implements EntityBl
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                  BlockHitResult hit) {
         if (part(state) != Part.CONTROLLER || hand != InteractionHand.MAIN_HAND) {
-            return InteractionResult.PASS;
+            return super.use(state, level, pos, player, hand, hit);
         }
-        if (level instanceof ServerLevel && level.getBlockEntity(pos) instanceof TurbineController controller) {
-            if (controller.assembled()) {
+        if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof TurbineController controller) {
+            var diagnostic = controller.diagnostic(server);
+            if (diagnostic == null) {
                 player.openMenu(controller);
             } else {
-                player.displayClientMessage(controller.validationMessage(), true);
+                diagnostic.show(player, true);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

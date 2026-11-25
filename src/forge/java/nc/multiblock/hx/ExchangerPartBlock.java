@@ -18,6 +18,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import nc.NuclearCraft;
 import nc.multiblock.computer.ComputerPort;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 
@@ -46,6 +47,13 @@ public class ExchangerPartBlock extends Block {
     @Override
     public boolean skipRendering(BlockState state, BlockState adjacent, Direction side) {
         return part == Part.GLASS && adjacent.is(this) || super.skipRendering(state, adjacent, side);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                 BlockHitResult hit) {
+        return AssemblyDiagnostic.inspect(level, pos, player, hand, ExchangerLayout.maxLength(),
+                blockState -> part(blockState) != null, ExchangerController.class);
     }
 
     @Override
@@ -103,7 +111,8 @@ public class ExchangerPartBlock extends Block {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
-            return ComputerPort.inspect(level, pos, player, hand);
+            var diagnostic = super.use(state, level, pos, player, hand, hit);
+            return diagnostic.consumesAction() ? diagnostic : ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

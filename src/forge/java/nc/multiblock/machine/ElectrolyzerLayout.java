@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.MachineMaterialRecipe;
@@ -33,7 +34,7 @@ final class ElectrolyzerLayout {
     private final double speed;
     private final double power;
 
-    record Validation(@Nullable ElectrolyzerLayout layout, @Nullable String error) {}
+    record Validation(@Nullable ElectrolyzerLayout layout, @Nullable AssemblyDiagnostic error) {}
     private record Cell(Block block, @Nullable MachineMaterialRecipe material) {
         boolean diaphragm() { return material != null && material.kind() == Kind.DIAPHRAGM; }
     }
@@ -73,23 +74,24 @@ final class ElectrolyzerLayout {
                 var roof = base.above(height);
                 Part bottom = terminal(level.getBlockState(floor));
                 Part top = terminal(level.getBlockState(roof));
-                if (bottom != top) return new Validation(null, "terminals");
+                if (bottom != top) return invalid("terminals", bottom == null ? floor : roof);
 
                 BlockState state = level.getBlockState(base);
                 Block block = identity(state);
                 for (int y = 1; y < height; y++) {
-                    if (identity(level.getBlockState(base.above(y))) != block) return new Validation(null, "symmetry");
+                    BlockPos pos = base.above(y);
+                    if (identity(level.getBlockState(pos)) != block) return invalid("symmetry", pos);
                 }
                 MachineMaterialRecipe material = null;
                 if (bottom != null) {
                     Kind kind = bottom == Part.CATHODE_TERMINAL ? Kind.CATHODE : Kind.ANODE;
                     material = MachineMaterialRecipe.firstMatch(materials.get(kind), block);
-                    if (material == null) return new Validation(null, "electrode");
+                    if (material == null) return invalid("electrode", base);
                     terminals.add(floor);
                     terminals.add(roof);
                 } else if (!state.canBeReplaced() && !state.isAir()) {
                     material = MachineMaterialRecipe.firstMatch(materials.get(Kind.DIAPHRAGM), block);
-                    if (material == null) return new Validation(null, "interior");
+                    if (material == null) return invalid("interior", base);
                 }
                 cells[index(x, z, width)] = new Cell(block, material);
             }
@@ -113,7 +115,9 @@ final class ElectrolyzerLayout {
                 int z = cell / width;
                 var material = cells[cell].material;
                 if (material != null) {
-                    if (polarity != null && polarity != material.kind()) return new Validation(null, "short_circuit");
+                    if (polarity != null && polarity != material.kind()) {
+                        return invalid("short_circuit", origin.offset(x, 0, z));
+                    }
                     polarity = material.kind();
                     electrodes.add(cell);
                     contactPower++;
@@ -151,6 +155,10 @@ final class ElectrolyzerLayout {
         }
         return new Validation(new ElectrolyzerLayout(origin, width, height, depth, cells, materials, terminals,
                 speed, contactPower * height), null);
+    }
+
+    private static Validation invalid(String key, BlockPos position) {
+        return new Validation(null, AssemblyDiagnostic.at("message.nuclearcraft.electrolyzer." + key, position));
     }
 
     boolean matches(ServerLevel level) {

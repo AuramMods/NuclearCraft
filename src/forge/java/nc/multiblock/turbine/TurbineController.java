@@ -1,5 +1,6 @@
 package nc.multiblock.turbine;
 
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
@@ -40,7 +41,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.stream.IntStream;
 
-public final class TurbineController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
+public final class TurbineController extends BlockEntity implements MenuProvider, ComputerPort.Controller, AssemblyDiagnostic.Controller {
     private static final int BASE_STEAM = 1000;
     private static final int BASE_EXHAUST = 4000;
 
@@ -67,7 +68,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     private FluidStack lastSentExhaust = FluidStack.EMPTY;
     private @Nullable ResourceLocation particle;
     private double particleSpeed;
-    private Component validationMessage = Component.translatable("message.nuclearcraft.turbine.checking");
+    private AssemblyDiagnostic validation = new AssemblyDiagnostic(
+            Component.translatable("message.nuclearcraft.turbine.checking"), null);
 
     public TurbineController(BlockPos pos, BlockState state) {
         super(NCTurbine.CONTROLLER_ENTITY.get(), pos, state);
@@ -83,7 +85,15 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     public Component validationMessage() {
-        return validationMessage;
+        return validation.message();
+    }
+
+    @Override
+    public @Nullable AssemblyDiagnostic diagnostic(ServerLevel server) {
+        if (dirty) {
+            refresh(server);
+        }
+        return assembled() ? null : validation;
     }
 
     public void tick(ServerLevel server) {
@@ -287,7 +297,7 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     private void refresh(ServerLevel server) {
         dirty = false;
         TurbineLayout.Validation result = TurbineLayout.find(server, worldPosition);
-        validationMessage = result.message();
+        validation = result.diagnostic();
         TurbineLayout found = result.layout();
         if (found == null) {
             disassemble();

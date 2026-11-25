@@ -1,6 +1,8 @@
 package nc.multiblock.quantum;
 
 import nc.init.NCQuantum;
+import nc.multiblock.AssemblyDiagnostic;
+import nc.multiblock.fission.FissionHighlights;
 import nc.multiblock.quantum.QuantumPart.Setting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -139,8 +141,14 @@ public final class QuantumPartEntity extends BlockEntity {
             return message;
         }
         QuantumComputer active = network == null ? null : network.computer();
-        return active == null ? Component.translatable("message.nuclearcraft.quantum.controllers")
-                : active.inspect(level, network);
+        if (active != null) {
+            return active.inspect(level, network);
+        }
+        if (network == null || network.controllers().isEmpty()) {
+            return Component.translatable(AssemblyDiagnostic.NO_CONTROLLER);
+        }
+        FissionHighlights.send(player, network.controllers().stream().map(BlockEntity::getBlockPos).toList());
+        return Component.translatable("message.nuclearcraft.quantum.controllers");
     }
 
     Component configure(ServerLevel level, ServerPlayer player, ItemStack tool) {

@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.ElectrolyzerElectrolyteRecipe;
@@ -131,7 +132,7 @@ public final class LargeElectrolyzer extends MachineController {
         return super.wallError(part, outward);
     }
 
-    @Override @Nullable String validateLayout(ServerLevel server, Cuboid candidate) {
+    @Override @Nullable AssemblyDiagnostic validateLayout(ServerLevel server, Cuboid candidate) {
         var result = ElectrolyzerLayout.validate(server, candidate);
         layout = result.layout();
         return result.error();
@@ -154,7 +155,7 @@ public final class LargeElectrolyzer extends MachineController {
         if (layout == null) return;
         // Electrode blocks may be supplied by vanilla or other mods and bypass Large Machine part events.
         if (server.getGameTime() % 20 == Math.floorMod(worldPosition.asLong(), 20) && !layout.matches(server)) {
-            fail("interior");
+            fail(problem("interior", worldPosition));
             return;
         }
         processing = electrolyze(server, layout);

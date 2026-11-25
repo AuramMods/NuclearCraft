@@ -6,17 +6,35 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /** Geometry shared by rectangular multiblocks. Discovery only examines loaded chunks. */
 public record Cuboid(BlockPos min, BlockPos max) {
-    public static Cuboid findConnected(ServerLevel level, BlockPos origin, int maxLength, Predicate<BlockState> isPart) {
+    public static @Nullable Cuboid findConnected(ServerLevel level, BlockPos origin, int maxLength,
+                                                 Predicate<BlockState> isPart) {
+        return scanConnected(level, origin, maxLength, isPart, pos -> null, Cuboid::new);
+    }
+
+    public static <T extends BlockEntity> @Nullable T findConnectedController(ServerLevel level, BlockPos origin,
+            int maxLength, Predicate<BlockState> isPart, Class<T> type) {
+        return scanConnected(level, origin, maxLength, isPart, pos -> {
+            var chunk = level.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            BlockEntity entity = chunk == null ? null : chunk.getBlockEntity(pos);
+            return type.isInstance(entity) && !entity.isRemoved() ? type.cast(entity) : null;
+        }, (min, max) -> null);
+    }
+
+    private static <T> @Nullable T scanConnected(ServerLevel level, BlockPos origin, int maxLength,
+            Predicate<BlockState> isPart, Function<BlockPos, T> match, BiFunction<BlockPos, BlockPos, T> complete) {
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();
         Set<BlockPos> visited = new HashSet<>();
         BlockPos min = origin;
@@ -26,6 +44,10 @@ public record Cuboid(BlockPos min, BlockPos max) {
 
         while (!pending.isEmpty()) {
             BlockPos pos = pending.removeFirst();
+            T found = match.apply(pos);
+            if (found != null) {
+                return found;
+            }
             min = new BlockPos(Math.min(pos.getX(), min.getX()), Math.min(pos.getY(), min.getY()),
                     Math.min(pos.getZ(), min.getZ()));
             max = new BlockPos(Math.max(pos.getX(), max.getX()), Math.max(pos.getY(), max.getY()),
@@ -46,7 +68,7 @@ public record Cuboid(BlockPos min, BlockPos max) {
             }
         }
 
-        return new Cuboid(min, max);
+        return complete.apply(min, max);
     }
 
     public static <T extends BlockEntity> void visitNearby(ServerLevel level, ChunkPos center, int maxDistance,

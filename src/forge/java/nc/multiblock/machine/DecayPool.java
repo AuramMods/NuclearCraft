@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.DecayPoolRecipe;
@@ -80,12 +81,12 @@ public final class DecayPool extends MachineController {
                 || !lastRenderProduct.isFluidStackIdentical(output.getFluid()))) syncRender();
     }
 
-    @Override @Nullable String validateLayout(ServerLevel server, Cuboid found) {
+    @Override @Nullable AssemblyDiagnostic validateLayout(ServerLevel server, Cuboid found) {
         int count = 0;
         for (BlockPos pos : BlockPos.betweenClosed(found.min().offset(1, 1, 1), found.max().offset(-1, -1, -1))) {
             Part part = MachinePartBlock.part(server.getBlockState(pos));
             if (part == Part.CONTAINER) count++;
-            else if (part != null) return "interior";
+            else if (part != null) return problem("interior", pos);
         }
         containers = count;
         return null;

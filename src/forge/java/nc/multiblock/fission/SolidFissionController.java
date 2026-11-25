@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
@@ -12,6 +13,7 @@ import nc.multiblock.fission.FissionPartBlock.Role;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
 import nc.recipe.FissionHeatRecipe;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -20,7 +22,6 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -47,7 +48,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import java.util.Objects;
 
-public final class SolidFissionController extends BlockEntity implements MenuProvider, ComputerPort.Controller {
+public final class SolidFissionController extends BlockEntity implements MenuProvider, ComputerPort.Controller, AssemblyDiagnostic.Controller {
     private static final int BASE_TANK_CAPACITY = 4_000;
     private final ItemStackHandler inventory;
     private final FissionVariant variant;
@@ -63,8 +64,8 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private SolidFissionLayout layout;
     private SolidFissionCore core;
-    private Component validationMessage = Component.translatable("message.nuclearcraft.fission.checking");
-    private @Nullable BlockPos errorPosition;
+    private AssemblyDiagnostic validation = new AssemblyDiagnostic(
+            Component.translatable("message.nuclearcraft.fission.checking"), null);
     private long casingHeat;
     private boolean enabled;
     private boolean dirty = true;
@@ -101,14 +102,15 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     public Component validationMessage() {
-        return validationMessage;
+        return validation.message();
     }
 
-    void showValidation(ServerPlayer player) {
-        player.displayClientMessage(validationMessage, true);
-        if (errorPosition != null) {
-            FissionHighlights.send(player, List.of(errorPosition));
+    @Override
+    public @Nullable AssemblyDiagnostic diagnostic(ServerLevel server) {
+        if (dirty) {
+            refresh(server);
         }
+        return assembled() ? null : validation;
     }
 
     boolean containsFissionComponent(BlockPos pos) {
@@ -212,8 +214,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private void refresh(ServerLevel server) {
         dirty = false;
         SolidFissionLayout.Validation result = SolidFissionLayout.find(server, worldPosition);
-        validationMessage = result.message();
-        errorPosition = result.errorPosition();
+        validation = result.diagnostic();
         SolidFissionLayout found = result.layout();
         if (found == null) {
             disassemble();

@@ -1,4 +1,5 @@
 {
+    "message.nuclearcraft.multiblock.no_controller": "There must be a controller for the multiblock to form.",
     "message.nuclearcraft.quantum.state_unavailable": "The saved quantum state could not be read. See the server log.",
     "message.nuclearcraft.quantum.state_unsaved": "The quantum state could not be saved. See the server log.",
     "itemGroup.nuclearcraft.quantum": "NuclearCraft Quantum Computing",

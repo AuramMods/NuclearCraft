@@ -1,4 +1,5 @@
 {
+    "message.nuclearcraft.multiblock.no_controller": "完成多方块结构必须要有一个控制器。",
     "info.nuclearcraft.multitool.save_processor_config": "已将%s的配置保存到多功能工具。",
     "info.nuclearcraft.multitool.load_processor_config": "已从多功能工具加载%s的配置。",
     "info.nuclearcraft.multitool.invalid_processor_config": "无法将%s的配置应用到%s。",

@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCHeatExchangers;
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import net.minecraft.core.BlockPos;
@@ -95,6 +96,13 @@ public class MachinePartBlock extends Block {
 
     static @Nullable Part part(BlockState state) {
         return state.getBlock() instanceof MachinePartBlock block ? block.part : null;
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                 BlockHitResult hit) {
+        return AssemblyDiagnostic.inspect(level, pos, player, hand, NCMachines.maxSize() + 2,
+                blockState -> part(blockState) != null, MachineController.class);
     }
 
     @Override
@@ -280,7 +288,7 @@ public class MachinePartBlock extends Block {
                             ? InteractionResult.CONSUME : InteractionResult.PASS;
                 }
             }
-            return InteractionResult.PASS;
+            return super.use(state, level, pos, player, hand, hit);
         }
 
         public InteractionResult reverseProcessPort(UseOnContext context) {
@@ -310,7 +318,8 @@ public class MachinePartBlock extends Block {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
-            return ComputerPort.inspect(level, pos, player, hand);
+            var diagnostic = super.use(state, level, pos, player, hand, hit);
+            return diagnostic.consumesAction() ? diagnostic : ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

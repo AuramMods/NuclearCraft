@@ -1,6 +1,7 @@
 package nc.multiblock.turbine;
 
 import nc.init.TurbineConfig;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,7 +25,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
                      Dynamo dynamo, boolean glass) {
     record Port(BlockPos pos, Direction side, Part part) {}
 
-    record Validation(TurbineLayout layout, Component message) {}
+    record Validation(TurbineLayout layout, AssemblyDiagnostic diagnostic) {}
 
     record Dynamo(Map<BlockPos, TurbineWallBlock> parts, Map<BlockPos, TurbineWallBlock> installed,
                   Map<TurbineWallBlock, Integer> inlet, Map<TurbineWallBlock, Integer> outlet,
@@ -199,7 +200,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
         });
         return new Validation(new TurbineLayout(bounds, flow, shaft, blade, List.copyOf(stages), Map.copyOf(rotor),
                 Set.copyOf(bearings), List.copyOf(ports), List.copyOf(redstone), List.copyOf(computers), List.copyOf(frames), dynamo, glass),
-                Component.translatable("message.nuclearcraft.turbine.assembled"));
+                new AssemblyDiagnostic(Component.translatable("message.nuclearcraft.turbine.assembled"), null));
     }
 
     private static Dynamo solveDynamo(Cuboid bounds, Direction flow, Set<BlockPos> bearings, Map<BlockPos, TurbineWallBlock> coils) {
@@ -226,8 +227,7 @@ record TurbineLayout(Cuboid bounds, Direction flow, int shaftWidth, int bladeLen
     }
 
     private static Validation invalid(String reason, BlockPos pos) {
-        return new Validation(null, Component.translatable("message.nuclearcraft.turbine." + reason,
-                pos.getX(), pos.getY(), pos.getZ()));
+        return new Validation(null, AssemblyDiagnostic.at("message.nuclearcraft.turbine." + reason, pos));
     }
 
     private record CrossSection(Cuboid bounds, Axis flow, Axis u, Axis v) {

@@ -3,6 +3,7 @@ package nc.multiblock.turbine;
 import nc.NuclearCraft;
 import nc.init.TurbineConfig;
 import nc.multiblock.computer.ComputerPort;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import net.minecraft.world.InteractionHand;
@@ -83,6 +84,13 @@ public class TurbinePartBlock extends Block {
     }
 
     @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                 BlockHitResult hit) {
+        return AssemblyDiagnostic.inspect(level, pos, player, hand, TurbineConfig.searchLength(),
+                blockState -> part(blockState) != null, TurbineController.class);
+    }
+
+    @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moved) {
         super.onPlace(state, level, pos, previous, moved);
         if (level instanceof ServerLevel server && !state.is(previous.getBlock())) {
@@ -159,7 +167,8 @@ public class TurbinePartBlock extends Block {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
-            return ComputerPort.inspect(level, pos, player, hand);
+            var diagnostic = super.use(state, level, pos, player, hand, hit);
+            return diagnostic.consumesAction() ? diagnostic : ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

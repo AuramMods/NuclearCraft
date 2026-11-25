@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.multiblock.machine.MachinePartBlock.TrayPosition;
@@ -108,7 +109,7 @@ public final class Distiller extends MachineController {
         };
     }
 
-    @Override @Nullable String validateLayout(ServerLevel server, Cuboid found) {
+    @Override @Nullable AssemblyDiagnostic validateLayout(ServerLevel server, Cuboid found) {
         RecipeManager recipes = server.getRecipeManager();
         int configRevision = NCMachines.distillerConfigRevision();
         var sieves = recipes.getAllRecipesFor(NCMachines.materialRecipes(Kind.SIEVE)).stream()
@@ -125,19 +126,22 @@ public final class Distiller extends MachineController {
         double packedEfficiency = 0;
 
         for (int y = low.getY(); y <= high.getY(); y++) {
-            BlockState sample = server.getBlockState(new BlockPos(low.getX(), y, low.getZ()));
+            BlockPos planeOrigin = new BlockPos(low.getX(), y, low.getZ());
+            BlockState sample = server.getBlockState(planeOrigin);
             Block block = planeBlock(sample);
-            if (!uniformPlane(server, low, high, y, block)) return "symmetry";
+            var mismatch = nonUniformBlock(server, low, high, y, block);
+            if (mismatch != null) return problem("symmetry", mismatch);
             plane.add(block);
             Part part = MachinePartBlock.part(sample);
             if (part == Part.SIEVE_TRAY) {
-                Block upper = server.getBlockState(new BlockPos(low.getX(), y + 1, low.getZ())).getBlock();
+                BlockPos packing = planeOrigin.above();
+                Block upper = server.getBlockState(packing).getBlock();
                 var sieve = MachineMaterialRecipe.firstMatch(sieves, upper);
-                if (sieve == null) return "sieve";
+                if (sieve == null) return problem("sieve", packing);
                 trayEfficiency += sieve.efficiency();
                 installedTrays.add(y - low.getY());
             } else {
-                if (part != null && !part.sieve()) return "interior";
+                if (part != null && !part.sieve()) return problem("interior", planeOrigin);
                 boolean placedOnTray = y > low.getY() && plane.get(plane.size() - 2) == NCMachines.block(Part.SIEVE_TRAY);
                 var sieve = placedOnTray ? null : MachineMaterialRecipe.firstMatch(sieves, block);
                 if (sieve != null) {
@@ -179,16 +183,16 @@ public final class Distiller extends MachineController {
         return state.isAir() ? Blocks.AIR : state.getBlock();
     }
 
-    private static boolean uniformPlane(ServerLevel server, BlockPos low, BlockPos high, int y, Block block) {
+    private static @Nullable BlockPos nonUniformBlock(ServerLevel server, BlockPos low, BlockPos high, int y, Block block) {
         for (BlockPos pos : BlockPos.betweenClosed(low.getX(), y, low.getZ(), high.getX(), y, high.getZ())) {
-            if (planeBlock(server.getBlockState(pos)) != block) return false;
+            if (planeBlock(server.getBlockState(pos)) != block) return pos.immutable();
         }
-        return true;
+        return null;
     }
 
     @Override void processTick(ServerLevel server) {
         if (sieveRecipeManager != server.getRecipeManager() || distillerConfigRevision != NCMachines.distillerConfigRevision()) {
-            String error = validateLayout(server, bounds);
+            AssemblyDiagnostic error = validateLayout(server, bounds);
             if (error != null) {
                 fail(error);
                 return;
@@ -199,8 +203,9 @@ public final class Distiller extends MachineController {
             var low = bounds.min().offset(1, 1, 1);
             var high = bounds.max().offset(-1, -1, -1);
             for (int layer = 0; layer < layers.size(); layer++) {
-                if (!uniformPlane(server, low, high, low.getY() + layer, layers.get(layer))) {
-                    fail("symmetry");
+                var mismatch = nonUniformBlock(server, low, high, low.getY() + layer, layers.get(layer));
+                if (mismatch != null) {
+                    fail(problem("symmetry", mismatch));
                     return;
                 }
             }

@@ -289,7 +289,7 @@ public final class CondenserGameTests {
         throw new GameTestAssertException("No saved circuit for inlet " + inlet);
     }
 
-    private static void build(GameTestHelper helper) {
+    static void build(GameTestHelper helper) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 4, 4))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 4
                     || pos.getZ() == 1 || pos.getZ() == 4) {

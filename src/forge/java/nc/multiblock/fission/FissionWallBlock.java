@@ -157,16 +157,17 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
                 FissionMultitool.inspectCluster(user, monitor);
             } else if (entity instanceof FissionPortBlockEntity port) {
                 if (!usePort(server, state, pos, player, hand, hit, port, role, multitool, sneaking)) {
-                    return InteractionResult.PASS;
+                    return super.use(state, level, pos, player, hand, hit);
                 }
             } else if (entity instanceof SolidFissionController controller) {
-                if (controller.assembled()) {
+                var diagnostic = controller.diagnostic(server);
+                if (diagnostic == null) {
                     player.openMenu(controller);
-                } else if (player instanceof ServerPlayer user) {
-                    controller.showValidation(user);
+                } else {
+                    diagnostic.show(player, true);
                 }
             } else {
-                return InteractionResult.PASS;
+                return super.use(state, level, pos, player, hand, hit);
             }
         } else if (!isController(role) && role != Role.MONITOR && role != Role.IRRADIATOR_PORT
                 && role != Role.VESSEL_PORT && role != Role.HEATER_PORT

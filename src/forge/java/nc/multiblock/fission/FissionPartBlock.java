@@ -3,6 +3,7 @@ package nc.multiblock.fission;
 import nc.NuclearCraft;
 import nc.multiblock.computer.ComputerPort;
 import nc.init.NCFission;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import net.minecraft.world.InteractionHand;
@@ -90,6 +91,16 @@ public class FissionPartBlock extends Block {
     }
 
     @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
+                                 BlockHitResult hit) {
+        if (!SolidFissionLayout.connectsReactor(state)) {
+            return InteractionResult.PASS;
+        }
+        return AssemblyDiagnostic.inspect(level, pos, player, hand, NCFission.searchLength(),
+                SolidFissionLayout::connectsReactor, SolidFissionController.class);
+    }
+
+    @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState previous, boolean moved) {
         super.onPlace(state, level, pos, previous, moved);
         if (level instanceof ServerLevel server && !state.is(previous.getBlock())) {
@@ -148,7 +159,8 @@ public class FissionPartBlock extends Block {
         @Override
         public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                      BlockHitResult hit) {
-            return ComputerPort.inspect(level, pos, player, hand);
+            var diagnostic = super.use(state, level, pos, player, hand, hit);
+            return diagnostic.consumesAction() ? diagnostic : ComputerPort.inspect(level, pos, player, hand);
         }
     }
 }

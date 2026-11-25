@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import org.jetbrains.annotations.Nullable;
@@ -31,7 +32,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         }
     }
 
-    record Validation(@Nullable SolidFissionLayout layout, Component message, @Nullable BlockPos errorPosition) {}
+    record Validation(@Nullable SolidFissionLayout layout, AssemblyDiagnostic diagnostic) {}
 
     static Validation find(ServerLevel level, BlockPos origin) {
         Cuboid bounds = Cuboid.findConnected(level, origin, NCFission.searchLength(),
@@ -167,7 +168,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
                 List.copyOf(conductors), List.copyOf(monitors), List.copyOf(computers), List.copyOf(frames), variant),
-                Component.translatable("message.nuclearcraft.fission.assembled"), null);
+                new AssemblyDiagnostic(Component.translatable("message.nuclearcraft.fission.assembled"), null));
     }
 
     private static boolean validPort(FissionVariant variant, Role role) {
@@ -178,7 +179,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         };
     }
 
-    private static boolean connectsReactor(BlockState state) {
+    static boolean connectsReactor(BlockState state) {
         var role = FissionPartBlock.role(state);
         return role != null && role != Role.MODERATOR && role != Role.REFLECTOR;
     }
@@ -200,7 +201,6 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
     }
 
     static Validation invalid(String reason, BlockPos pos) {
-        return new Validation(null, Component.translatable("message.nuclearcraft.fission." + reason,
-                pos.getX(), pos.getY(), pos.getZ()), pos.immutable());
+        return new Validation(null, AssemblyDiagnostic.at("message.nuclearcraft.fission." + reason, pos));
     }
 }

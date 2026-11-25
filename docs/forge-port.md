@@ -444,6 +444,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
 | PneumaticCraft | 6.0.22 | Liquid and Omnidirectional Hopper transfers on processors and fission ports |
+| Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -619,6 +620,10 @@ The Chemical Reactor kept 250 mB of hydrogen and 2,000 FE with its west input di
 A solid-fission reactor used Liquid Hoppers on its outward vents and Omnidirectional Hoppers on its floor and roof fuel ports. The hoppers retained all 1,000 mB of water and one LECf-251 oxide item while the shell was open. After the shell was repaired, the hoppers delivered 4,000 mB of high-pressure steam and one depleted fuel item to Industrial Foregoing storage. After a dedicated restart, the server confirmed the four circuit chunks were unloaded before force-loading them and recovered every measured output.
 
 The isolated Auram client loaded all 539 installed mod JARs on Forge 47.4.10 and repeated the generator-powered Melter and the solid-fission circuit. Its saved regions held 1,000 mB of water, 4,000 mB of high-pressure steam, and one depleted fuel item, with both sources empty. The run used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, and visible window samples.
+
+### Hopper Ducts
+
+Auram's Hopper Ducts 1.5 ran with the packaged JAR on a headless Forge 47.4.10 server. A filtered Grated Hopper held one coal while the Manufactory's west input was disabled. The Manufactory retained its 4,000 FE. Opening that face let the machine make one coal dust. A second filtered Grated Hopper pulled the dust from the output face, and its Hopper Duct kept the dust while the destination barrel was full. After a confirmed chunk unload and restart, freeing one barrel slot delivered exactly one coal dust and left the hoppers, duct, and processor empty.
 
 ### Tools and Armor
 
@@ -1446,6 +1451,18 @@ All 149 GameTests passed, including face placement on all three reactor variants
 
 A multiplayer client rendered outlines for exactly the linked fuel cell, water heat sink, and conductor. The same outlines rendered with all 538 installed Auram mod JARs after JEI loaded. Overheating was disabled for the disposable Auram rendering fixture. Both clients used OpenAL No Output with master volume zero. The native watcher recorded zero focus activations or visible window samples.
 
+### Multiblock assembly diagnostics
+
+Right-click casing, glass, or another passive multiblock part with both hands empty to inspect an incomplete structure. Reactor, turbine, exchanger, condenser, and chemical machine parts look for a controller connected through their own parts in loaded chunks. An isolated part reports a missing controller. A connected part reports the validation failure in chat and highlights the reported block for five seconds. Right-click the controller to see the error in the action bar or open the repaired machine's menu. An invalid extension disassembles an exchanger and releases its ports.
+
+The chemical machines report the block responsible for an invalid shell or interior, including mismatched Distiller layers and Large Electrolyzer terminals or columns. Quantum connectors distinguish a missing controller from conflicting ones and mark all connected controllers when there is a conflict.
+
+All 224 local GameTests passed, including empty-hand inspection, offhand item precedence, a disconnected casing beside a larger reactor, repair, exact failure coordinates, and the two quantum controller errors.
+
+A muted multiplayer client sent normal right-click packets to the packaged Forge 47.4.10 server. The received outlines marked the missing reactor casing, missing turbine shaft, missing exchanger casing, misplaced chemical machine part, and both conflicting quantum controllers. The disconnected reactor casing returned the missing-controller message. A separate multiplayer click reopened the repaired reactor's controller screen. The clients used OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
+
+The isolated Auram client repeated all six inspection cases with the packaged JAR and all 541 currently installed Auram JARs on Forge 47.4.10. The replacement Neo-Voxy 0.4.0-beta.1 build, SHA-256 beginning `06946db8db0d`, loaded past the earlier Impersonate failure. The client joined the integrated world, loaded JEI, received each expected message and highlight, saved the diagnostic fixtures, and shut down its Voxy renderer. The native observer recorded zero focus activations, foreground samples, or visible windows with OpenAL No Output.
+
 ### Multiblock casing and glass
 
 Assembled edges and corners use the original frame artwork on fission reactors, turbines, heat exchangers, condensers, and chemical machines. Flat casing faces use their wall texture. Fission, turbine, and exchanger casings keep their existing IDs and use the same `frame` block state as the chemical machine frame. Use the wall state when converting placement data. Controllers restore the appropriate edge states after validating the complete structure. The four types of multiblock glass use the original cutout layer and cull faces between matching blocks.
@@ -1456,7 +1473,7 @@ All 219 local GameTests passed. A packaged Forge 47.4.10 dedicated server saved 
 
 Two multiplayer clients read the baked models from the same packaged build. Standard Forge used the base sprites for all 12 fixtures. CTM 1.1.10 used the correct connected sprite on each adjacent pair and the original sprite on its isolated counterpart. Both clients used OpenAL No Output and had zero focus activations, foreground samples, or visible windows. [CTM 1.1.10 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/ctm/files/5983309)
 
-The same build joined an integrated world with 540 installed Auram JARs. With Embeddium loaded, the reactor edge resolved to the frame sprite after assembly and the wall sprite after disassembly. Its flat wall used the wall sprite throughout. The repaired edges saved with `frame=true` and the flat wall saved with `frame=false`. The client ran muted and had zero focus activations, foreground samples, or visible windows. The isolated copy omitted Neo-Voxy 0.4.0-beta.1 because the installed 541-JAR profile still hit the Impersonate startup error described below.
+The same build joined an integrated world with 540 installed Auram JARs. With Embeddium loaded, the reactor edge resolved to the frame sprite after assembly and the wall sprite after disassembly. Its flat wall used the wall sprite throughout. The repaired edges saved with `frame=true` and the flat wall saved with `frame=false`. The client ran muted and had zero focus activations, foreground samples, or visible windows. This snapshot omitted the earlier Neo-Voxy 0.4.0-beta.1 build. The updated build passed the [later exact-pack test](#multiblock-assembly-diagnostics).
 
 ### Player radiation
 
@@ -1571,7 +1588,7 @@ Headless tests with Industrial Foregoing 3.5.21 and Mekanism 10.4.16.80 also sta
 
 In the isolated 539-JAR Auram snapshot on Forge 47.4.10, a survival player kept a full copper bucket when placement was disabled. A sulfur bucket placed a source and returned an empty bucket. Create 6.0.8's hose pulley also left the world unchanged when offered copper. After restarting with placement enabled, the copper bucket returned an empty bucket. The region file contained the two copper sources and the sulfur source after shutdown. Both launches used OpenAL No Output, and the native observer recorded zero focus activations, foreground samples, and visible windows.
 
-The installed 541-JAR Auram profile on Forge 47.4.10 stopped before login in both the packaged-port run and a separate control using only the installed JARs. During Sinytra Connector 1.0.0-beta.47 startup, Impersonate 2.10.2 failed to apply its `TextMixin` because `net.minecraft.network.chat.Component` had already loaded. The control reached client audio initialization and exited normally after removing only Neo-Voxy 0.4.0-beta.1 from its isolated copy. The installed instance was left intact.
+The earlier 541-JAR Auram snapshot on Forge 47.4.10 stopped before login in both the packaged-port run and a separate control using only the installed JARs. During Sinytra Connector 1.0.0-beta.47 startup, Impersonate 2.10.2 failed to apply its `TextMixin` because `net.minecraft.network.chat.Component` had already loaded. Removing the earlier Neo-Voxy 0.4.0-beta.1 build from the disposable control let it reach audio initialization. The replacement build passed the [later exact-pack test](#multiblock-assembly-diagnostics).
 
 ### Nuclear Wasteland
 

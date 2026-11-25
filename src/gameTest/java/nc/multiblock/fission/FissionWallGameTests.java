@@ -114,7 +114,7 @@ public final class FissionWallGameTests {
                     helper.setBlock(MIN, NCFission.GLASS.get());
                     var error = SolidFissionLayout.find(helper.getLevel(), helper.absolutePos(CONTROLLER));
                     helper.assertTrue(!controller(helper).assembled() && monitor(helper, MONITOR).cluster().isEmpty()
-                                    && helper.absolutePos(MIN).equals(error.errorPosition()),
+                                    && helper.absolutePos(MIN).equals(error.diagnostic().position()),
                             "Glass is face-only and the frame validation identifies the offending block");
                     helper.setBlock(MIN, NCFission.CASING.get());
                 })

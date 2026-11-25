@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.recipe.InfiltratorPressureRecipe;
@@ -112,14 +113,14 @@ public final class Infiltrator extends MachineController {
                 .min(Comparator.comparing(InfiltratorPressureRecipe::id)).orElse(null);
     }
 
-    @Override @Nullable String validateLayout(ServerLevel server, Cuboid found) {
+    @Override @Nullable AssemblyDiagnostic validateLayout(ServerLevel server, Cuboid found) {
         var pressureChambers = new ArrayList<BlockPos>();
         var heatingUnits = new HashSet<BlockPos>();
         for (var pos : BlockPos.betweenClosed(found.min().offset(1, 1, 1), found.max().offset(-1, -1, -1))) {
             Part part = MachinePartBlock.part(server.getBlockState(pos));
             if (part == Part.PRESSURE_CHAMBER) pressureChambers.add(pos.immutable());
             else if (part == Part.INFILTRATOR_HEATER) heatingUnits.add(pos.immutable());
-            else if (part != null) return "interior";
+            else if (part != null) return problem("interior", pos);
         }
         int heated = 0;
         for (var pos : pressureChambers) {

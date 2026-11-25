@@ -1,6 +1,7 @@
 package nc.multiblock.hx;
 
 import nc.init.HeatExchangerConfig;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.hx.ExchangerPartBlock.Part;
 import net.minecraft.core.BlockPos;
@@ -37,7 +38,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
         }
     }
     record Tube(BlockPos pos, Vec3 tubeFlow, Vec3 shellFlow) {}
-    record Validation(ExchangerLayout layout, String error, BlockPos position) {}
+    record Validation(ExchangerLayout layout, AssemblyDiagnostic diagnostic) {}
     private record TubeNetwork(BlockPos inlet, List<BlockPos> tubes, Map<BlockPos, Vec3> flow) {}
 
     static int maxLength() {
@@ -196,7 +197,7 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
             installed.add(new Tube(pos, tubeFlow.getOrDefault(pos, Vec3.ZERO), shellFlow.getOrDefault(pos, Vec3.ZERO)));
         }
         return new Validation(new ExchangerLayout(bounds, ports, List.copyOf(networks),
-                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers), List.copyOf(frames), glass), null, null);
+                List.copyOf(installed), List.copyOf(redstone), List.copyOf(computers), List.copyOf(frames), glass), null);
     }
 
     private static Network network(Map<BlockPos, BlockState> tubeStates, TubeNetwork tube,
@@ -240,6 +241,6 @@ record ExchangerLayout(Cuboid bounds, List<Port> ports, List<Network> networks, 
     }
 
     private static Validation error(String message, BlockPos pos) {
-        return new Validation(null, message, pos.immutable());
+        return new Validation(null, AssemblyDiagnostic.at("message.nuclearcraft.exchanger." + message, pos));
     }
 }

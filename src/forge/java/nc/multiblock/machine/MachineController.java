@@ -1,6 +1,7 @@
 package nc.multiblock.machine;
 
 import nc.init.NCMachines;
+import nc.multiblock.AssemblyDiagnostic;
 import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
@@ -9,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
-import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -27,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-abstract class MachineController extends BlockEntity implements ComputerPort.Controller {
+abstract class MachineController extends BlockEntity implements ComputerPort.Controller, AssemblyDiagnostic.Controller {
     protected @Nullable Cuboid bounds;
     private final Part controllerPart;
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
@@ -36,13 +36,14 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     private List<BlockPos> frames = List.of();
     private boolean dirty = true;
     private long nextValidationTick;
-    private String validation = "dimensions";
+    private AssemblyDiagnostic validation;
     private boolean halted;
     private long power;
 
     MachineController(BlockEntityType<?> type, BlockPos pos, BlockState state, Part controllerPart) {
         super(type, pos, state);
         this.controllerPart = controllerPart;
+        validation = problem("dimensions", pos);
     }
 
     final void tick() {
@@ -111,15 +112,15 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
         var found = Cuboid.findConnected(server, worldPosition, NCMachines.maxSize() + 2,
                 state -> MachinePartBlock.part(state) != null);
         if (found == null || Math.min(found.xLength(), Math.min(found.yLength(), found.zLength())) < NCMachines.minSize() + 2) {
-            fail("dimensions");
+            fail(problem("dimensions", worldPosition));
             return;
         }
         if (!found.isLoaded(server)) {
-            fail("unloaded");
+            fail(problem("unloaded", worldPosition));
             return;
         }
         if (found.boundaryAxes(worldPosition) != 1) {
-            fail("wall");
+            fail(problem("wall", worldPosition));
             return;
         }
 
@@ -136,18 +137,18 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
                 continue;
             }
             if (boundary != 1 || part == null || part.internal() || part.controller() && !pos.equals(worldPosition)) {
-                fail("wall");
+                fail(problem("wall", pos));
                 return;
             }
             var error = wallError(part, found.outward(pos));
             if (error != null) {
-                fail(error);
+                fail(problem(error, pos));
                 return;
             }
             if (part.port()) {
                 if (server.getBlockEntity(pos) instanceof MachinePort port) installedPorts.add(port);
                 else {
-                    fail("wall");
+                    fail(problem("wall", pos));
                     return;
                 }
             } else if (part == Part.REDSTONE) {
@@ -157,7 +158,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
             }
         }
 
-        String error = validateLayout(server, found);
+        AssemblyDiagnostic error = validateLayout(server, found);
         if (error != null) {
             fail(error);
             return;
@@ -169,7 +170,6 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
         ports = List.copyOf(installedPorts);
         redstone = List.copyOf(installedRedstone);
         frames = List.copyOf(edgeFrames);
-        validation = "assembled";
         long volume = (long) found.xLength() * found.yLength() * found.zLength();
         int capacity = (int) Math.min(Integer.MAX_VALUE, volume * 1000);
         for (int i = 0; i < tankCount(false); i++) tankFor(false, i).setCapacity(capacity);
@@ -185,11 +185,15 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     }
 
     @Nullable String wallError(Part part, Direction outward) { return part.distillerWall() || part.electrodeTerminal() ? "wall" : null; }
-    abstract @Nullable String validateLayout(ServerLevel server, Cuboid found);
+    abstract @Nullable AssemblyDiagnostic validateLayout(ServerLevel server, Cuboid found);
     void assemblyChanged() {}
     void beforeDisconnect() {}
 
-    final void fail(String error) {
+    final AssemblyDiagnostic problem(String key, BlockPos pos) {
+        return AssemblyDiagnostic.at("message.nuclearcraft." + controllerPart.id().replace("_controller", "") + "." + key, pos);
+    }
+
+    final void fail(AssemblyDiagnostic error) {
         boolean previouslyAssembled = bounds != null;
         setFrames(false);
         disconnect();
@@ -225,14 +229,14 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
             if (!bounds.contains(pos) && !bounds.contains(pos.above()) && !bounds.contains(pos.below())
                     && !bounds.contains(pos.north()) && !bounds.contains(pos.south())
                     && !bounds.contains(pos.east()) && !bounds.contains(pos.west())) return;
-            fail("wall");
+            fail(problem("wall", pos));
         }
         dirty = true;
     }
 
     final void chunkUnloaded(ChunkPos chunk) {
         if (bounds != null && bounds.touchesChunk(chunk)) {
-            validation = "unloaded";
+            validation = problem("unloaded", worldPosition);
             disconnect();
             if (!new ChunkPos(worldPosition).equals(chunk)) {
                 setLit(false);
@@ -254,15 +258,20 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
         super.setRemoved();
     }
 
-    final void open(Player player) {
-        if (!(level instanceof ServerLevel server)) return;
+    @Override
+    public final @Nullable AssemblyDiagnostic diagnostic(ServerLevel server) {
         if (dirty || !assembled()) {
             assemble(server);
             dirty = false;
         }
-        if (assembled()) openMenu(player);
-        else player.displayClientMessage(Component.translatable("message.nuclearcraft." + controllerPart.id().replace("_controller", "")
-                + "." + validation), true);
+        return assembled() ? null : validation;
+    }
+
+    final void open(Player player) {
+        if (!(level instanceof ServerLevel server)) return;
+        var diagnostic = diagnostic(server);
+        if (diagnostic == null) openMenu(player);
+        else diagnostic.show(player, true);
     }
 
     @Override
