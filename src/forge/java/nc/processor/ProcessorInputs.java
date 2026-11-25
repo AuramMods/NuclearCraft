@@ -18,6 +18,10 @@ public final class ProcessorInputs extends SimpleContainer {
         Arrays.fill(fluids, FluidStack.EMPTY);
     }
 
+    int fluidCount() {
+        return fluids.length;
+    }
+
     public FluidStack fluid() {
         return fluid(0);
     }

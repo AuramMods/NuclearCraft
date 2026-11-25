@@ -62,6 +62,16 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         fluids = new ProcessorFluidTanks(this, this::acceptsFluid, this::canFill, machine.inputs, machine.outputs);
     }
 
+    @Override
+    List<? extends FluidProcessorRecipe> availableRecipes(Level level) {
+        return level.getRecipeManager().getAllRecipesFor(machine.recipes());
+    }
+
+    @Override
+    ProcessorInputs recipeInput() {
+        return new ProcessorInputs(machine.hasItemInput ? 1 : 0, machine.inputs);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
         boolean running = machine.process(level, machine.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, running);

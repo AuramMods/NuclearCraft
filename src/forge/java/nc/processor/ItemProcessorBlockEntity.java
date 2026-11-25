@@ -37,6 +37,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -92,6 +93,27 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
 
     public ItemStackHandler inventory() {
         return inventory;
+    }
+
+    @Override
+    List<ItemProcessorRecipe> availableRecipes(Level level) {
+        var manager = level.getRecipeManager();
+        var custom = manager.getAllRecipesFor(machine.recipes());
+        if (smeltingRecipes == null) {
+            return custom;
+        }
+        var available = new ArrayList<>(custom);
+        for (var source : manager.getAllRecipesFor(RecipeType.SMELTING)) {
+            if (!source.getIngredients().isEmpty()) {
+                available.add(ItemProcessorRecipe.electricSmelting(source, level.registryAccess()));
+            }
+        }
+        return available;
+    }
+
+    @Override
+    ProcessorInputs recipeInput() {
+        return new ProcessorInputs(machine.inputs(), machine.fluidInputs());
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {

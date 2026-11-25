@@ -31,6 +31,8 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 public final class MelterBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
     private static final int ENERGY_CAPACITY = 512_000;
     private static final int PROGRESS_SCALE = 1000;
@@ -73,6 +75,16 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     @Override
     ProcessorFluidTanks fluidTanks() {
         return fluids;
+    }
+
+    @Override
+    List<MelterRecipe> availableRecipes(Level level) {
+        return level.getRecipeManager().getAllRecipesFor(NCRegistries.MELTING.get());
+    }
+
+    @Override
+    ProcessorInputs recipeInput() {
+        return new ProcessorInputs(1, 0);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {

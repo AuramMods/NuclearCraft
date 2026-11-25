@@ -3,6 +3,7 @@ package nc.processor;
 import nc.automation.MachineInterface;
 import nc.init.NCItemProcessors;
 import nc.processor.ProcessorProfile.Rates;
+import nc.recipe.ProcessingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,6 +18,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     final ProcessorUpgrades upgrades = new ProcessorUpgrades(this);
     final ProcessorEnergy power;
@@ -27,6 +30,10 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     private double basePower;
     double batchTicks;
     double progressHalfTicks;
+
+    abstract List<? extends ProcessingRecipe> availableRecipes(Level level);
+
+    abstract ProcessorInputs recipeInput();
 
     UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rates rate, int baseCapacity) {
         this(type, pos, state, rate, baseCapacity, false, false);

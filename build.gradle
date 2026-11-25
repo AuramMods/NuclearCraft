@@ -100,6 +100,7 @@ repositories {
             includeModule 'curse.maven', 'mantle-74924'
             includeModule 'curse.maven', 'projecte-226410'
             includeModule 'curse.maven', 'almostunified-633823'
+            includeModule 'curse.maven', 'common-capabilities-247007'
         }
     }
 }
@@ -127,6 +128,7 @@ dependencies {
     compileOnly fg.deobf('curse.maven:mantle-74924:7414488')
     compileOnly fg.deobf('curse.maven:projecte-226410:4901949')
     compileOnly fg.deobf('curse.maven:almostunified-633823:7430993')
+    compileOnly fg.deobf('curse.maven:common-capabilities-247007:7229322')
 }
 
 def equipmentFamilies = ['boron', 'tough', 'hard_carbon', 'boron_nitride']

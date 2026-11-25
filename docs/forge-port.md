@@ -477,6 +477,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
 | Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors, and Energy Battery transfer in both directions |
+| Integrated Crafting and Common Capabilities | 1.4.2 and 2.9.11 | Attuned Crafting Interface recipe discovery on single-block processors |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
@@ -701,6 +702,18 @@ Auram's Integrated Dynamics 1.29.11 Fluid, Inventory, and Machine Readers measur
 On dedicated Forge 47.4.10, a Voltaic Pile supplied 5,000 FE to fill an Integrated Dynamics Energy Battery and kept 7,500 FE. A separate Energy Battery powered by a redstone signal supplied 5,000 FE to fill a Voltaic Pile and kept 5,000 FE. Closed NuclearCraft faces held the original charge in both fixtures. Both chunks fully evicted, and the exact balances and marker inventories survived reload and a dedicated restart.
 
 The isolated client with all 539 installed Auram mod JARs repeated the XNet Melter transfer and the three Integrated Dynamics readings. The client used master volume zero and OpenAL No Output. The native monitor recorded zero activations, foreground samples, or on-screen window samples.
+
+### Integrated Crafting
+
+With Common Capabilities installed, single-block item and fluid processors expose their loaded recipes to Integrated Crafting's Attuned Crafting Interface. Recipes carry their item and fluid alternatives, exact batch quantities, and deterministic products. The Electric Furnace also exposes regular smelting recipes. Recipes with variable output quantities, no required inputs, or no products are excluded from discovery. Item, fluid, and energy transfers still use the processor's Forge capabilities and face settings. [Common Capabilities API](https://github.com/CyclopsMC/CommonCapabilitiesAPI)
+
+On dedicated Forge 47.4.10 with Auram's Integrated Crafting 1.4.2, Common Capabilities 2.9.11, and Integrated Dynamics 1.29.11, simulation confirmed recipes from the Melter, Manufactory, Electric Furnace, Infuser, and Electrolyzer. A real Melter converted one ice and 4,000 FE into 1,000 mB of water. After a datapack reload, its attached interface showed the new 1,250 mB batch size without reattaching. The interface recovered the updated recipe after its chunk fully unloaded and reloaded and after a dedicated restart.
+
+All 277 local GameTests passed. The same packaged JAR also ran on clean dedicated Forge 47.4.10 without Common Capabilities. The pebble-bed and molten-salt reactor coolant batches completed and retained their exact quantities through restart.
+
+The isolated client with all 540 installed Auram mod JARs loaded JEI, found the recipe through its attached interface, and produced the same 1,000 mB batch. It saved and exited with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible window samples.
+
+Auram's installed mod set lacks Integrated Tunnels, so the isolated tests cover recipe discovery and processor execution. An automated job from an Integrated Dynamics ingredient storage network remains unverified.
 
 ### PneumaticCraft and Industrial Foregoing
 
