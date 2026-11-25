@@ -31,6 +31,13 @@ public final class RadiationConfig {
             BUILDER.defineInRange("radiation_rain_mult", 1D, 1E-6, 1E6);
     static final ForgeConfigSpec.ConfigValue<List<? extends String>> IMMUNE_PLAYERS =
             BUILDER.defineListAllowEmpty("radiation_immune_players", List.of(), RadiationConfig::validUuid);
+    static final ForgeConfigSpec.BooleanValue DEFAULT_STAGE_IMMUNITY =
+            BUILDER.comment("Default immunity when GameStages is installed. A listed stage reverses this setting.")
+                    .define("radiation_default_stage_immunity", false);
+    static final ForgeConfigSpec.ConfigValue<List<String>> IMMUNITY_STAGES =
+            BUILDER.comment("GameStages IDs that flip the default immunity. Any one listed stage is sufficient.")
+                    .define("radiation_immunity_stages", List.of(), value -> value instanceof List<?> stages
+                            && stages.stream().allMatch(stage -> stage instanceof String id && !id.isBlank()));
     static final ForgeConfigSpec.BooleanValue FATAL = BUILDER.define("radiation_player_rads_fatal", true);
     static final ForgeConfigSpec.BooleanValue PERSIST_DEATH = BUILDER.define("radiation_death_persist", true);
     static final ForgeConfigSpec.DoubleValue DEATH_FRACTION =

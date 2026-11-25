@@ -1,6 +1,7 @@
 package nc.radiation;
 
 import nc.NuclearCraft;
+import nc.compat.gamestages.RadiationGameStages;
 import nc.init.NCRadiation;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -86,7 +87,7 @@ public final class PlayerRadiation {
         double dose = data.getDouble(DOSE);
         double previousDose = dose;
         double immunity = Math.max(0, data.getDouble(IMMUNITY) - ticks);
-        boolean immune = immunity > 0 || permanentlyImmune(player);
+        boolean immune = immunity > 0 || hasUntimedImmunity(player);
         boolean vulnerable = !immune && !player.isCreative() && !player.isSpectator();
         boolean fatal = vulnerable && RadiationConfig.FATAL.get();
         if (fatal && dose >= max && RadiationEffects.kill(player)) {
@@ -230,8 +231,10 @@ public final class PlayerRadiation {
         return RadiationConfig.ENABLED.get();
     }
 
-    private static boolean permanentlyImmune(Player player) {
-        return RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID());
+    private static boolean hasUntimedImmunity(Player player) {
+        return RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID())
+                || RadiationGameStages.grantsImmunity(player, RadiationConfig.DEFAULT_STAGE_IMMUNITY.get(),
+                        RadiationConfig.IMMUNITY_STAGES.get());
     }
 
     static RadiationSync.Reading reading(ServerPlayer player) {
@@ -241,7 +244,7 @@ public final class PlayerRadiation {
         CompoundTag data = read(player);
         return new RadiationSync.Reading(true, RadiationConfig.REQUIRE_COUNTER.get(), data.getDouble(DOSE),
                 RadiationConfig.MAX_DOSE.get(), data.getDouble(RATE), data.getDouble(RAW_RATE),
-                permanentlyImmune(player), data.getDouble(IMMUNITY), RadiationConfig.MINIMUM_RATE.get(),
+                hasUntimedImmunity(player), data.getDouble(IMMUNITY), RadiationConfig.MINIMUM_RATE.get(),
                 RadiationConfig.UNIT_DIGITS.get(), RadiationConfig.soundVolume(0));
     }
 

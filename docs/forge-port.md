@@ -1604,7 +1604,7 @@ The player settings ported from the legacy radiation category retain their names
 
 The four item IDs are `nuclearcraft:geiger_counter`, `nuclearcraft:radaway`, `nuclearcraft:radaway_slow`, and `nuclearcraft:rad_x`. The Infuser consumes two bioplastic and 250 mB of either RadAway fluid. It can also upgrade a RadAway item with 200 mB of molten redstone. These are ordinary `nuclearcraft:infuser` recipes and use the existing Forge item, fluid, and energy capabilities.
 
-The radiation HUD uses the legacy dose bar and displays the effective Rad/t after resistance. It also shows configured UUID immunity and the remaining immunity after death. With `radiation_require_counter` enabled, a handheld or fixed counter in the inventory reveals the HUD. The handheld counter clicks from the hotbar based on the raw dose rate. Using it reports the dose, percentage, and raw rate in chat. The first harmful dose threshold warns players who have no counter.
+The radiation HUD uses the legacy dose bar and displays the effective Rad/t after resistance. It also shows immunity granted by a UUID or GameStages rule and the remaining immunity after death. With `radiation_require_counter` enabled, a handheld or fixed counter in the inventory reveals the HUD. The handheld counter clicks from the hotbar based on the raw dose rate. Using it reports the dose, percentage, and raw rate in chat. The first harmful dose threshold warns players who have no counter.
 
 `radiation_require_counter`, `radiation_unit_prefixes`, and the Geiger and warning entries at indices 0 and 6 of `radiation_sound_volumes` keep their names in `world/serverconfig/nuclearcraft-radiation.toml`. HUD size, angle, optional Cartesian position, and text outline settings keep their names in `config/nuclearcraft-radiation-client.toml` so each client can place its overlay. The displayed readings and exposure remain authoritative on the server.
 
@@ -1617,6 +1617,21 @@ The packaged HUD build also joined the integrated world and rendered a 22-percen
 The local Forge suite passed all 99 required GameTests. The radiation cases covered inventory and offhand exposure, depleted fuel rates, armor resistance, save and load, radiation sickness, treatment, death immunity, fatal damage, and Infuser automation. The packaged JAR ran on a clean dedicated Forge server with a muted background client. The Geiger counter showed 0.7600 Rad/t with two californium-252 ingots and about 0.0224 Rad/t after Rad-X. RadAway cleared the measured dose. The native observer recorded zero focus activations and zero visible window samples.
 
 The packaged JAR also entered the isolated 539-mod Auram instance on Forge 47.4.18 with Ender IO 8.2.18 RF Preview and AuramCore 1.0.37 RF Preview. The KubeJS check equipped 32 Mekanism uranium ingots, measured the expected Forge-tag exposure, and obtained a Geiger counter and RadAway. The existing fixture assertions passed, including Ender IO and Mekanism automation on the Large Machine Electrolyzer. JEI loaded and the world saved before the muted client exited with zero focus activations or visible window samples.
+
+### GameStages radiation immunity
+
+Move the legacy CraftTweaker `setRadiationImmunityGameStages` call to the top level of `world/serverconfig/nuclearcraft-radiation.toml`. This configuration makes either listed stage grant immunity.
+
+```toml
+radiation_default_stage_immunity = false
+radiation_immunity_stages = ["radiation_training", "hazmat_certified"]
+```
+
+With GameStages installed, possessing any listed stage flips the default. Set the default to `true` to make stages remove immunity. An empty list applies the default to everyone. Without GameStages, the stage settings are ignored. The UUID list always grants immunity, and the respawn timer applies separately. Stage grants and removals take effect on the next radiation update. Immune players keep their effective rate reading and can reduce existing dose with treatment. [GameStages 15.0.2 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/game-stages/files/5790361)
+
+All 229 local GameTests passed. On packaged Forge 47.4.10 with GameStages 15.0.2, either listed stage flipped both settings. An unrelated stage left immunity unchanged. The UUID exemption took priority. At 2 Rad/t, an exposed player gained 10 Rad in five ticks. An immune player kept their initial 25 Rad. With an empty list and the default enabled, all players remained immune. On clean Forge the enabled default had no effect and the UUID exemption still applied.
+
+The isolated client loaded JEI with all 541 installed Auram mod JARs. GameStages commands granted immunity with either listed stage, preserved it when one listed stage replaced the other, and restored exposure when the last listed stage was removed. The client reading followed each change and continued to show 2 Rad/t. The client used master volume zero and OpenAL No Output, and the world saved. The observer reached its shutdown wait limit before writing a focus report. A separate Forge 47.4.10 client with GameStages and Bookshelf repeated the stage and HUD checks, saved, and exited cleanly. Its native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### Food radiation
 
