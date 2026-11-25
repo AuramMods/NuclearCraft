@@ -4,6 +4,7 @@ import nc.init.NCFission;
 import nc.init.NCPebbleFission;
 import nc.init.NCRadiation;
 import nc.multiblock.Cuboid;
+import nc.recipe.FissionCoolantRecipe;
 import nc.recipe.FissionFuelStats;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.SaltFissionRecipe;
@@ -48,10 +49,10 @@ final class SolidFissionCore {
     record FuelStats(FissionFuelStats recipe, double ticks, double radiation, int baseHeat, double baseEfficiency,
                      boolean primed, boolean processing, double heating, double efficiency, int heatMultiplier, long flux) {}
     record ShieldStats(double heating, long flux) {}
-    record CoolerStats(boolean processing, double speed) {}
+    record CoolerStats(boolean processing, double speed, int cooling) {}
 
-    private record GasLoad(BlockPos pos, PebbleCoolant gas, double efficiency) {}
-    private record SaltLoad(BlockPos pos, FissionCoolant coolant, double efficiency) {}
+    private record GasLoad(BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {}
+    private record SaltLoad(BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {}
 
     private enum NeutronEndpoint { FUEL, IRRADIATOR, REFLECTOR }
 
@@ -409,9 +410,9 @@ final class SolidFissionCore {
         }
         var coolingNeighbors = FissionPlacementRules.neighborhood(level, layout.bounds(), layout.variant().fuelPart(),
                 thermalCells, neutronParts, activeModerators);
-        Map<BlockPos, PebbleCoolant> coolers = gasCooling == null ? Map.of()
+        Map<BlockPos, FissionCoolantRecipe> coolers = gasCooling == null ? Map.of()
                 : gasCooling.available(level, layout, coolingNeighbors);
-        Map<BlockPos, FissionCoolant> heaters = saltCooling == null ? Map.of()
+        Map<BlockPos, FissionCoolantRecipe> heaters = saltCooling == null ? Map.of()
                 : saltCooling.available(level, layout, coolingNeighbors);
         Set<BlockPos> sinks = fluidCooling ? Set.of() : availableSinks(level, coolingNeighbors);
         Set<BlockPos> cooledParts = switch (layout.variant()) {
@@ -514,8 +515,8 @@ final class SolidFissionCore {
 
             long cooling = 0;
             for (BlockPos sink : cluster.sinks()) {
-                PebbleCoolant gas = coolers.get(sink);
-                FissionCoolant salt = heaters.get(sink);
+                FissionCoolantRecipe gas = coolers.get(sink);
+                FissionCoolantRecipe salt = heaters.get(sink);
                 int rate = gas != null ? gas.cooling() : salt != null ? salt.cooling()
                         : sinks.contains(sink) ? ((SolidHeatSinkBlock) level.getBlockState(sink).getBlock()).cooling() : 0;
                 if (rate > 0) {
@@ -530,11 +531,11 @@ final class SolidFissionCore {
                 double efficiency = (effectiveCluster + effectiveDecay) / baseCluster
                         * Math.min(1D, (double) totalHeat / cooling);
                 for (BlockPos sink : cluster.sinks()) {
-                    PebbleCoolant gas = coolers.get(sink);
+                    FissionCoolantRecipe gas = coolers.get(sink);
                     if (gas != null) {
                         gasLoads.add(new GasLoad(sink, gas, efficiency));
                     }
-                    FissionCoolant coolant = heaters.get(sink);
+                    FissionCoolantRecipe coolant = heaters.get(sink);
                     if (coolant != null) {
                         saltLoads.add(new SaltLoad(sink, coolant, efficiency));
                     }
@@ -589,10 +590,10 @@ final class SolidFissionCore {
         if (gasCooling != null) {
             for (GasLoad load : gasLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
-                weightedCoolantSpeed += speed * load.gas().cooling();
-                gasCooling.heatGas(load.pos(), load.gas(), speed);
+                weightedCoolantSpeed += speed * load.recipe().cooling();
+                boolean processing = gasCooling.heatGas(level, load.pos(), load.recipe(), speed);
                 if (measuredCoolers != null) {
-                    measuredCoolers.put(load.pos(), new CoolerStats(speed > 0, speed));
+                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed, load.recipe().cooling()));
                 }
             }
         }
@@ -600,13 +601,13 @@ final class SolidFissionCore {
             var heating = new HashSet<BlockPos>();
             for (SaltLoad load : saltLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
-                weightedCoolantSpeed += speed * load.coolant().cooling();
-                boolean processing = saltCooling.heat(level, load.pos(), load.coolant(), speed);
+                weightedCoolantSpeed += speed * load.recipe().cooling();
+                boolean processing = saltCooling.heat(level, load.pos(), load.recipe(), speed);
                 if (processing) {
                     heating.add(load.pos());
                 }
                 if (measuredCoolers != null) {
-                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed));
+                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed, load.recipe().cooling()));
                 }
             }
             heatingSalts = heating;

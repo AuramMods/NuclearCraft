@@ -1,0 +1,6 @@
+{
+  "type": "nuclearcraft:coolant_heater",
+  "material": "qa_salt_recipe",
+  "input": {"fluid": "nuclearcraft:iron_nak", "amount": 10},
+  "output": {}
+}

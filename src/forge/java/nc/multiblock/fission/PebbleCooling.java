@@ -1,18 +1,13 @@
 package nc.multiblock.fission;
 
 import nc.init.NCPebbleFission;
+import nc.recipe.FissionCoolantRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -22,13 +17,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 final class PebbleCooling {
-    private static final int PORT_VOLUME = 1296;
     private final SolidFissionController owner;
-    private final Map<Channel, Tanks> circuits = new LinkedHashMap<>();
+    private final Map<Channel, CoolantTanks> circuits = new LinkedHashMap<>();
     private final Map<BlockPos, Channel> coolerRoutes = new HashMap<>();
     private final Map<BlockPos, Double> credit = new HashMap<>();
 
@@ -38,17 +30,17 @@ final class PebbleCooling {
         this.owner = owner;
     }
 
-    Tanks circuit(Channel channel) {
-        return circuits.computeIfAbsent(channel, key -> new Tanks(key.gas(), owner, key::filter));
+    CoolantTanks circuit(Channel channel) {
+        return circuits.computeIfAbsent(channel, key -> new CoolantTanks(key.gas(), owner, key::filter));
     }
 
-    Tanks tanks(PebbleCooler cooler) {
+    CoolantTanks tanks(PebbleCooler cooler) {
         Channel channel = coolerRoutes.get(cooler.getBlockPos());
         return channel != null ? circuit(channel) : cooler.localTanks();
     }
 
     void clearMaterial() {
-        circuits.values().forEach(Tanks::clear);
+        circuits.values().forEach(CoolantTanks::clear);
         credit.clear();
         owner.setChanged();
     }
@@ -78,11 +70,10 @@ final class PebbleCooling {
             }
         }
         for (var entry : portCounts.entrySet()) {
-            Tanks tanks = circuit(entry.getKey());
-            int capacity = Math.max(PORT_VOLUME * entry.getValue(), 36 * coolerCounts.getOrDefault(entry.getKey(), 0));
-            // Retain both inputs and products through changes to the shell.
-            resize(tanks.hot, Math.max(capacity, entry.getKey().gas().outputAmount()));
-            resize(tanks.cold, Math.max(capacity, entry.getKey().gas().inputIngredient().amount()));
+            CoolantTanks tanks = circuit(entry.getKey());
+            long capacity = Math.max((long) CoolantTanks.PORT_VOLUME * entry.getValue(),
+                    36L * coolerCounts.getOrDefault(entry.getKey(), 0));
+            tanks.resize(capacity);
         }
         credit.keySet().retainAll(layout.sinks());
     }
@@ -99,56 +90,48 @@ final class PebbleCooling {
         return cooler.filter() == null && channels.size() == 1 ? channels.get(0) : null;
     }
 
-    private static void resize(FluidTank tank, int minimum) {
-        tank.setCapacity(Math.max(minimum, tank.getFluidAmount()));
-    }
-
-    Map<BlockPos, PebbleCoolant> available(ServerLevel level, SolidFissionLayout layout,
-                                          BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
+    Map<BlockPos, FissionCoolantRecipe> available(ServerLevel level, SolidFissionLayout layout,
+                                                 BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
         var eligible = new HashMap<String, List<BlockPos>>();
+        var recipes = new HashMap<BlockPos, FissionCoolantRecipe>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
-                PebbleCoolant gas = cooler.gas();
-                if (tanks(cooler).transferable(cooler.filter()) > 0 && gas.cooling() > 0) {
-                    eligible.computeIfAbsent(gas.id(), ignored -> new ArrayList<>()).add(pos);
+                var recipe = tanks(cooler).ready(cooler.filter());
+                if (recipe != null) {
+                    eligible.computeIfAbsent(cooler.gas().id(), ignored -> new ArrayList<>()).add(pos);
+                    recipes.put(pos, recipe);
                 }
             }
         }
-        var active = NCPebbleFission.placementRules().active(eligible, neighbors);
-        var result = new HashMap<BlockPos, PebbleCoolant>();
-        active.forEach((pos, id) -> result.put(pos, NCPebbleFission.coolants().get(id)));
-        return result;
+        recipes.keySet().retainAll(NCPebbleFission.placementRules().active(eligible, neighbors).keySet());
+        return recipes;
     }
 
-    void heatGas(BlockPos pos, PebbleCoolant gas, double multiplier) {
-        if (!(owner.getLevel().getBlockEntity(pos) instanceof PebbleCooler cooler)) {
-            return;
+    boolean heatGas(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double multiplier) {
+        if (multiplier <= 0 || !(level.getBlockEntity(pos) instanceof PebbleCooler cooler)) {
+            return false;
         }
-        Tanks tanks = tanks(cooler);
-        int transferable = tanks.transferable(cooler.filter());
-        if (transferable <= 0 || multiplier <= 0) {
-            return;
+        CoolantTanks tanks = tanks(cooler);
+        if (tanks.ready(cooler.filter()) != recipe) {
+            return false;
         }
-        int inputAmount = gas.inputIngredient().amount();
+        int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
         double progress = credit.getOrDefault(pos, 0D)
-                + multiplier * gas.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
-        int amount = Math.min(transferable, (int) progress);
+                + multiplier * recipe.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
         credit.put(pos, progress - Math.floor(progress));
-        if (amount > 0) {
-            tanks.hot.fill(new FluidStack(gas.hot(), gas.outputAmount() * amount), FluidAction.EXECUTE);
-            tanks.cold.drain(inputAmount * amount, FluidAction.EXECUTE);
-        }
+        tanks.process(cooler.filter(), recipe, (int) progress, level.random);
         owner.setChanged();
+        return true;
     }
 
     FissionTankTotals tankTotals(ServerLevel level, SolidFissionLayout layout) {
         var totals = new FissionTankTotals();
-        for (Tanks tanks : circuits.values()) {
+        for (CoolantTanks tanks : circuits.values()) {
             totals.add(tanks.cold, tanks.hot);
         }
         for (BlockPos pos : layout.sinks()) {
             if (!coolerRoutes.containsKey(pos) && level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
-                Tanks tanks = cooler.localTanks();
+                CoolantTanks tanks = cooler.localTanks();
                 totals.add(tanks.cold, tanks.hot);
             }
         }
@@ -214,72 +197,6 @@ final class PebbleCooling {
             if (value > 0 && value < 1) {
                 credit.put(BlockPos.of(fraction.getLong("pos")), value);
             }
-        }
-    }
-
-    private static FluidTank createTank(BlockEntity owner, int batch, Predicate<FluidStack> accepts) {
-        return new FluidTank(Math.max(PORT_VOLUME, batch), accepts) {
-            @Override
-            protected void onContentsChanged() {
-                owner.setChanged();
-            }
-        };
-    }
-
-    static final class Tanks {
-        final FluidTank cold;
-        final FluidTank hot;
-        private final PebbleCoolant gas;
-        private final Supplier<@Nullable ResourceLocation> filter;
-
-        Tanks(PebbleCoolant gas, BlockEntity owner, Supplier<@Nullable ResourceLocation> filter) {
-            this.gas = gas;
-            this.filter = filter;
-            cold = createTank(owner, gas.inputIngredient().amount(),
-                    stack -> gas.inputIngredient().accepts(stack) && matches(stack, filter()));
-            hot = createTank(owner, gas.outputAmount(), stack -> stack.getFluid() == gas.hot());
-        }
-
-        @Nullable ResourceLocation filter() {
-            return filter.get();
-        }
-
-        FluidTank tank(boolean output) {
-            return output ? hot : cold;
-        }
-
-        void clear() {
-            cold.drain(cold.getFluidAmount(), FluidAction.EXECUTE);
-            hot.drain(hot.getFluidAmount(), FluidAction.EXECUTE);
-        }
-
-        int transferable(@Nullable ResourceLocation coolerFilter) {
-            FluidStack input = cold.getFluid();
-            var output = gas.hot();
-            if (input.isEmpty() || !cold.isFluidValid(input) || !matches(input, coolerFilter) || output == Fluids.EMPTY
-                    || !hot.isEmpty() && hot.getFluid().getFluid() != output) {
-                return 0;
-            }
-            return Math.min(cold.getFluidAmount() / gas.inputIngredient().amount(),
-                    (hot.getCapacity() - hot.getFluidAmount()) / gas.outputAmount());
-        }
-
-        private static boolean matches(FluidStack stack, @Nullable ResourceLocation filter) {
-            return filter == null || filter.equals(ForgeRegistries.FLUIDS.getKey(stack.getFluid()));
-        }
-
-        CompoundTag save() {
-            CompoundTag tag = new CompoundTag();
-            tag.put("input", cold.writeToNBT(new CompoundTag()));
-            tag.put("output", hot.writeToNBT(new CompoundTag()));
-            return tag;
-        }
-
-        void load(CompoundTag tag) {
-            cold.readFromNBT(tag.getCompound("input"));
-            hot.readFromNBT(tag.getCompound("output"));
-            resize(cold, cold.getCapacity());
-            resize(hot, hot.getCapacity());
         }
     }
 }

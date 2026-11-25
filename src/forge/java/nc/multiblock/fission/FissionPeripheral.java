@@ -225,7 +225,7 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
                                                    String type, @Nullable FluidTank in, @Nullable FluidTank out,
                                                    double progress, int cooling, boolean valid) {
         return Map.of("coolant", ComputerValues.fluid(fluid(in)), "hot_coolant", ComputerValues.fluid(fluid(out)),
-                "type", type, "cooling", valid ? cooling : 0, "speed_multiplier", stats == null ? 0D : stats.speed(),
+                "type", type, "cooling", valid ? stats == null ? cooling : stats.cooling() : 0, "speed_multiplier", stats == null ? 0D : stats.speed(),
                 "is_processing", stats != null && stats.processing(), "current_time", progress, "base_process_time", 1D);
     }
 

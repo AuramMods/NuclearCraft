@@ -64,6 +64,10 @@ public final class SaltFissionGameTests {
                     "nuclearcraft:nak_hot", 5, 110, "one vessel");
             helper.register(NuclearCraft.id("salt_fission_heater_qa_nak"), NCSaltFission.createScriptedHeater(coolant));
             helper.register(NuclearCraft.id("fission_heater_port_qa_nak"), NCSaltFission.createScriptedHeaterPort(coolant));
+            var recipeCoolant = NCSaltFission.scriptedCoolant("qa_salt_recipe", "nuclearcraft:nak", 3,
+                    "nuclearcraft:nak_hot", 5, 110, "one vessel");
+            helper.register(NuclearCraft.id("salt_fission_heater_qa_salt_recipe"), NCSaltFission.createScriptedHeater(recipeCoolant));
+            helper.register(NuclearCraft.id("fission_heater_port_qa_salt_recipe"), NCSaltFission.createScriptedHeaterPort(recipeCoolant));
         });
     }
 
@@ -136,6 +140,68 @@ public final class SaltFissionGameTests {
                                 && fluids(helper, NAK_OUT, Direction.UP).drain(1292, EXECUTE)
                                     .isFluidStackIdentical(stack("nak_hot", 1292)),
                         "The saved circuit restores its exact cold remainder and hot product"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 300)
+    public static void authoredSaltHeaterReservesMaximumOutputAndProcessesEmptyFallback(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        var heater = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("salt_fission_heater_qa_salt_recipe"));
+        var port = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("fission_heater_port_qa_salt_recipe"));
+        helper.setBlock(FIRST_VESSEL.below(), heater);
+        helper.setBlock(NAK_IN, port);
+        helper.setBlock(NAK_OUT, port.defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var state = controller.saveWithoutMetadata();
+        var circuit = new CompoundTag();
+        circuit.put("output", stack("iron_nak_hot", 1289).writeToNBT(new CompoundTag()));
+        var storage = new CompoundTag();
+        storage.put("qa_salt_recipe", circuit);
+        state.put("salt_cooling", storage);
+        controller.load(state);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The authored heater circuit assembles"))
+                .thenExecute(() -> {
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    helper.assertTrue(input.fill(stack("nak", 31), SIMULATE) == 0
+                                    && input.fill(stack("iron_nak", 31), EXECUTE) == 31,
+                            "Only the authored cold fluid enters the assembled outward port");
+                    var player = saltInspector(helper);
+                    helper.useBlock(NAK_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.coolantInput() != null && menu.coolantInput().amount() == 18 && menu.cooling() == 180
+                                    && menu.filter().getFluid() == stack("iron_nak", 1).getFluid(),
+                            "The higher-priority recipe is selected and displays the actual alternative fluid");
+                    fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 180), EXECUTE);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(12, () -> {
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    var output = fluids(helper, NAK_OUT, Direction.UP);
+                    helper.assertTrue(input.getFluidInTank(0).getAmount() == 31
+                                    && output.getFluidInTank(0).getAmount() == 1289,
+                            "Seven millibuckets of room stall the eight-millibucket maximum, even with an empty fallback");
+                    helper.assertTrue(output.drain(1, EXECUTE).isFluidStackIdentical(stack("iron_nak_hot", 1)),
+                            "Drawing through the port allows the first batch to finish");
+                })
+                .thenWaitUntil(() -> {
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    var output = fluids(helper, NAK_OUT, Direction.UP);
+                    helper.assertTrue(input.getFluidInTank(0).isFluidStackIdentical(stack("iron_nak", 3))
+                                    && output.getFluidInTank(0).isFluidStackIdentical(stack("iron_nak_hot", 1291)),
+                            "The 18 mB recipe makes 3 mB of product and the 10 mB fallback makes no product");
+                })
+                .thenExecute(() -> {
+                    var player = saltInspector(helper);
+                    helper.useBlock(NAK_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    helper.assertTrue(input.fill(stack("iron_nak", 7), EXECUTE) == 7, "Complete another fallback batch");
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.coolantInput() != null && menu.coolantInput().amount() == 10 && menu.cooling() == 110,
+                            "The fallback inherits the material cooling rate and shows its own dose");
+                })
                 .thenSucceed();
     }
 

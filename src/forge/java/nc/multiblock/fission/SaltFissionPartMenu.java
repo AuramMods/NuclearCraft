@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCSaltFission;
+import nc.recipe.FissionCoolantRecipes;
 import nc.recipe.FluidIngredient;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -15,6 +16,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
@@ -49,6 +51,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private static final int CAN_CLEAR_FILTER = 32;
 
     private final Kind kind;
+    private final Level playerLevel;
     private final SimpleContainerData data = new SimpleContainerData(DATA_SIZE);
     private final @Nullable ServerLevel level;
     private final BlockPos pos;
@@ -64,6 +67,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
                                BlockPos pos, @Nullable Block expected) {
         super(kind.menu(), id);
         this.kind = kind;
+        playerLevel = player.player.level();
         this.level = level;
         this.pos = pos.immutable();
         this.expected = expected;
@@ -105,13 +109,9 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
 
     public @Nullable FluidIngredient coolantInput() {
         var block = BuiltInRegistries.BLOCK.byId(get(HEATER_BLOCK));
-        if (block instanceof SaltHeaterBlock heater) {
-            return heater.coolant().inputIngredient();
-        }
-        if (block instanceof FissionWallBlock wall && wall.saltCoolant() != null) {
-            return wall.saltCoolant().inputIngredient();
-        }
-        return null;
+        FissionCoolant material = block instanceof SaltHeaterBlock heater ? heater.coolant()
+                : block instanceof FissionWallBlock wall ? wall.saltCoolant() : null;
+        return material == null ? null : FissionCoolantRecipes.displayedInput(playerLevel, material, fluid(false));
     }
 
     public FluidStack reserved() {
@@ -226,10 +226,18 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         }
         boolean linked = part.linked();
         viewLocal &= linked;
-        setTank(INPUT, part.tank(viewLocal, false));
+        var input = part.tank(viewLocal, false);
+        setTank(INPUT, input);
         setTank(OUTPUT, part.tank(viewLocal, true));
         ResourceLocation filter = part.filter();
-        set(FILTER, fluidId(part.coolant != null ? part.coolant.cold() : filter == null ? null : ForgeRegistries.FLUIDS.getValue(filter)));
+        var feed = input == null ? FluidStack.EMPTY : input.getFluid();
+        var recipe = part.coolant == null ? null : FissionCoolantRecipes.displayedRecipe(level, part.coolant, feed);
+        var filterFluid = filter == null ? null : ForgeRegistries.FLUIDS.getValue(filter);
+        if (recipe != null) {
+            filterFluid = recipe.input().accepts(feed) ? feed.getFluid()
+                    : recipe.input().alternatives().stream().findFirst().orElse(FluidStack.EMPTY).getFluid();
+        }
+        set(FILTER, fluidId(filterFluid));
         set(HEATER_BLOCK, part.coolant == null ? 0 : BuiltInRegistries.BLOCK.getId(expected));
         FluidStack reserved = part.vessel == null ? FluidStack.EMPTY : part.vessel.reservedForInspection();
         set(RESERVED, fluidId(reserved.getFluid()));
@@ -238,7 +246,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
                 : part.coolant != null && !kind.port() && part.controller != null
                     ? part.controller.heaterProgress(pos, part.coolant) : 0;
         set(PROGRESS, (int) (1000 * progress));
-        set(COOLING, part.coolant != null ? part.coolant.cooling() : 0);
+        set(COOLING, recipe == null ? 0 : recipe.cooling());
         var heat = part.controller == null || kind.port() ? SolidFissionCore.PartHeat.NONE : part.controller.partHeat(pos);
         set(HEAT, (int) Math.min(Integer.MAX_VALUE, heat.amount()));
         set(HEAT_CAPACITY, (int) Math.min(Integer.MAX_VALUE, heat.capacity()));
@@ -282,11 +290,11 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private record Part(@Nullable SolidFissionController controller, @Nullable SaltVessel vessel,
                         @Nullable FissionPortBlockEntity port, @Nullable SaltHeater heater,
                         @Nullable FissionCoolant coolant, boolean outputPort) {
-        @Nullable SaltCooling.Tanks sharedCoolant() {
+        @Nullable CoolantTanks sharedCoolant() {
             return coolant == null || controller == null ? null : controller.connectedSaltCoolant(coolant);
         }
 
-        SaltCooling.Tanks localCoolant() {
+        CoolantTanks localCoolant() {
             return heater == null ? port.localSaltCoolant() : heater.localTanks();
         }
 

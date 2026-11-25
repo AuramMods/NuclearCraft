@@ -1,0 +1,12 @@
+{
+  "type": "nuclearcraft:gas_cooler",
+  "material": "qa_gas_recipe",
+  "input": {
+    "alternatives": [
+      {"tag": "forge:nitrogen", "amount": 18},
+      {"fluid": "nuclearcraft:nitrogen", "amount": 10}
+    ]
+  },
+  "output": {"fluid": "nuclearcraft:nitrogen_hot", "amount": 8, "min_amount": 3, "step": 5, "chance_percent": 0},
+  "cooling": 210
+}

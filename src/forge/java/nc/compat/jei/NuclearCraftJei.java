@@ -38,7 +38,6 @@ import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.multiblock.fission.FissionMaterials;
 import nc.init.NCSaltFission;
-import nc.multiblock.fission.SaltHeaterBlock;
 import nc.init.NCGenerators;
 import nc.init.NCOres;
 import nc.init.NCMachines;
@@ -83,6 +82,8 @@ import nc.recipe.SaltFissionRecipe;
 import nc.recipe.SolidFissionRecipe;
 import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionFuelStats;
+import nc.recipe.FissionCoolantRecipe;
+import nc.recipe.FissionCoolantRecipes;
 import nc.recipe.FissionHeatRecipe;
 import nc.recipe.FissionMaterialRecipe;
 import nc.recipe.ProcessingRecipe;
@@ -99,7 +100,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
@@ -156,8 +156,8 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "fission_heating", FissionHeatRecipe.class);
     private static final RecipeType<FissionHeatRecipe> FISSION_EMERGENCY_COOLING =
             RecipeType.create(NuclearCraft.MOD_ID, "fission_emergency_cooling", FissionHeatRecipe.class);
-    private static final RecipeType<SaltHeaterBlock> SALT_HEATING =
-            RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", SaltHeaterBlock.class);
+    private static final RecipeType<FissionCoolantRecipe> SALT_HEATING =
+            RecipeType.create(NuclearCraft.MOD_ID, "coolant_heater", FissionCoolantRecipe.class);
     private static final RecipeType<HeatExchangerRecipe> HEAT_EXCHANGER =
             RecipeType.create(NuclearCraft.MOD_ID, "heat_exchanger", HeatExchangerRecipe.class);
     private static final RecipeType<CondenserRecipe> CONDENSER =
@@ -318,12 +318,13 @@ public final class NuclearCraftJei implements IModPlugin {
                 new Category<>(FISSION_EMERGENCY_COOLING, NCPebbleFission.CONTROLLER.get(), gui,
                         NuclearCraftJei::fissionHeat, NuclearCraftJei::fissionHeatCost,
                         Component.translatable("gui.nuclearcraft.jei.fission_emergency_cooling")),
-                new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, heater) -> {
-                    var coolant = heater.coolant();
+                new Category<>(SALT_HEATING, NCSaltFission.heater(NCSaltCoolants.NAK), gui, (layout, recipe) -> {
+                    var heater = NCSaltFission.heaters().stream().filter(block -> block.coolant().equals(recipe.material()))
+                            .findFirst().orElseThrow();
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStack(new ItemStack(heater));
-                    fluidSlot(layout, INPUT, 43, coolant.inputIngredient().alternatives());
-                    fluidSlot(layout, OUTPUT, 104, List.of(new FluidStack(coolant.hot(), coolant.outputAmount())));
-                }, heater -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", heater.coolant().cooling())),
+                    fluidSlot(layout, INPUT, 43, recipe.input().alternatives());
+                    fluidProductSlot(layout, 104, 12, recipe.product(), 1);
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.coolant_heater", recipe.cooling())),
                 new Category<>(HEAT_EXCHANGER, NCHeatExchangers.CONTROLLER.get(), gui, (layout, recipe) -> {
                     fluidSlot(layout, INPUT, 20, recipe.input().alternatives());
                     fluidProductSlot(layout, 104, 12, recipe.outputProduct(), 1);
@@ -412,9 +413,11 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(FISSION_HEATING, recipes.getAllRecipesFor(NCFission.HEATING_TYPE.get()));
         registration.addRecipes(FISSION_EMERGENCY_COOLING, recipes.getAllRecipesFor(NCFission.EMERGENCY_COOLING_TYPE.get()));
         registration.addRecipes(SALT_HEATING, NCSaltFission.heaters().stream()
-                .filter(heater -> heater.coolant().cold() != Fluids.EMPTY && heater.coolant().hot() != Fluids.EMPTY).toList());
+                .flatMap(heater -> FissionCoolantRecipes.forMaterial(recipes, heater.coolant()).stream())
+                .filter(recipe -> !recipe.input().alternatives().isEmpty()).toList());
         registration.addRecipes(GasCoolerCategory.TYPE, NCPebbleFission.coolers().stream()
-                .filter(cooler -> cooler.gas().cold() != Fluids.EMPTY && cooler.gas().hot() != Fluids.EMPTY).toList());
+                .flatMap(cooler -> FissionCoolantRecipes.forMaterial(recipes, cooler.gas()).stream())
+                .filter(recipe -> !recipe.input().alternatives().isEmpty()).toList());
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
         registration.addRecipes(CondenserCoolantCategory.TYPE, new CondenserCoolants(recipes).entries());
         registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
@@ -636,7 +639,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
     }
 
-    private static @Nullable IRecipeSlotBuilder fluidProductSlot(IRecipeLayoutBuilder layout, int x, int y,
+    static @Nullable IRecipeSlotBuilder fluidProductSlot(IRecipeLayoutBuilder layout, int x, int y,
                                                                  FluidProduct product, int factor) {
         if (product.isEmpty()) {
             return null;
@@ -762,7 +765,7 @@ public final class NuclearCraftJei implements IModPlugin {
         }
     }
 
-    private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, List<FluidStack> fluids) {
+    static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, List<FluidStack> fluids) {
         fluidSlot(layout, role, x, 12, fluids);
     }
 

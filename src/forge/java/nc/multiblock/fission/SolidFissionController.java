@@ -539,11 +539,11 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return getBlockState().getValue(FissionWallBlock.ACTIVE);
     }
 
-    PebbleCooling.Tanks pebbleCircuit(PebbleCooling.Channel gas) {
+    CoolantTanks pebbleCircuit(PebbleCooling.Channel gas) {
         return gasCooling.circuit(gas);
     }
 
-    PebbleCooling.Tanks pebbleTanks(PebbleCooler cooler) {
+    CoolantTanks pebbleTanks(PebbleCooler cooler) {
         return gasCooling.tanks(cooler);
     }
 
@@ -642,7 +642,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return Objects.requireNonNull(saltFuel);
     }
 
-    @Nullable SaltCooling.Tanks connectedSaltCoolant(FissionCoolant coolant) {
+    @Nullable CoolantTanks connectedSaltCoolant(FissionCoolant coolant) {
         return !assembled() || saltCooling == null ? null : saltCooling.connectedTanks(coolant);
     }
 

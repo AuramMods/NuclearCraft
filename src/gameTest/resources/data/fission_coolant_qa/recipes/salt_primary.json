@@ -1,0 +1,13 @@
+{
+  "type": "nuclearcraft:coolant_heater",
+  "material": "qa_salt_recipe",
+  "input": {
+    "alternatives": [
+      {"fluid": "nuclearcraft:gold_nak", "amount": 18},
+      {"fluid": "nuclearcraft:iron_nak", "amount": 18}
+    ]
+  },
+  "output": {"fluid": "nuclearcraft:iron_nak_hot", "amount": 8, "min_amount": 3, "step": 5, "chance_percent": 0},
+  "cooling": 180,
+  "priority": 1
+}

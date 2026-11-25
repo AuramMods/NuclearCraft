@@ -11,6 +11,7 @@ import nc.multiblock.fission.PebbleCooler;
 import nc.multiblock.fission.PebbleCoolerBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.recipe.FissionCoolantRecipe;
 import nc.recipe.FluidIngredient;
 import nc.recipe.SolidFissionRecipe;
 import net.minecraft.resources.ResourceLocation;
@@ -95,6 +96,11 @@ public final class NCPebbleFission {
             () -> RecipeType.simple(NuclearCraft.id("pebble_fission")));
     public static final RegistryObject<RecipeSerializer<SolidFissionRecipe>> FUEL_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("pebble_fission", () -> new SolidFissionRecipe.Serializer(true));
+
+    public static final RegistryObject<RecipeType<FissionCoolantRecipe>> COOLER_TYPE =
+            NCRegistries.RECIPE_TYPES.register("gas_cooler", () -> RecipeType.simple(NuclearCraft.id("gas_cooler")));
+    public static final RegistryObject<RecipeSerializer<FissionCoolantRecipe>> COOLER_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("gas_cooler", () -> new FissionCoolantRecipe.Serializer(true));
 
     private NCPebbleFission() {}
 

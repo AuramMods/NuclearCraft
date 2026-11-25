@@ -15,19 +15,19 @@ import java.util.Objects;
 
 public final class PebbleCooler extends BlockEntity {
     private final PebbleCoolant gas;
-    private final PebbleCooling.Tanks local;
+    private final CoolantTanks local;
     private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation filter;
 
     public PebbleCooler(BlockPos pos, BlockState state) {
         super(NCPebbleFission.COOLER_ENTITY.get(), pos, state);
         gas = ((PebbleCoolerBlock) state.getBlock()).gas();
-        local = new PebbleCooling.Tanks(gas, this, this::filter);
+        local = new CoolantTanks(gas, this, this::filter);
     }
 
     PebbleCoolant gas() { return gas; }
     @Nullable ResourceLocation filter() { return filter; }
-    PebbleCooling.Tanks localTanks() { return local; }
+    CoolantTanks localTanks() { return local; }
 
     @Nullable SolidFissionController controller() {
         return controller != null && controller.assembled() ? controller : null;
@@ -35,13 +35,13 @@ public final class PebbleCooler extends BlockEntity {
 
     void bind(@Nullable SolidFissionController next) { controller = next; }
 
-    PebbleCooling.Tanks tanks() {
+    CoolantTanks tanks() {
         var current = controller();
         return current == null ? local : current.pebbleTanks(this);
     }
 
     boolean selectFilter(FluidStack sample) {
-        if (controller() != null || !local.cold.isEmpty() || (!sample.isEmpty() && !gas.inputIngredient().accepts(sample))) {
+        if (controller() != null || !local.cold.isEmpty() || (!sample.isEmpty() && !local.accepts(sample))) {
             return false;
         }
         var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());

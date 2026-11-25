@@ -9,17 +9,17 @@ import org.jetbrains.annotations.Nullable;
 
 public final class SaltHeater extends BlockEntity {
     private final FissionCoolant coolant;
-    private final SaltCooling.Tanks local;
+    private final CoolantTanks local;
     private @Nullable SolidFissionController controller;
 
     public SaltHeater(BlockPos pos, BlockState state) {
         super(NCSaltFission.HEATER_ENTITY.get(), pos, state);
         coolant = ((SaltHeaterBlock) state.getBlock()).coolant();
-        local = new SaltCooling.Tanks(coolant, this);
+        local = new CoolantTanks(coolant, this);
     }
 
     FissionCoolant coolant() { return coolant; }
-    SaltCooling.Tanks localTanks() { return local; }
+    CoolantTanks localTanks() { return local; }
 
     @Nullable SolidFissionController controller() {
         return controller != null && controller.assembled() ? controller : null;
@@ -29,7 +29,7 @@ public final class SaltHeater extends BlockEntity {
         controller = next;
     }
 
-    SaltCooling.Tanks tanks() {
+    CoolantTanks tanks() {
         var current = controller();
         var shared = current == null ? null : current.connectedSaltCoolant(coolant);
         return shared == null ? local : shared;

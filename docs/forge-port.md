@@ -1620,6 +1620,46 @@ All 203 local GameTests passed, including the scripted input menu, a whole-batch
 
 The same JAR started on clean Forge 47.4.18 and in the isolated 539-mod Auram instance. In Auram, both circuits held their products while adjacent tanks contained water and delivered the exact outputs after the Ender IO conduit and Mekanism pipe were connected to empty tanks. The client loaded both scripted part models, synchronized the crafting recipe, showed the 3-to-5 mB conversion in JEI, and displayed the pack's custom input tag in the port tooltip. The run exited cleanly with master volume zero, OpenAL No Output, and zero focus activations, foreground samples, or visible window samples.
 
+### Data-driven coolant conversions
+
+Migrate legacy GroovyScript gas cooler and coolant heater recipes to `nuclearcraft:gas_cooler` and `nuclearcraft:coolant_heater`. Use the registered material ID from the legacy placement key. Remove the `_cooler` or `_heater` suffix and use `nak` for the stock `standard_heater` material. The block and port registration and the material's configured placement rule still determine where the parts can operate.
+
+This datapack recipe replaces the stock oxygen conversion with two possible input doses and a chance product. Save it under `data/<namespace>/recipes/<name>.json`.
+
+```json
+{
+  "type": "nuclearcraft:gas_cooler",
+  "material": "oxygen",
+  "input": {
+    "alternatives": [
+      {"tag": "forge:oxygen", "amount": 18},
+      {"fluid": "nuclearcraft:oxygen", "amount": 10}
+    ]
+  },
+  "output": {
+    "fluid": "nuclearcraft:oxygen_hot",
+    "amount": 8,
+    "min_amount": 3,
+    "step": 5,
+    "chance_percent": 40
+  },
+  "cooling": 60,
+  "priority": 10
+}
+```
+
+A material with authored recipes uses those recipes as its complete conversion list. Materials without authored recipes use the stock or startup-scripted batch. The reactor chooses the highest-priority recipe that matches the amount and fluid, breaking ties by ascending recipe ID. Inside one `alternatives` list it uses the first matching dose. Omit `cooling` to inherit the material's configured H/t rate. Set it to zero to disable the selected conversion while preserving its input filter. Use an empty object for `output` when the batch should consume coolant without producing a fluid.
+
+The selected recipe waits for space for its maximum product and rolls separately for each completed batch. A reactor port accepts the inputs from the material's recipe list. Exact gas filters restrict that list to the selected fluid. Reloading recipes keeps the contents and fractional progress in the existing buffers. A removed input can be cleared from the tank menu, and existing hot output can still be extracted on the outward face. JEI shows the doses and chance product for each recipe.
+
+KubeJS can submit this JSON with `event.custom({...}).id('pack:oxygen_batch')` in `ServerEvents.recipes`. CraftTweaker can submit the fields with `<recipetype:nuclearcraft:gas_cooler>.addJsonRecipe("oxygen_batch", {...})` or its `coolant_heater` equivalent. Both use the registered material's existing block and port IDs.
+
+All 277 local GameTests passed. The new cases verified 18 mB and 10 mB doses, an 8 mB maximum with a 3 mB guarantee, a seven-millibucket backpressure stall, an empty fallback product, and selection of the current fluid in the heater menu. On clean packaged Forge 47.4.10, a live recipe reload converted the existing 3 mB gas remainder into 5 mB of hot nitrogen and retained the 6 mB already in the output. Both reactor circuits kept their exact amounts after restart. Worlds saved by the preceding port build retained oversized cold and hot tanks for filtered gas and standard NaK through dedicated startup and confirmed chunk unload and reload.
+
+With CraftTweaker 14.0.59 on packaged Forge 47.4.10, Ender IO 8.2.22-beta fluid conduits and Mekanism 10.4.16.80 mechanical pipes each fed 31 mB into a gas cooler circuit and a salt heater circuit. Each network recovered 6 mB of hot nitrogen and 3 mB of hot iron NaK. Both circuits kept their 3 mB remainders. The exact pipe destination and reactor amounts survived dedicated restart and confirmed chunk unload and reload.
+
+The same JAR ran in the isolated Auram instance with all 540 installed mod JARs. KubeJS supplied the recipes and both reactors produced the same exact amounts. JEI displayed the two gas doses, both primary heater fluids, the chance ranges, and the empty fallback. The client saved and closed with master volume zero, OpenAL No Output, and zero observed desktop activations, foreground samples, or visible window samples.
+
 ### Solid-fuel cell and port controls
 
 Use a valid solid fuel item on an unassembled cell or cell port with an empty input to choose its filter. Use an empty hand to open the menu. The fuel cell shows its input, depleted output, reserved fuel, burn progress, and cluster heat. The port shows its buffers and whether its outward Forge item capability accepts input or extracts output. Shift-click an empty filtered input slot to clear the selection while unassembled. Switch between local and reactor storage from a linked screen.

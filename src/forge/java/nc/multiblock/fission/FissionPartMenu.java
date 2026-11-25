@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.recipe.FissionCoolantRecipes;
 import nc.recipe.FluidIngredient;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
@@ -15,6 +16,7 @@ import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
@@ -36,6 +38,7 @@ public final class FissionPartMenu extends AbstractContainerMenu {
 
     private final SimpleContainerData data = new SimpleContainerData(36);
     private final Kind kind;
+    private final Level level;
     private final @Nullable BlockEntity entity;
     private boolean local;
 
@@ -46,6 +49,7 @@ public final class FissionPartMenu extends AbstractContainerMenu {
     private FissionPartMenu(int id, Inventory inventory, Kind kind, @Nullable BlockEntity entity) {
         super(NCFission.partMenu(kind), id);
         this.kind = kind;
+        level = inventory.player.level();
         this.entity = entity;
         if (kind.fuel()) {
             var items = entity == null ? new ItemStackHandler(2) : new MenuItems();
@@ -108,15 +112,15 @@ public final class FissionPartMenu extends AbstractContainerMenu {
         return local ? localItems(entity) : sharedItems(slot == 1);
     }
 
-    private PebbleCooling.Tanks localGas() {
+    private CoolantTanks localGas() {
         return entity instanceof PebbleCooler cooler ? cooler.localTanks() : ((FissionPortBlockEntity) entity).localPebbleGas();
     }
 
-    private PebbleCooling.Tanks sharedGas() {
+    private CoolantTanks sharedGas() {
         return entity instanceof PebbleCooler cooler ? cooler.tanks() : ((FissionPortBlockEntity) entity).pebbleGas();
     }
 
-    private PebbleCooling.Tanks selectedGas() {
+    private CoolantTanks selectedGas() {
         return local ? localGas() : sharedGas();
     }
 
@@ -241,10 +245,16 @@ public final class FissionPartMenu extends AbstractContainerMenu {
                 filter = cooler.filter();
             }
             gasFilter = filter != null;
-            var fluid = filter == null ? gas.cold() : BuiltInRegistries.FLUID.get(filter);
+            FluidStack input = tanks.cold.getFluid();
+            if (input.isEmpty() && filter != null) {
+                input = new FluidStack(BuiltInRegistries.FLUID.get(filter), 1);
+            }
+            var recipe = FissionCoolantRecipes.displayedRecipe(level, gas, input);
+            var fluid = filter != null ? BuiltInRegistries.FLUID.get(filter)
+                    : recipe.input().alternatives().stream().findFirst().orElse(FluidStack.EMPTY).getFluid();
             set(FILTER, BuiltInRegistries.FLUID.getId(fluid));
             set(GAS_BLOCK, BuiltInRegistries.BLOCK.getId(entity.getBlockState().getBlock()));
-            set(COOLING, gas.cooling());
+            set(COOLING, recipe.cooling());
             if (controller != null && !kind.port() && !local) {
                 progress = controller.gasProgress(pos);
                 processing = controller.isCooling(pos);
@@ -293,13 +303,13 @@ public final class FissionPartMenu extends AbstractContainerMenu {
 
     public @Nullable FluidIngredient gasInput() {
         var block = BuiltInRegistries.BLOCK.byId(get(GAS_BLOCK));
-        if (block instanceof PebbleCoolerBlock cooler) {
-            return cooler.gas().inputIngredient();
+        PebbleCoolant material = block instanceof PebbleCoolerBlock cooler ? cooler.gas()
+                : block instanceof FissionWallBlock wall ? wall.coolant() : null;
+        FluidStack input = gas(false);
+        if (input.isEmpty() && exactGasFilter()) {
+            input = gasFilter();
         }
-        if (block instanceof FissionWallBlock wall && wall.coolant() != null) {
-            return wall.coolant().inputIngredient();
-        }
-        return null;
+        return material == null ? null : FissionCoolantRecipes.displayedInput(level, material, input);
     }
 
     public FluidStack gas(boolean output) {

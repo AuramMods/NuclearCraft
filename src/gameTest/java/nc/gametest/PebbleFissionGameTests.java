@@ -68,6 +68,10 @@ public final class PebbleFissionGameTests {
                     "nuclearcraft:oxygen_hot", 5, 60, "one chamber");
             helper.register(NuclearCraft.id("pebble_fission_cooler_qa_oxygen"), NCPebbleFission.createScriptedCooler(gas));
             helper.register(NuclearCraft.id("fission_cooler_port_qa_oxygen"), NCPebbleFission.createScriptedCoolerPort(gas));
+            var recipeGas = NCPebbleFission.scriptedCoolant("qa_gas_recipe", "#forge:oxygen", 3,
+                    "nuclearcraft:oxygen_hot", 5, 60, "one chamber");
+            helper.register(NuclearCraft.id("pebble_fission_cooler_qa_gas_recipe"), NCPebbleFission.createScriptedCooler(recipeGas));
+            helper.register(NuclearCraft.id("fission_cooler_port_qa_gas_recipe"), NCPebbleFission.createScriptedCoolerPort(recipeGas));
         });
     }
 
@@ -125,6 +129,52 @@ public final class PebbleFissionGameTests {
                     helper.assertTrue(drained.getFluid() == NCGasCoolants.OXYGEN.hot() && drained.getAmount() == 100
                                     && amount(helper, COLD, Direction.NORTH) == 2 && amount(helper, HOT, Direction.SOUTH) == 0,
                             "Reassembly restores the scripted product and the two-millibucket remainder");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 300)
+    public static void authoredGasCoolingUsesCountedAlternativesAndChanceProducts(GameTestHelper helper) {
+        buildReactor(helper);
+        var cooler = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("pebble_fission_cooler_qa_gas_recipe"));
+        var port = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("fission_cooler_port_qa_gas_recipe"));
+        helper.setBlock(COLD, port);
+        helper.setBlock(HOT, output(port));
+        for (Direction side : new Direction[]{Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH}) {
+            helper.setBlock(CHAMBER.relative(side), cooler);
+        }
+        var nitrogen = NCGasCoolants.NITROGEN;
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var input = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(input.fill(new FluidStack(NCGasCoolants.OXYGEN.cold(), 31), FluidAction.SIMULATE) == 0,
+                            "The authored recipes replace the startup fluid for this material");
+                    helper.assertTrue(input.fill(new FluidStack(nitrogen.cold(), 31), FluidAction.SIMULATE) == 31
+                                    && input.getFluidInTank(0).isEmpty()
+                                    && input.fill(new FluidStack(nitrogen.cold(), 31), FluidAction.EXECUTE) == 31,
+                            "The port accepts the new fluid without mutating either side of a simulated fill");
+                    var player = inspector(helper);
+                    helper.useBlock(COLD, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.gasInput() != null && menu.gasInput().tag()
+                                    && menu.gasInput().amount() == 18 && menu.cooling() == 210,
+                            "The reactor port reports the selected counted dose and rate");
+                    items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
+                    runReactor(helper);
+                })
+                .thenWaitUntil(() -> {
+                    var product = fluids(helper, HOT, Direction.SOUTH).getFluidInTank(0);
+                    helper.assertTrue(product.isFluidStackIdentical(new FluidStack(nitrogen.hot(), 6))
+                                    && amount(helper, COLD, Direction.NORTH) == 3,
+                            "An 18 mB dose and a 10 mB dose leave 3 mB of feed and produce 6 mB of hot nitrogen");
+                })
+                .thenExecute(() -> {
+                    var player = inspector(helper);
+                    helper.useBlock(COLD, player);
+                    var menu = (FissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.gasInput() != null && menu.gasInput().tag(),
+                            "Partial feed still displays the matching input definition");
                 })
                 .thenSucceed();
     }

@@ -13,6 +13,7 @@ import nc.multiblock.fission.SaltVessel;
 import nc.multiblock.fission.SaltVesselBlock;
 import nc.multiblock.fission.SolidFissionController;
 import nc.multiblock.fission.SolidFissionMenu;
+import nc.recipe.FissionCoolantRecipe;
 import nc.recipe.FluidIngredient;
 import nc.recipe.SaltFissionRecipe;
 import net.minecraft.resources.ResourceLocation;
@@ -116,6 +117,11 @@ public final class NCSaltFission {
             NCRegistries.RECIPE_TYPES.register("salt_fission", () -> RecipeType.simple(NuclearCraft.id("salt_fission")));
     public static final RegistryObject<RecipeSerializer<SaltFissionRecipe>> FUEL_SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("salt_fission", SaltFissionRecipe.Serializer::new);
+
+    public static final RegistryObject<RecipeType<FissionCoolantRecipe>> HEATER_TYPE =
+            NCRegistries.RECIPE_TYPES.register("coolant_heater", () -> RecipeType.simple(NuclearCraft.id("coolant_heater")));
+    public static final RegistryObject<RecipeSerializer<FissionCoolantRecipe>> HEATER_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register("coolant_heater", () -> new FissionCoolantRecipe.Serializer(false));
 
     private NCSaltFission() {}
 

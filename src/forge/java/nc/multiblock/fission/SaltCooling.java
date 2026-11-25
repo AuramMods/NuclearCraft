@@ -3,15 +3,13 @@ package nc.multiblock.fission;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCSaltCoolants;
 import nc.init.NCSaltFission;
+import nc.recipe.FissionCoolantRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,16 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
-import java.util.function.Predicate;
-
-import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 
 final class SaltCooling {
-    private static final int BASE_VOLUME = 1_296;
     private static final int VOLUME_PER_HEATER = 36;
 
     private final SolidFissionController owner;
-    private final Map<FissionCoolant, Tanks> circuits = new HashMap<>();
+    private final Map<FissionCoolant, CoolantTanks> circuits = new HashMap<>();
     private final Set<FissionCoolant> connected = new HashSet<>();
     private final Map<BlockPos, Fraction> credit = new HashMap<>();
     private record Fraction(FissionCoolant coolant, double amount) {}
@@ -40,15 +34,15 @@ final class SaltCooling {
         this.owner = owner;
     }
 
-    private Tanks circuit(FissionCoolant coolant) {
-        return circuits.computeIfAbsent(coolant, kind -> new Tanks(kind, owner));
+    private CoolantTanks circuit(FissionCoolant coolant) {
+        return circuits.computeIfAbsent(coolant, kind -> new CoolantTanks(kind, owner));
     }
 
     FluidTank tank(FissionCoolant coolant, boolean output) {
         return circuit(coolant).tank(output);
     }
 
-    @Nullable Tanks connectedTanks(FissionCoolant coolant) {
+    @Nullable CoolantTanks connectedTanks(FissionCoolant coolant) {
         return connected.contains(coolant) ? circuits.get(coolant) : null;
     }
 
@@ -58,7 +52,7 @@ final class SaltCooling {
     }
 
     void clearMaterial() {
-        circuits.values().forEach(Tanks::clear);
+        circuits.values().forEach(CoolantTanks::clear);
         credit.clear();
         owner.setChanged();
     }
@@ -83,39 +77,37 @@ final class SaltCooling {
         credit.keySet().retainAll(layout.sinks());
     }
 
-    Map<BlockPos, FissionCoolant> available(ServerLevel level, SolidFissionLayout layout,
-                                            BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
+    Map<BlockPos, FissionCoolantRecipe> available(ServerLevel level, SolidFissionLayout layout,
+                                                 BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
         var eligible = new HashMap<FissionCoolant, List<BlockPos>>();
+        var recipes = new HashMap<BlockPos, FissionCoolantRecipe>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof SaltHeater heater) {
-                FissionCoolant coolant = heater.coolant();
-                if (coolant.cooling() > 0 && heater.tanks().transferable() > 0) {
-                    eligible.computeIfAbsent(coolant, ignored -> new ArrayList<>()).add(pos);
+                var recipe = heater.tanks().ready(null);
+                if (recipe != null) {
+                    eligible.computeIfAbsent(heater.coolant(), ignored -> new ArrayList<>()).add(pos);
+                    recipes.put(pos, recipe);
                 }
             }
         }
-        return NCSaltFission.placementRules().active(eligible, neighbors);
+        recipes.keySet().retainAll(NCSaltFission.placementRules().active(eligible, neighbors).keySet());
+        return recipes;
     }
 
-    boolean heat(ServerLevel level, BlockPos pos, FissionCoolant coolant, double efficiency) {
-        if (efficiency <= 0 || !(level.getBlockEntity(pos) instanceof SaltHeater heater) || !coolant.equals(heater.coolant())) {
+    boolean heat(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {
+        if (efficiency <= 0 || !(level.getBlockEntity(pos) instanceof SaltHeater heater)) {
             return false;
         }
-        Tanks tanks = heater.tanks();
-        int transferable = tanks.transferable();
-        if (transferable <= 0) {
+        CoolantTanks tanks = heater.tanks();
+        if (tanks.ready(null) != recipe) {
             return false;
         }
-        Fraction previous = credit.get(pos);
-        int inputAmount = coolant.inputIngredient().amount();
-        double progress = (previous != null && coolant.equals(previous.coolant()) ? previous.amount() : 0)
-                + efficiency * coolant.cooling() / (HeatExchangerConfig.nakHeatPerMb() * inputAmount);
-        int amount = Math.min(transferable, (int) progress);
+        FissionCoolant coolant = heater.coolant();
+        int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
+        double progress = progress(pos, coolant)
+                + efficiency * recipe.cooling() / (HeatExchangerConfig.nakHeatPerMb() * inputAmount);
         credit.put(pos, new Fraction(coolant, progress - Math.floor(progress)));
-        if (amount > 0) {
-            tanks.hot.fill(new FluidStack(coolant.hot(), coolant.outputAmount() * amount), EXECUTE);
-            tanks.cold.drain(inputAmount * amount, EXECUTE);
-        }
+        tanks.process(null, recipe, (int) progress, level.random);
         owner.setChanged();
         return true;
     }
@@ -174,65 +166,6 @@ final class SaltCooling {
             if (amount > 0 && amount < 1 && coolant != null) {
                 credit.put(BlockPos.of(state.getLong("pos")), new Fraction(coolant, amount));
             }
-        }
-    }
-
-    static final class Tanks {
-        private final FissionCoolant coolant;
-        private final FluidTank cold;
-        private final FluidTank hot;
-        private long minimum = BASE_VOLUME;
-
-        Tanks(FissionCoolant coolant, BlockEntity owner) {
-            this.coolant = coolant;
-            cold = makeTank(owner, coolant.inputIngredient().amount(), coolant.inputIngredient()::accepts);
-            hot = makeTank(owner, coolant.outputAmount(), stack -> !stack.isEmpty() && stack.getFluid() == coolant.hot());
-        }
-
-        private static FluidTank makeTank(BlockEntity owner, int batch, Predicate<FluidStack> accepts) {
-            return new FluidTank(Math.max(BASE_VOLUME, batch), accepts) {
-                @Override
-                protected void onContentsChanged() {
-                    owner.setChanged();
-                }
-            };
-        }
-
-        FluidTank tank(boolean output) {
-            return output ? hot : cold;
-        }
-
-        void resize(long capacity) {
-            minimum = Math.max(BASE_VOLUME, capacity);
-            SaltFuelBank.resize(cold, Math.max(minimum, coolant.inputIngredient().amount()));
-            SaltFuelBank.resize(hot, Math.max(minimum, coolant.outputAmount()));
-        }
-
-        int transferable() {
-            if (!cold.isFluidValid(cold.getFluid()) || coolant.hot() == Fluids.EMPTY
-                    || (!hot.isEmpty() && !hot.isFluidValid(hot.getFluid()))) {
-                return 0;
-            }
-            return Math.min(cold.getFluidAmount() / coolant.inputIngredient().amount(),
-                    (hot.getCapacity() - hot.getFluidAmount()) / coolant.outputAmount());
-        }
-
-        void clear() {
-            cold.drain(cold.getFluidAmount(), EXECUTE);
-            hot.drain(hot.getFluidAmount(), EXECUTE);
-        }
-
-        CompoundTag save() {
-            var saved = new CompoundTag();
-            saved.put("input", cold.writeToNBT(new CompoundTag()));
-            saved.put("output", hot.writeToNBT(new CompoundTag()));
-            return saved;
-        }
-
-        void load(CompoundTag saved) {
-            cold.readFromNBT(saved.getCompound("input"));
-            hot.readFromNBT(saved.getCompound("output"));
-            resize(minimum);
         }
     }
 }

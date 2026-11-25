@@ -30,8 +30,8 @@ import java.util.Objects;
 public final class FissionPortBlockEntity extends BlockEntity {
     private final @Nullable IrradiatorItems irradiationItems;
     private final @Nullable FissionFuelItems localFuelItems;
-    private final @Nullable PebbleCooling.Tanks localPebbleGas;
-    private final @Nullable SaltCooling.Tanks localSaltCoolant;
+    private final @Nullable CoolantTanks localPebbleGas;
+    private final @Nullable CoolantTanks localSaltCoolant;
     private final @Nullable SaltFuelBank.Tanks localVesselFuel;
     private @Nullable VentHandler detachedHandler;
     private LazyOptional<IFluidHandler> detachedFluid = LazyOptional.empty();
@@ -50,9 +50,9 @@ public final class FissionPortBlockEntity extends BlockEntity {
             default -> NCFission.PORT_ENTITY.get();
         }, pos, state);
         localPebbleGas = FissionPartBlock.role(state) == Role.COOLER_PORT
-                ? new PebbleCooling.Tanks(((FissionWallBlock) state.getBlock()).coolant(), this, this::gasFilter) : null;
+                ? new CoolantTanks(((FissionWallBlock) state.getBlock()).coolant(), this, this::gasFilter) : null;
         localSaltCoolant = FissionPartBlock.role(state) == Role.HEATER_PORT
-                ? new SaltCooling.Tanks(((FissionWallBlock) state.getBlock()).saltCoolant(), this) : null;
+                ? new CoolantTanks(((FissionWallBlock) state.getBlock()).saltCoolant(), this) : null;
         localVesselFuel = FissionPartBlock.role(state) == Role.VESSEL_PORT
                 ? new SaltFuelBank.Tanks(this, this::fuelFilter) : null;
         localFuelItems = switch (FissionPartBlock.role(state)) {
@@ -195,11 +195,11 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return controller == null ? localFuelItems() : controller.fuelItems(localFuelItems().filter());
     }
 
-    PebbleCooling.Tanks localPebbleGas() {
+    CoolantTanks localPebbleGas() {
         return Objects.requireNonNull(localPebbleGas);
     }
 
-    PebbleCooling.Tanks pebbleGas() {
+    CoolantTanks pebbleGas() {
         Binding current = binding;
         return current == null || !connected(current) ? localPebbleGas() : current.controller.pebbleCircuit(current.port.gas());
     }
@@ -216,7 +216,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     boolean selectGasFilter(FluidStack sample) {
         var channel = gasChannel();
         if (channel == null || assembled() || !localPebbleGas().cold.isEmpty()
-                || (!sample.isEmpty() && !channel.gas().inputIngredient().accepts(sample))) {
+                || (!sample.isEmpty() && !localPebbleGas().accepts(sample))) {
             return false;
         }
         var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());
@@ -231,7 +231,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return true;
     }
 
-    SaltCooling.Tanks localSaltCoolant() {
+    CoolantTanks localSaltCoolant() {
         return Objects.requireNonNull(localSaltCoolant);
     }
 
