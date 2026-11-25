@@ -7,6 +7,7 @@
         "IntegratedServerHandshake",
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
+        "compat.CyclicFluidPersistence",
         "compat.ForegoingFluidPlacement",
         "compat.MekanismFluidPlacement"
     ]

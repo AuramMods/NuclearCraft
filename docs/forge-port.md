@@ -462,6 +462,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Tom's Simple Storage | 1.7.1 | Item routing through Inventory Connectors, Basic Inventory Hoppers, and Inventory Proxies |
 | Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
 | Satiscraftory | 1.1.3 | Conveyor transfer on sided processors and battery power for the Smelter |
+| Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -503,6 +504,8 @@ Two automated chains sent depleted fuel from solid reactors into Fuel Reprocesso
 With Auram’s Thermal Dynamics, Thermal Foundation, and CoFH Core JARs, a Thermal Energy Duct transferred power from a Decay Generator to a Manufactory that processed coal from an empty FE buffer. A Thermal Fluid Duct carried water from a Compact Water Source to an Infuser that produced one white concrete.
 
 On a headless server with Auram’s Immersive Engineering JAR, a Compact Water Source supplied an Infuser through an Immersive Engineering Fluid Pipe. The Infuser used 1,000 mB of that water and 1,500 FE to make one white concrete.
+
+Immersive Engineering 10.2.0-183 Extracting Conveyors fed one coal into a Manufactory and collected its coal dust. An LV Capacitor supplied exactly 4,000 FE. The input belt held the coal while the machine's west face was closed. The output belt held the dust while its barrel was full, then delivered exactly one dust after a confirmed chunk unload and dedicated restart. A second LV Capacitor accepted exactly 4,000 FE from a Voltaic Pile after its input face opened. Its charge also survived restart. [Immersive Engineering](https://github.com/BluSunrize/ImmersiveEngineering)
 
 Two Decay Generators sent power through an Ender IO Energy Conduit and a Mekanism Basic Universal Cable. Each was surrounded by five uranium blocks. Both Manufactory machines started with an empty energy buffer, consumed one coal, and produced one coal dust.
 
@@ -651,6 +654,18 @@ An Entangled 1.3.20 block relayed an ice block from a hopper and 4,000 FE from a
 Satiscraftory 1.1.3 Mark 1 belts carried a copper ingot into a Manufactory and took its copper dust to a Satiscraftory Smelter. A Voltaic Pile powered the Smelter with 1,000 FE. With the output barrel full, the belt held the copper dust and the Smelter kept its full charge. The dust and charge survived a confirmed chunk unload and a dedicated restart. Freeing one slot let the Smelter spend the charge and deliver exactly one copper ingot. A second batch raised the destination count to two.
 
 The isolated client with all 541 installed Auram mod JARs loaded JEI and repeated the Tom's Simple Storage and Entangled routes. The saved region showed one Mekanism coal dust under the pack's unification rules, the charcoal still in the source, and exactly 1,000 mB of water in the Ender IO tank. Both NuclearCraft machines and the battery saved empty. The client used master volume zero and OpenAL No Output. The observer recorded zero foreground samples, focus activations, and visible window samples through exit.
+
+### Cyclic
+
+On dedicated Forge 47.4.10 with Cyclic 1.13.6 and FLib 0.0.15 from Auram, an Energy Cable delivered exactly 1,500 FE from a Voltaic Pile to a NuclearCraft Infuser. The Item and Fluid Cables held one white concrete powder and 1,000 mB of water until the corresponding faces opened. The outlet cables buffered one finished concrete and 1,000 mB of Melter water while their destinations were full. Both buffers survived a dedicated restart. Each cable delivered its entire batch when its destination opened. [Cyclic 1.13.6](https://www.curseforge.com/minecraft/mc-mods/cyclic/files/6373460)
+
+Cyclic's input cables installed against an open reactor shell kept 1,000 mB of water and one LECf-251 oxide in their buffers. Sealing and powering the shell let them feed the outward ports. The outlet cables collected 4,000 mB of high-pressure steam and one depleted LECf-251 oxide. The steam tank occupied a separate chunk from the reactor and its outlet cable.
+
+Cyclic 1.13.6 handles client synchronization in its fluid-change callback. That callback leaves the owning chunk marked clean, so fluid can disappear when the chunk unloads. The port marks the owning block entity changed on the server as part of that callback. This also covers Cyclic tanks and cable buffers filled by other mods.
+
+In a Cyclic-only test, a live tank and a full-destination cable buffer each held 1,000 mB after a cross-chunk transfer, while their saved regions and a server restart showed zero. A control tank kept its water after an unrelated block placement made its chunk dirty. The patched build kept both volumes through a server restart. All three NuclearCraft circuits also kept their exact outputs after chunk unload and reload, including all 4,000 mB of steam in the separate Cyclic tank. All 225 local GameTests passed, and the packaged JAR processed water electrolysis on clean Forge.
+
+The isolated Auram client loaded all 541 installed mod JARs, started JEI, and repeated the three Cyclic circuits with the patched JAR. After shutdown, the region files held one white concrete, 1,000 mB of water, 4,000 mB of steam, and one depleted LECf-251 oxide. The source tanks, machine buffers, and cable buffers were empty. The client ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible window samples.
 
 ### Tools and Armor
 
