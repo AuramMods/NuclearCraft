@@ -24,7 +24,7 @@
         "count": 1
     },
     "ticks": 600,
-    "energy_per_tick": 10,
+    "power_multiplier": 0.5,
     "conditions": [
         {
             "type": "forge:item_exists",

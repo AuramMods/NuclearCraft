@@ -169,6 +169,15 @@ public final class MaterialGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void craftsDimensionalBlendFromObsidianAndEndStoneDust(GameTestHelper helper) {
+        var grid = craftingGrid(3, 3);
+        var obsidian = item("obsidian_dust");
+        fillGrid(grid, obsidian, obsidian, item("end_stone_dust"), obsidian, obsidian);
+        assertCrafts(helper, grid, item("dimensional_blend"), 2);
+        helper.succeed();
+    }
+
     private static void fillGrid(TransientCraftingContainer grid, Item... inputs) {
         grid.clearContent();
         for (int slot = 0; slot < inputs.length; slot++) {

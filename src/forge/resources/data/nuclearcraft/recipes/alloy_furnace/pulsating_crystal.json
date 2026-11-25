@@ -1,0 +1,48 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:diamond"
+                },
+                {
+                    "tag": "forge:gems/diamond"
+                },
+                {
+                    "tag": "c:gems/diamond"
+                },
+                {
+                    "tag": "forge:dusts/diamond"
+                },
+                {
+                    "tag": "c:dusts/diamond"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/pulsating_alloy"
+                },
+                {
+                    "tag": "c:nuggets/pulsating_alloy"
+                }
+            ],
+            "count": 8
+        }
+    ],
+    "result": {
+        "item": "enderio:pulsating_crystal",
+        "count": 1
+    },
+    "ticks": 400,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:pulsating_crystal"
+        }
+    ]
+}

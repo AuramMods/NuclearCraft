@@ -2,9 +2,20 @@
     "type": "nuclearcraft:alloy_furnace",
     "ingredients": [
         {
-            "ingredient": {
-                "tag": "forge:silicon"
-            },
+            "ingredient": [
+                {
+                    "tag": "forge:silicon"
+                },
+                {
+                    "tag": "c:silicon"
+                },
+                {
+                    "tag": "forge:ingots/silicon"
+                },
+                {
+                    "tag": "c:ingots/silicon"
+                }
+            ],
             "count": 1
         },
         {
@@ -19,7 +30,7 @@
         "count": 1
     },
     "ticks": 400,
-    "energy_per_tick": 20,
+    "power_multiplier": 1,
     "conditions": [
         {
             "type": "forge:item_exists",

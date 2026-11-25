@@ -1,0 +1,40 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/gold"
+                },
+                {
+                    "tag": "c:ingots/gold"
+                },
+                {
+                    "tag": "forge:dusts/gold"
+                },
+                {
+                    "tag": "c:dusts/gold"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "tag": "forge:dusts/energetic"
+            },
+            "count": 2
+        }
+    ],
+    "result": {
+        "item": "enderio:energetic_alloy_ingot",
+        "count": 1
+    },
+    "ticks": 400,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:energetic_alloy_ingot"
+        }
+    ]
+}

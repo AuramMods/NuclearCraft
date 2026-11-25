@@ -157,6 +157,23 @@ On packaged Forge 47.4.10 with Ender IO 8.2.22-beta, AE2 15.4.10, Immersive Engi
 
 In the isolated 540-mod Auram copy, JEI listed all 38 available Infuser recipes and all nine available Manufactory recipes. Thermal's populated enderium ingot tag kept the two enderium parts on their stock crafting recipes. The 47 machine batches produced their expected items and counts at their stock FE costs. The client saved and exited with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
 
+### Ender IO alloys and crystals
+
+The Alloy Furnace restores the legacy Energetic Alloy, End Steel, Pulsating Crystal, and Vibrant Crystal routes when Ender IO supplies their outputs. Vibrant Alloy accepts Ender IO's current Energetic Alloy tag as well as the Forge equivalents. Pulsating and Vibrant Alloy accept Ender Pearl Dust in place of the pearl. The Redstone Alloy recipe accepts the shared silicon item and ingot tags. The ten batches available with Ender IO 8.2.22-beta use the 2o.9.7 power multipliers with the configured Alloy Furnace base rate.
+
+| Ingredients | Product | Stock duration | Stock batch charge |
+| --- | --- | --- | --- |
+| One gold ingot or dust and two Energetic Blend | One Energetic Alloy ingot | 400 ticks | 6,000 FE |
+| One Dark Steel ingot and two Dimensional Blend | One End Steel ingot | 800 ticks | 16,000 FE |
+| One diamond gem or dust and eight Pulsating Alloy nuggets | One Pulsating Crystal | 400 ticks | 6,000 FE |
+| One emerald gem or dust and eight Vibrant Alloy nuggets | One Vibrant Crystal | 400 ticks | 6,000 FE |
+
+Four Obsidian Dust and one End Stone Dust craft two Dimensional Blend. The stock Manufactory recipes supply both dusts. The blend also feeds the Enricher's Mysterious Soul recipe.
+
+All 280 local GameTests passed, including the Dimensional Blend craft. The packaged JAR loaded the blend recipe on clean Forge 47.4.10 and enabled the ten Alloy Furnace recipes with Ender IO installed. Each recipe consumed its exact ingredients and stock charge. Item Conduits supplied Energetic Alloy ingredients, and Mekanism 10.4.16.80 Logistical Transporters supplied the End Steel ingredients. Full output slots held both batches and their charge through chunk eviction and restart. Connecting the outlets let each network deliver the 64 held items and the newly made ingot, for exactly 65 of each alloy.
+
+The isolated 540-mod Auram copy listed all ten recipes in JEI. Each finished in the world with the expected output, empty inputs, and zero remaining charge from its exact starting budget. The client used master volume zero and OpenAL No Output, then exited with zero focus activations, foreground samples, or visible window samples.
+
 ### Manufactory wood processing
 
 Copy the legacy `manufactory_wood` array to `world/serverconfig/nuclearcraft-processors.toml`. The first value controls the output from one log and the second controls sticks from one plank. The defaults are `[6, 4]`. Both values accept 1 through 64, subject to the output item's stack limit. Use `defaultconfigs` to seed new worlds and restart after changing a world's setting. The stock log and stick recipes take 200 and 100 ticks respectively at 10 FE/t before processor modifiers.

@@ -1,0 +1,25 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:dusts/obsidian"
+        },
+        {
+            "tag": "forge:dusts/obsidian"
+        },
+        {
+            "tag": "forge:dusts/obsidian"
+        },
+        {
+            "tag": "forge:dusts/obsidian"
+        },
+        {
+            "tag": "forge:dusts/end_stone"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:dimensional_blend",
+        "count": 2
+    }
+}

@@ -7,15 +7,29 @@
                     "tag": "forge:ingots/energetic_alloy"
                 },
                 {
+                    "tag": "c:ingots/energetic_alloy"
+                },
+                {
                     "tag": "forge:dusts/energetic_alloy"
+                },
+                {
+                    "tag": "c:dusts/energetic_alloy"
                 }
             ],
             "count": 1
         },
         {
-            "ingredient": {
-                "item": "minecraft:ender_pearl"
-            },
+            "ingredient": [
+                {
+                    "item": "minecraft:ender_pearl"
+                },
+                {
+                    "tag": "forge:dusts/ender_pearl"
+                },
+                {
+                    "tag": "c:dusts/ender_pearl"
+                }
+            ],
             "count": 1
         }
     ],
@@ -24,7 +38,7 @@
         "count": 1
     },
     "ticks": 600,
-    "energy_per_tick": 40,
+    "power_multiplier": 2,
     "conditions": [
         {
             "type": "forge:item_exists",
