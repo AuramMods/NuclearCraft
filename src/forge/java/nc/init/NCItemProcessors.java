@@ -26,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 public final class NCItemProcessors {
@@ -138,7 +139,7 @@ public final class NCItemProcessors {
     }
 
     public static boolean defaultRecipes(Rate rate) {
-        return value(DEFAULT_RECIPES_GLOBAL) && value(DEFAULT_RECIPES).get(rate.ordinal());
+        return rate.enabled() && value(DEFAULT_RECIPES_GLOBAL) && value(DEFAULT_RECIPES).get(rate.ordinal());
     }
 
     public static double speedUpgrade(int count) {
@@ -193,7 +194,9 @@ public final class NCItemProcessors {
 
     static void displayItems(CreativeModeTab.Output output) {
         for (Machine machine : Machine.values()) {
-            output.accept(machine.item.get());
+            if (machine.rate().enabled()) {
+                output.accept(machine.item.get());
+            }
         }
         NCScriptedProcessors.displayItems(output);
         output.accept(SPEED_UPGRADE.get());
@@ -237,6 +240,15 @@ public final class NCItemProcessors {
             this.stockTime = stockTime;
             this.stockPower = stockPower;
             this.particles = List.of(particles);
+        }
+
+        public String id() {
+            return name().toLowerCase(Locale.ROOT);
+        }
+
+        @Override
+        public boolean enabled() {
+            return NCProcessorAvailability.enabled(this);
         }
 
         public List<String> particles() {
@@ -332,7 +344,7 @@ public final class NCItemProcessors {
             block = NCRegistries.BLOCKS.register(id, () -> new ProcessorBlock<>(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                             .lightLevel(state -> state.getValue(ProcessorBlock.LIT) ? 7 : 0),
-                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory, rate.particles()));
+                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory, rate));
             item = NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
                     (pos, state) -> new ItemProcessorBlockEntity(pos, state, this), block.get()).build(null));
@@ -345,6 +357,11 @@ public final class NCItemProcessors {
 
         public String id() {
             return id;
+        }
+
+        @Override
+        public boolean jeiEnabled() {
+            return rate.enabled();
         }
 
         public Rate rate() {

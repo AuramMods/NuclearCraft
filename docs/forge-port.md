@@ -133,6 +133,20 @@ A clean multiplayer client loaded 1,300 mB water and 500 FE from a Melter saved 
 
 The isolated Auram copy with all 539 installed mod JARs loaded and rendered the Chemical Reactor, Melter, Radiation Scrubber, and Infuser screens. The Chemical Reactor switched to shared inputs and cleared one tank while preserving 300 mB in the other. The Melter retained 1,234 mB through a face and overflow change, and the Scrubber and Infuser retained their contents while changing their input routing and disposal settings. The client ran with master volume zero and OpenAL’s No Output device. The native observer recorded zero focus activations, foreground samples, or visible window samples.
 
+### Stock processor availability
+
+Copy the 21 legacy `register_processor` booleans into `config/nuclearcraft-processor-availability.toml`. Position 0 is the Nuclear Furnace. The other 20 positions follow `processor_time`, from the Manufactory through the Electric Furnace. All switches default to `true`. Restart after editing the file and distribute the same common config to clients for matching creative and JEI listings.
+
+A disabled processor disappears from the machine tab and JEI. Its built-in crafting recipe is unavailable, and recipes for its processing type are omitted, including datapack and KubeJS additions. The Nuclear Furnace and Electric Furnace switches leave ordinary smelting recipes available to vanilla furnaces. Newly generated vaults use vanilla furnaces when the Nuclear Furnace is disabled. The `default_processor_recipes` switches still control just the shipped recipes for enabled machines. Datapacks can use the Forge condition `nuclearcraft:processor_enabled` with the unqualified block name in `processor`.
+
+Blocks and items keep their registry IDs. Players can recover items and stored products from existing blocks through their menus and configured outlets. Disabled machines reject normal placement and new processing inputs, preserve their charge and batch progress, and resume when re-enabled. Pack recipes that craft alternative machines and scripted processors keep their own availability settings.
+
+All 210 local GameTests passed. The packaged JAR exposed 21, 14, zero, then 21 stock crafting recipes across four clean Forge 47.4.18 starts, preserving all registry entries. A reload kept disabled recipe types absent, including a custom datapack recipe. Re-enabled processors finished the saved Manufactory, Melter, and Electrolyzer batches, and both furnaces resumed smelting. A newly generated vault contained 30 vanilla furnaces when Nuclear Furnaces were disabled.
+
+With Auram's Ender IO 8.2.22-beta and Mekanism 10.4.16.80, each route recovered 15,500 mB of stored water from a disabled Melter. Neither Melter took additional ice or FE while disabled. After re-enabling, each route delivered 16,500 mB total, with the extra 2,000 FE in the machine and the spare ice still in its barrel after chunk unload and reload.
+
+The 539-mod Auram client listed exactly the 14 enabled processors in the machine tab and JEI item browser. The dedicated JEI categories and the Nuclear Furnace smelting catalyst followed the switches, and the machine tab used the Machine Interface icon when the Manufactory was disabled. A KubeJS recipe loaded for the enabled Separator and stayed absent for the disabled Manufactory. The client ran muted with zero focus activations, foreground samples, or visible window samples.
+
 ### Stock processor effects and redstone control
 
 The 20 stock powered processors display their legacy effects on the front face while a batch advances. The `processor_particles` setting in `world/serverconfig/nuclearcraft-processors.toml` applies to stock and scripted processors.

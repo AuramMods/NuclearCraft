@@ -4,6 +4,7 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.logging.LogUtils;
 import nc.init.NCItemProcessors;
+import nc.init.NCItemProcessors.Rate;
 import net.minecraft.commands.arguments.ParticleArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.DustParticleOptions;
@@ -40,7 +41,7 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -72,6 +73,7 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
     private final BlockEntityTicker<E> ticker;
     private final @Nullable Function<E, ItemStackHandler> inventory;
     private final List<String> particleNames;
+    private final BooleanSupplier enabled;
     private List<ParticleOptions> particles;
 
     public ProcessorBlock(Properties properties, Supplier<BlockEntityType<E>> entityType,
@@ -81,18 +83,31 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
 
     public ProcessorBlock(Properties properties, Supplier<BlockEntityType<E>> entityType,
                           BlockEntityTicker<E> ticker, @Nullable Function<E, ItemStackHandler> inventory,
+                          Rate rate) {
+        this(properties, entityType, ticker, inventory, rate.particles(), rate::enabled);
+    }
+
+    public ProcessorBlock(Properties properties, Supplier<BlockEntityType<E>> entityType,
+                          BlockEntityTicker<E> ticker, @Nullable Function<E, ItemStackHandler> inventory,
                           List<String> particleNames) {
+        this(properties, entityType, ticker, inventory, particleNames, () -> true);
+    }
+
+    private ProcessorBlock(Properties properties, Supplier<BlockEntityType<E>> entityType,
+                           BlockEntityTicker<E> ticker, @Nullable Function<E, ItemStackHandler> inventory,
+                           List<String> particleNames, BooleanSupplier enabled) {
         super(properties);
         this.entityType = entityType;
         this.ticker = ticker;
         this.inventory = inventory;
         this.particleNames = List.copyOf(particleNames);
+        this.enabled = enabled;
         registerDefaultState(stateDefinition.any().setValue(LIT, false));
     }
 
     @Override
     public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        if (!state.getValue(LIT) || particleNames.isEmpty() || !NCItemProcessors.processorParticles()) {
+        if (!state.getValue(LIT) || particleNames.isEmpty() || !enabled.getAsBoolean() || !NCItemProcessors.processorParticles()) {
             return;
         }
         if (particles == null) {
@@ -132,8 +147,8 @@ public class ProcessorBlock<E extends BlockEntity> extends BaseEntityBlock {
     }
 
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return enabled.getAsBoolean() ? defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()) : null;
     }
 
     @Override

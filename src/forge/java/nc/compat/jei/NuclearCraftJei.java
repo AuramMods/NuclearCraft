@@ -22,6 +22,7 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IRecipeTransferRegistration;
+import mezz.jei.api.runtime.IJeiRuntime;
 import nc.NuclearCraft;
 import nc.client.FluidProcessorScreen;
 import nc.client.FissionIrradiatorScreen;
@@ -41,6 +42,7 @@ import nc.init.NCMachines;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
+import nc.init.NCProcessorAvailability;
 import nc.init.NCPebbleFission;
 import nc.init.NCRegistries;
 import nc.init.NCRadiation;
@@ -49,6 +51,7 @@ import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.processor.NuclearFurnaceMenu;
 import nc.processor.ProcessorLayout;
 import nc.processor.ProcessorProfile;
+import nc.processor.FluidProcessorBlockEntity;
 import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
 import nc.recipe.CondenserRecipe;
@@ -102,8 +105,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static mezz.jei.api.recipe.RecipeIngredientRole.INPUT;
 import static mezz.jei.api.recipe.RecipeIngredientRole.OUTPUT;
@@ -126,6 +131,14 @@ public final class NuclearCraftJei implements IModPlugin {
             RecipeType.create(NuclearCraft.MOD_ID, "supercooler", SupercoolerRecipe.class);
     private static final RecipeType<SaltMixerRecipe> SALT_MIXER =
             RecipeType.create(NuclearCraft.MOD_ID, "salt_mixer", SaltMixerRecipe.class);
+    private static final Map<RecipeType<?>, Rate> STOCK_FLUID_CATEGORIES = Map.of(
+            MELTER, Rate.MELTER,
+            ELECTROLYZER, Rate.ELECTROLYZER,
+            CHEMICAL_REACTOR, Rate.CHEMICAL_REACTOR,
+            ENRICHER, Rate.ENRICHER,
+            CENTRIFUGE, Rate.CENTRIFUGE,
+            SUPERCOOLER, Rate.SUPERCOOLER,
+            SALT_MIXER, Rate.SALT_MIXER);
     private static final RecipeType<FissionIrradiatorRecipe> IRRADIATION =
             RecipeType.create(NuclearCraft.MOD_ID, "fission_irradiator", FissionIrradiatorRecipe.class);
     private static final RecipeType<SolidFissionRecipe> FISSION =
@@ -198,7 +211,7 @@ public final class NuclearCraftJei implements IModPlugin {
                         default -> Component.translatable("gui.nuclearcraft.jei.electrode", decimal(100 * material.efficiency()));
                     }, kind == Kind.SIEVE ? Component.translatable("gui.nuclearcraft.jei.sieve_assembly") : catalyst.getName()));
         }
-        registration.addRecipeCategories(
+        Stream.of(
                 new Category<>(DECAY, NCGenerators.DECAY_GENERATOR.get(), gui, (layout, recipe) -> {
                     layout.addSlot(INPUT, 20, 12).setStandardSlotBackground().addItemStacks(
                             Arrays.stream(recipe.input().getItems()).filter(recipe::accepts).toList());
@@ -314,7 +327,14 @@ public final class NuclearCraftJei implements IModPlugin {
                             .map(fluid -> new FluidStack(fluid, recipe.inputAmount())).filter(recipe::accepts).toList();
                     fluidSlot(layout, INPUT, 20, fluids);
                     fluidSlot(layout, OUTPUT, 104, List.of(recipe.output()));
-                }, recipe -> Component.translatable("gui.nuclearcraft.jei.turbine", recipe.powerPerMb(), recipe.expansion())));
+                }, recipe -> Component.translatable("gui.nuclearcraft.jei.turbine", recipe.powerPerMb(), recipe.expansion())))
+                .filter(category -> stockCategoryEnabled(category.getRecipeType()))
+                .forEach(registration::addRecipeCategories);
+    }
+
+    private static boolean stockCategoryEnabled(RecipeType<?> type) {
+        Rate rate = STOCK_FLUID_CATEGORIES.get(type);
+        return rate == null || rate.enabled();
     }
 
     @Override
@@ -365,14 +385,14 @@ public final class NuclearCraftJei implements IModPlugin {
         recipes.getAllRecipesFor(NCRegistries.MELTING.get()).stream().filter(recipe -> !recipe.input().isEmpty())
                 .forEach(melterRecipes::add);
         melterRecipes.addAll(MelterMaterialRecipes.fromSyncedTags(recipes));
-        registration.addRecipes(MELTER, melterRecipes);
-        registration.addRecipes(ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
-        registration.addRecipes(CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
+        addStockRecipes(registration, MELTER, melterRecipes);
+        addStockRecipes(registration, ELECTROLYZER, recipes.getAllRecipesFor(NCRegistries.ELECTROLYSIS.get()));
+        addStockRecipes(registration, CHEMICAL_REACTOR, recipes.getAllRecipesFor(NCRegistries.CHEMICAL_REACTIONS.get()));
         registration.addRecipes(SCRUBBER, recipes.getAllRecipesFor(NCRadiation.SCRUBBER_RECIPES.get()));
-        registration.addRecipes(ENRICHER, recipes.getAllRecipesFor(NCRegistries.ENRICHING.get()));
-        registration.addRecipes(SUPERCOOLER, recipes.getAllRecipesFor(NCRegistries.SUPERCOOLING.get()));
-        registration.addRecipes(CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
-        registration.addRecipes(SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
+        addStockRecipes(registration, ENRICHER, recipes.getAllRecipesFor(NCRegistries.ENRICHING.get()));
+        addStockRecipes(registration, SUPERCOOLER, recipes.getAllRecipesFor(NCRegistries.SUPERCOOLING.get()));
+        addStockRecipes(registration, CENTRIFUGE, recipes.getAllRecipesFor(NCRegistries.CENTRIFUGING.get()));
+        addStockRecipes(registration, SALT_MIXER, recipes.getAllRecipesFor(NCRegistries.MIXING.get()));
         registration.addRecipes(IRRADIATION, recipes.getAllRecipesFor(NCFission.IRRADIATION.get()));
         registration.addRecipes(FISSION, recipes.getAllRecipesFor(NCFission.FUEL_TYPE.get()).stream()
                 .filter(recipe -> !ForgeHooks.hasNoElements(recipe.fuel())).toList());
@@ -387,6 +407,42 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
         registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
+    }
+
+    private static <R> void addStockRecipes(IRecipeRegistration registration, RecipeType<R> type, List<R> recipes) {
+        if (stockCategoryEnabled(type)) {
+            registration.addRecipes(type, recipes);
+        }
+    }
+
+    private static void addStockCatalyst(IRecipeCatalystRegistration registration, Block block, RecipeType<?> type) {
+        if (stockCategoryEnabled(type)) {
+            registration.addRecipeCatalyst(block, type);
+        }
+    }
+
+    @Override
+    public void onRuntimeAvailable(IJeiRuntime runtime) {
+        var disabled = new ArrayList<ItemStack>();
+        if (!NCProcessorAvailability.nuclearFurnaceEnabled()) {
+            disabled.add(new ItemStack(NCRegistries.NUCLEAR_FURNACE.get()));
+        }
+        if (!Rate.MELTER.enabled()) {
+            disabled.add(new ItemStack(NCRegistries.MELTER.get()));
+        }
+        for (Machine machine : Machine.values()) {
+            if (!machine.rate().enabled()) {
+                disabled.add(new ItemStack(machine.block()));
+            }
+        }
+        for (var machine : FluidProcessorBlockEntity.Machine.values()) {
+            if (!machine.rate().enabled()) {
+                disabled.add(new ItemStack(machine.block()));
+            }
+        }
+        if (!disabled.isEmpty()) {
+            runtime.getIngredientManager().removeIngredientsAtRuntime(VanillaTypes.ITEM_STACK, disabled);
+        }
     }
 
     @Override
@@ -407,15 +463,17 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipeCatalyst(NCMachines.block(Part.ELECTROLYZER), LARGE_ELECTROLYZER, ELECTROLYTE,
                 materialType(Kind.CATHODE), materialType(Kind.ANODE), materialType(Kind.DIAPHRAGM));
         for (Kind kind : Kind.values()) registration.addRecipeCatalyst(materialBlock(kind), materialType(kind));
-        registration.addRecipeCatalyst(NCRegistries.MELTER.get(), MELTER);
-        registration.addRecipeCatalyst(NCRegistries.NUCLEAR_FURNACE.get(), RecipeTypes.SMELTING);
-        registration.addRecipeCatalyst(NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
-        registration.addRecipeCatalyst(NCRegistries.SALT_MIXER.get(), SALT_MIXER);
-        registration.addRecipeCatalyst(NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
+        addStockCatalyst(registration, NCRegistries.MELTER.get(), MELTER);
+        if (NCProcessorAvailability.nuclearFurnaceEnabled()) {
+            registration.addRecipeCatalyst(NCRegistries.NUCLEAR_FURNACE.get(), RecipeTypes.SMELTING);
+        }
+        addStockCatalyst(registration, NCRegistries.ELECTROLYZER.get(), ELECTROLYZER);
+        addStockCatalyst(registration, NCRegistries.SALT_MIXER.get(), SALT_MIXER);
+        addStockCatalyst(registration, NCRegistries.CHEMICAL_REACTOR.get(), CHEMICAL_REACTOR);
         registration.addRecipeCatalyst(NCRadiation.SCRUBBER.get(), SCRUBBER);
-        registration.addRecipeCatalyst(NCRegistries.ENRICHER.get(), ENRICHER);
-        registration.addRecipeCatalyst(NCRegistries.SUPERCOOLER.get(), SUPERCOOLER);
-        registration.addRecipeCatalyst(NCRegistries.CENTRIFUGE.get(), CENTRIFUGE);
+        addStockCatalyst(registration, NCRegistries.ENRICHER.get(), ENRICHER);
+        addStockCatalyst(registration, NCRegistries.SUPERCOOLER.get(), SUPERCOOLER);
+        addStockCatalyst(registration, NCRegistries.CENTRIFUGE.get(), CENTRIFUGE);
         registration.addRecipeCatalyst(NCFission.IRRADIATOR.get(), IRRADIATION);
         registration.addRecipeCatalyst(NCFission.IRRADIATOR_PORT.get(), IRRADIATION);
         registration.addRecipeCatalyst(NCFission.CONTROLLER.get(), FISSION);
@@ -446,8 +504,10 @@ public final class NuclearCraftJei implements IModPlugin {
 
     @Override
     public void registerRecipeTransferHandlers(IRecipeTransferRegistration registration) {
-        registration.addRecipeTransferHandler(NuclearFurnaceMenu.class, NCRegistries.NUCLEAR_FURNACE_MENU.get(),
-                RecipeTypes.SMELTING, 0, 1, 3, 36);
+        if (NCProcessorAvailability.nuclearFurnaceEnabled()) {
+            registration.addRecipeTransferHandler(NuclearFurnaceMenu.class, NCRegistries.NUCLEAR_FURNACE_MENU.get(),
+                    RecipeTypes.SMELTING, 0, 1, 3, 36);
+        }
     }
 
     @Override
@@ -466,12 +526,19 @@ public final class NuclearCraftJei implements IModPlugin {
                         kind.fuel() ? SALT_FISSION : SALT_HEATING));
             }
         });
-        registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
-        registration.addRecipeClickArea(NuclearFurnaceScreen.class, 78, 32, 28, 23, RecipeTypes.SMELTING);
+        if (Rate.MELTER.enabled()) {
+            registration.addRecipeClickArea(MelterScreen.class, 74, 35, 37, 16, MELTER);
+        }
+        if (NCProcessorAvailability.nuclearFurnaceEnabled()) {
+            registration.addRecipeClickArea(NuclearFurnaceScreen.class, 78, 32, 28, 23, RecipeTypes.SMELTING);
+        }
         registration.addRecipeClickArea(ScrubberScreen.class, 70, 35, 37, 16, SCRUBBER);
         registration.addGuiContainerHandler(FluidProcessorScreen.class, new IGuiContainerHandler<>() {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(FluidProcessorScreen screen, double x, double y) {
+                if (!screen.getMenu().type().rate().enabled()) {
+                    return List.of();
+                }
                 return switch (screen.getMenu().type()) {
                     case ELECTROLYZER -> List.of(IGuiClickableArea.createBasic(68, 30, 37, 38, ELECTROLYZER));
                     case SALT_MIXER -> List.of(IGuiClickableArea.createBasic(84, 34, 37, 18, SALT_MIXER));

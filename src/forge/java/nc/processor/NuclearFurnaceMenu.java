@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.init.NCProcessorAvailability;
 import nc.init.NCRegistries;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
@@ -36,11 +37,16 @@ public final class NuclearFurnaceMenu extends AbstractContainerMenu {
         super(NCRegistries.NUCLEAR_FURNACE_MENU.get(), id);
         this.furnace = furnace;
         this.data = data;
-        addSlot(new Slot(furnace, 0, 56, 17));
+        addSlot(new Slot(furnace, 0, 56, 17) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return NCProcessorAvailability.nuclearFurnaceEnabled();
+            }
+        });
         addSlot(new Slot(furnace, 1, 56, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return NuclearFurnaceBlockEntity.uraniumBurnTime(stack) > 0;
+                return NCProcessorAvailability.nuclearFurnaceEnabled() && NuclearFurnaceBlockEntity.uraniumBurnTime(stack) > 0;
             }
         });
         addSlot(new FurnaceResultSlot(player.player, furnace, 2, 116, 35));
@@ -61,7 +67,7 @@ public final class NuclearFurnaceMenu extends AbstractContainerMenu {
     }
 
     public boolean isBurning() {
-        return data.get(DATA_LIT_TIME) > 0;
+        return NCProcessorAvailability.nuclearFurnaceEnabled() && data.get(DATA_LIT_TIME) > 0;
     }
 
     public int burnPixels(int pixels) {

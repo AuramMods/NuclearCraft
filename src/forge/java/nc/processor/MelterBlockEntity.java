@@ -56,6 +56,9 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     }
 
     private boolean acceptsItem(ItemStack stack) {
+        if (!rate.enabled()) {
+            return false;
+        }
         if (level == null || level.isClientSide) {
             return true;
         }
@@ -88,6 +91,9 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
+        if (!rate.enabled()) {
+            return false;
+        }
         recipeInput.setItem(0, inventory.getStackInSlot(0));
         MelterRecipe recipe = recipeInput.isEmpty() ? null : recipes.getRecipeFor(recipeInput, level)
                 .orElseGet(() -> MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0)));

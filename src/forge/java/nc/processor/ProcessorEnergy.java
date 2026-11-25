@@ -4,12 +4,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.energy.EnergyStorage;
 import net.minecraftforge.energy.IEnergyStorage;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.IntSupplier;
 
 final class ProcessorEnergy extends EnergyStorage {
     private final BlockEntity owner;
     private final IntSupplier capacityLimit;
     private final boolean generator;
+    private final BooleanSupplier inputEnabled;
     private boolean transferring;
 
     ProcessorEnergy(BlockEntity owner, int capacity) {
@@ -17,19 +19,21 @@ final class ProcessorEnergy extends EnergyStorage {
     }
 
     ProcessorEnergy(BlockEntity owner, int capacity, IntSupplier capacityLimit) {
-        this(owner, capacity, capacityLimit, false);
+        this(owner, capacity, capacityLimit, false, () -> true);
     }
 
-    ProcessorEnergy(BlockEntity owner, int capacity, IntSupplier capacityLimit, boolean generator) {
+    ProcessorEnergy(BlockEntity owner, int capacity, IntSupplier capacityLimit, boolean generator,
+                    BooleanSupplier inputEnabled) {
         super(capacity, generator ? 0 : capacity, generator ? capacity : 0);
         this.owner = owner;
         this.capacityLimit = capacityLimit;
         this.generator = generator;
+        this.inputEnabled = inputEnabled;
     }
 
     @Override
     public boolean canReceive() {
-        return !owner.isRemoved() && super.canReceive();
+        return !owner.isRemoved() && inputEnabled.getAsBoolean() && super.canReceive();
     }
 
     @Override

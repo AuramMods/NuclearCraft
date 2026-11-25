@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.init.NCProcessorAvailability;
 import nc.init.NCRegistries;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -9,6 +10,7 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.FurnaceBlock;
@@ -24,6 +26,11 @@ import java.util.List;
 public final class NuclearFurnaceBlock extends FurnaceBlock {
     public NuclearFurnaceBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return NCProcessorAvailability.nuclearFurnaceEnabled() ? super.getStateForPlacement(context) : null;
     }
 
     @Override

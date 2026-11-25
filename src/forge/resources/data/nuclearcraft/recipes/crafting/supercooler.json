@@ -1,5 +1,11 @@
 {
     "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:processor_enabled",
+            "processor": "supercooler"
+        }
+    ],
     "category": "misc",
     "pattern": [
         "PDP",

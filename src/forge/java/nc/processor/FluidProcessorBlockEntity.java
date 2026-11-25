@@ -73,12 +73,12 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     }
 
     private boolean acceptsFluid(FluidStack stack) {
-        return level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+        return rate.enabled() && level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
                 .anyMatch(recipe -> recipe.acceptsFluid(stack));
     }
 
     private boolean canFill(int tank, FluidStack stack) {
-        if (level == null) {
+        if (!rate.enabled() || level == null) {
             return false;
         }
         if (!NCItemProcessors.smartProcessorInput() || fluids.stored(tank).isFluidEqual(stack)) {
@@ -95,6 +95,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     }
 
     private boolean acceptsItem(ItemStack stack) {
+        if (!rate.enabled()) {
+            return false;
+        }
         if (level == null || level.isClientSide) {
             return true;
         }
@@ -127,6 +130,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
 
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
+        if (!rate.enabled()) {
+            return false;
+        }
         refreshInput();
         FluidProcessorRecipe recipe = input.fluid().isEmpty() ? null : recipes.getRecipeFor(input, level).orElse(null);
         ResourceLocation next = recipe == null ? null : recipe.id();
@@ -356,7 +362,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             return inputs + outputs;
         }
 
-        Block block() {
+        public Block block() {
             return switch (this) {
                 case ELECTROLYZER -> NCRegistries.ELECTROLYZER.get();
                 case SALT_MIXER -> NCRegistries.SALT_MIXER.get();
@@ -389,7 +395,11 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             };
         }
 
-        RecipeType<? extends FluidProcessorRecipe> recipes() {
+        public Rate rate() {
+            return rate;
+        }
+
+        public RecipeType<? extends FluidProcessorRecipe> recipes() {
             return switch (this) {
                 case ELECTROLYZER -> NCRegistries.ELECTROLYSIS.get();
                 case SALT_MIXER -> NCRegistries.MIXING.get();

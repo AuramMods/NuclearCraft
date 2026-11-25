@@ -89,6 +89,10 @@ public interface ProcessorProfile {
     }
 
     interface Rates {
+        default boolean enabled() {
+            return true;
+        }
+
         double defaultTime();
         double baseTime();
         double basePower();

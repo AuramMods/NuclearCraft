@@ -38,7 +38,7 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         this.baseCapacity = baseCapacity;
         this.generator = generator;
         this.redstoneControl = redstoneControl;
-        power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity, generator);
+        power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity, generator, rate::enabled);
     }
 
     final boolean redstoneControl() {

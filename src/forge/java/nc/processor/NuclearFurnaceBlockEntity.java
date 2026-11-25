@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.init.NCProcessorAvailability;
 import nc.init.NCRegistries;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.RadiationSources;
@@ -45,6 +46,12 @@ public final class NuclearFurnaceBlockEntity extends AbstractFurnaceBlockEntity 
     }
 
     private void tick(Level level, BlockPos pos, BlockState state) {
+        if (!NCProcessorAvailability.nuclearFurnaceEnabled()) {
+            if (state.getValue(NuclearFurnaceBlock.LIT)) {
+                level.setBlock(pos, state.setValue(NuclearFurnaceBlock.LIT, false), Block.UPDATE_ALL);
+            }
+            return;
+        }
         int previousBurn = dataAccess.get(DATA_LIT_TIME);
         int previousProgress = dataAccess.get(DATA_COOKING_PROGRESS);
         int burn = Math.max(0, previousBurn - 1);
@@ -157,7 +164,7 @@ public final class NuclearFurnaceBlockEntity extends AbstractFurnaceBlockEntity 
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return slot == SLOT_INPUT || slot == SLOT_FUEL && uraniumBurnTime(stack) > 0;
+        return NCProcessorAvailability.nuclearFurnaceEnabled() && (slot == SLOT_INPUT || slot == SLOT_FUEL && uraniumBurnTime(stack) > 0);
     }
 
     @Override
@@ -172,7 +179,7 @@ public final class NuclearFurnaceBlockEntity extends AbstractFurnaceBlockEntity 
 
     @Override
     public double radiationEmission() {
-        return dataAccess.get(DATA_LIT_TIME) > 0 ? RadiationSources.LEU_235_FISSION : 0D;
+        return NCProcessorAvailability.nuclearFurnaceEnabled() && dataAccess.get(DATA_LIT_TIME) > 0 ? RadiationSources.LEU_235_FISSION : 0D;
     }
 
     @Override

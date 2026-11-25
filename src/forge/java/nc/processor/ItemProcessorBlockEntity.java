@@ -68,7 +68,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         inventory = new ItemStackHandler(machine.slots()) {
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                if (slot >= machine.inputs() || stack.isEmpty()) {
+                if (!rate.enabled() || slot >= machine.inputs() || stack.isEmpty()) {
                     return false;
                 }
                 if (level == null || level.isClientSide) {
@@ -147,6 +147,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     }
 
     private boolean isIngredient(ItemStack stack) {
+        if (!rate.enabled()) {
+            return false;
+        }
         if (level == null || level.isClientSide) {
             return true;
         }
@@ -162,12 +165,12 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     }
 
     private boolean acceptsFluid(FluidStack stack) {
-        return level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
+        return rate.enabled() && level != null && level.getRecipeManager().getAllRecipesFor(machine.recipes()).stream()
                 .anyMatch(recipe -> recipe.acceptsFluid(stack));
     }
 
     private boolean canFill(int tank, FluidStack stack) {
-        if (level == null) {
+        if (!rate.enabled() || level == null) {
             return false;
         }
         if (!NCItemProcessors.smartProcessorInput() || fluid.stored(tank).isFluidEqual(stack)) {
@@ -213,6 +216,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
 
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
+        if (!rate.enabled()) {
+            return false;
+        }
         refreshInput();
         ItemProcessorRecipe recipe = reserved == null ? findRecipe(level) : reservedRecipe(level);
         if (recipe == null && reserved != null) {

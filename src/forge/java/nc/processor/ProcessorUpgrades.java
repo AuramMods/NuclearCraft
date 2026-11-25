@@ -30,7 +30,7 @@ final class ProcessorUpgrades extends ItemStackHandler {
 
     @Override
     public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-        return slotFor(stack) == slot;
+        return (owner == null || owner.rate.enabled()) && slotFor(stack) == slot;
     }
 
     @Override

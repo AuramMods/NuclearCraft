@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import nc.NuclearCraft;
 import nc.init.NCGenerators;
+import nc.init.NCProcessorAvailability;
 import nc.init.NCRegistries;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -277,7 +278,8 @@ final class VaultPiece extends StructurePiece {
             BlockState crateState = Blocks.OAK_PLANKS.defaultBlockState();
             BlockState voltaicState = block("voltaic_pile_basic", Blocks.IRON_BLOCK);
             BlockState slabState = Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, SlabType.DOUBLE);
-            BlockState furnaceState = NCRegistries.NUCLEAR_FURNACE.get().defaultBlockState();
+            BlockState furnaceState = (NCProcessorAvailability.nuclearFurnaceEnabled()
+                    ? NCRegistries.NUCLEAR_FURNACE.get() : Blocks.FURNACE).defaultBlockState();
             BlockState leadState = block("lead_block", Blocks.IRON_BLOCK);
             BlockState decayGeneratorState = NCGenerators.DECAY_GENERATOR.get().defaultBlockState();
             BlockState noteBlockState = Blocks.NOTE_BLOCK.defaultBlockState();

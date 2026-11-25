@@ -5,7 +5,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors;
+import nc.init.NCItemProcessors.Machine;
 import nc.init.NCItemProcessors.Rate;
+import nc.init.NCRegistries;
+import nc.processor.FluidProcessorBlockEntity;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.crafting.Recipe;
@@ -18,6 +21,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -62,8 +66,10 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     }
 
     private static void removeDisabledRecipes(RecipeManager manager) {
+        Set<RecipeType<?>> inactiveTypes = inactiveTypes();
         Set<ResourceLocation> disabled = manager.byName.values().stream()
-                .filter(recipe -> recipe instanceof ProcessingRecipe processing && processing.defaults() != null
+                .filter(recipe -> inactiveTypes.contains(recipe.getType())
+                        || recipe instanceof ProcessingRecipe processing && processing.defaults() != null
                         && !processing.defaults().enabled())
                 .map(Recipe::getId).collect(Collectors.toSet());
         if (disabled.isEmpty()) {
@@ -83,6 +89,24 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
         });
         manager.recipes = recipes.build();
         manager.byName = remove(manager.byName, disabled);
+    }
+
+    private static Set<RecipeType<?>> inactiveTypes() {
+        Set<RecipeType<?>> types = new HashSet<>();
+        if (!Rate.MELTER.enabled()) {
+            types.add(NCRegistries.MELTING.get());
+        }
+        for (Machine machine : Machine.values()) {
+            if (!machine.rate().enabled()) {
+                types.add(machine.recipes());
+            }
+        }
+        for (var machine : FluidProcessorBlockEntity.Machine.values()) {
+            if (!machine.rate().enabled()) {
+                types.add(machine.recipes());
+            }
+        }
+        return types;
     }
 
     private static Map<ResourceLocation, Recipe<?>> remove(Map<ResourceLocation, Recipe<?>> entries,

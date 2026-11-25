@@ -1,5 +1,11 @@
 {
     "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:processor_enabled",
+            "processor": "rock_crusher"
+        }
+    ],
     "category": "misc",
     "pattern": [
         "PMP",
