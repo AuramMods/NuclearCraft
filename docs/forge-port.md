@@ -487,6 +487,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
 | Satiscraftory | 1.1.3 | Conveyor transfer on sided processors and battery power for the Smelter |
 | Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
+| Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -792,6 +793,16 @@ Cyclic 1.13.6 handles client synchronization in its fluid-change callback. That 
 In a Cyclic-only test, a live tank and a full-destination cable buffer each held 1,000 mB after a cross-chunk transfer, while their saved regions and a server restart showed zero. A control tank kept its water after an unrelated block placement made its chunk dirty. The patched build kept both volumes through a server restart. All three NuclearCraft circuits also kept their exact outputs after chunk unload and reload, including all 4,000 mB of steam in the separate Cyclic tank. All 225 local GameTests passed, and the packaged JAR processed water electrolysis on clean Forge.
 
 The isolated Auram client loaded all 541 installed mod JARs, started JEI, and repeated the three Cyclic circuits with the patched JAR. After shutdown, the region files held one white concrete, 1,000 mB of water, 4,000 mB of steam, and one depleted LECf-251 oxide. The source tanks, machine buffers, and cable buffers were empty. The client ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible window samples.
+
+### Starbunclemania transport
+
+On dedicated Forge 47.4.10 with Auram's Starbunclemania 1.2.3.0 and Ars Nouveau 4.12.7, the fluid and energy jobs kept their sources intact while the selected NuclearCraft faces were closed. After the faces opened, a Starbucket carried 250 mB of liquid ender from a Fluid Containment Jar to an Infuser. The Infuser spent 6,000 FE to make one End Stone. A second Starbucket drew 1,000 mB of water from a Melter as soon as the full destination jar had room. A Starbattery carried exactly 3,000 FE between two Voltaic Piles. [Starbunclemania](https://www.curseforge.com/minecraft/mc-mods/starbunclemania)
+
+A Starbuncle with a Wyrm Degree waited until the Manufactory's west input opened, then brought in one coal. The Manufactory held its coal dust while the output barrel was full. After confirmed chunk unload and reload and a dedicated restart, the outgoing Starbuncle collected exactly one coal dust when a barrel slot opened. A Starballoon waited for the Chemical Reactor's west inlets to open, then carried 250 units of Mekanism 10.4.16.80 hydrogen from a Basic Chemical Tank. The reactor used that gas with 250 mB of chlorine to produce 250 mB of hydrogen chloride. The restart preserved the product and the empty gas source.
+
+A Starbucket drew steam from the south-facing outlet of an assembled solid-fission reactor and carried it to a jar in another chunk. The worker retained 1,000 mB in transit and the reactor retained the other 3,000 mB while the jar was full. Both amounts survived confirmed chunk unload and reload and a dedicated restart. Freeing 4,000 mB of room let the same worker deliver the complete batch.
+
+The isolated 540-mod Auram instance repeated the liquid ender and 3,000 FE routes and loaded JEI. The client saved and exited with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
 
 ### Tools and Armor
 
