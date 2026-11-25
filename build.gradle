@@ -34,6 +34,7 @@ minecraft {
     runs {
         configureEach {
             workingDirectory layout.buildDirectory.dir("runs/${name}").get().asFile
+            args '--mixin.config', 'nuclearcraft.mixins.json'
             mods {
                 nuclearcraft {
                     source sourceSets.main
@@ -384,6 +385,7 @@ tasks.matching { it.name in ['runServer', 'runGameTestServer'] }.configureEach {
 
 tasks.named('jar', Jar) {
     from 'LICENSE.md'
+    manifest.attributes 'MixinConfigs': 'nuclearcraft.mixins.json'
     finalizedBy 'reobfJar'
 }
 
