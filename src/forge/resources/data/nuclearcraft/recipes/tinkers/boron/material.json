@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "boron"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/boron"
+    },
+    "material": "nuclearcraft:boron",
+    "needed": 1,
+    "value": 1
+}

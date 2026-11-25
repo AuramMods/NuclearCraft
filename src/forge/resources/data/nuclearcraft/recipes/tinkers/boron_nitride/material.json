@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "boron_nitride"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:gems/boron_nitride"
+    },
+    "material": "nuclearcraft:boron_nitride",
+    "needed": 1,
+    "value": 1
+}

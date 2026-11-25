@@ -1,0 +1,10 @@
+{
+    "condition": {
+        "type": "nuclearcraft:tinkers_material_enabled",
+        "material": "chocolate"
+    },
+    "craftable": false,
+    "hidden": false,
+    "sortOrder": 7,
+    "tier": 2
+}

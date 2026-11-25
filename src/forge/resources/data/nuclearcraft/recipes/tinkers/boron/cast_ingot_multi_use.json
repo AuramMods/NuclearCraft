@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "boron"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/multi_use/ingot"
+    },
+    "cast_consumed": false,
+    "cooling_time": 62,
+    "fluid": {
+        "fluid": "nuclearcraft:boron",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:boron_ingot"
+    }
+}

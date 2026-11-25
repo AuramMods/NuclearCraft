@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "chocolate"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/single_use/ingot"
+    },
+    "cast_consumed": true,
+    "cooling_time": 18,
+    "fluid": {
+        "fluid": "nuclearcraft:milk_chocolate",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:milk_chocolate"
+    }
+}

@@ -1,0 +1,10 @@
+{
+    "condition": {
+        "type": "nuclearcraft:tinkers_material_enabled",
+        "material": "boron_nitride"
+    },
+    "craftable": true,
+    "hidden": false,
+    "sortOrder": 3,
+    "tier": 4
+}

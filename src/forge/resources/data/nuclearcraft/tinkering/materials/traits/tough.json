@@ -1,0 +1,58 @@
+{
+    "default": [
+        {
+            "name": "tconstruct:dense",
+            "level": 1
+        }
+    ],
+    "perStat": {
+        "tconstruct:melee_harvest": [
+            {
+                "name": "tconstruct:dense",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:momentum",
+                "level": 1
+            }
+        ],
+        "tconstruct:head": [
+            {
+                "name": "tconstruct:dense",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:momentum",
+                "level": 1
+            }
+        ],
+        "tconstruct:armor": [
+            {
+                "name": "tconstruct:knockback_resistance",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:protection",
+                "level": 1
+            }
+        ],
+        "tconstruct:handle": [
+            {
+                "name": "tconstruct:dense",
+                "level": 1
+            }
+        ],
+        "tconstruct:binding": [
+            {
+                "name": "tconstruct:dense",
+                "level": 1
+            }
+        ],
+        "tconstruct:maille": [
+            {
+                "name": "tconstruct:knockback_resistance",
+                "level": 1
+            }
+        ]
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material_melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "tough"
+        }
+    ],
+    "input": "nuclearcraft:tough",
+    "result": {
+        "fluid": "nuclearcraft:tough",
+        "amount": 144
+    },
+    "temperature": 950
+}

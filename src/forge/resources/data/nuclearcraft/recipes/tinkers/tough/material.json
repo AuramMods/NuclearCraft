@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "tough"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/tough"
+    },
+    "material": "nuclearcraft:tough",
+    "needed": 1,
+    "value": 1
+}

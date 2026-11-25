@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "magnesium"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/magnesium"
+    },
+    "result": {
+        "fluid": "nuclearcraft:magnesium",
+        "amount": 144
+    },
+    "temperature": 650,
+    "time": 56
+}

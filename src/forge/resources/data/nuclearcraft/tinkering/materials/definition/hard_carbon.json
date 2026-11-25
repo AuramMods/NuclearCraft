@@ -1,0 +1,10 @@
+{
+    "condition": {
+        "type": "nuclearcraft:tinkers_material_enabled",
+        "material": "hard_carbon"
+    },
+    "craftable": false,
+    "hidden": false,
+    "sortOrder": 2,
+    "tier": 4
+}

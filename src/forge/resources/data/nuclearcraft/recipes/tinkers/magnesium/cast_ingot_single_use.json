@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "magnesium"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/single_use/ingot"
+    },
+    "cast_consumed": true,
+    "cooling_time": 56,
+    "fluid": {
+        "fluid": "nuclearcraft:magnesium",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:magnesium_ingot"
+    }
+}

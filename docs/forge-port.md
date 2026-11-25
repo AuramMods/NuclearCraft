@@ -342,7 +342,7 @@ The isolated Auram client loaded all 539 installed mod JARs and ran the same Che
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
-| Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags and fluid transfer |
+| Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
 | Industrial Foregoing | 3.5.21 | Automation through standard capabilities |
 | PneumaticCraft | 6.0.22 | Fluid and item automation and shared tags |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
@@ -510,6 +510,22 @@ Move `register_tool` and `register_armor` to `config/nuclearcraft-equipment-avai
 Move the tool and armor stat arrays to `world/serverconfig/nuclearcraft-equipment.toml` with their legacy names. Tool arrays retain eight entries with the ordinary tools and Spaxelhoe alternating for each grade. The three armor stat arrays take the four metal grades. Each grade's protection array is still ordered boots, leggings, chestplate, helmet. Vanilla and Forge harvest requirements use the configured tier, including Forge's tier ordering for modded blocks. When manually converting equipment stacks from 1.12.2, keep their namespaced item IDs and move the equipment damage value to the integer `tag.Damage`.
 
 All 158 headless Forge GameTests passed. A packaged Forge 47.4.18 dedicated server honored the recipe switches and retained the configured armor and attack stats across restart. In the isolated Auram snapshot with all 538 installed mod JARs, the Boron Spaxelhoe tilled dirt at a one-point durability cost. The original Boron Nitride armor rendered in-game and gave the player 20 armor and 8 toughness. The Auram crafting manager assembled the Boron Spaxelhoe and Boron Nitride chestplate from their original ingredients, and JEI displayed all 40 recipes. OpenAL used No Output and the native observer recorded zero visible-window samples, foreground samples, and activation events.
+
+### Tinkers’ Construct materials
+
+Tinkers’ Construct adds eight optional NuclearCraft materials for its modular tools, bows, and armor. In the Part Builder, use Boron Nitride gems. Cast Boron, Tough Alloy, Hard Carbon Alloy, Thorium, Uranium, Magnesium, and Chocolate parts on a casting table. The repair recipes use the corresponding Forge ingot or gem tag. Chocolate uses Milk Chocolate. Melt metal and Chocolate parts to recover their casting fluid.
+
+The NuclearCraft material recipes use 144 mB per ingot for casting and recycling. Tinkers’ Uranium parts use 90 mB of `tconstruct:molten_uranium` per ingot, matching the Tinkers’ smeltery’s Uranium recipes. NuclearCraft’s existing Uranium processor recipes retain their 144 mB amounts. Molten Thorium also works in the NuclearCraft Melter and Ingot Former.
+
+The old `register_tic_tool` and `register_conarm_armor` arrays move to `config/nuclearcraft-tinkers-materials.toml`. Each applies independently. Keep the order Boron, Tough Alloy, Hard Carbon Alloy, Boron Nitride, Thorium, Uranium, Magnesium, and Chocolate. Restart the game or dedicated server after changing the arrays. A material with both entries disabled disappears from the Tinkers’ catalog and loses its material recipes.
+
+The material IDs are `nuclearcraft:boron`, `nuclearcraft:tough`, `nuclearcraft:hard_carbon`, `nuclearcraft:boron_nitride`, `nuclearcraft:thorium`, `nuclearcraft:uranium`, `nuclearcraft:magnesium`, and `nuclearcraft:chocolate`. When converting custom stats, use Tinkers’ 1.20.1 material-stat and trait datapack files under `data/nuclearcraft/tinkering/materials`. Legacy head durability, mining speed, and harvest tier carry over. The modern handle, bow, and plating stat formats express the corresponding bonuses in Tinkers’ 1.20.1 units. Modern modifiers cover old traits such as Stiff and Splintering with Maintained and Piercing. Withering, Poisonous, Moldable, and Uplifting use NuclearCraft modifier IDs. Moldable grants upgrade slots. Uplifting can grant Regeneration III. Existing 1.12.2 Tinkers’ tool stacks require a separate conversion to the modern tool, part, and modifier data. [Tinkers’ material data formats](https://slimeknights.github.io/docs/guides/material/)
+
+On packaged Forge 47.4.18 with Tinkers’ Construct 3.11.2.166 and Mantle 1.11.97, the Melter turned two Boron ingots into 288 mB and delivered it to a Seared Casting Table. The table produced one Boron pick head. Its recycling recipe yielded 288 mB, and the cast part persisted across a dedicated restart. The Part Builder consumed two Boron Nitride gems for a pick head, and a Tinker Station repaired a Boron pick from 150 damage to zero with two ingots. Thorium and Uranium melee hits applied Wither and Poison, and Chocolate parts supplied upgrade slots and granted Regeneration during combat. A restart with mixed settings removed Boron’s tool parts, Tough Alloy’s armor parts, and Chocolate’s material and recipes. The same JAR started and saved on clean Forge with the optional recipes skipped.
+
+In the isolated 539-mod Auram snapshot, the client loaded the colors for all eight materials and initialized JEI. The Part Builder crafted a Boron Nitride pick head. A Melter delivered 288 mB of Boron to the casting table, which produced one Boron pick head with no fluid left in either machine. The client exited normally with master volume zero, OpenAL No Output, and zero focus activations, foreground samples, or visible window samples.
+
+The remaining legacy smeltery alloy and secondary melting recipes in `TConstructExtras` still need migration and verification. The 90 mB stock Tinkers’ and 144 mB NuclearCraft Uranium ingot-casting routes also need a common-volume audit.
 
 ### Quantum Computer
 

@@ -1,0 +1,62 @@
+{
+    "default": [
+        {
+            "name": "nuclearcraft:poisonous",
+            "level": 1
+        },
+        {
+            "name": "nuclearcraft:withering",
+            "level": 1
+        }
+    ],
+    "perStat": {
+        "tconstruct:melee_harvest": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            }
+        ],
+        "tconstruct:head": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            }
+        ],
+        "tconstruct:armor": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            }
+        ],
+        "tconstruct:handle": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            },
+            {
+                "name": "nuclearcraft:withering",
+                "level": 1
+            }
+        ],
+        "tconstruct:binding": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            },
+            {
+                "name": "nuclearcraft:withering",
+                "level": 1
+            }
+        ],
+        "tconstruct:maille": [
+            {
+                "name": "nuclearcraft:poisonous",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:solid",
+                "level": 1
+            }
+        ]
+    }
+}

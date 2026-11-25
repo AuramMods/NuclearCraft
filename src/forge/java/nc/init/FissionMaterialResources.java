@@ -7,20 +7,15 @@ import nc.NuclearCraft;
 import nc.init.NCFissionMaterials.Form;
 import nc.init.NCFissionMaterials.Material;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.AbstractPackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.resources.IoSupplier;
 import net.minecraft.util.GsonHelper;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static nc.init.NCFissionMaterials.FLUORIDE;
 import static nc.init.NCFissionMaterials.FUEL_SALT;
@@ -276,50 +271,5 @@ final class FissionMaterialResources {
 
     private static byte[] bytes(Object object) {
         return GSON.toJson(object).getBytes(StandardCharsets.UTF_8);
-    }
-
-    static final class PackContent extends AbstractPackResources {
-        private final PackType type;
-        private final Map<ResourceLocation, byte[]> resources;
-        private final Set<String> namespaces;
-
-        PackContent(String id, PackType type, Map<ResourceLocation, byte[]> resources) {
-            super(id, true);
-            this.type = type;
-            this.resources = resources;
-            namespaces = resources.keySet().stream().map(ResourceLocation::getNamespace).collect(Collectors.toUnmodifiableSet());
-        }
-
-        @Override
-        public IoSupplier<InputStream> getRootResource(String... path) {
-            return null;
-        }
-
-        @Override
-        public IoSupplier<InputStream> getResource(PackType type, ResourceLocation id) {
-            byte[] bytes = type == this.type ? resources.get(id) : null;
-            return bytes == null ? null : () -> new ByteArrayInputStream(bytes);
-        }
-
-        @Override
-        public void listResources(PackType type, String namespace, String path, ResourceOutput output) {
-            if (type != this.type) {
-                return;
-            }
-            String prefix = path.isEmpty() ? "" : path + "/";
-            resources.forEach((id, bytes) -> {
-                if (id.getNamespace().equals(namespace) && id.getPath().startsWith(prefix)) {
-                    output.accept(id, () -> new ByteArrayInputStream(bytes));
-                }
-            });
-        }
-
-        @Override
-        public Set<String> getNamespaces(PackType type) {
-            return type == this.type ? namespaces : Set.of();
-        }
-
-        @Override
-        public void close() {}
     }
 }

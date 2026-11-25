@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material_fluid",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "hard_carbon"
+        }
+    ],
+    "fluid": {
+        "fluid": "nuclearcraft:hard_carbon",
+        "amount": 144
+    },
+    "output": "nuclearcraft:hard_carbon",
+    "temperature": 1050
+}

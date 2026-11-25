@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material_fluid",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "magnesium"
+        }
+    ],
+    "fluid": {
+        "fluid": "nuclearcraft:magnesium",
+        "amount": 144
+    },
+    "output": "nuclearcraft:magnesium",
+    "temperature": 650
+}

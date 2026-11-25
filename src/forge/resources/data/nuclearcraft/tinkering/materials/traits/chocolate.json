@@ -1,0 +1,74 @@
+{
+    "default": [
+        {
+            "name": "nuclearcraft:moldable",
+            "level": 1
+        },
+        {
+            "name": "nuclearcraft:uplifting",
+            "level": 1
+        }
+    ],
+    "perStat": {
+        "tconstruct:melee_harvest": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 2
+            },
+            {
+                "name": "tconstruct:tasty",
+                "level": 1
+            }
+        ],
+        "tconstruct:head": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 2
+            },
+            {
+                "name": "tconstruct:tasty",
+                "level": 1
+            }
+        ],
+        "tconstruct:armor": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 2
+            },
+            {
+                "name": "tconstruct:tasty",
+                "level": 1
+            }
+        ],
+        "tconstruct:handle": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 1
+            },
+            {
+                "name": "nuclearcraft:uplifting",
+                "level": 1
+            }
+        ],
+        "tconstruct:binding": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 1
+            },
+            {
+                "name": "nuclearcraft:uplifting",
+                "level": 1
+            }
+        ],
+        "tconstruct:maille": [
+            {
+                "name": "nuclearcraft:moldable",
+                "level": 1
+            },
+            {
+                "name": "nuclearcraft:uplifting",
+                "level": 1
+            }
+        ]
+    }
+}

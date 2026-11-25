@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material_fluid",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "boron"
+        }
+    ],
+    "fluid": {
+        "fluid": "nuclearcraft:boron",
+        "amount": 144
+    },
+    "output": "nuclearcraft:boron",
+    "temperature": 750
+}

@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material_fluid",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "uranium"
+        }
+    ],
+    "fluid": {
+        "fluid": "tconstruct:molten_uranium",
+        "amount": 90
+    },
+    "output": "nuclearcraft:uranium",
+    "temperature": 830
+}

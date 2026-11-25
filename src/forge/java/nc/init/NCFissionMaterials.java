@@ -60,7 +60,7 @@ final class NCFissionMaterials {
             int format = SharedConstants.getCurrentVersion().getPackVersion(type);
             var info = new Pack.Info(title, format, format, FeatureFlagSet.of(), false);
             event.addRepositorySource(packs -> packs.accept(Pack.create(PACK_ID, title, true,
-                    id -> new FissionMaterialResources.PackContent(id, type, content), info, type,
+                    id -> new GeneratedPackResources(id, type, content), info, type,
                     Pack.Position.BOTTOM, false, PackSource.BUILT_IN)));
         });
     }

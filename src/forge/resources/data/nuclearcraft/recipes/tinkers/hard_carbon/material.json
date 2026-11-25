@@ -1,0 +1,19 @@
+{
+    "type": "tconstruct:material",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "hard_carbon"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/hard_carbon"
+    },
+    "material": "nuclearcraft:hard_carbon",
+    "needed": 1,
+    "value": 1
+}

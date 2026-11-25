@@ -1,0 +1,23 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": [
+        {
+            "tag": "forge:ingots/thorium"
+        },
+        {
+            "tag": "forge:dusts/thorium"
+        },
+        {
+            "tag": "c:ingots/thorium"
+        },
+        {
+            "tag": "c:dusts/thorium"
+        }
+    ],
+    "result": {
+        "fluid": "nuclearcraft:thorium",
+        "amount": 144
+    },
+    "ticks": 800,
+    "energy_per_tick": 40
+}

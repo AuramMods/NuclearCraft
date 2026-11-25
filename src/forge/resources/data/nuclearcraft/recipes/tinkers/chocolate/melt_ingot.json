@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "chocolate"
+        }
+    ],
+    "ingredient": {
+        "item": "nuclearcraft:milk_chocolate"
+    },
+    "result": {
+        "fluid": "nuclearcraft:milk_chocolate",
+        "amount": 144
+    },
+    "temperature": 45,
+    "time": 18
+}

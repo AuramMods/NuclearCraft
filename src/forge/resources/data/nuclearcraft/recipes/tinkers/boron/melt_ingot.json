@@ -1,0 +1,22 @@
+{
+    "type": "tconstruct:melting",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "boron"
+        }
+    ],
+    "ingredient": {
+        "tag": "forge:ingots/boron"
+    },
+    "result": {
+        "fluid": "nuclearcraft:boron",
+        "amount": 144
+    },
+    "temperature": 750,
+    "time": 62
+}

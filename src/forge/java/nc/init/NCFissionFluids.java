@@ -4,6 +4,7 @@ final class NCFissionFluids {
     private NCFissionFluids() {}
 
     static void registerFuels() {
+        NCFluids.fission("thorium", 0x292929);
         NCFluids.fission("uranium", 0x375437);
         NCFluids.fission("strontium_90", 0xB8BE88);
         NCFluids.fission("ruthenium_106", 0xA3A3A3);

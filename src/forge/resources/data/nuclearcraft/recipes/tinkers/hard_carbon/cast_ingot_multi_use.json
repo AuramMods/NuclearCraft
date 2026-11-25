@@ -1,0 +1,25 @@
+{
+    "type": "tconstruct:casting_table",
+    "conditions": [
+        {
+            "type": "forge:mod_loaded",
+            "modid": "tconstruct"
+        },
+        {
+            "type": "nuclearcraft:tinkers_material_enabled",
+            "material": "hard_carbon"
+        }
+    ],
+    "cast": {
+        "tag": "tconstruct:casts/multi_use/ingot"
+    },
+    "cast_consumed": false,
+    "cooling_time": 90,
+    "fluid": {
+        "fluid": "nuclearcraft:hard_carbon",
+        "amount": 144
+    },
+    "result": {
+        "item": "nuclearcraft:hard_carbon_ingot"
+    }
+}

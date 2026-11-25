@@ -1,0 +1,68 @@
+{
+    "default": [
+        {
+            "name": "tconstruct:lightweight",
+            "level": 1
+        }
+    ],
+    "perStat": {
+        "tconstruct:melee_harvest": [
+            {
+                "name": "tconstruct:lightweight",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:smite",
+                "level": 1
+            }
+        ],
+        "tconstruct:head": [
+            {
+                "name": "tconstruct:lightweight",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:smite",
+                "level": 1
+            }
+        ],
+        "tconstruct:armor": [
+            {
+                "name": "tconstruct:featherweight",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:magic_protection",
+                "level": 1
+            }
+        ],
+        "tconstruct:ranged": [
+            {
+                "name": "tconstruct:lightweight",
+                "level": 1
+            },
+            {
+                "name": "tconstruct:holy",
+                "level": 1
+            }
+        ],
+        "tconstruct:handle": [
+            {
+                "name": "tconstruct:lightweight",
+                "level": 1
+            }
+        ],
+        "tconstruct:binding": [
+            {
+                "name": "tconstruct:lightweight",
+                "level": 1
+            }
+        ],
+        "tconstruct:maille": [
+            {
+                "name": "tconstruct:featherweight",
+                "level": 1
+            }
+        ]
+    }
+}
