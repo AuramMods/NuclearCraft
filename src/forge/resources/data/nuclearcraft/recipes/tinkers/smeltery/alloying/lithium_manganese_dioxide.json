@@ -2,8 +2,7 @@
     "type": "tconstruct:alloy",
     "conditions": [
         {
-            "type": "forge:mod_loaded",
-            "modid": "tconstruct"
+            "type": "nuclearcraft:tinkers_smeltery_enabled"
         }
     ],
     "inputs": [

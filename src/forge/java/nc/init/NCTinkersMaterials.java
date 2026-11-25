@@ -37,11 +37,14 @@ public final class NCTinkersMaterials {
     private static final ForgeConfigSpec SPEC;
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> TOOLS;
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> ARMOR;
+    private static final ForgeConfigSpec.BooleanValue SMELTERY;
 
     static {
         var config = new ForgeConfigSpec.Builder();
         TOOLS = defineFlags(config, "register_tic_tool", "tool and bow");
         ARMOR = defineFlags(config, "register_conarm_armor", "armor and shield");
+        SMELTERY = config.comment("Enable the extra NuclearCraft melting, casting, and alloying recipes in Tinkers' Construct.")
+                .worldRestart().define("register_tic_recipes", true);
         SPEC = config.build();
     }
 
@@ -57,8 +60,10 @@ public final class NCTinkersMaterials {
 
     public static void register(FMLJavaModLoadingContext context) {
         context.registerConfig(ModConfig.Type.COMMON, SPEC, "nuclearcraft-tinkers-materials.toml");
-        context.getModEventBus().addListener((FMLCommonSetupEvent event) ->
-                event.enqueueWork(() -> CraftingHelper.register(MaterialEnabled.SERIALIZER)));
+        context.getModEventBus().addListener((FMLCommonSetupEvent event) -> event.enqueueWork(() -> {
+            CraftingHelper.register(MaterialEnabled.SERIALIZER);
+            CraftingHelper.register(SmelteryEnabled.SERIALIZER);
+        }));
         if (ModList.get().isLoaded("tconstruct")) {
             context.getModEventBus().addListener(NCTinkersMaterials::addStatsPack);
             StockRecipeAdjustments.register("tconstruct", (recipe, additions) -> NCTinkersSmeltery.adjustRecipe(recipe));
@@ -101,6 +106,36 @@ public final class NCTinkersMaterials {
 
     private static boolean enabled(ForgeConfigSpec.ConfigValue<List<Boolean>> config, int index) {
         return !SPEC.isLoaded() || config.get().get(index);
+    }
+
+    private enum SmelteryEnabled implements ICondition {
+        INSTANCE;
+
+        private static final ResourceLocation ID = NuclearCraft.id("tinkers_smeltery_enabled");
+        private static final IConditionSerializer<SmelteryEnabled> SERIALIZER = new IConditionSerializer<>() {
+            @Override
+            public void write(JsonObject json, SmelteryEnabled condition) {}
+
+            @Override
+            public SmelteryEnabled read(JsonObject json) {
+                return INSTANCE;
+            }
+
+            @Override
+            public ResourceLocation getID() {
+                return ID;
+            }
+        };
+
+        @Override
+        public ResourceLocation getID() {
+            return ID;
+        }
+
+        @Override
+        public boolean test(IContext context) {
+            return ModList.get().isLoaded("tconstruct") && (!SPEC.isLoaded() || SMELTERY.get());
+        }
     }
 
     private record MaterialEnabled(int index) implements ICondition {

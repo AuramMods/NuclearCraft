@@ -2,8 +2,7 @@
     "type": "tconstruct:casting_table",
     "conditions": [
         {
-            "type": "forge:mod_loaded",
-            "modid": "tconstruct"
+            "type": "nuclearcraft:tinkers_smeltery_enabled"
         },
         {
             "type": "mantle:tag_filled",

@@ -2,8 +2,7 @@
     "type": "tconstruct:melting",
     "conditions": [
         {
-            "type": "forge:mod_loaded",
-            "modid": "tconstruct"
+            "type": "nuclearcraft:tinkers_smeltery_enabled"
         }
     ],
     "ingredient": {

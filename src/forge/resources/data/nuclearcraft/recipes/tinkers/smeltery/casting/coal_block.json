@@ -2,8 +2,7 @@
     "type": "tconstruct:casting_basin",
     "conditions": [
         {
-            "type": "forge:mod_loaded",
-            "modid": "tconstruct"
+            "type": "nuclearcraft:tinkers_smeltery_enabled"
         }
     ],
     "cooling_time": 175,
