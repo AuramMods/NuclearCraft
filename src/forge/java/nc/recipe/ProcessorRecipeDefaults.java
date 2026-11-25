@@ -16,6 +16,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -55,10 +56,17 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
         applyCatalogs(event.getServer().getRecipeManager());
     }
 
+    @SubscribeEvent
+    public static void onServerStarting(ServerStartingEvent event) {
+        ManufactoryWoodRecipes.apply(event.getServer());
+    }
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onDatapackSync(OnDatapackSyncEvent event) {
         if (event.getPlayer() == null) {
-            applyCatalogs(event.getPlayerList().getServer().getRecipeManager());
+            var server = event.getPlayerList().getServer();
+            applyCatalogs(server.getRecipeManager());
+            ManufactoryWoodRecipes.apply(server);
         }
     }
 
@@ -69,19 +77,26 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     }
 
     static void addRecipes(RecipeManager manager, RecipeType<ItemProcessorRecipe> type, List<ItemProcessorRecipe> additions) {
-        if (additions.isEmpty()) {
+        updateRecipes(manager, type, Set.of(), additions);
+    }
+
+    static void updateRecipes(RecipeManager manager, RecipeType<ItemProcessorRecipe> type,
+                              Set<ResourceLocation> removed, List<ItemProcessorRecipe> additions) {
+        if (removed.isEmpty() && additions.isEmpty()) {
             return;
         }
         var types = new LinkedHashMap<>(manager.recipes);
-        var entries = ImmutableMap.<ResourceLocation, Recipe<?>>builder().putAll(types.getOrDefault(type, Map.of()));
-        var byName = ImmutableMap.<ResourceLocation, Recipe<?>>builder().putAll(manager.byName);
+        var entries = new LinkedHashMap<>(types.getOrDefault(type, Map.of()));
+        var byName = new LinkedHashMap<>(manager.byName);
+        entries.keySet().removeAll(removed);
+        byName.keySet().removeAll(removed);
         for (ItemProcessorRecipe recipe : additions) {
             entries.put(recipe.id(), recipe);
             byName.put(recipe.id(), recipe);
         }
-        types.put(type, entries.build());
+        types.put(type, ImmutableMap.copyOf(entries));
         manager.recipes = ImmutableMap.copyOf(types);
-        manager.byName = byName.build();
+        manager.byName = ImmutableMap.copyOf(byName);
     }
 
     private static void removeDisabledRecipes(RecipeManager manager) {

@@ -111,6 +111,22 @@ The clean multiplayer client saw the same-ID Melter replacement in JEI while sto
 
 The isolated 539-mod Auram client listed one Melter recipe with the global switch off. KubeJS reused the original ice recipe ID, and its batch produced 781 mB of water while a packed-ice batch preserved its input and charge. This client also ran muted with zero focus activations, foreground samples, or visible windows.
 
+### Manufactory wood processing
+
+Copy the legacy `manufactory_wood` array to `world/serverconfig/nuclearcraft-processors.toml`. The first value controls the output from one log and the second controls sticks from one plank. The defaults are `[6, 4]`. Both values accept 1 through 64, subject to the output item's stack limit. Use `defaultconfigs` to seed new worlds and restart after changing a world's setting. The stock log and stick recipes take 200 and 100 ticks respectively at 10 FE/t before processor modifiers.
+
+The server looks up single-log crafting for the vanilla wood families and logs from `minecraft:logs`, `forge:logs`, and `c:logs`. It sends the resolved Manufactory recipes to clients. The vanilla families keep their existing `nuclearcraft:manufactory/<wood>_planks` IDs for their main output. Additional routes use `nuclearcraft:manufactory/logs/<namespace>/<item_path>`, including logs in a stock family whose crafting output differs. The stick recipe keeps `nuclearcraft:manufactory/sticks`.
+
+Datapack or KubeJS changes to crafting take effect when the server reloads data. Explicit Manufactory recipes can supply their own output and count, including under a shipped or discovered ID. The per-processor and global default recipe settings also control wood discovery.
+
+All 215 local GameTests passed. On dedicated Forge 47.4.18, a test datapack supplied a log and a one-log crafting recipe. The Manufactory resumed an in-progress batch across restart and used the configured yield of nine planks. A reload split oak logs and stripped oak logs into two routes with different plank products. Removing the stock recipe or disabling Manufactory defaults left the explicit datapack replacement in place.
+
+On the same Forge version with Auram's Biomes O’ Plenty 19.0.0.96, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied one fir log and 2,000 FE. Each Manufactory buffered eleven fir planks while its output barrel was full. After restart, freeing a slot let each network deliver all eleven planks. A confirmed chunk unload and reload preserved both deliveries and the empty machine buffers.
+
+A muted multiplayer client showed eight spruce planks and five sticks in JEI from the server's recipes. Reloading server crafting data changed the discovered output to eight jungle planks. The client received the new recipe and JEI displayed the update. The focus observer recorded zero activations, foreground samples, or visible window samples.
+
+The isolated 539-mod Auram instance produced seven Biomes O’ Plenty fir planks and seven vanilla oak planks at the configured yield, and five sticks from one fir plank. A KubeJS change to Nature’s Spirit fir crafting produced seven birch planks. A separate KubeJS Manufactory recipe at the discovered stripped-fir ID produced exactly two Nature’s Spirit fir planks for 60 FE. The client and server agreed on all five recipes. The client saved and exited with master volume zero, OpenAL No Output, and zero observed focus changes or visible windows.
+
 ### Material recipe output priority
 
 Copy `ore_dict_priority_bool` and the ordered `ore_dict_priority` list to `config/nuclearcraft-recipe-outputs.toml`. The settings apply on the server when loading recipes. Restart after changing the options. The old `thermalfoundation` and `appliedenergistics2` entries also recognize the current `thermal` and `ae2` item namespaces. When priority is disabled, the list is empty, or no namespace matches, the first item in the tag supplies the output.

@@ -22,6 +22,37 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class ItemProcessorGameTests {
     private static final BlockPos POS = new BlockPos(2, 1, 2);
 
+    @GameTest(template = "empty", timeoutTicks = 380)
+    public static void manufactoryDiscoversSingleLogCraftingAndMakesSticks(GameTestHelper helper) {
+        var recipes = helper.getLevel().getRecipeManager();
+        helper.assertTrue(recipes.byKey(NuclearCraft.id("manufactory/oak_planks")).isPresent()
+                        && recipes.byKey(NuclearCraft.id("manufactory/logs/minecraft/moss_block")).isEmpty(),
+                "Keep the stock recipe ID and require a crafting recipe for discovered logs");
+
+        helper.setBlock(POS, Machine.MANUFACTORY.block());
+        var processor = (ItemProcessorBlockEntity) helper.getBlockEntity(POS);
+        var inventory = items(processor, Direction.UP);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.WEST).orElseThrow(AssertionError::new);
+        helper.assertTrue(inventory.insertItem(0, new ItemStack(Items.MUSHROOM_STEM), false).isEmpty(),
+                "Accept a log supplied by the datapack through the normal item handler");
+        power.receiveEnergy(3000, false);
+        helper.startSequence().thenWaitUntil(() -> {
+            ItemStack result = inventory.getStackInSlot(1);
+            helper.assertTrue(result.is(Items.SPRUCE_PLANKS) && result.getCount() == 6
+                            && inventory.getStackInSlot(0).isEmpty() && power.getEnergyStored() == 1000,
+                    "Use the crafting product, stock plank yield, and exact log processing energy");
+        }).thenExecute(() -> {
+            inventory.extractItem(1, 6, false);
+            helper.assertTrue(inventory.insertItem(0, new ItemStack(Items.SPRUCE_PLANKS), false).isEmpty(),
+                    "Feed one plank into the stock stick recipe");
+        }).thenWaitUntil(() -> {
+            ItemStack result = inventory.getStackInSlot(1);
+            helper.assertTrue(result.is(Items.STICK) && result.getCount() == 4
+                            && inventory.getStackInSlot(0).isEmpty() && power.getEnergyStored() == 0,
+                    "One plank and 1,000 FE make four sticks");
+        }).thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 370)
     public static void manufactoryProcessesCoalIntoGraphite(GameTestHelper helper) {
         helper.setBlock(POS, Machine.MANUFACTORY.block());
