@@ -1,6 +1,5 @@
 package nc.client;
 
-import com.mojang.blaze3d.platform.InputConstants;
 import nc.NuclearCraft;
 import nc.init.NCClientPresentation;
 import net.minecraft.ChatFormatting;
@@ -15,7 +14,6 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,12 +50,7 @@ public final class ItemDescriptions {
     }
 
     private static boolean infoKeyDown(boolean control) {
-        if (!control) {
-            return Screen.hasShiftDown();
-        }
-        long window = Minecraft.getInstance().getWindow().getWindow();
-        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL)
-                || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return control ? ClientModifiers.controlDown() : Screen.hasShiftDown();
     }
 
     private static List<Component> descriptions(List<Component> tooltip, String base) {

@@ -855,6 +855,16 @@ The same packaged JAR ran both solid-fission-to-turbine-to-condenser chains with
 
 The isolated 539-mod Auram client loaded JEI and opened a world with custom blade expansion, a higher ideal steam expansion, and fast blade rendering. Captured frames showed different blade positions through the windows as an east-flowing turbine spun up through a stationary stator stage. The client displayed 475,000 mB of exhaust and returned to static rotor models when the shell broke. Repair restored the render and retained the exhaust. OpenAL used No Output and the focus observer recorded zero activations, foreground samples, and visible-window samples.
 
+### Turbine controller diagnostics
+
+The controller shows interior dimensions, live power and processing status, dynamo and rotor efficiency, and the measured steam input against the rotor's rated flow. Input above the rating is flagged and the bearing-tension reading changes color as tension rises. Hover over the three gauges to see the exact amounts and capacities in mB or FE.
+
+Hold Shift or the physical Ctrl key to see the valid inlet and outlet coils, actual and ideal expansion, and the throughput power bonus. With either key held, Clear drains the steam and exhaust tanks while preserving stored FE. Enable controls the manual setting. The turbine also responds to external redstone, and each redstone port lights when it receives a signal.
+
+All 236 local GameTests passed. A client connected to a dedicated server on packaged Forge 47.4.10 received 70,001 mB of steam, 80,001 mB of exhaust, and 4,294,967,321 FE without rounding or truncation. It displayed both redstone port textures and the regular and Shift diagnostics. A click with no modifier left both tanks intact. The physical Ctrl input enabled Clear on macOS, and a server restart preserved the resulting empty tanks and full energy balance.
+
+The same JAR repeated the controller test in an isolated Auram instance with all 540 installed mod JARs. The regular and alternate readings rendered with JEI and Dark Mode active. The overload warning appeared after the measured intake exceeded the rating, and clearing both tanks preserved 4,294,967,321 FE. The test worlds used a reduced `mb_per_blade` so the operating fixture ran long enough to sample. The isolated Auram setting was restored afterward. Both clients ran with master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible-window samples.
+
 ### Scripted turbine blades and stators
 
 Migrate `Registration.registerTurbineBlade` and `Registration.registerTurbineStator` to KubeJS startup registrations. Keep the original `nuclearcraft:turbine_rotor_blade_<id>` and `nuclearcraft:turbine_rotor_stator_<id>` block and item IDs on both the client and server.

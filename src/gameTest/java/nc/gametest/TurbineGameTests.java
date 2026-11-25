@@ -7,7 +7,9 @@ import nc.init.NCFluids;
 import nc.init.NCRegistries;
 import nc.init.NCTurbine;
 import nc.multiblock.turbine.TurbineController;
+import nc.multiblock.turbine.TurbineMenu;
 import nc.multiblock.turbine.TurbineRotorBlock;
+import nc.multiblock.turbine.TurbineWallBlock;
 import nc.multiblock.turbine.TurbinePartBlock.Part;
 import nc.init.NCGasCoolants;
 import net.minecraft.core.BlockPos;
@@ -20,7 +22,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayerFactory;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
@@ -434,6 +438,66 @@ public final class TurbineGameTests {
                     helper.assertTrue(client.visuals() == null
                                     && !helper.getBlockState(SHAFT).getValue(TurbineRotorBlock.ANIMATED),
                             "The old animation disappears and the shaft is visible as a normal block");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void turbineReportsLiveDiagnosticsAndClearsOnlyFluids(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        BlockPos port = new BlockPos(4, 2, 1);
+        helper.setBlock(port, NCTurbine.REDSTONE.get().defaultBlockState().setValue(TurbineWallBlock.FACING, Direction.EAST));
+        TurbineController turbine = controller(helper, CONTROLLER);
+        long stored = 4_294_967_321L;
+        var save = turbine.saveWithoutMetadata();
+        save.putLong("energy", stored);
+        save.putDouble("tension", 0.38D);
+        turbine.load(save);
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        TurbineMenu menu = turbine.createMenu(0, player.getInventory(), player);
+
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    int filled = fluid(helper, INLET, Direction.NORTH).fill(
+                            new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 70001), FluidAction.EXECUTE);
+                    helper.assertTrue(filled == 70001 && menu.steamAmount() == 70001 && menu.steamCapacity() == 100000
+                                    && menu.exhaustCapacity() == 400000 && menu.energyStored() == stored,
+                            "The turbine reports the complete tank and energy readings");
+                    helper.assertTrue(menu.lengthX() == 3 && menu.lengthY() == 3 && menu.lengthZ() == 2
+                                    && menu.inletCoils() == 1 && menu.outletCoils() == 1 && menu.bearingsPerSide() == 1
+                                    && Math.abs(menu.conductivity() - 0.88D) < 1e-6D
+                                    && menu.tension() == 0.38D && !menu.running() && !menu.enabled()
+                                    && helper.getBlockState(port).getValue(TurbineWallBlock.FACING) == Direction.NORTH,
+                            "Report actual coils and bearing tension and orient the redstone port outward");
+                    helper.setBlock(port.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(menu.running() && !menu.enabled() && menu.processing()
+                                && helper.getBlockState(port).getValue(TurbineWallBlock.ACTIVE)
+                                && menu.ratedFlow() == 800 && menu.throughput() > 0D && menu.power() > 0
+                                && menu.rotorEfficiency() > 0D && menu.powerBonus() > 1D
+                                && Math.abs(menu.expansion() - 1.96D) < 1e-6D && menu.idealExpansion() == 4D,
+                        "The local redstone signal lights the port and starts the real drive calculations"))
+                .thenExecute(() -> helper.setBlock(port.north(), Blocks.AIR))
+                .thenWaitUntil(() -> helper.assertTrue(!menu.running() && !menu.processing()
+                                && !helper.getBlockState(port).getValue(TurbineWallBlock.ACTIVE),
+                        "Removing external power turns off the indicator and steam consumption"))
+                .thenExecute(() -> {
+                    Vec3 position = Vec3.atCenterOf(helper.absolutePos(CONTROLLER));
+                    Vec3 original = player.position();
+                    try {
+                        player.setPos(position.x + 20, position.y, position.z);
+                        helper.assertTrue(!menu.clickMenuButton(player, TurbineMenu.CLEAR)
+                                        && menu.steamAmount() > 0 && menu.exhaustAmount() > 0,
+                                "A clear request outside the menu range must preserve both tanks");
+                        player.setPos(position.x - 1, position.y, position.z);
+                        helper.assertTrue(menu.clickMenuButton(player, TurbineMenu.CLEAR)
+                                        && menu.steamAmount() == 0 && menu.exhaustAmount() == 0
+                                        && menu.energyStored() == stored,
+                                "Clearing empties steam and exhaust while preserving stored Forge Energy");
+                    } finally {
+                        player.setPos(original.x, original.y, original.z);
+                    }
                 })
                 .thenSucceed();
     }

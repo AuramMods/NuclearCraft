@@ -20,7 +20,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
@@ -314,6 +313,10 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         steam.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_STEAM * found.exteriorVolume()));
         exhaust.setCapacity((int) Math.min(Integer.MAX_VALUE, (long) BASE_EXHAUST * found.exteriorVolume()));
         faceOutward(server, worldPosition, found.bounds().outward(worldPosition));
+        for (BlockPos redstone : found.redstonePorts()) {
+            faceOutward(server, redstone, found.bounds().outward(redstone));
+            TurbineWallBlock.updateRedstoneIndicator(server.getBlockState(redstone), server, redstone);
+        }
         updateRotorBlocks(server, found, found.glass());
         for (TurbineLayout.Port port : found.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof TurbinePort outlet) {
@@ -472,6 +475,9 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     void computerClear() {
         steam.setFluid(FluidStack.EMPTY);
         exhaust.setFluid(FluidStack.EMPTY);
+        if (level instanceof ServerLevel server && layout != null && layout.glass()) {
+            syncVisuals(server);
+        }
         setChanged();
     }
 
@@ -558,29 +564,39 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
     @Override
     public TurbineMenu createMenu(int id, Inventory inventory, Player player) {
-        return new TurbineMenu(id, this, ContainerLevelAccess.create(player.level(), worldPosition), new ContainerData() {
-            @Override
-            public int get(int index) {
-                return switch (index) {
-                    case TurbineMenu.ENABLED -> enabled ? 1 : 0;
-                    case TurbineMenu.PROCESSING -> processing ? 1 : 0;
-                    case TurbineMenu.STEAM -> (int) (1000L * Math.min(steam.getFluidAmount(), steam.getCapacity()) / steam.getCapacity());
-                    case TurbineMenu.EXHAUST -> (int) (1000L * Math.min(exhaust.getFluidAmount(), exhaust.getCapacity()) / exhaust.getCapacity());
-                    case TurbineMenu.ENERGY -> (int) (1000D * Math.min(energy, capacity) / capacity);
-                    case TurbineMenu.POWER_LOW -> (int) Math.min(Integer.MAX_VALUE, power) & 0xFFFF;
-                    case TurbineMenu.POWER_HIGH -> (int) Math.min(Integer.MAX_VALUE, power) >>> 16;
-                    default -> 0;
-                };
-            }
+        return new TurbineMenu(id, this, ContainerLevelAccess.create(player.level(), worldPosition));
+    }
 
-            @Override
-            public void set(int index, int value) {}
-
-            @Override
-            public int getCount() {
-                return TurbineMenu.DATA_COUNT;
-            }
-        });
+    long menuValue(TurbineMenu.Reading reading) {
+        if (layout == null) {
+            return 0L;
+        }
+        return switch (reading) {
+            case FLAGS -> (enabled ? TurbineMenu.MANUAL : 0)
+                    | (getBlockState().getValue(TurbineWallBlock.ACTIVE) ? TurbineMenu.RUNNING : 0)
+                    | (processing ? TurbineMenu.PROCESSING : 0);
+            case LENGTH_X -> layout.bounds().xLength() - 2;
+            case LENGTH_Y -> layout.bounds().yLength() - 2;
+            case LENGTH_Z -> layout.bounds().zLength() - 2;
+            case STEAM -> steam.getFluidAmount();
+            case STEAM_CAPACITY -> steam.getCapacity();
+            case EXHAUST -> exhaust.getFluidAmount();
+            case EXHAUST_CAPACITY -> exhaust.getCapacity();
+            case ENERGY -> energy;
+            case ENERGY_CAPACITY -> capacity;
+            case POWER -> power;
+            case INLET_COILS -> layout.dynamo().inletCoils();
+            case OUTLET_COILS -> layout.dynamo().outletCoils();
+            case BEARINGS_PER_SIDE -> layout.dynamo().bearingsPerSide();
+            case CONDUCTIVITY -> Double.doubleToLongBits(layout.dynamo().conductivity());
+            case ROTOR_EFFICIENCY -> Double.doubleToLongBits(drive.rotorEfficiency());
+            case EXPANSION -> Double.doubleToLongBits(computerTotalExpansion());
+            case IDEAL_EXPANSION -> Double.doubleToLongBits(idealExpansion);
+            case THROUGHPUT -> Double.doubleToLongBits(drive.throughput());
+            case RATED_FLOW -> drive.ratedFlow(layout);
+            case POWER_BONUS -> Double.doubleToLongBits(drive.powerBonus());
+            case TENSION -> Double.doubleToLongBits(drive.tension());
+        };
     }
 
     private final class TurbineTank extends FluidTank {

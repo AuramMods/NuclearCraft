@@ -11,6 +11,8 @@ final class TurbineDrive {
     private double ratedPower;
     private double throughput;
     private double tension;
+    private double rotorEfficiency;
+    private double powerBonus = 1D;
 
     long ratedFlow(TurbineLayout layout) {
         return (long) TurbineConfig.mbPerBlade() * layout.bladeArea() * layout.bladeSets();
@@ -45,6 +47,8 @@ final class TurbineDrive {
         double previousThroughput = throughput;
         throughput = rateTracker.update(inputRate);
         if (recipe == null) {
+            rotorEfficiency = 0D;
+            powerBonus = 1D;
             return 0;
         }
         int stageCount = layout.stages().size();
@@ -68,7 +72,7 @@ final class TurbineDrive {
                 minStator = Math.min(minStator, coefficient);
             }
         }
-        efficiency /= layout.bladeSets();
+        rotorEfficiency = efficiency / layout.bladeSets();
         int maxLength = TurbineConfig.maxSize();
         int mbPerBlade = TurbineConfig.mbPerBlade();
         int minimumBladeArea = 4 * Math.max(1, TurbineConfig.minSize() - 2);
@@ -88,9 +92,9 @@ final class TurbineDrive {
         double rate = Math.min(inputRate, rated);
         double lengthBonus = rate / ((double) mbPerBlade * layout.bladeArea() * effectiveMax);
         double areaBonus = Math.sqrt(2D * rate / ((double) mbPerBlade * stageCount * maxLength * effectiveMax));
-        double bonus = 1D + TurbineConfig.powerBonus() * Math.pow(lengthBonus * areaBonus, 2D / 3D);
-        double multiplier = layout.dynamo().conductivity() * efficiency * expansionFactor(idealExpansion, expansion)
-                * throughputEfficiency * bonus;
+        powerBonus = 1D + TurbineConfig.powerBonus() * Math.pow(lengthBonus * areaBonus, 2D / 3D);
+        double multiplier = layout.dynamo().conductivity() * rotorEfficiency * expansionFactor(idealExpansion, expansion)
+                * throughputEfficiency * powerBonus;
         return (long) (rawPower * multiplier);
     }
 
@@ -110,8 +114,12 @@ final class TurbineDrive {
         return throughput;
     }
 
+    double rotorEfficiency() { return rotorEfficiency; }
+    double powerBonus() { return powerBonus; }
+
     void clearRotation() {
-        rawPower = ratedPower = throughput = 0D;
+        rawPower = ratedPower = throughput = rotorEfficiency = 0D;
+        powerBonus = 1D;
         rateTracker.reset();
     }
 
