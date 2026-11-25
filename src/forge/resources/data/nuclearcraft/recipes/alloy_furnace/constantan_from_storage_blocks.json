@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/copper"
+                },
+                {
+                    "tag": "c:storage_blocks/copper"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/nickel"
+                },
+                {
+                    "tag": "c:storage_blocks/nickel"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/constantan",
+        "preferred_tag": "forge:storage_blocks/constantan",
+        "count": 2
+    },
+    "ticks": 3600,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/constantan"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/constantan"
+                    }
+                ]
+            }
+        }
+    ]
+}

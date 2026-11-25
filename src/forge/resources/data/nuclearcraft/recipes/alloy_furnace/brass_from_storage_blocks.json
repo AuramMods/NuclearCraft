@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/copper"
+                },
+                {
+                    "tag": "c:storage_blocks/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/zinc"
+                },
+                {
+                    "tag": "c:storage_blocks/zinc"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/brass",
+        "preferred_tag": "forge:storage_blocks/brass",
+        "count": 4
+    },
+    "ticks": 3600,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/zinc"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/brass"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/brass"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/iron"
+                },
+                {
+                    "tag": "c:storage_blocks/iron"
+                }
+            ],
+            "count": 2
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/nickel"
+                },
+                {
+                    "tag": "c:storage_blocks/nickel"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/invar",
+        "preferred_tag": "forge:storage_blocks/invar",
+        "count": 3
+    },
+    "ticks": 3600,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/invar"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/invar"
+                    }
+                ]
+            }
+        }
+    ]
+}

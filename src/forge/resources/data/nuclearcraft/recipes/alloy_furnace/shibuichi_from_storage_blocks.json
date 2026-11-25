@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/copper"
+                },
+                {
+                    "tag": "c:storage_blocks/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/silver"
+                },
+                {
+                    "tag": "c:storage_blocks/silver"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/shibuichi",
+        "preferred_tag": "forge:storage_blocks/shibuichi",
+        "count": 4
+    },
+    "ticks": 5400,
+    "power_multiplier": 0.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/silver"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/shibuichi"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/shibuichi"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/cobalt"
+                },
+                {
+                    "tag": "c:storage_blocks/cobalt"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/ardite"
+                },
+                {
+                    "tag": "c:storage_blocks/ardite"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/manyullyn",
+        "preferred_tag": "forge:storage_blocks/manyullyn",
+        "count": 1
+    },
+    "ticks": 7200,
+    "power_multiplier": 2,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/cobalt"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/cobalt"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/ardite"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/ardite"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/manyullyn"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/manyullyn"
+                    }
+                ]
+            }
+        }
+    ]
+}

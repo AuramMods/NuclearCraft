@@ -400,7 +400,8 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                     && fluidProducts.stream().allMatch(FluidProduct::isEmpty)) {
                 throw new JsonSyntaxException("Processor recipe needs an input or output for " + id);
             }
-            double ticks = machine.scripted() ? scriptedTicks(id, json) : GsonHelper.getAsInt(json, "ticks");
+            double ticks = machine.scripted() ? scriptedTicks(id, json)
+                    : fractionalTicks() ? GsonHelper.getAsDouble(json, "ticks") : GsonHelper.getAsInt(json, "ticks");
             Double power = json.has("power_multiplier") ? GsonHelper.getAsDouble(json, "power_multiplier") : null;
             if (power != null && (json.has("energy_per_tick") || !Double.isFinite(power) || power < 0)) {
                 throw new JsonSyntaxException("Expected one valid power setting for " + id);
@@ -480,7 +481,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             }
             List<Product> results = readProducts(buffer);
             List<Product> alternate = buffer.readBoolean() ? readProducts(buffer) : List.of();
-            double ticks = machine.scripted() ? buffer.readDouble() : buffer.readVarInt();
+            double ticks = fractionalTicks() ? buffer.readDouble() : buffer.readVarInt();
             return new ItemProcessorRecipe(id, machine, inputs, fluids, fluidProducts, results, alternate,
                     ticks, buffer.readVarInt(), buffer.readDouble(),
                     buffer.readNullable(FriendlyByteBuf::readDouble), buffer.readBoolean(), null);
@@ -502,7 +503,7 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
             if (!recipe.alternateResults.isEmpty()) {
                 writeProducts(buffer, recipe.alternateResults);
             }
-            if (machine.scripted()) {
+            if (fractionalTicks()) {
                 buffer.writeDouble(recipe.ticks);
             } else {
                 buffer.writeVarInt((int) recipe.ticks);
@@ -519,6 +520,10 @@ public record ItemProcessorRecipe(ResourceLocation id, ProcessorProfile machine,
                 results.add(Product.fromNetwork(buffer));
             }
             return results;
+        }
+
+        private boolean fractionalTicks() {
+            return machine.scripted() || machine == Machine.ALLOY_FURNACE;
         }
 
         private static void writeProducts(FriendlyByteBuf buffer, List<Product> products) {

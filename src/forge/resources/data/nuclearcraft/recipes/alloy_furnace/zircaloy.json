@@ -30,5 +30,5 @@
         "count": 8
     },
     "ticks": 1600,
-    "energy_per_tick": 20
+    "energy_per_tick": 10
 }

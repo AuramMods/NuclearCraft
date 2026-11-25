@@ -30,11 +30,42 @@
         "count": 1
     },
     "ticks": 400,
-    "energy_per_tick": 20,
+    "energy_per_tick": 10,
     "conditions": [
         {
-            "type": "forge:tag_empty",
-            "tag": "forge:fuels/coal_coke"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:not",
+                "value": {
+                    "type": "forge:and",
+                    "values": [
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:fuels/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:fuels/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:dusts/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:dusts/coal_coke"
+                        }
+                    ]
+                }
+            }
         }
     ]
 }

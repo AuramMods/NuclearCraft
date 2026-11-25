@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/zirconium"
+                },
+                {
+                    "tag": "c:nuggets/zirconium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/zirconium"
+                },
+                {
+                    "tag": "c:tiny_dusts/zirconium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/molybdenum"
+                },
+                {
+                    "tag": "c:nuggets/molybdenum"
+                },
+                {
+                    "tag": "forge:tiny_dusts/molybdenum"
+                },
+                {
+                    "tag": "c:tiny_dusts/molybdenum"
+                }
+            ],
+            "count": 15
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/zirconium_molybdenum",
+        "preferred_tag": "forge:nuggets/zirconium_molybdenum",
+        "count": 16
+    },
+    "ticks": 355.55555555555554,
+    "power_multiplier": 2.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/zirconium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/zirconium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/zirconium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/zirconium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/molybdenum"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/zirconium_molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/zirconium_molybdenum"
+                    }
+                ]
+            }
+        }
+    ]
+}

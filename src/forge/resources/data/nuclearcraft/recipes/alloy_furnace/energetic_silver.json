@@ -1,0 +1,98 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/silver"
+                },
+                {
+                    "tag": "c:ingots/silver"
+                },
+                {
+                    "tag": "forge:dusts/silver"
+                },
+                {
+                    "tag": "c:dusts/silver"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:dusts/energetic"
+                },
+                {
+                    "tag": "c:dusts/energetic"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/energetic_silver",
+        "preferred_tag": "forge:ingots/energetic_silver",
+        "count": 1
+    },
+    "ticks": 400,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/silver"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/energetic"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/energetic"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/energetic_silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/energetic_silver"
+                    }
+                ]
+            }
+        }
+    ]
+}

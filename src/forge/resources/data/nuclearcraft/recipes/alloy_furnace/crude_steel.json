@@ -1,0 +1,50 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:clay_ball"
+            },
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:gravel"
+                },
+                {
+                    "tag": "forge:gravels/gravel"
+                },
+                {
+                    "tag": "c:gravels/gravel"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/crude_steel",
+        "preferred_tag": "forge:ingots/crude_steel",
+        "count": 1
+    },
+    "ticks": 200,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/crude_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/crude_steel"
+                    }
+                ]
+            }
+        }
+    ]
+}

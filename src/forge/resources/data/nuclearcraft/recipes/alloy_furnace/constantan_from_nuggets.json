@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/copper"
+                },
+                {
+                    "tag": "c:nuggets/copper"
+                },
+                {
+                    "tag": "forge:tiny_dusts/copper"
+                },
+                {
+                    "tag": "c:tiny_dusts/copper"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/nickel"
+                },
+                {
+                    "tag": "c:nuggets/nickel"
+                },
+                {
+                    "tag": "forge:tiny_dusts/nickel"
+                },
+                {
+                    "tag": "c:tiny_dusts/nickel"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/constantan",
+        "preferred_tag": "forge:nuggets/constantan",
+        "count": 2
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/constantan"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/constantan"
+                    }
+                ]
+            }
+        }
+    ]
+}

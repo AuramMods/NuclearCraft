@@ -25,7 +25,7 @@
         }
     ],
     "ticks": 400,
-    "energy_per_tick": 20,
+    "energy_per_tick": 10,
     "result": {
         "item": "nuclearcraft:uranium_233_carbide_ingot",
         "preferred_tag": "forge:ingots/uranium_233_carbide",

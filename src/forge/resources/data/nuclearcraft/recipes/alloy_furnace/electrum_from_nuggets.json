@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/gold"
+                },
+                {
+                    "tag": "c:nuggets/gold"
+                },
+                {
+                    "tag": "forge:tiny_dusts/gold"
+                },
+                {
+                    "tag": "c:tiny_dusts/gold"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/silver"
+                },
+                {
+                    "tag": "c:nuggets/silver"
+                },
+                {
+                    "tag": "forge:tiny_dusts/silver"
+                },
+                {
+                    "tag": "c:tiny_dusts/silver"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/electrum",
+        "preferred_tag": "forge:nuggets/electrum",
+        "count": 2
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 0.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/gold"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/silver"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/electrum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/electrum"
+                    }
+                ]
+            }
+        }
+    ]
+}

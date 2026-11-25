@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/magnesium"
+                },
+                {
+                    "tag": "c:nuggets/magnesium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/magnesium"
+                },
+                {
+                    "tag": "c:tiny_dusts/magnesium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/boron"
+                },
+                {
+                    "tag": "c:nuggets/boron"
+                },
+                {
+                    "tag": "forge:tiny_dusts/boron"
+                },
+                {
+                    "tag": "c:tiny_dusts/boron"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/magnesium_diboride",
+        "preferred_tag": "forge:nuggets/magnesium_diboride",
+        "count": 3
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/magnesium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/magnesium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/magnesium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/magnesium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/boron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/magnesium_diboride"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/magnesium_diboride"
+                    }
+                ]
+            }
+        }
+    ]
+}

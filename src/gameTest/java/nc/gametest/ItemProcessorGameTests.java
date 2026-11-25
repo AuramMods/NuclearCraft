@@ -1,5 +1,6 @@
 package nc.gametest;
 
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity;
@@ -8,6 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -139,10 +142,10 @@ public final class ItemProcessorGameTests {
                 "The second slot accepts the matching copper");
         processor.inventory().setStackInSlot(2, stack("bronze_ingot", 64));
         var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).orElseThrow(AssertionError::new);
-        power.receiveEnergy(8000, false);
+        power.receiveEnergy(4000, false);
 
         helper.runAtTickTime(12, () -> {
-            helper.assertTrue(power.getEnergyStored() == 8000 && inputs.getStackInSlot(1).getCount() == 3,
+            helper.assertTrue(power.getEnergyStored() == 4000 && inputs.getStackInSlot(1).getCount() == 3,
                     "A full output must leave ingredients and energy in place");
             helper.assertTrue(output.extractItem(2, 64, false).getCount() == 64, "Clear the output through automation");
         });
@@ -164,9 +167,32 @@ public final class ItemProcessorGameTests {
                 helper.assertTrue(restoredInput.getStackInSlot(0).isEmpty() && restoredInput.getStackInSlot(1).isEmpty(),
                         "The two ingredients are consumed once");
                 var charge = restored.getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).orElseThrow(AssertionError::new);
-                helper.assertTrue(charge.getEnergyStored() == 0, "The recipe consumed its original 8,000 FE");
+                helper.assertTrue(charge.getEnergyStored() == 0, "The recipe consumed its original 4,000 FE");
             });
         });
+    }
+
+    @GameTest(template = "empty")
+    public static void alloyFurnaceSyncsFractionalRecipeTime(GameTestHelper helper) {
+        var id = NuclearCraft.id("alloy_furnace/qa_fractional_time");
+        var serializer = new ItemProcessorRecipe.Serializer(Machine.ALLOY_FURNACE);
+        var recipe = serializer.fromJson(id, GsonHelper.parse("""
+                {"ingredients":[{"ingredient":{"item":"minecraft:gold_nugget"},"count":3},
+                   {"ingredient":{"item":"minecraft:iron_nugget"},"count":1}],
+                 "result":{"item":"minecraft:quartz","count":4},
+                 "ticks":44.44444444444444,"power_multiplier":1}
+                """));
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(buffer, recipe);
+            var synced = serializer.fromNetwork(id, buffer);
+            helper.assertTrue(synced.ticks() == 400D / 9 && synced.powerMultiplier() == 1
+                            && synced.products().get(0).stack().getCount() == 4,
+                    "Preserve a nugget recipe's fractional time and product across synchronization");
+        } finally {
+            buffer.release();
+        }
+        helper.succeed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 4100)

@@ -1,0 +1,63 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/end_steel"
+                },
+                {
+                    "tag": "c:ingots/end_steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "item": "minecraft:popped_chorus_fruit"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/melodic_alloy",
+        "preferred_tag": "forge:ingots/melodic_alloy",
+        "count": 1
+    },
+    "ticks": 800,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/end_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/end_steel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/melodic_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/melodic_alloy"
+                    }
+                ]
+            }
+        }
+    ]
+}

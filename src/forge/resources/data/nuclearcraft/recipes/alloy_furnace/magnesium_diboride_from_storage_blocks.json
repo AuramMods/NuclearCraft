@@ -1,0 +1,84 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/magnesium"
+                },
+                {
+                    "tag": "c:storage_blocks/magnesium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/boron"
+                },
+                {
+                    "tag": "c:storage_blocks/boron"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/magnesium_diboride",
+        "preferred_tag": "forge:storage_blocks/magnesium_diboride",
+        "count": 3
+    },
+    "ticks": 3600,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/magnesium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/magnesium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/boron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/magnesium_diboride"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/magnesium_diboride"
+                    }
+                ]
+            }
+        }
+    ]
+}

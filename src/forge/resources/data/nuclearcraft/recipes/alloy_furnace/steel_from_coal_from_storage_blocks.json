@@ -1,0 +1,119 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/iron"
+                },
+                {
+                    "tag": "c:storage_blocks/iron"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/coal"
+                },
+                {
+                    "tag": "c:storage_blocks/coal"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/steel",
+        "preferred_tag": "forge:storage_blocks/steel",
+        "count": 1
+    },
+    "ticks": 3600,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:not",
+                "value": {
+                    "type": "forge:and",
+                    "values": [
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:fuels/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:fuels/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:dusts/coal_coke"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:dusts/coal_coke"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/coal"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/coal"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/steel"
+                    }
+                ]
+            }
+        }
+    ]
+}

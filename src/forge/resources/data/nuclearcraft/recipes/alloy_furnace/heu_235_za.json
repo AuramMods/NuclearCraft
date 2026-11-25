@@ -25,7 +25,7 @@
         }
     ],
     "ticks": 400,
-    "energy_per_tick": 20,
+    "energy_per_tick": 10,
     "result": {
         "item": "nuclearcraft:heu_235_za",
         "preferred_tag": "forge:ingots/heu_235_za",

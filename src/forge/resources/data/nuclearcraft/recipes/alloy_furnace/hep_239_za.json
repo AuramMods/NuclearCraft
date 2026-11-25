@@ -25,7 +25,7 @@
         }
     ],
     "ticks": 400,
-    "energy_per_tick": 20,
+    "energy_per_tick": 10,
     "result": {
         "item": "nuclearcraft:hep_239_za",
         "preferred_tag": "forge:ingots/hep_239_za",

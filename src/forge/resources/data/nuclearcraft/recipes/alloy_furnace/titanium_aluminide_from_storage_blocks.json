@@ -1,0 +1,98 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/aluminum"
+                },
+                {
+                    "tag": "c:storage_blocks/aluminum"
+                },
+                {
+                    "tag": "forge:storage_blocks/aluminium"
+                },
+                {
+                    "tag": "c:storage_blocks/aluminium"
+                }
+            ],
+            "count": 7
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/titanium"
+                },
+                {
+                    "tag": "c:storage_blocks/titanium"
+                }
+            ],
+            "count": 3
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/titanium_aluminide",
+        "preferred_tag": "forge:storage_blocks/titanium_aluminide",
+        "count": 3
+    },
+    "ticks": 10800,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/aluminium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/titanium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/titanium_aluminide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/titanium_aluminide"
+                    }
+                ]
+            }
+        }
+    ]
+}

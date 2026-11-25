@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/steel"
+                },
+                {
+                    "tag": "c:ingots/steel"
+                },
+                {
+                    "tag": "forge:dusts/steel"
+                },
+                {
+                    "tag": "c:dusts/steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:silicon"
+                },
+                {
+                    "tag": "c:silicon"
+                },
+                {
+                    "tag": "forge:ingots/silicon"
+                },
+                {
+                    "tag": "c:ingots/silicon"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/electrical_steel",
+        "preferred_tag": "forge:ingots/electrical_steel",
+        "count": 1
+    },
+    "ticks": 600,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/steel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/silicon"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/electrical_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/electrical_steel"
+                    }
+                ]
+            }
+        }
+    ]
+}

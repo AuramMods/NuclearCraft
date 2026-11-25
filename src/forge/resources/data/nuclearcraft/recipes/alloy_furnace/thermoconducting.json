@@ -25,5 +25,5 @@
         "count": 2
     },
     "ticks": 600,
-    "energy_per_tick": 30
+    "energy_per_tick": 15
 }

@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/nichrome"
+                },
+                {
+                    "tag": "c:nuggets/nichrome"
+                },
+                {
+                    "tag": "forge:tiny_dusts/nichrome"
+                },
+                {
+                    "tag": "c:tiny_dusts/nichrome"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/molybdenum"
+                },
+                {
+                    "tag": "c:nuggets/molybdenum"
+                },
+                {
+                    "tag": "forge:tiny_dusts/molybdenum"
+                },
+                {
+                    "tag": "c:tiny_dusts/molybdenum"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/hastelloy",
+        "preferred_tag": "forge:nuggets/hastelloy",
+        "count": 4
+    },
+    "ticks": 88.88888888888889,
+    "power_multiplier": 2.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/nichrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/nichrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/nichrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/nichrome"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/molybdenum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/molybdenum"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/hastelloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/hastelloy"
+                    }
+                ]
+            }
+        }
+    ]
+}

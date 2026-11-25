@@ -1,0 +1,147 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/nickel"
+                },
+                {
+                    "tag": "c:ingots/nickel"
+                },
+                {
+                    "tag": "forge:dusts/nickel"
+                },
+                {
+                    "tag": "c:dusts/nickel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/chromium"
+                },
+                {
+                    "tag": "c:ingots/chromium"
+                },
+                {
+                    "tag": "forge:ingots/chrome"
+                },
+                {
+                    "tag": "c:ingots/chrome"
+                },
+                {
+                    "tag": "forge:dusts/chromium"
+                },
+                {
+                    "tag": "c:dusts/chromium"
+                },
+                {
+                    "tag": "forge:dusts/chrome"
+                },
+                {
+                    "tag": "c:dusts/chrome"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/nichrome",
+        "preferred_tag": "forge:ingots/nichrome",
+        "count": 2
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:mod_loaded",
+                "modid": "qmd"
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/chrome"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/nichrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/nichrome"
+                    }
+                ]
+            }
+        }
+    ]
+}

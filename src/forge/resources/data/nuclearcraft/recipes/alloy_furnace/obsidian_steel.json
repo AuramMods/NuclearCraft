@@ -1,0 +1,103 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/steel"
+                },
+                {
+                    "tag": "c:ingots/steel"
+                },
+                {
+                    "tag": "forge:dusts/steel"
+                },
+                {
+                    "tag": "c:dusts/steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": {
+                "item": "minecraft:obsidian"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/obsidian_steel",
+        "preferred_tag": "forge:ingots/obsidian_steel",
+        "count": 1
+    },
+    "ticks": 600,
+    "power_multiplier": 2,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:not",
+                "value": {
+                    "type": "forge:and",
+                    "values": [
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "forge:ingots/dark_steel"
+                        },
+                        {
+                            "type": "forge:tag_empty",
+                            "tag": "c:ingots/dark_steel"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:item_exists",
+                "item": "enderio:dark_steel_ingot"
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/steel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/obsidian_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/obsidian_steel"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,98 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/aluminum"
+                },
+                {
+                    "tag": "c:storage_blocks/aluminum"
+                },
+                {
+                    "tag": "forge:storage_blocks/aluminium"
+                },
+                {
+                    "tag": "c:storage_blocks/aluminium"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:storage_blocks/copper"
+                },
+                {
+                    "tag": "c:storage_blocks/copper"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:storage_blocks/aluminum_brass",
+        "preferred_tag": "forge:storage_blocks/aluminum_brass",
+        "count": 4
+    },
+    "ticks": 3600,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/aluminium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:storage_blocks/aluminum_brass"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:storage_blocks/aluminum_brass"
+                    }
+                ]
+            }
+        }
+    ]
+}

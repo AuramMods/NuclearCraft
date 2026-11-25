@@ -87,23 +87,26 @@ final class FissionMaterialResources {
     private void alloy(Material material, Form form, String addition) {
         String result = material.item(form, false);
         String raw = material.ingotTag(Form.RAW, false);
-        recipe("alloy_furnace", result, 400, 20, Map.of(
+        String productTag = material.ingotTag(form, false);
+        recipe("alloy_furnace", result, 400, 10, Map.of(
                 "ingredients", List.of(counted(alloyIngredient(raw), 1),
                         counted(alloyIngredient(addition), 1)), "result", item(result, 1)));
-        alloySize(result, "nuggets", "tiny_dusts", raw, addition, 400 / 9);
-        alloySize(result, "storage_blocks", "storage_blocks", raw, addition, 3_600);
+        alloySize(result, "nuggets", "tiny_dusts", raw, addition, productTag, 400D / 9);
+        alloySize(result, "storage_blocks", "storage_blocks", raw, addition, productTag, 3_600);
     }
 
-    private void alloySize(String result, String size, String dustSize, String raw, String addition, int ticks) {
+    private void alloySize(String result, String size, String dustSize, String raw, String addition,
+                           String product, double ticks) {
         String first = size + "/" + raw;
         String second = size + "/" + addition;
         String firstDust = dustSize + "/" + raw;
         String secondDust = dustSize + "/" + addition;
-        recipe("alloy_furnace", result + "_from_" + size, ticks, 20, Map.of(
+        String output = size + "/" + product;
+        recipe("alloy_furnace", result + "_from_" + size, ticks, 10, Map.of(
                 "ingredients", List.of(counted(List.of(itemTag(first), itemTag(firstDust)), 1),
                         counted(List.of(itemTag(second), itemTag(secondDust)), 1)),
-                "conditions", List.of(anyTag(first, firstDust), anyTag(second, secondDust)),
-                "result", item(result, 1)));
+                "conditions", List.of(anyTag(first, firstDust), anyTag(second, secondDust), anyTag(output, output)),
+                "result", Map.of("tag", "forge:" + output)));
     }
 
     private static Map<String, ?> anyTag(String first, String second) {
@@ -197,7 +200,7 @@ final class FissionMaterialResources {
         }
     }
 
-    private void recipe(String type, String name, int ticks, int energyPerTick, Map<String, ?> fields) {
+    private void recipe(String type, String name, double ticks, int energyPerTick, Map<String, ?> fields) {
         Map<String, Object> process = new HashMap<>(fields);
         process.put("ticks", ticks);
         process.put("energy_per_tick", energyPerTick);

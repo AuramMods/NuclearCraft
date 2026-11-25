@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/copper"
+                },
+                {
+                    "tag": "c:ingots/copper"
+                },
+                {
+                    "tag": "forge:dusts/copper"
+                },
+                {
+                    "tag": "c:dusts/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/zinc"
+                },
+                {
+                    "tag": "c:ingots/zinc"
+                },
+                {
+                    "tag": "forge:dusts/zinc"
+                },
+                {
+                    "tag": "c:dusts/zinc"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/brass",
+        "preferred_tag": "forge:ingots/brass",
+        "count": 4
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/zinc"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/brass"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/brass"
+                    }
+                ]
+            }
+        }
+    ]
+}

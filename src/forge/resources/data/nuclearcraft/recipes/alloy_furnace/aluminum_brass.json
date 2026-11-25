@@ -1,0 +1,140 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/aluminum"
+                },
+                {
+                    "tag": "c:ingots/aluminum"
+                },
+                {
+                    "tag": "forge:ingots/aluminium"
+                },
+                {
+                    "tag": "c:ingots/aluminium"
+                },
+                {
+                    "tag": "forge:dusts/aluminum"
+                },
+                {
+                    "tag": "c:dusts/aluminum"
+                },
+                {
+                    "tag": "forge:dusts/aluminium"
+                },
+                {
+                    "tag": "c:dusts/aluminium"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/copper"
+                },
+                {
+                    "tag": "c:ingots/copper"
+                },
+                {
+                    "tag": "forge:dusts/copper"
+                },
+                {
+                    "tag": "c:dusts/copper"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/aluminum_brass",
+        "preferred_tag": "forge:ingots/aluminum_brass",
+        "count": 4
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/aluminium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/aluminum_brass"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/aluminum_brass"
+                    }
+                ]
+            }
+        }
+    ]
+}

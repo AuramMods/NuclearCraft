@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/steel"
+                },
+                {
+                    "tag": "c:nuggets/steel"
+                },
+                {
+                    "tag": "forge:tiny_dusts/steel"
+                },
+                {
+                    "tag": "c:tiny_dusts/steel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/boron"
+                },
+                {
+                    "tag": "c:nuggets/boron"
+                },
+                {
+                    "tag": "forge:tiny_dusts/boron"
+                },
+                {
+                    "tag": "c:tiny_dusts/boron"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/ferroboron",
+        "preferred_tag": "forge:nuggets/ferroboron",
+        "count": 2
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 1.5,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/steel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/boron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/boron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/ferroboron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/ferroboron"
+                    }
+                ]
+            }
+        }
+    ]
+}

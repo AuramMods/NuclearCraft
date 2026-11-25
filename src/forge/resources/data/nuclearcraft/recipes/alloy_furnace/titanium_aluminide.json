@@ -1,0 +1,140 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/aluminum"
+                },
+                {
+                    "tag": "c:ingots/aluminum"
+                },
+                {
+                    "tag": "forge:ingots/aluminium"
+                },
+                {
+                    "tag": "c:ingots/aluminium"
+                },
+                {
+                    "tag": "forge:dusts/aluminum"
+                },
+                {
+                    "tag": "c:dusts/aluminum"
+                },
+                {
+                    "tag": "forge:dusts/aluminium"
+                },
+                {
+                    "tag": "c:dusts/aluminium"
+                }
+            ],
+            "count": 7
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/titanium"
+                },
+                {
+                    "tag": "c:ingots/titanium"
+                },
+                {
+                    "tag": "forge:dusts/titanium"
+                },
+                {
+                    "tag": "c:dusts/titanium"
+                }
+            ],
+            "count": 3
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/titanium_aluminide",
+        "preferred_tag": "forge:ingots/titanium_aluminide",
+        "count": 3
+    },
+    "ticks": 1200,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/aluminium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/titanium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/titanium_aluminide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/titanium_aluminide"
+                    }
+                ]
+            }
+        }
+    ]
+}

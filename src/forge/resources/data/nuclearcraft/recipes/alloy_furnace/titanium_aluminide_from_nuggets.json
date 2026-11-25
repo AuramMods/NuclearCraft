@@ -1,0 +1,140 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/aluminum"
+                },
+                {
+                    "tag": "c:nuggets/aluminum"
+                },
+                {
+                    "tag": "forge:nuggets/aluminium"
+                },
+                {
+                    "tag": "c:nuggets/aluminium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/aluminum"
+                },
+                {
+                    "tag": "c:tiny_dusts/aluminum"
+                },
+                {
+                    "tag": "forge:tiny_dusts/aluminium"
+                },
+                {
+                    "tag": "c:tiny_dusts/aluminium"
+                }
+            ],
+            "count": 7
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/titanium"
+                },
+                {
+                    "tag": "c:nuggets/titanium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/titanium"
+                },
+                {
+                    "tag": "c:tiny_dusts/titanium"
+                }
+            ],
+            "count": 3
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/titanium_aluminide",
+        "preferred_tag": "forge:nuggets/titanium_aluminide",
+        "count": 3
+    },
+    "ticks": 133.33333333333334,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/aluminum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/aluminium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/aluminium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/titanium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/titanium_aluminide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/titanium_aluminide"
+                    }
+                ]
+            }
+        }
+    ]
+}

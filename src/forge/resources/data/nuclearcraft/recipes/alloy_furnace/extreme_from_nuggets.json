@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/tough"
+                },
+                {
+                    "tag": "c:nuggets/tough"
+                },
+                {
+                    "tag": "forge:tiny_dusts/tough"
+                },
+                {
+                    "tag": "c:tiny_dusts/tough"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/hard_carbon"
+                },
+                {
+                    "tag": "c:nuggets/hard_carbon"
+                },
+                {
+                    "tag": "forge:tiny_dusts/hard_carbon"
+                },
+                {
+                    "tag": "c:tiny_dusts/hard_carbon"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/extreme",
+        "preferred_tag": "forge:nuggets/extreme",
+        "count": 1
+    },
+    "ticks": 88.88888888888889,
+    "power_multiplier": 2.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/tough"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/tough"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/tough"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/tough"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/hard_carbon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/hard_carbon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/hard_carbon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/hard_carbon"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/extreme"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/extreme"
+                    }
+                ]
+            }
+        }
+    ]
+}

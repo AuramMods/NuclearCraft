@@ -1,0 +1,147 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/nickel"
+                },
+                {
+                    "tag": "c:nuggets/nickel"
+                },
+                {
+                    "tag": "forge:tiny_dusts/nickel"
+                },
+                {
+                    "tag": "c:tiny_dusts/nickel"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/chromium"
+                },
+                {
+                    "tag": "c:nuggets/chromium"
+                },
+                {
+                    "tag": "forge:nuggets/chrome"
+                },
+                {
+                    "tag": "c:nuggets/chrome"
+                },
+                {
+                    "tag": "forge:tiny_dusts/chromium"
+                },
+                {
+                    "tag": "c:tiny_dusts/chromium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/chrome"
+                },
+                {
+                    "tag": "c:tiny_dusts/chrome"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/nichrome",
+        "preferred_tag": "forge:nuggets/nichrome",
+        "count": 2
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:mod_loaded",
+                "modid": "qmd"
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/chromium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/chrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/chrome"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/nichrome"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/nichrome"
+                    }
+                ]
+            }
+        }
+    ]
+}

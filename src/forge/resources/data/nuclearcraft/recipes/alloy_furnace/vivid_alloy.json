@@ -1,0 +1,85 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/energetic_silver"
+                },
+                {
+                    "tag": "c:ingots/energetic_silver"
+                },
+                {
+                    "tag": "forge:dusts/energetic_silver"
+                },
+                {
+                    "tag": "c:dusts/energetic_silver"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:ender_pearl"
+                },
+                {
+                    "tag": "forge:dusts/ender_pearl"
+                },
+                {
+                    "tag": "c:dusts/ender_pearl"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/vivid_alloy",
+        "preferred_tag": "forge:ingots/vivid_alloy",
+        "count": 1
+    },
+    "ticks": 600,
+    "power_multiplier": 2,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/energetic_silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/energetic_silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/energetic_silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/energetic_silver"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/vivid_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/vivid_alloy"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "replace": false,
+    "values": [
+        {
+            "id": "enderio:pulsating_powder",
+            "required": false
+        }
+    ]
+}

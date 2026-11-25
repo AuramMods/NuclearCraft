@@ -36,6 +36,11 @@ public final class FissionMaterialGameTests {
         helper.assertTrue(cast.getAsJsonObject("fluid_input").get("amount").getAsInt() == 144
                 && cast.getAsJsonObject("result").get("item").getAsString().equals("nuclearcraft:qa_fuel_pellet"),
                 "Casting should restore the registered raw pellet from one ingot volume");
+        var nuggets = json(data, "nuclearcraft:recipes/alloy_furnace/qa_fuel_pellet_carbide_from_nuggets.json");
+        helper.assertTrue(nuggets.get("ticks").getAsDouble() == 400D / 9
+                        && nuggets.get("energy_per_tick").getAsInt() == 10
+                        && nuggets.getAsJsonObject("result").get("tag").getAsString().equals("forge:nuggets/qafuel_carbide"),
+                "Generated alloys use the legacy nugget timing and produce the corresponding nugget form");
         var triso = json(data, "nuclearcraft:recipes/pebble_fission/qa_fuel_triso.json");
         helper.assertTrue(triso.get("ticks").getAsInt() == 900 && triso.get("heat").getAsInt() == 277
                 && triso.get("criticality").getAsInt() == 72 && triso.get("intrinsic_flux").getAsInt() == 10

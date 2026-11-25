@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/lithium"
+                },
+                {
+                    "tag": "c:nuggets/lithium"
+                },
+                {
+                    "tag": "forge:tiny_dusts/lithium"
+                },
+                {
+                    "tag": "c:tiny_dusts/lithium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/manganese_dioxide"
+                },
+                {
+                    "tag": "c:nuggets/manganese_dioxide"
+                },
+                {
+                    "tag": "forge:tiny_dusts/manganese_dioxide"
+                },
+                {
+                    "tag": "c:tiny_dusts/manganese_dioxide"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/lithium_manganese_dioxide",
+        "preferred_tag": "forge:nuggets/lithium_manganese_dioxide",
+        "count": 2
+    },
+    "ticks": 66.66666666666667,
+    "power_multiplier": 1.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/lithium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/lithium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/lithium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/lithium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/manganese_dioxide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/manganese_dioxide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/manganese_dioxide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/manganese_dioxide"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/lithium_manganese_dioxide"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/lithium_manganese_dioxide"
+                    }
+                ]
+            }
+        }
+    ]
+}

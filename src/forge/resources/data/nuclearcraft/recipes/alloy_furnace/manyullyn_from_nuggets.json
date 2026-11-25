@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/cobalt"
+                },
+                {
+                    "tag": "c:nuggets/cobalt"
+                },
+                {
+                    "tag": "forge:tiny_dusts/cobalt"
+                },
+                {
+                    "tag": "c:tiny_dusts/cobalt"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/ardite"
+                },
+                {
+                    "tag": "c:nuggets/ardite"
+                },
+                {
+                    "tag": "forge:tiny_dusts/ardite"
+                },
+                {
+                    "tag": "c:tiny_dusts/ardite"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/manyullyn",
+        "preferred_tag": "forge:nuggets/manyullyn",
+        "count": 1
+    },
+    "ticks": 88.88888888888889,
+    "power_multiplier": 2,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/cobalt"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/cobalt"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/cobalt"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/cobalt"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/ardite"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/ardite"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/ardite"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/ardite"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/manyullyn"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/manyullyn"
+                    }
+                ]
+            }
+        }
+    ]
+}

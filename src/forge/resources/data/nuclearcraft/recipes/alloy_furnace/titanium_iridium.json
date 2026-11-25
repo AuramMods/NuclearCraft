@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/titanium"
+                },
+                {
+                    "tag": "c:ingots/titanium"
+                },
+                {
+                    "tag": "forge:dusts/titanium"
+                },
+                {
+                    "tag": "c:dusts/titanium"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/iridium"
+                },
+                {
+                    "tag": "c:ingots/iridium"
+                },
+                {
+                    "tag": "forge:dusts/iridium"
+                },
+                {
+                    "tag": "c:dusts/iridium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/titanium_iridium",
+        "preferred_tag": "forge:ingots/titanium_iridium",
+        "count": 2
+    },
+    "ticks": 600,
+    "power_multiplier": 2,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/titanium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/titanium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/iridium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/iridium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/iridium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/iridium"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/titanium_iridium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/titanium_iridium"
+                    }
+                ]
+            }
+        }
+    ]
+}

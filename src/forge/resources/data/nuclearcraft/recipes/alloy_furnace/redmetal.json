@@ -1,0 +1,85 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/gold"
+                },
+                {
+                    "tag": "c:ingots/gold"
+                },
+                {
+                    "tag": "forge:dusts/gold"
+                },
+                {
+                    "tag": "c:dusts/gold"
+                }
+            ],
+            "count": 1
+        },
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:redstone"
+                },
+                {
+                    "tag": "forge:dusts/redstone"
+                },
+                {
+                    "tag": "c:dusts/redstone"
+                }
+            ],
+            "count": 2
+        }
+    ],
+    "result": {
+        "tag": "c:ingots/redmetal",
+        "preferred_tag": "forge:ingots/redmetal",
+        "count": 1
+    },
+    "ticks": 400,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/gold"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/redmetal"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/redmetal"
+                    }
+                ]
+            }
+        }
+    ]
+}

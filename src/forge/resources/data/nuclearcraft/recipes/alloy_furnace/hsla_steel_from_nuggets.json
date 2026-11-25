@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/iron"
+                },
+                {
+                    "tag": "c:nuggets/iron"
+                },
+                {
+                    "tag": "forge:tiny_dusts/iron"
+                },
+                {
+                    "tag": "c:tiny_dusts/iron"
+                }
+            ],
+            "count": 15
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/carbon_manganese"
+                },
+                {
+                    "tag": "c:nuggets/carbon_manganese"
+                },
+                {
+                    "tag": "forge:tiny_dusts/carbon_manganese"
+                },
+                {
+                    "tag": "c:tiny_dusts/carbon_manganese"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/hsla_steel",
+        "preferred_tag": "forge:nuggets/hsla_steel",
+        "count": 16
+    },
+    "ticks": 355.55555555555554,
+    "power_multiplier": 2.0,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/carbon_manganese"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/carbon_manganese"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/carbon_manganese"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/carbon_manganese"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/hsla_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/hsla_steel"
+                    }
+                ]
+            }
+        }
+    ]
+}

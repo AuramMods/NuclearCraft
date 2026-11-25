@@ -1,0 +1,112 @@
+{
+    "type": "nuclearcraft:alloy_furnace",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/copper"
+                },
+                {
+                    "tag": "c:nuggets/copper"
+                },
+                {
+                    "tag": "forge:tiny_dusts/copper"
+                },
+                {
+                    "tag": "c:tiny_dusts/copper"
+                }
+            ],
+            "count": 3
+        },
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:nuggets/zinc"
+                },
+                {
+                    "tag": "c:nuggets/zinc"
+                },
+                {
+                    "tag": "forge:tiny_dusts/zinc"
+                },
+                {
+                    "tag": "c:tiny_dusts/zinc"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "c:nuggets/brass",
+        "preferred_tag": "forge:nuggets/brass",
+        "count": 4
+    },
+    "ticks": 44.44444444444444,
+    "power_multiplier": 1,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/copper"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/copper"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:tiny_dusts/zinc"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:tiny_dusts/zinc"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/brass"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/brass"
+                    }
+                ]
+            }
+        }
+    ]
+}
