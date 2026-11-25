@@ -90,6 +90,7 @@ repositories {
             includeModule 'curse.maven', 'embers-rekindled-300777'
             includeModule 'curse.maven', 'tinkers-construct-74072'
             includeModule 'curse.maven', 'mantle-74924'
+            includeModule 'curse.maven', 'projecte-226410'
         }
     }
 }
@@ -108,6 +109,7 @@ dependencies {
     compileOnly fg.deobf('curse.maven:embers-rekindled-300777:7446478')
     compileOnly fg.deobf('curse.maven:tinkers-construct-74072:7449219')
     compileOnly fg.deobf('curse.maven:mantle-74924:7414488')
+    compileOnly fg.deobf('curse.maven:projecte-226410:4901949')
 }
 
 def equipmentFamilies = ['boron', 'tough', 'hard_carbon', 'boron_nitride']

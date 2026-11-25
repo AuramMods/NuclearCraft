@@ -548,6 +548,16 @@ The Mixer Centrifuge processed 144 mB each of NuclearCraft copper and gold into 
 
 The isolated 539-mod Auram copy stamped one unified Immersive Engineering Uranium ingot from 144 mB of NuclearCraft fluid delivered through an Embers pipe. The Ingot Former consumed 90 mB of Embers fluid for each of a Thermal Bronze ingot and an Embers Dawnstone ingot. The KubeJS test kept its explicit 18 mB Uranium nugget-stamp override. The client initialized JEI, used master volume zero and OpenAL No Output, and exited with zero focus activations, foreground samples, or visible window samples.
 
+### ProjectE material EMC
+
+NuclearCraft supplies the original EMC defaults through ProjectE's material mapper API. Ingot, gem, and dust values follow the matching Forge item tags. Tagged storage blocks use nine times the material value, and quartz blocks keep ProjectE's normal crafting-derived value. The defaults also cover the original compound dusts, silicon, and Wasteland Earth. ProjectE's custom values and pack scripts can replace these defaults.
+
+Move the legacy `register_projecte_emc` setting to `config/nuclearcraft-projecte.toml`. It defaults to true. Restart to change it. Turning it off leaves ProjectE's other mappers and custom values available.
+
+Packaged Forge 47.4.18 with ProjectE PE1.0.1 reported 512 EMC for Boron ingots and dust, 4,608 for a Boron block, 4,160 for a Hard Carbon ingot, and 344 for Crystal Binder. A datapack added a member to the Boron ingot tag. ProjectE picked up that tag change and a custom 777 EMC Crystal Binder value after reload and kept them after restart. Disabling NuclearCraft's mapper removed its Wasteland Earth and Boron values while preserving the custom Crystal Binder value. The JAR started and saved on clean Forge, and all 213 local GameTests passed. [ProjectE PE1.0.1](https://www.curseforge.com/minecraft/mc-mods/projecte/files/4901949)
+
+In the isolated 539-mod Auram copy, ProjectE Integration 7.2.5 and KubeJS ProjectE 1.0 loaded alongside the mapper. Immersive Engineering Uranium had 4,096 EMC, AE2 Silicon had 1, and the Boron ingot and block retained their defaults. A KubeJS `setEMCAfter` override set Crystal Binder to 1,777 EMC. The client joined and initialized JEI with master volume zero and OpenAL No Output. It exited normally with zero focus activations, foreground samples, or visible window samples.
+
 ### Quantum Computer
 
 Connect exactly one controller, qubits, gates, and other parts face to face. The shape is unrestricted. Connections use loaded block entities and pause an existing circuit while any of its chunks unload. A redstone rising edge queues one operation. Controllers reset the state, gates apply the configured operation, and qubits measure and update comparators to 0 or 15. The 26 gates include the single-qubit operators, their controlled forms, Swap, and Controlled Swap. The original models and gate textures ship in the JAR. Qubit cores cycle through colors and flash red for zero or blue for one.

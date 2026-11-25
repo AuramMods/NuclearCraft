@@ -2,6 +2,7 @@ package nc;
 
 import nc.compat.mekanism.GasFluidCapability;
 import nc.compat.patchouli.Guidebook;
+import nc.compat.projecte.ProjectEIntegration;
 import nc.compat.tconstruct.TinkersModifiers;
 import nc.fluid.FluidConfig;
 import nc.multiblock.fission.FissionHighlights;
@@ -52,6 +53,7 @@ public final class NuclearCraft {
         NCQuantum.register(context);
         NCRadiation.register(context);
         Guidebook.register(context);
+        ProjectEIntegration.register(context);
         NCTinkersMaterials.register(context);
         if (ModList.get().isLoaded("mekanism")) {
             GasFluidCapability.register();
