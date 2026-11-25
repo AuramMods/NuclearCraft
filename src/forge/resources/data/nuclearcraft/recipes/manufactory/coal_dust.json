@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:coal_dust",
+        "preferred_tag": "forge:dusts/coal",
         "count": 1
     },
     "ticks": 200,

@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:zirconium_block"
         }
     ],
+    "result_tag": "forge:ingots/zirconium",
     "result": {
         "item": "nuclearcraft:zirconium_ingot",
         "count": 9

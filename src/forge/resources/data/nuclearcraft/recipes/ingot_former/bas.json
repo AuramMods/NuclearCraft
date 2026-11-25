@@ -6,7 +6,8 @@
         "amount": 666
     },
     "result": {
-        "item": "nuclearcraft:boron_arsenide"
+        "item": "nuclearcraft:boron_arsenide",
+        "preferred_tag": "forge:gems/boron_arsenide"
     },
     "ticks": 800,
     "power_multiplier": 2

@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:tin_dust",
+        "preferred_tag": "forge:dusts/tin",
         "count": 1
     },
     "ticks": 400,

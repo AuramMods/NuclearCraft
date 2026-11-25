@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:lithium_6_ingot"
+        "item": "nuclearcraft:lithium_6_ingot",
+        "preferred_tag": "forge:ingots/lithium_6"
     },
     "ticks": 400,
     "power_multiplier": 1

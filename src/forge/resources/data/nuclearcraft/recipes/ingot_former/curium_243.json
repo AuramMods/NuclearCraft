@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:curium_243_ingot"
+        "item": "nuclearcraft:curium_243_ingot",
+        "preferred_tag": "forge:ingots/curium_243"
     },
     "ticks": 400,
     "power_multiplier": 1

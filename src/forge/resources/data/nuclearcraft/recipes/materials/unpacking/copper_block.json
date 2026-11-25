@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:copper_block"
         }
     ],
+    "result_tag": "forge:ingots/copper",
     "result": {
         "item": "nuclearcraft:copper_ingot",
         "count": 9

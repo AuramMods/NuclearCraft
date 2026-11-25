@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:blasting",
+    "type": "nuclearcraft:material_blasting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:graphite_dust"
     },
+    "result_tag": "forge:ingots/graphite",
     "result": "nuclearcraft:graphite_ingot",
     "experience": 0.0,
     "cookingtime": 100

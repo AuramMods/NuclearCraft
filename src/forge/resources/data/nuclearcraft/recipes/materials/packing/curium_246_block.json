@@ -1,5 +1,5 @@
 {
-    "type": "minecraft:crafting_shaped",
+    "type": "nuclearcraft:material_shaped",
     "category": "misc",
     "pattern": [
         "III",
@@ -11,6 +11,7 @@
             "item": "nuclearcraft:curium_246_ingot"
         }
     },
+    "result_tag": "forge:storage_blocks/curium_246",
     "result": {
         "item": "nuclearcraft:curium_246_block",
         "count": 1

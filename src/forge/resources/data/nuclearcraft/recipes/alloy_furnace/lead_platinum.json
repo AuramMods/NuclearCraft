@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:lead_platinum_ingot",
+        "preferred_tag": "forge:ingots/lead_platinum",
         "count": 4
     },
     "ticks": 600,

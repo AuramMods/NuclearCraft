@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:neptunium_237_nitride_ingot",
+            "preferred_tag": "forge:ingots/neptunium_237_nitride",
             "count": 6
         },
         {
             "item": "nuclearcraft:neptunium_236_nitride_ingot",
+            "preferred_tag": "forge:ingots/neptunium_236_nitride",
             "count": 3
         }
     ]

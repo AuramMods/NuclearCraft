@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:silica",
+        "preferred_tag": "forge:dusts/silica",
         "count": 1
     },
     "ticks": 600,

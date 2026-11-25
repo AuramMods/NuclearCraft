@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:silicon",
+        "preferred_tag": "forge:silicon",
         "count": 1
     },
     "ticks": 400,

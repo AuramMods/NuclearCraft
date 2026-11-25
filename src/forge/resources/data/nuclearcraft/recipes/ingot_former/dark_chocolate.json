@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:dark_chocolate"
+        "item": "nuclearcraft:dark_chocolate",
+        "preferred_tag": "forge:ingots/chocolate"
     },
     "ticks": 200,
     "power_multiplier": 0.5

@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:californium_252_oxide_ingot",
+            "preferred_tag": "forge:ingots/californium_252_oxide",
             "count": 6
         },
         {
             "item": "nuclearcraft:californium_249_oxide_ingot",
+            "preferred_tag": "forge:ingots/californium_249_oxide",
             "count": 3
         }
     ]

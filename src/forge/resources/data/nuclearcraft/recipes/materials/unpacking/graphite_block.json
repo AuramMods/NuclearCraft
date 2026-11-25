@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:graphite_block"
         }
     ],
+    "result_tag": "forge:ingots/graphite",
     "result": {
         "item": "nuclearcraft:graphite_ingot",
         "count": 9

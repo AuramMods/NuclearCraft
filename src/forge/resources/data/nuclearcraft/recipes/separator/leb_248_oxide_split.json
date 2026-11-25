@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:berkelium_247_oxide_ingot",
+            "preferred_tag": "forge:ingots/berkelium_247_oxide",
             "count": 8
         },
         {
             "item": "nuclearcraft:berkelium_248_oxide_ingot",
+            "preferred_tag": "forge:ingots/berkelium_248_oxide",
             "count": 1
         }
     ]

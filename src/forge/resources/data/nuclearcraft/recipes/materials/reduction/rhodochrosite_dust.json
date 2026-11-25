@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:rhodochrosite_dust"
     },
+    "result_tag": "forge:dusts/manganese_oxide",
     "result": "nuclearcraft:manganese_oxide_dust",
     "experience": 0.0,
     "cookingtime": 200

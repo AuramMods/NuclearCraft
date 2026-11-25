@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:tbu_pellet"
+        "item": "nuclearcraft:tbu_pellet",
+        "preferred_tag": "forge:ingots/tbu"
     },
     "ticks": 400,
     "power_multiplier": 1

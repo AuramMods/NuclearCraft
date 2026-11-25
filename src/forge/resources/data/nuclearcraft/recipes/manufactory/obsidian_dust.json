@@ -15,6 +15,7 @@
     ],
     "result": {
         "item": "nuclearcraft:obsidian_dust",
+        "preferred_tag": "forge:dusts/obsidian",
         "count": 4
     },
     "ticks": 800,

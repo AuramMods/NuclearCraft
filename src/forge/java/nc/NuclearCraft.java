@@ -30,6 +30,7 @@ import nc.init.NCRegistries;
 import nc.init.NCWasteland;
 import nc.init.NCTerrainRecipes;
 import nc.init.NCTinkersMaterials;
+import nc.recipe.MaterialRecipeOutputs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -58,6 +59,7 @@ public final class NuclearCraft {
         NCRadiation.register(context);
         Guidebook.register(context);
         ProjectEIntegration.register(context);
+        MaterialRecipeOutputs.register(context);
         NCTinkersMaterials.register(context);
         if (ModList.get().isLoaded("mekanism")) {
             GasFluidCapability.register();

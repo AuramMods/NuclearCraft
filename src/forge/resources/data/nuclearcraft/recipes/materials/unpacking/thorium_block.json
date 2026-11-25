@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:thorium_block"
         }
     ],
+    "result_tag": "forge:ingots/thorium",
     "result": {
         "item": "nuclearcraft:thorium_ingot",
         "count": 9

@@ -1,6 +1,5 @@
 package nc.recipe;
 
-import com.google.common.collect.ImmutableMap;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
@@ -13,18 +12,16 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.crafting.conditions.ICondition;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 final class IngotFormerMaterialRecipes {
@@ -71,19 +68,7 @@ final class IngotFormerMaterialRecipes {
                 addRecipe(manager, discovered, covered, fluid, materialKey(id.getPath()));
             }
         }
-        if (!discovered.isEmpty()) {
-            var types = new LinkedHashMap<>(manager.recipes);
-            var casting = ImmutableMap.<ResourceLocation, Recipe<?>>builder()
-                    .putAll(types.getOrDefault(type, Map.of()));
-            var byName = ImmutableMap.<ResourceLocation, Recipe<?>>builder().putAll(manager.byName);
-            for (ItemProcessorRecipe recipe : discovered) {
-                casting.put(recipe.id(), recipe);
-                byName.put(recipe.id(), recipe);
-            }
-            types.put(type, casting.build());
-            manager.recipes = ImmutableMap.copyOf(types);
-            manager.byName = byName.build();
-        }
+        ProcessorRecipeDefaults.addRecipes(manager, type, discovered);
     }
 
     private static void addRecipe(RecipeManager manager, List<ItemProcessorRecipe> recipes, Set<Fluid> covered,
@@ -124,9 +109,7 @@ final class IngotFormerMaterialRecipes {
 
     private static Item taggedItem(String path) {
         for (String namespace : TAG_NAMESPACES) {
-            var key = TagKey.create(Registries.ITEM, ResourceLocation.tryBuild(namespace, path));
-            var result = BuiltInRegistries.ITEM.getTag(key).stream().flatMap(set -> set.stream())
-                    .map(Holder::value).filter(item -> item != Items.AIR).findFirst();
+            var result = MaterialRecipeOutputs.select(namespace + ":" + path, ICondition.IContext.EMPTY);
             if (result.isPresent()) {
                 return result.get();
             }

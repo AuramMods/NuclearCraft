@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:steel_ingot",
+        "preferred_tag": "forge:ingots/steel",
         "count": 1
     },
     "ticks": 400,

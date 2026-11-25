@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:lead_ore"
     },
+    "result_tag": "forge:ingots/lead",
     "result": "nuclearcraft:lead_ingot",
     "experience": 0.5,
     "cookingtime": 200

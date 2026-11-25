@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:boron_nitride",
+        "preferred_tag": "forge:gems/boron_nitride",
         "count": 1
     },
     "ticks": 600,

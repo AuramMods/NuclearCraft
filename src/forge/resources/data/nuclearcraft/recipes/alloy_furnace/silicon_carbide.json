@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:silicon_carbide_ingot",
+        "preferred_tag": "forge:ingots/silicon_carbide",
         "count": 2
     },
     "ticks": 800,

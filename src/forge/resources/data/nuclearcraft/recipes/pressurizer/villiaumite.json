@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:villiaumite",
+        "preferred_tag": "forge:gems/villiaumite",
         "count": 1
     },
     "ticks": 600,

@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:manganese_ingot"
+        "item": "nuclearcraft:manganese_ingot",
+        "preferred_tag": "forge:ingots/manganese"
     },
     "ticks": 400,
     "power_multiplier": 1

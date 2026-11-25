@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:uranium_ore"
     },
+    "result_tag": "forge:ingots/uranium",
     "result": "nuclearcraft:uranium_ingot",
     "experience": 0.5,
     "cookingtime": 200

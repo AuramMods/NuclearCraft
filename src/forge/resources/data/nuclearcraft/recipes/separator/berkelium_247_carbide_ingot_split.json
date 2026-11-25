@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:berkelium_247_ingot",
+            "preferred_tag": "forge:ingots/berkelium_247",
             "count": 1
         },
         {
             "item": "nuclearcraft:graphite_dust",
+            "preferred_tag": "forge:dusts/graphite",
             "count": 1
         }
     ]

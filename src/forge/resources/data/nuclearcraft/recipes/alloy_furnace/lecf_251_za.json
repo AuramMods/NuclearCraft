@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:lecf_251_za",
+        "preferred_tag": "forge:ingots/lecf_251_za",
         "count": 1
     }
 }

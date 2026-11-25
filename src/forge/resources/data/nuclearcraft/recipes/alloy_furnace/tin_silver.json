@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:tin_silver_ingot",
+        "preferred_tag": "forge:ingots/tin_silver",
         "count": 4
     },
     "ticks": 600,

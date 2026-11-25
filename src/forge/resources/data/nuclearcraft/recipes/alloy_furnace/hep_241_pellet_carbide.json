@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:hep_241_pellet_carbide",
+        "preferred_tag": "forge:ingots/hep_241_carbide",
         "count": 1
     }
 }

@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:hastelloy_ingot",
+        "preferred_tag": "forge:ingots/hastelloy",
         "count": 4
     },
     "ticks": 800,

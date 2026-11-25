@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:villiaumite_dust",
+        "preferred_tag": "forge:dusts/villiaumite",
         "count": 1
     },
     "ticks": 600,

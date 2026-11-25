@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:mix_239_za",
+        "preferred_tag": "forge:ingots/mix_239_za",
         "count": 1
     }
 }

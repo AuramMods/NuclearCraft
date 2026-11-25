@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:curium_243_ingot",
+            "preferred_tag": "forge:ingots/curium_243",
             "count": 1
         },
         {
             "item": "nuclearcraft:graphite_dust",
+            "preferred_tag": "forge:dusts/graphite",
             "count": 1
         }
     ]

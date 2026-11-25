@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:hastelloy_ingot"
+        "item": "nuclearcraft:hastelloy_ingot",
+        "preferred_tag": "forge:ingots/hastelloy"
     },
     "ticks": 400,
     "power_multiplier": 1

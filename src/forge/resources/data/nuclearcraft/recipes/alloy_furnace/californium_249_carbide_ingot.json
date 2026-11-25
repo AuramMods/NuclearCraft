@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:californium_249_carbide_ingot",
+        "preferred_tag": "forge:ingots/californium_249_carbide",
         "count": 1
     }
 }

@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:neptunium_237_oxide_ingot",
+            "preferred_tag": "forge:ingots/neptunium_237_oxide",
             "count": 6
         },
         {
             "item": "nuclearcraft:neptunium_236_oxide_ingot",
+            "preferred_tag": "forge:ingots/neptunium_236_oxide",
             "count": 3
         }
     ]

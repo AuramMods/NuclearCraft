@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:shibuichi_ingot",
+        "preferred_tag": "forge:ingots/shibuichi",
         "count": 4
     },
     "ticks": 600,

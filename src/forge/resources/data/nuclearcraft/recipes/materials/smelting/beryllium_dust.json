@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:beryllium_dust"
     },
+    "result_tag": "forge:ingots/beryllium",
     "result": "nuclearcraft:beryllium_ingot",
     "experience": 0.0,
     "cookingtime": 200

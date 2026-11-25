@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:californium_252_nitride_ingot",
+            "preferred_tag": "forge:ingots/californium_252_nitride",
             "count": 6
         },
         {
             "item": "nuclearcraft:californium_249_nitride_ingot",
+            "preferred_tag": "forge:ingots/californium_249_nitride",
             "count": 3
         }
     ]

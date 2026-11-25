@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:holmium_block"
         }
     ],
+    "result_tag": "forge:ingots/holmium",
     "result": {
         "item": "nuclearcraft:holmium_ingot",
         "count": 9

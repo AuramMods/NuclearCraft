@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:thorium_dust",
+        "preferred_tag": "forge:dusts/thorium",
         "count": 2
     },
     "ticks": 500,

@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:aluminum_block"
         }
     ],
+    "result_tag": "forge:ingots/aluminum",
     "result": {
         "item": "nuclearcraft:aluminum_ingot",
         "count": 9

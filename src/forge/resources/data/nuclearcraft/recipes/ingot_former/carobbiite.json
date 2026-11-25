@@ -6,7 +6,8 @@
         "amount": 666
     },
     "result": {
-        "item": "nuclearcraft:carobbiite"
+        "item": "nuclearcraft:carobbiite",
+        "preferred_tag": "forge:gems/carobbiite"
     },
     "ticks": 400,
     "power_multiplier": 1

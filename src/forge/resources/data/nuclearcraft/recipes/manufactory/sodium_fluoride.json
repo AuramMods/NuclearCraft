@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:sodium_fluoride",
+        "preferred_tag": "forge:dusts/sodium_fluoride",
         "count": 1
     },
     "ticks": 400,

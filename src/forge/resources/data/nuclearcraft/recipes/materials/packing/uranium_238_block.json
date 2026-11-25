@@ -1,5 +1,5 @@
 {
-    "type": "minecraft:crafting_shaped",
+    "type": "nuclearcraft:material_shaped",
     "category": "misc",
     "pattern": [
         "III",
@@ -11,6 +11,7 @@
             "item": "nuclearcraft:uranium_238_ingot"
         }
     },
+    "result_tag": "forge:storage_blocks/uranium_238",
     "result": {
         "item": "nuclearcraft:uranium_238_block",
         "count": 1

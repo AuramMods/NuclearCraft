@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:pyrolytic_carbon",
+        "preferred_tag": "forge:ingots/pyrolytic_carbon",
         "count": 1
     },
     "ticks": 600,

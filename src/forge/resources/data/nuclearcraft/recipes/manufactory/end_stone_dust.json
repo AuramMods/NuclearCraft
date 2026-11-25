@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:end_stone_dust",
+        "preferred_tag": "forge:dusts/end_stone",
         "count": 4
     },
     "ticks": 800,

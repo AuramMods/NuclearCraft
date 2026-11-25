@@ -22,6 +22,8 @@ import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -63,6 +65,23 @@ public record ProcessorRecipeDefaults(Rate processor, boolean ore) {
     private static void applyCatalogs(RecipeManager manager) {
         removeDisabledRecipes(manager);
         IngotFormerMaterialRecipes.addDiscoveredRecipes(manager);
+        PressurizerPlateRecipes.addDiscoveredRecipes(manager);
+    }
+
+    static void addRecipes(RecipeManager manager, RecipeType<ItemProcessorRecipe> type, List<ItemProcessorRecipe> additions) {
+        if (additions.isEmpty()) {
+            return;
+        }
+        var types = new LinkedHashMap<>(manager.recipes);
+        var entries = ImmutableMap.<ResourceLocation, Recipe<?>>builder().putAll(types.getOrDefault(type, Map.of()));
+        var byName = ImmutableMap.<ResourceLocation, Recipe<?>>builder().putAll(manager.byName);
+        for (ItemProcessorRecipe recipe : additions) {
+            entries.put(recipe.id(), recipe);
+            byName.put(recipe.id(), recipe);
+        }
+        types.put(type, entries.build());
+        manager.recipes = ImmutableMap.copyOf(types);
+        manager.byName = byName.build();
     }
 
     private static void removeDisabledRecipes(RecipeManager manager) {

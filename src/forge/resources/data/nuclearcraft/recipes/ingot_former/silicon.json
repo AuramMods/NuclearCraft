@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:silicon"
+        "item": "nuclearcraft:silicon",
+        "preferred_tag": "forge:silicon"
     },
     "ticks": 400,
     "power_multiplier": 1,

@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:lep_239_pellet",
+            "preferred_tag": "forge:ingots/lep_239",
             "count": 1
         },
         {
             "item": "nuclearcraft:graphite_dust",
+            "preferred_tag": "forge:dusts/graphite",
             "count": 1
         }
     ]

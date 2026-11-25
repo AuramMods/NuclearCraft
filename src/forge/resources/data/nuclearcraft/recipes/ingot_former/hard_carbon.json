@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:hard_carbon_ingot"
+        "item": "nuclearcraft:hard_carbon_ingot",
+        "preferred_tag": "forge:ingots/hard_carbon"
     },
     "ticks": 400,
     "power_multiplier": 1

@@ -18,6 +18,7 @@ import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
 import nc.recipe.FluidContainerRecipe;
+import nc.recipe.MaterialRecipeSerializer;
 import nc.recipe.MelterRecipe;
 import nc.recipe.SaltMixerRecipe;
 import nc.recipe.SupercoolerRecipe;
@@ -60,6 +61,13 @@ public final class NCRegistries {
 
     public static final RegistryObject<RecipeSerializer<FluidContainerRecipe>> FLUID_CONTAINER_CRAFTING =
             RECIPE_SERIALIZERS.register("fluid_container_crafting", FluidContainerRecipe.Serializer::new);
+
+    static {
+        RECIPE_SERIALIZERS.register("material_smelting", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SMELTING_RECIPE));
+        RECIPE_SERIALIZERS.register("material_blasting", () -> new MaterialRecipeSerializer<>(RecipeSerializer.BLASTING_RECIPE));
+        RECIPE_SERIALIZERS.register("material_shaped", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SHAPED_RECIPE));
+        RECIPE_SERIALIZERS.register("material_shapeless", () -> new MaterialRecipeSerializer<>(RecipeSerializer.SHAPELESS_RECIPE));
+    }
 
     public static final RegistryObject<MelterBlock> MELTER = BLOCKS.register("melter", () -> new MelterBlock(
             BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)

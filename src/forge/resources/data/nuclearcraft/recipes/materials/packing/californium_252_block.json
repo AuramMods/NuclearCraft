@@ -1,5 +1,5 @@
 {
-    "type": "minecraft:crafting_shaped",
+    "type": "nuclearcraft:material_shaped",
     "category": "misc",
     "pattern": [
         "III",
@@ -11,6 +11,7 @@
             "item": "nuclearcraft:californium_252_ingot"
         }
     },
+    "result_tag": "forge:storage_blocks/californium_252",
     "result": {
         "item": "nuclearcraft:californium_252_block",
         "count": 1

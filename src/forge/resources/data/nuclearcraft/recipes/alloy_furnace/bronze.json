@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:bronze_ingot",
+        "preferred_tag": "forge:ingots/bronze",
         "count": 4
     },
     "ticks": 400,

@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:lithium_dust",
+        "preferred_tag": "forge:dusts/lithium",
         "count": 2
     },
     "ticks": 500,

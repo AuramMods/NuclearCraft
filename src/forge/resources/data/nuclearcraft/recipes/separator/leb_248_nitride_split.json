@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:berkelium_247_nitride_ingot",
+            "preferred_tag": "forge:ingots/berkelium_247_nitride",
             "count": 8
         },
         {
             "item": "nuclearcraft:berkelium_248_nitride_ingot",
+            "preferred_tag": "forge:ingots/berkelium_248_nitride",
             "count": 1
         }
     ]

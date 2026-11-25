@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:berkelium_247_carbide_ingot",
+        "preferred_tag": "forge:ingots/berkelium_247_carbide",
         "count": 1
     }
 }

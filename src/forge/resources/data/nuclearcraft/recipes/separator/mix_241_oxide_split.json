@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:uranium_238_oxide_ingot",
+            "preferred_tag": "forge:ingots/uranium_238_oxide",
             "count": 8
         },
         {
             "item": "nuclearcraft:plutonium_241_oxide_ingot",
+            "preferred_tag": "forge:ingots/plutonium_241_oxide",
             "count": 1
         }
     ]

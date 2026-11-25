@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:silica"
     },
+    "result_tag": "forge:ingots/silicon",
     "result": "nuclearcraft:silicon",
     "experience": 0.0,
     "cookingtime": 200

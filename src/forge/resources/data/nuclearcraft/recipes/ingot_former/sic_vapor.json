@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:silicon_carbide_ingot"
+        "item": "nuclearcraft:silicon_carbide_ingot",
+        "preferred_tag": "forge:ingots/silicon_carbide"
     },
     "ticks": 400,
     "power_multiplier": 1

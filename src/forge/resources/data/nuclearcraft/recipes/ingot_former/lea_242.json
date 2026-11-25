@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:lea_242_pellet"
+        "item": "nuclearcraft:lea_242_pellet",
+        "preferred_tag": "forge:ingots/lea_242"
     },
     "ticks": 400,
     "power_multiplier": 1

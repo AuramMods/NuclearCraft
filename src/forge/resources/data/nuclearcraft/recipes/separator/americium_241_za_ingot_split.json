@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:americium_241_ingot",
+            "preferred_tag": "forge:ingots/americium_241",
             "count": 1
         },
         {
             "item": "nuclearcraft:zirconium_dust",
+            "preferred_tag": "forge:dusts/zirconium",
             "count": 1
         }
     ]

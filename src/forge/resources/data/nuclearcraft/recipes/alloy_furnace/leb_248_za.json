@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:leb_248_za",
+        "preferred_tag": "forge:ingots/leb_248_za",
         "count": 1
     }
 }

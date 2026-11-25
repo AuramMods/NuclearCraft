@@ -6,7 +6,8 @@
         "amount": 666
     },
     "result": {
-        "item": "nuclearcraft:fluorite"
+        "item": "nuclearcraft:fluorite",
+        "preferred_tag": "forge:gems/fluorite"
     },
     "ticks": 400,
     "power_multiplier": 1

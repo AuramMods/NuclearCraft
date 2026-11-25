@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:californium_249_ingot",
+            "preferred_tag": "forge:ingots/californium_249",
             "count": 1
         },
         {
             "item": "nuclearcraft:graphite_dust",
+            "preferred_tag": "forge:dusts/graphite",
             "count": 1
         }
     ]

@@ -6,7 +6,8 @@
         "amount": 90
     },
     "result": {
-        "item": "nuclearcraft:steel_ingot"
+        "item": "nuclearcraft:steel_ingot",
+        "preferred_tag": "forge:ingots/steel"
     },
     "ticks": 400,
     "power_multiplier": 1,

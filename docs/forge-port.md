@@ -111,6 +111,20 @@ The clean multiplayer client saw the same-ID Melter replacement in JEI while sto
 
 The isolated 539-mod Auram client listed one Melter recipe with the global switch off. KubeJS reused the original ice recipe ID, and its batch produced 781 mB of water while a packed-ice batch preserved its input and charge. This client also ran muted with zero focus activations, foreground samples, or visible windows.
 
+### Material recipe output priority
+
+Copy `ore_dict_priority_bool` and the ordered `ore_dict_priority` list to `config/nuclearcraft-recipe-outputs.toml`. The settings apply on the server when loading recipes. Restart after changing the options. The old `thermalfoundation` and `appliedenergistics2` entries also recognize the current `thermal` and `ae2` item namespaces. When priority is disabled, the list is empty, or no namespace matches, the first item in the tag supplies the output.
+
+Almost Unified supplies its chosen item for a configured tag when that item belongs to the tag. Explicit item outputs still use the recipe's declared stack. In processor JSON, `tag` requires a populated output tag and `preferred_tag` falls back to the declared item or tag. Counts, chance, and stack data still come from the recipe. Discovered Ingot Former and Pressurizer recipes resolve their outputs on the server and send them to clients through recipe sync.
+
+The stock smelting, blasting, reduction, packing, and unpacking recipes keep their IDs and load as normal furnace and crafting recipes. Their JSON uses the `nuclearcraft:material_smelting`, `nuclearcraft:material_blasting`, `nuclearcraft:material_shaped`, or `nuclearcraft:material_shapeless` serializer with a `result_tag` and a concrete `result` fallback. Datapacks and KubeJS can replace any of these recipes by ID with their own vanilla or modded recipe. JSON recipe type filters can refer to the corresponding NuclearCraft serializer for the stock definitions. [Forge recipe serializers](https://docs.minecraftforge.net/en/1.20.1/resources/server/recipes/custom/)
+
+All 213 local GameTests passed. On clean dedicated Forge 47.4.18, a furnace and a blast furnace each used the stock NuclearCraft recipe to turn one copper dust into one vanilla copper ingot. With Auram's Mekanism 10.4.16.80 installed and first in the priority list, the ingot, dust, and block recipes selected Mekanism tin. The Manufactory produced one Mekanism dust, and unpacking retained its count of nine ingots. Disabling priority, clearing the list, or using an unmatched namespace fell back to tag order. A tag reload changed the fallback, and an explicit smelting override survived reload and restart.
+
+A muted multiplayer client with its own default mod order showed the dedicated server's Pressurizer product in JEI. Reloading the server's tag changed the displayed output. The focus observer recorded zero activations, foreground samples, and on-screen window samples.
+
+The isolated client with all 539 installed Auram mod JARs used Almost Unified 0.11.0 to select Thermal tin for NuclearCraft's smelting, blasting, Manufactory, Ingot Former, and Pressurizer recipes. The Manufactory produced one Thermal tin dust and the Pressurizer produced one Thermal tin plate. Two KubeJS replacements retained the original recipe IDs and specified gold nuggets for boron smelting and three clay balls for the Manufactory. The Manufactory produced all three clay balls in-world. The client used master volume zero and OpenAL No Output and exited with zero observed focus changes or visible windows. [Almost Unified 0.11.0](https://www.curseforge.com/minecraft/mc-mods/almostunified/files/7430993)
+
 ### Melter material recipes
 
 The Melter now melts ore, tiny dust, nuggets, and storage blocks where the material is available. An ingot or dust gives 144 mB, a metal ore gives 288 mB, a nugget gives 16 mB, and a metal storage block gives 1,296 mB. Gems and their dusts give 666 mB, gem ores give 1,332 mB, and gem nuggets give 74 mB. The recipe duration of a nugget is 800/9 ticks. Progress carries forward between batches, so nine metal nuggets use exactly the time and power of an ingot. Sulfur dust restores the legacy 666 mB yield. Existing tank contents retain their saved amounts.
@@ -308,7 +322,7 @@ The muted Auram client displayed the original Glowstone Aggregator artwork with 
 
 ### Pressurizer plate discovery
 
-The Pressurizer discovers plate families from `forge:plates/<material>` when server data loads. It uses one `forge:ingots/<material>` item, falling back to `forge:gems/<material>` when the ingot tag is empty. The first item in the plate tag is the product. A regular plate takes 600 ticks at 40 FE/t. Graphite ingots still produce pyrolytic carbon. A dense plate consumes nine regular plates and takes 1,200 ticks at 80 FE/t. Dense outputs use `forge:plates/dense/<material>`, with `forge:dense_plates/<material>` as a fallback.
+The Pressurizer discovers plate families from `forge:plates/<material>` when server data loads. It uses one `forge:ingots/<material>` item, falling back to `forge:gems/<material>` when the ingot tag is empty. The server selects the product from the plate tag using the material output priority. A regular plate takes 600 ticks at 40 FE/t. Graphite ingots still produce pyrolytic carbon. A dense plate consumes nine regular plates and takes 1,200 ticks at 80 FE/t. Dense outputs use `forge:plates/dense/<material>`, with `forge:dense_plates/<material>` as a fallback.
 
 Regular plate IDs use `nuclearcraft:pressurizer/plates/<material>`, and dense plate IDs use `nuclearcraft:pressurizer/dense_plates/<material>`. Saved batches reference these IDs. An explicit Pressurizer recipe takes priority over a discovered recipe. Datapacks and KubeJS can replace a discovered entry in both the machine and JEI by giving the explicit recipe the same ID. Reloading tag data also updates which families are available and which item each family produces.
 

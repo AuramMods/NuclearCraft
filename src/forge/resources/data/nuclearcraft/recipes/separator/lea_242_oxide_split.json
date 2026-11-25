@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:americium_243_oxide_ingot",
+            "preferred_tag": "forge:ingots/americium_243_oxide",
             "count": 8
         },
         {
             "item": "nuclearcraft:americium_242_oxide_ingot",
+            "preferred_tag": "forge:ingots/americium_242_oxide",
             "count": 1
         }
     ]

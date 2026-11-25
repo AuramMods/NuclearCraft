@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:neptunium_236_za_ingot",
+        "preferred_tag": "forge:ingots/neptunium_236_za",
         "count": 1
     }
 }

@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:hecf_251_pellet"
+        "item": "nuclearcraft:hecf_251_pellet",
+        "preferred_tag": "forge:ingots/hecf_251"
     },
     "ticks": 400,
     "power_multiplier": 1

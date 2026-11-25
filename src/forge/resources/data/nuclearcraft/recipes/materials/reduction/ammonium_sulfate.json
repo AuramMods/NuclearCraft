@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:ammonium_sulfate"
     },
+    "result_tag": "forge:dusts/ammonium_bisulfate",
     "result": "nuclearcraft:ammonium_bisulfate",
     "experience": 0.0,
     "cookingtime": 200

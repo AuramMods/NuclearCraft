@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:lecm_245_pellet_carbide",
+        "preferred_tag": "forge:ingots/lecm_245_carbide",
         "count": 1
     }
 }

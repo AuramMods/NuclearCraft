@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:ferroboron_ingot",
+        "preferred_tag": "forge:ingots/ferroboron",
         "count": 2
     },
     "ticks": 400,

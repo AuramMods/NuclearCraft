@@ -6,7 +6,8 @@
         "amount": 666
     },
     "result": {
-        "item": "nuclearcraft:villiaumite"
+        "item": "nuclearcraft:villiaumite",
+        "preferred_tag": "forge:gems/villiaumite"
     },
     "ticks": 400,
     "power_multiplier": 1

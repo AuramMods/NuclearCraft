@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:magnesium_dust",
+        "preferred_tag": "forge:dusts/magnesium",
         "count": 1
     },
     "ticks": 400,

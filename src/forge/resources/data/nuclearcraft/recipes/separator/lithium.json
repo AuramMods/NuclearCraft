@@ -18,10 +18,12 @@
     "results": [
         {
             "item": "nuclearcraft:lithium_7_ingot",
+            "preferred_tag": "forge:ingots/lithium_7",
             "count": 9
         },
         {
             "item": "nuclearcraft:lithium_6_ingot",
+            "preferred_tag": "forge:ingots/lithium_6",
             "count": 1
         }
     ]

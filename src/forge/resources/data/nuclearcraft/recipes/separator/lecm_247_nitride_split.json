@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:curium_246_nitride_ingot",
+            "preferred_tag": "forge:ingots/curium_246_nitride",
             "count": 8
         },
         {
             "item": "nuclearcraft:curium_247_nitride_ingot",
+            "preferred_tag": "forge:ingots/curium_247_nitride",
             "count": 1
         }
     ]

@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:curium_246_oxide_ingot",
+            "preferred_tag": "forge:ingots/curium_246_oxide",
             "count": 6
         },
         {
             "item": "nuclearcraft:curium_245_oxide_ingot",
+            "preferred_tag": "forge:ingots/curium_245_oxide",
             "count": 3
         }
     ]

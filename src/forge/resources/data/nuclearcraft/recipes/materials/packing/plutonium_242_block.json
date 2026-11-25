@@ -1,5 +1,5 @@
 {
-    "type": "minecraft:crafting_shaped",
+    "type": "nuclearcraft:material_shaped",
     "category": "misc",
     "pattern": [
         "III",
@@ -11,6 +11,7 @@
             "item": "nuclearcraft:plutonium_242_ingot"
         }
     },
+    "result_tag": "forge:storage_blocks/plutonium_242",
     "result": {
         "item": "nuclearcraft:plutonium_242_block",
         "count": 1

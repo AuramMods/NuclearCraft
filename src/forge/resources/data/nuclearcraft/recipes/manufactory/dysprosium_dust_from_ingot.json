@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:dysprosium_dust",
+        "preferred_tag": "forge:dusts/dysprosium",
         "count": 1
     },
     "ticks": 400,

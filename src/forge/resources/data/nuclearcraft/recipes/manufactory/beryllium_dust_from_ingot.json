@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:beryllium_dust",
+        "preferred_tag": "forge:dusts/beryllium",
         "count": 1
     },
     "ticks": 400,

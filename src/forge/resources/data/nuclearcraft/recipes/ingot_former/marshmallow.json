@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:marshmallow"
+        "item": "nuclearcraft:marshmallow",
+        "preferred_tag": "forge:ingots/marshmallow"
     },
     "ticks": 200,
     "power_multiplier": 0.5

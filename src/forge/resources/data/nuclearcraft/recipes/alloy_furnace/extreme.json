@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:extreme_ingot",
+        "preferred_tag": "forge:ingots/extreme",
         "count": 1
     },
     "ticks": 800,

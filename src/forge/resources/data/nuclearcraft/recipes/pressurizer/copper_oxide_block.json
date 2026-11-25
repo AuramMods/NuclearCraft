@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:copper_oxide_block",
+        "preferred_tag": "forge:storage_blocks/copper_oxide",
         "count": 1
     },
     "ticks": 5400,

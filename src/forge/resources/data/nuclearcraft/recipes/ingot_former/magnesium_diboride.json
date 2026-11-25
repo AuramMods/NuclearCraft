@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:magnesium_diboride_ingot"
+        "item": "nuclearcraft:magnesium_diboride_ingot",
+        "preferred_tag": "forge:ingots/magnesium_diboride"
     },
     "ticks": 400,
     "power_multiplier": 1

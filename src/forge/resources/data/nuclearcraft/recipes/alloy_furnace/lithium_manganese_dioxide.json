@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:lithium_manganese_dioxide_ingot",
+        "preferred_tag": "forge:ingots/lithium_manganese_dioxide",
         "count": 2
     },
     "ticks": 600,

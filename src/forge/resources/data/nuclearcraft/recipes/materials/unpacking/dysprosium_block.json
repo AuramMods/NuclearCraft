@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:dysprosium_block"
         }
     ],
+    "result_tag": "forge:ingots/dysprosium",
     "result": {
         "item": "nuclearcraft:dysprosium_ingot",
         "count": 9

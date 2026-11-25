@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:lead_block"
         }
     ],
+    "result_tag": "forge:ingots/lead",
     "result": {
         "item": "nuclearcraft:lead_ingot",
         "count": 9

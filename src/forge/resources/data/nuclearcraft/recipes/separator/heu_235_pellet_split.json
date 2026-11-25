@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:uranium_238_ingot",
+            "preferred_tag": "forge:ingots/uranium_238",
             "count": 6
         },
         {
             "item": "nuclearcraft:uranium_235_ingot",
+            "preferred_tag": "forge:ingots/uranium_235",
             "count": 3
         }
     ]

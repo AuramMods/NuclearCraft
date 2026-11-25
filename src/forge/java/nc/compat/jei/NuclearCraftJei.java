@@ -80,14 +80,12 @@ import nc.recipe.FissionIrradiatorRecipe;
 import nc.recipe.FissionFuelStats;
 import nc.recipe.FissionHeatRecipe;
 import nc.recipe.ProcessingRecipe;
-import nc.recipe.PressurizerPlateRecipes;
 import nc.radiation.RadiationDisplay;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -363,8 +361,6 @@ public final class NuclearCraftJei implements IModPlugin {
                 recipes.getAllRecipesFor(SMELTING).stream()
                         .map(recipe -> ItemProcessorRecipe.electricSmelting(recipe, connection.registryAccess()))
                         .forEach(machineRecipes::add);
-            } else if (machine == Machine.PRESSURIZER) {
-                machineRecipes.addAll(PressurizerPlateRecipes.fromSyncedTags(recipes, BuiltInRegistries.ITEM));
             }
             registration.addRecipes(itemType(machine), machineRecipes);
         }

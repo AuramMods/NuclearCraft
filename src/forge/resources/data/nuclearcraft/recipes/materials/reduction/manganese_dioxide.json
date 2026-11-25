@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:manganese_dioxide_ingot"
     },
+    "result_tag": "forge:ingots/manganese_oxide",
     "result": "nuclearcraft:manganese_oxide_ingot",
     "experience": 0.0,
     "cookingtime": 200

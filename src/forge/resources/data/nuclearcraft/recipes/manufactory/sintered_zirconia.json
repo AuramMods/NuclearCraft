@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:zirconia_dust",
+        "preferred_tag": "forge:dusts/zirconia",
         "count": 1
     },
     "ticks": 400,

@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:tin_oxide_ingot"
     },
+    "result_tag": "forge:ingots/tin",
     "result": "nuclearcraft:tin_ingot",
     "experience": 0.0,
     "cookingtime": 200

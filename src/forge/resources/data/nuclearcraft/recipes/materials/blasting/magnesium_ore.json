@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:blasting",
+    "type": "nuclearcraft:material_blasting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:magnesium_ore"
     },
+    "result_tag": "forge:ingots/magnesium",
     "result": "nuclearcraft:magnesium_ingot",
     "experience": 0.5,
     "cookingtime": 100

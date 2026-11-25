@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:uranium_233_ingot"
+        "item": "nuclearcraft:uranium_233_ingot",
+        "preferred_tag": "forge:ingots/uranium_233"
     },
     "ticks": 400,
     "power_multiplier": 1

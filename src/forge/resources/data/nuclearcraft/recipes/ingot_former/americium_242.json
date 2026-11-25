@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:americium_242_ingot"
+        "item": "nuclearcraft:americium_242_ingot",
+        "preferred_tag": "forge:ingots/americium_242"
     },
     "ticks": 400,
     "power_multiplier": 1

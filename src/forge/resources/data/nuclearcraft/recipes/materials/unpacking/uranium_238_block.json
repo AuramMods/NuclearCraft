@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:uranium_238_block"
         }
     ],
+    "result_tag": "forge:ingots/uranium_238",
     "result": {
         "item": "nuclearcraft:uranium_238_ingot",
         "count": 9

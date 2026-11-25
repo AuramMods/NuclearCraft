@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:curium_246_carbide_ingot",
+        "preferred_tag": "forge:ingots/curium_246_carbide",
         "count": 1
     }
 }

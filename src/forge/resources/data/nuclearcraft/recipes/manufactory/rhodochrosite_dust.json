@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:rhodochrosite_dust",
+        "preferred_tag": "forge:dusts/rhodochrosite",
         "count": 1
     },
     "ticks": 600,

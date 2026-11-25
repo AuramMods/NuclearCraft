@@ -7,7 +7,6 @@ import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ProcessorFluidTanks.OutputMode;
 import nc.recipe.ItemProcessorRecipe;
-import nc.recipe.PressurizerPlateRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -150,7 +149,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         RecipeManager manager = level.getRecipeManager();
         refreshInput();
         return manager.getAllRecipesFor(machine.recipes()).stream()
-                .anyMatch(recipe -> recipe.canInsert(input, slot, stack)) || acceptsSupplementalItem(manager, stack);
+                .anyMatch(recipe -> recipe.canInsert(input, slot, stack)) || acceptsSmeltingInput(manager, stack);
     }
 
     private boolean isIngredient(ItemStack stack) {
@@ -162,13 +161,12 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         RecipeManager manager = level.getRecipeManager();
         return manager.getAllRecipesFor(machine.recipes()).stream().anyMatch(recipe -> recipe.acceptsItem(stack))
-                || acceptsSupplementalItem(manager, stack);
+                || acceptsSmeltingInput(manager, stack);
     }
 
-    private boolean acceptsSupplementalItem(RecipeManager manager, ItemStack stack) {
-        return (machine == Machine.PRESSURIZER
-                && PressurizerPlateRecipes.forServer(manager).stream().anyMatch(recipe -> recipe.acceptsItem(stack)))
-                || (smeltingRecipes != null && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level).isPresent());
+    private boolean acceptsSmeltingInput(RecipeManager manager, ItemStack stack) {
+        return smeltingRecipes != null
+                && manager.getRecipeFor(RecipeType.SMELTING, new SimpleContainer(stack), level).isPresent();
     }
 
     private boolean acceptsFluid(FluidStack stack) {
@@ -192,10 +190,6 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         ItemProcessorRecipe recipe = recipes.getRecipeFor(input, level).orElse(null);
         if (recipe != null || input.getItem(0).isEmpty()) {
             return recipe;
-        }
-        if (machine == Machine.PRESSURIZER) {
-            return PressurizerPlateRecipes.forServer(level.getRecipeManager()).stream()
-                    .filter(plate -> plate.matches(input, level)).findFirst().orElse(null);
         }
         if (smeltingRecipes == null) {
             return null;

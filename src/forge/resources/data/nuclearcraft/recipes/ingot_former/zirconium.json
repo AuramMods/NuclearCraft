@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:zirconium_ingot"
+        "item": "nuclearcraft:zirconium_ingot",
+        "preferred_tag": "forge:ingots/zirconium"
     },
     "ticks": 400,
     "power_multiplier": 1

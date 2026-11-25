@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:copper_dust",
+        "preferred_tag": "forge:dusts/copper",
         "count": 1
     },
     "ticks": 400,

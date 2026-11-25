@@ -21,6 +21,7 @@
     ],
     "result": {
         "item": "nuclearcraft:hsla_steel_ingot",
+        "preferred_tag": "forge:ingots/hsla_steel",
         "count": 16
     },
     "ticks": 3200,

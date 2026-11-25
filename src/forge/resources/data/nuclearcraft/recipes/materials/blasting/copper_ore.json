@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:blasting",
+    "type": "nuclearcraft:material_blasting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:copper_ore"
     },
+    "result_tag": "forge:ingots/copper",
     "result": "nuclearcraft:copper_ingot",
     "experience": 0.5,
     "cookingtime": 100

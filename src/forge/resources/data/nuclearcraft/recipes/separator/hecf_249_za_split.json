@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:hecf_249_pellet",
+            "preferred_tag": "forge:ingots/hecf_249",
             "count": 1
         },
         {
             "item": "nuclearcraft:zirconium_dust",
+            "preferred_tag": "forge:dusts/zirconium",
             "count": 1
         }
     ]

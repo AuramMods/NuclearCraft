@@ -1,5 +1,5 @@
 {
-    "type": "minecraft:crafting_shaped",
+    "type": "nuclearcraft:material_shaped",
     "category": "misc",
     "pattern": [
         "III",
@@ -11,6 +11,7 @@
             "item": "nuclearcraft:holmium_ingot"
         }
     },
+    "result_tag": "forge:storage_blocks/holmium",
     "result": {
         "item": "nuclearcraft:holmium_block",
         "count": 1

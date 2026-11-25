@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:curium_246_block"
         }
     ],
+    "result_tag": "forge:ingots/curium_246",
     "result": {
         "item": "nuclearcraft:curium_246_ingot",
         "count": 9

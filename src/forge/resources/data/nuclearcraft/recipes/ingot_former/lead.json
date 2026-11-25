@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:lead_ingot"
+        "item": "nuclearcraft:lead_ingot",
+        "preferred_tag": "forge:ingots/lead"
     },
     "ticks": 400,
     "power_multiplier": 1

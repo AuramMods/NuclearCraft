@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:fluorite_dust",
+        "preferred_tag": "forge:dusts/fluorite",
         "count": 1
     },
     "ticks": 600,

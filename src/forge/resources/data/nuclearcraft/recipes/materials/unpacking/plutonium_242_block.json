@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:plutonium_242_block"
         }
     ],
+    "result_tag": "forge:ingots/plutonium_242",
     "result": {
         "item": "nuclearcraft:plutonium_242_ingot",
         "count": 9

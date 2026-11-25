@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:mix_241_pellet"
+        "item": "nuclearcraft:mix_241_pellet",
+        "preferred_tag": "forge:ingots/mix_241"
     },
     "ticks": 400,
     "power_multiplier": 1

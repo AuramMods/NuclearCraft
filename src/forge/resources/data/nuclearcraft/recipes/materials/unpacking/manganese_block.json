@@ -1,11 +1,12 @@
 {
-    "type": "minecraft:crafting_shapeless",
+    "type": "nuclearcraft:material_shapeless",
     "category": "misc",
     "ingredients": [
         {
             "item": "nuclearcraft:manganese_block"
         }
     ],
+    "result_tag": "forge:ingots/manganese",
     "result": {
         "item": "nuclearcraft:manganese_ingot",
         "count": 9

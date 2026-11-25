@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:zircaloy_ingot",
+        "preferred_tag": "forge:ingots/zircaloy",
         "count": 8
     },
     "ticks": 1600,

@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:cobalt_oxide_dust"
     },
+    "result_tag": "forge:ingots/cobalt_oxide",
     "result": "nuclearcraft:cobalt_oxide_ingot",
     "experience": 0.0,
     "cookingtime": 200

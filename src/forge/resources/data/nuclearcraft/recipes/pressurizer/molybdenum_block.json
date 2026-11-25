@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:molybdenum_block",
+        "preferred_tag": "forge:storage_blocks/molybdenum",
         "count": 1
     },
     "ticks": 5400,

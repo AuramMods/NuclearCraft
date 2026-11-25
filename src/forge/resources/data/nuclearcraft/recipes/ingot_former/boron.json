@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:boron_ingot"
+        "item": "nuclearcraft:boron_ingot",
+        "preferred_tag": "forge:ingots/boron"
     },
     "ticks": 400,
     "power_multiplier": 1

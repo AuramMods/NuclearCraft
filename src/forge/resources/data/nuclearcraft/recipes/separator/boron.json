@@ -18,10 +18,12 @@
     "results": [
         {
             "item": "nuclearcraft:boron_11_ingot",
+            "preferred_tag": "forge:ingots/boron_11",
             "count": 9
         },
         {
             "item": "nuclearcraft:boron_10_ingot",
+            "preferred_tag": "forge:ingots/boron_10",
             "count": 3
         }
     ]

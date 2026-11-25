@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:lithium_ore"
     },
+    "result_tag": "forge:ingots/lithium",
     "result": "nuclearcraft:lithium_ingot",
     "experience": 0.5,
     "cookingtime": 200

@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:zirconium_dust"
     },
+    "result_tag": "forge:ingots/zirconium",
     "result": "nuclearcraft:zirconium_ingot",
     "experience": 0.0,
     "cookingtime": 200

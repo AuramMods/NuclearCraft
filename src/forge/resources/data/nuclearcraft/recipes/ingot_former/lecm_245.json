@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:lecm_245_pellet"
+        "item": "nuclearcraft:lecm_245_pellet",
+        "preferred_tag": "forge:ingots/lecm_245"
     },
     "ticks": 400,
     "power_multiplier": 1

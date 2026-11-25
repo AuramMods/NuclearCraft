@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:plutonium_239_ingot"
+        "item": "nuclearcraft:plutonium_239_ingot",
+        "preferred_tag": "forge:ingots/plutonium_239"
     },
     "ticks": 400,
     "power_multiplier": 1

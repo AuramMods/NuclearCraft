@@ -6,7 +6,8 @@
         "amount": 100
     },
     "result": {
-        "item": "nuclearcraft:graphite_ingot"
+        "item": "nuclearcraft:graphite_ingot",
+        "preferred_tag": "forge:ingots/graphite"
     },
     "ticks": 200,
     "power_multiplier": 1

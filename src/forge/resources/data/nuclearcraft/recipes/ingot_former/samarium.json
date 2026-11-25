@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:samarium_ingot"
+        "item": "nuclearcraft:samarium_ingot",
+        "preferred_tag": "forge:ingots/samarium"
     },
     "ticks": 400,
     "power_multiplier": 1

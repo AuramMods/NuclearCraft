@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:blasting",
+    "type": "nuclearcraft:material_blasting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:uranium_dust"
     },
+    "result_tag": "forge:ingots/uranium",
     "result": "nuclearcraft:uranium_ingot",
     "experience": 0.0,
     "cookingtime": 100

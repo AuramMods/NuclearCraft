@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:carobbiite",
+        "preferred_tag": "forge:gems/carobbiite",
         "count": 1
     },
     "ticks": 600,

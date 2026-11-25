@@ -21,6 +21,7 @@
     ],
     "result": {
         "item": "nuclearcraft:thermoconducting_ingot",
+        "preferred_tag": "forge:ingots/thermoconducting",
         "count": 2
     },
     "ticks": 600,

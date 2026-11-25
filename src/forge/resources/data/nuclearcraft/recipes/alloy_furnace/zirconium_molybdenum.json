@@ -26,6 +26,7 @@
     ],
     "result": {
         "item": "nuclearcraft:zirconium_molybdenum_ingot",
+        "preferred_tag": "forge:ingots/zirconium_molybdenum",
         "count": 16
     },
     "ticks": 3200,

@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:blasting",
+    "type": "nuclearcraft:material_blasting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:zirconia_dust"
     },
+    "result_tag": "forge:ingots/zirconia",
     "result": "nuclearcraft:zirconia_ingot",
     "experience": 0.0,
     "cookingtime": 100

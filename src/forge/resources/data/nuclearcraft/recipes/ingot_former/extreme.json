@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:extreme_ingot"
+        "item": "nuclearcraft:extreme_ingot",
+        "preferred_tag": "forge:ingots/extreme"
     },
     "ticks": 400,
     "power_multiplier": 1

@@ -28,6 +28,7 @@
     "energy_per_tick": 20,
     "result": {
         "item": "nuclearcraft:lea_242_za",
+        "preferred_tag": "forge:ingots/lea_242_za",
         "count": 1
     }
 }

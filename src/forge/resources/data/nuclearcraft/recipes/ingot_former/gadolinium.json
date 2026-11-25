@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:gadolinium_ingot"
+        "item": "nuclearcraft:gadolinium_ingot",
+        "preferred_tag": "forge:ingots/gadolinium"
     },
     "ticks": 400,
     "power_multiplier": 1

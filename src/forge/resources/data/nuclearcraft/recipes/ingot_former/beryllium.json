@@ -6,7 +6,8 @@
         "amount": 144
     },
     "result": {
-        "item": "nuclearcraft:beryllium_ingot"
+        "item": "nuclearcraft:beryllium_ingot",
+        "preferred_tag": "forge:ingots/beryllium"
     },
     "ticks": 400,
     "power_multiplier": 1

@@ -10,6 +10,7 @@
     ],
     "result": {
         "item": "nuclearcraft:molybdenum_dust",
+        "preferred_tag": "forge:dusts/molybdenum",
         "count": 9
     },
     "ticks": 3600,

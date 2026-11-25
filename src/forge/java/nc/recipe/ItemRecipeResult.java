@@ -2,14 +2,10 @@ package nc.recipe;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
-import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.tags.TagKey;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraftforge.common.crafting.CraftingHelper;
 import net.minecraftforge.common.crafting.conditions.ICondition;
 
@@ -41,15 +37,7 @@ final class ItemRecipeResult {
     }
 
     private static Optional<ResourceLocation> selectTag(JsonObject json, String key, ICondition.IContext context) {
-        var id = ResourceLocation.tryParse(GsonHelper.getAsString(json, key));
-        if (id == null) {
-            throw new JsonSyntaxException("Invalid item output tag in " + json);
-        }
-        var tag = TagKey.create(Registries.ITEM, id);
-        var entries = context == ICondition.IContext.EMPTY
-                ? BuiltInRegistries.ITEM.getTag(tag).stream().flatMap(set -> set.stream())
-                : context.getTag(tag).stream();
-        return entries.map(Holder::value).filter(item -> item != Items.AIR)
-                .map(BuiltInRegistries.ITEM::getKey).findFirst();
+        return MaterialRecipeOutputs.select(GsonHelper.getAsString(json, key), context)
+                .map(BuiltInRegistries.ITEM::getKey);
     }
 }

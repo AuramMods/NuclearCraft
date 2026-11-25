@@ -1,9 +1,10 @@
 {
-    "type": "minecraft:smelting",
+    "type": "nuclearcraft:material_smelting",
     "category": "misc",
     "ingredient": {
         "item": "nuclearcraft:holmium_dust"
     },
+    "result_tag": "forge:ingots/holmium",
     "result": "nuclearcraft:holmium_ingot",
     "experience": 0.0,
     "cookingtime": 200

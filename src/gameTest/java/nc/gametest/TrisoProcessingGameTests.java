@@ -3,7 +3,6 @@ package nc.gametest;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Machine;
 import nc.recipe.ItemProcessorRecipe;
-import nc.recipe.PressurizerPlateRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -69,7 +68,7 @@ public final class TrisoProcessingGameTests {
 
     @GameTest(template = "empty", timeoutTicks = 1920)
     public static void pressurizerDiscoversTaggedPlatesAndAllowsRecipeOverrides(GameTestHelper helper) {
-        var recipes = PressurizerPlateRecipes.forServer(helper.getLevel().getRecipeManager());
+        var recipes = helper.getLevel().getRecipeManager().getAllRecipesFor(Machine.PRESSURIZER.recipes());
         var metal = recipes.stream().filter(recipe -> recipe.id().equals(
                 NuclearCraft.id("pressurizer/plates/pressurizer_qa_metal"))).findFirst().orElseThrow();
         var dense = recipes.stream().filter(recipe -> recipe.id().equals(
@@ -84,9 +83,11 @@ public final class TrisoProcessingGameTests {
                 "Use the gem tag when the ingot tag is absent");
         helper.assertTrue(dense.inputs().get(0).count() == 9 && dense.products().get(0).stack().is(Items.BOOK),
                 "The canonical dense plate tag selects the output and nine matching plates supply the input");
-        helper.assertTrue(recipes.stream().noneMatch(recipe -> recipe.id().getPath().endsWith("/graphite")
-                        || recipe.id().getPath().endsWith("/pressurizer_qa_override")),
-                "Exclude graphite plates and leave an explicit stable recipe ID to the datapack");
+        var override = recipes.stream().filter(recipe -> recipe.id().equals(
+                NuclearCraft.id("pressurizer/plates/pressurizer_qa_override"))).findFirst().orElseThrow();
+        helper.assertTrue(recipes.stream().noneMatch(recipe -> recipe.id().equals(NuclearCraft.id("pressurizer/plates/graphite")))
+                        && override.defaults() == null && override.products().get(0).stack().is(Items.FLINT),
+                "Exclude graphite plates and leave the explicit datapack recipe at its stable recipe ID");
 
         helper.setBlock(PRESS, Machine.PRESSURIZER.block());
         var press = helper.getBlockEntity(PRESS);

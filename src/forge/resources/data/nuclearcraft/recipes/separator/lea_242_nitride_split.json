@@ -13,10 +13,12 @@
     "results": [
         {
             "item": "nuclearcraft:americium_243_nitride_ingot",
+            "preferred_tag": "forge:ingots/americium_243_nitride",
             "count": 8
         },
         {
             "item": "nuclearcraft:americium_242_nitride_ingot",
+            "preferred_tag": "forge:ingots/americium_242_nitride",
             "count": 1
         }
     ]
