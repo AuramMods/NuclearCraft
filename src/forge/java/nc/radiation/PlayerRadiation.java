@@ -230,9 +230,14 @@ public final class PlayerRadiation {
     }
 
     private static boolean hasUntimedImmunity(Player player) {
-        return RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID())
-                || RadiationGameStages.grantsImmunity(player, RadiationConfig.DEFAULT_STAGE_IMMUNITY.get(),
-                        RadiationConfig.IMMUNITY_STAGES.get());
+        if (RadiationConfig.IMMUNE_PLAYERS.get().contains(player.getStringUUID())) {
+            return true;
+        }
+        var scripted = RadiationScriptRules.active().stages();
+        return scripted == null
+                ? RadiationGameStages.grantsImmunity(player, RadiationConfig.DEFAULT_STAGE_IMMUNITY.get(),
+                        RadiationConfig.IMMUNITY_STAGES.get())
+                : RadiationGameStages.grantsImmunity(player, scripted.defaultImmunity(), scripted.names());
     }
 
     static RadiationSync.Reading reading(ServerPlayer player) {

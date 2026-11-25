@@ -130,5 +130,6 @@ public final class RadiationHud {
     @SubscribeEvent
     public static void onLogout(ClientPlayerNetworkEvent.LoggingOut event) {
         RadiationSync.clearClientReading();
+        RadiationSync.clearClientFoods();
     }
 }

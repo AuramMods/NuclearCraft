@@ -20,12 +20,22 @@ public final class RadiationSources {
     private static final Map<ResourceLocation, Double> ITEM_TAGS = new HashMap<>();
     private static final Map<ResourceLocation, Double> FLUIDS = new HashMap<>();
     private static final Map<ResourceLocation, Double> FLUID_TAGS = new HashMap<>();
-    private static final List<String> SALT_FORMS = List.of("", "_za", "_fluoride", "_fluoride_flibe");
+    private static final Map<String, Double> MATERIAL_BASES = new HashMap<>();
+    private static final Map<String, Double> MATERIAL_MULTIPLIERS = Map.ofEntries(
+            Map.entry("ingots", 1D), Map.entry("dusts", 1D), Map.entry("dirty_dusts", 1D),
+            Map.entry("clumps", 1D), Map.entry("shards", 1D), Map.entry("crystals", 1D),
+            Map.entry("crushed", 1D), Map.entry("impure_dusts", 1D), Map.entry("pure_dusts", 1D),
+            Map.entry("plates", 1D), Map.entry("raw_materials", 1D), Map.entry("sheetmetals", 1D),
+            Map.entry("tiny_dusts", 1D / 9), Map.entry("nuggets", 1D / 9), Map.entry("rods", 1D / 2),
+            Map.entry("sheetmetal_slabs", 1D / 2), Map.entry("coins", 1D / 3), Map.entry("ores", 1D / 4),
+            Map.entry("gravel_ores", 1D / 4), Map.entry("small_dusts", 1D / 4), Map.entry("gears", 4D),
+            Map.entry("storage_blocks", 9D), Map.entry("dense_plates", 9D), Map.entry("slabs", 9D / 2));
+    static final List<String> SALT_FORMS = List.of("", "_za", "_fluoride", "_fluoride_flibe");
     private static final List<String> ISOTOPE_FORMS = List.of("", "_carbide", "_oxide", "_nitride", "_za");
     private static final List<String> FUEL_FORMS = List.of("_oxide", "_triso", "_nitride", "_za");
 
     // Stock NuclearCraft 2o.9.7 rates are in Rad/t per item.
-    private static final double FLUID_MULTIPLIER = 125D / 18D;
+    static final double FLUID_MULTIPLIER = 125D / 18D;
     private static final double TRITIUM = 0.0115D;
     public static final double CORIUM = 0.0000165D;
     private static final double THORIUM = 0.0000000000715D;
@@ -224,10 +234,12 @@ public final class RadiationSources {
             return 0;
         }
         var settings = RadiationSourceSettings.active();
+        var scripts = RadiationScriptRules.active();
         var item = ForgeRegistries.ITEMS.getKey(stack.getItem());
-        if (item == null || settings.excludedItems().contains(item)) {
+        if (item == null || settings.excludedItems().contains(item) || scripts.excludedItems().contains(item)) {
             return 0;
         }
+        Double scriptedItem = scripts.items().get(item);
         if (stack.getItem() instanceof BlockItem blockItem) {
             var block = ForgeRegistries.BLOCKS.getKey(blockItem.getBlock());
             if (block != null) {
@@ -235,18 +247,22 @@ public final class RadiationSources {
                     return 0;
                 }
                 Double configured = settings.blocks().get(block);
-                if (configured != null) {
+                if (scriptedItem == null && configured != null) {
                     return configured;
                 }
             }
+        }
+        if (scriptedItem != null) {
+            return scriptedItem;
         }
         Double configured = settings.items().get(item);
         if (configured != null) {
             return configured;
         }
-        if (!settings.itemTags().isEmpty()) {
-            double override = stack.getTags().filter(tag -> !settings.excludedTags().contains(tag.location()))
-                    .mapToDouble(tag -> settings.itemTags().getOrDefault(tag.location(), -1D)).max().orElse(-1);
+        if (!settings.itemTags().isEmpty() || !scripts.itemTags().isEmpty()
+                || !scripts.materials().isEmpty() || !scripts.materialPrefixes().isEmpty()) {
+            double override = stack.getTags().mapToDouble(tag -> tagOverride(tag.location(), settings, scripts))
+                    .max().orElse(-1);
             if (override >= 0) {
                 return override;
             }
@@ -256,18 +272,61 @@ public final class RadiationSources {
             return direct;
         }
         return stack.getTags()
-                .filter(tag -> !settings.excludedTags().contains(tag.location()))
+                .filter(tag -> !tagExcluded(tag.location(), settings, scripts))
                 .mapToDouble(tag -> ITEM_TAGS.getOrDefault(tag.location(), 0D))
                 .max().orElse(0);
     }
 
+    static double itemTagRate(ResourceLocation tag) {
+        var settings = RadiationSourceSettings.active();
+        var scripts = RadiationScriptRules.active();
+        if (tagExcluded(tag, settings, scripts)) {
+            return 0;
+        }
+        double override = tagOverride(tag, settings, scripts);
+        return override >= 0 ? override : ITEM_TAGS.getOrDefault(tag, 0D);
+    }
+
+    private static boolean tagExcluded(ResourceLocation tag, RadiationSourceSettings.Snapshot settings,
+                                       RadiationScriptRules.Snapshot scripts) {
+        return settings.excludedTags().contains(tag) || scripts.excludedTags().contains(tag);
+    }
+
+    private static double tagOverride(ResourceLocation tag, RadiationSourceSettings.Snapshot settings,
+                                      RadiationScriptRules.Snapshot scripts) {
+        if (tagExcluded(tag, settings, scripts)) {
+            return -1;
+        }
+        Double explicit = scripts.itemTags().get(tag);
+        if (explicit != null) {
+            return explicit;
+        }
+        String path = tag.getPath();
+        int separator = path.indexOf('/');
+        if (separator > 0 && (tag.getNamespace().equals("forge") || tag.getNamespace().equals("c"))) {
+            String prefix = path.substring(0, separator);
+            String material = path.substring(separator + 1);
+            Double scripted = scripts.materialRate(prefix, material, MATERIAL_BASES.get(material),
+                    MATERIAL_MULTIPLIERS.get(prefix));
+            if (scripted != null) {
+                return scripted;
+            }
+        }
+        return settings.itemTags().getOrDefault(tag, -1D);
+    }
+
     static double blockRate(BlockState state) {
         var settings = RadiationSourceSettings.active();
+        var scripts = RadiationScriptRules.active();
         var block = ForgeRegistries.BLOCKS.getKey(state.getBlock());
         var item = ForgeRegistries.ITEMS.getKey(state.getBlock().asItem());
         if (block == null || settings.excludedBlocks().contains(block)
-                || item != null && settings.excludedItems().contains(item)) {
+                || item != null && (settings.excludedItems().contains(item) || scripts.excludedItems().contains(item))) {
             return 0;
+        }
+        Double scripted = item == null ? null : scripts.items().get(item);
+        if (scripted != null) {
+            return scripted;
         }
         Double configured = settings.blocks().get(block);
         if (configured != null) {
@@ -281,13 +340,22 @@ public final class RadiationSources {
         return stack.isEmpty() ? 0 : fluidUnitRate(stack.getFluid()) * (stack.getAmount() / 1000D);
     }
 
-    private static double fluidUnitRate(Fluid fluid) {
+    static double fluidUnitRate(Fluid fluid) {
         var settings = RadiationSourceSettings.active();
+        var scripts = RadiationScriptRules.active();
         var id = ForgeRegistries.FLUIDS.getKey(fluid);
         var source = fluid instanceof FlowingFluid flowing ? ForgeRegistries.FLUIDS.getKey(flowing.getSource()) : id;
         if (id == null || source == null || settings.excludedFluids().contains(id)
-                || settings.excludedFluids().contains(source)) {
+                || settings.excludedFluids().contains(source) || scripts.excludedFluids().contains(id)
+                || scripts.excludedFluids().contains(source)) {
             return 0;
+        }
+        Double scripted = scripts.fluids().get(id);
+        if (scripted == null) {
+            scripted = scripts.fluids().get(source);
+        }
+        if (scripted != null) {
+            return scripted;
         }
         Double configured = settings.fluids().get(id);
         if (configured == null) {
@@ -330,6 +398,7 @@ public final class RadiationSources {
     }
 
     private static void materialTags(String id, double rate) {
+        MATERIAL_BASES.put(id, rate);
         for (String form : List.of("ingots", "dusts", "clumps", "shards", "crystals", "crushed", "plates", "raw_materials", "sheetmetals")) {
             tag(form + "/" + id, rate);
         }

@@ -104,6 +104,11 @@ public final class FoodRadiation {
             return null;
         }
         String prefix = name + "_";
+        var scripted = entity == null || entity.level().isClientSide
+                ? RadiationSync.clientFood(name) : RadiationScriptRules.active().foods().get(name);
+        if (scripted != null) {
+            return scripted.dose() == 0 && scripted.resistance() == 0 ? null : scripted;
+        }
         Effects effects = null;
         for (String line : RadiationConfig.FOODS.get()) {
             if (line.startsWith(prefix)) {

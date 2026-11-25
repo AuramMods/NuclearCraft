@@ -1620,7 +1620,7 @@ The packaged JAR also entered the isolated 539-mod Auram instance on Forge 47.4.
 
 ### GameStages radiation immunity
 
-Move the legacy CraftTweaker `setRadiationImmunityGameStages` call to the top level of `world/serverconfig/nuclearcraft-radiation.toml`. This configuration makes either listed stage grant immunity.
+Set these keys at the top level of `world/serverconfig/nuclearcraft-radiation.toml` to make either listed stage grant immunity. CraftTweaker scripts can also use the restored `setRadiationImmunityGameStages` call.
 
 ```toml
 radiation_default_stage_immunity = false
@@ -1652,13 +1652,38 @@ The legacy entity expansion methods are available on `crafttweaker.api.entity.Li
 
 `addRadawayBuffer`, `setRadawayBuffer`, and `getRadawayBuffer` use the normal treatment buffer by default. Pass `true` to select Slow RadAway. Use the corresponding `add`, `set`, and `get` methods for `PoisonBuffer` and `RadiationResistance`. The buffers have a minimum of zero. Internal resistance accepts negative values. These methods change the same saved state as ordinary exposure and treatment. [CraftTweaker server event example for 1.20.1](https://docs.blamejared.com/1.20.1/en/forge/api/event/entity/player/PlayerLoggedInEvent/)
 
-To migrate static `Radiation.setRadiationLevel` calls to server configuration, use `radiation_items` for item IDs, `radiation_ores` for Forge item tag IDs, and `radiation_fluids` for fluid IDs. Use the respective `_blacklist` lists for `addToRadiationBlacklist` entries. Map `setFoodRadiationStats` to `radiation_foods`. The config formats and units are documented under [Environmental radiation](#environmental-radiation) and [Food radiation](#food-radiation).
-
 On packaged Forge 47.4.10 with CraftTweaker 14.0.59, a cow’s scripted dose capped at 500 Rad. Scripts read normal and slow treatment separately and preserved signed resistance. Clearing the normal RadAway and poison buffers let the next update discard the previous treatment amounts. Adding 1 Rad of treatment and 2 Rad of poison then started from those amounts. On clean Forge the stock Melter recipe still produced 1,000 mB of water.
 
 On the same packaged build, a scripted player login ended at 23 Rad. The configured UUID exemption blocked the guarded addition. The Melter produced 673 mB from the initial ZenCode recipe and 674 mB after a script reload. Both tanks retained their water after restart, and the revived cow retained its dose, treatment buffer, and resistance. All 229 local GameTests passed. The background multiplayer client used OpenAL No Output and recorded zero focus activations, foreground samples, and visible windows.
 
 The same JAR loaded JEI in an isolated copy of the current 540-mod Auram snapshot, which no longer included Distant Horizons. CraftTweaker reported 23 Rad on login and read distinct raw and effective rates. It also read back all scripted cow values and supplied the recipe that produced 673 mB of water in-world. The test removed its fixtures, saved, and exited with OpenAL No Output and zero focus activations, foreground samples, or visible windows.
+
+### CraftTweaker radiation source rules
+
+In the default CraftTweaker loader, import `mods.nuclearcraft.Radiation` to customize sources. Use registered item and fluid brackets or Forge item tags in place of ore dictionary ingredients. `setRadiationLevel` sets the rate per item or per 1,000 mB. `getRadiationLevel` accounts for the amount in a stack or counted tag. `addToRadiationBlacklist` excludes an item, a fluid, or one tag's contribution. A fluid source rule also covers its flowing variant. [CraftTweaker script loading for Forge 1.20.1](https://docs.blamejared.com/1.20.1/en/getting_started/)
+
+```zenscript
+import mods.nuclearcraft.Radiation;
+
+Radiation.setMaterialRadiationLevel("Copper", 0.25);
+Radiation.setMaterialPrefixRadiationMultiplier("block", 4.0);
+Radiation.setRadiationLevel(<fluid:minecraft:water>, 4.0);
+Radiation.addToRadiationBlacklist(<tag:items:forge:ores/copper>);
+Radiation.setFoodRadiationStats(<item:minecraft:apple>, 15.0, -1.5);
+Radiation.setRadiationImmunityGameStages(false, "radiation_training");
+```
+
+Material names can use legacy CamelCase or modern lowercase paths. Use globs such as `Uranium*` with `setMaterialRadiationLevel`. Material rules apply to the corresponding `forge` and `c` item tags. A direct tag rule takes precedence over a material family rule for that tag. A direct item or block rule takes precedence over tag rates. The largest applicable tag rate wins when several tags match. Blacklists still apply.
+
+`setIsotopeRadiationLevel` covers its material forms. `setFuelRadiationLevel` sets fresh and depleted fuel form rates separately. Both methods accept an optional registered base fluid ID and apply the legacy conversion to its fluid forms. Unnamespaced base fluid names resolve to `nuclearcraft`. `setFoodRadiationStats` changes the dose and resistance when the item is eaten and updates its tooltip. The server and client use the same NuclearCraft build for this sync. The GameStages call overrides the two stage settings for the current script load.
+
+A datapack reload replaces the scripted rules. Removing the script reveals the underlying config and stock rates. For a configuration-only migration, use `radiation_items`, `radiation_ores`, `radiation_fluids`, their corresponding blacklists, and `radiation_foods`. See [Environmental radiation](#environmental-radiation) and [Food radiation](#food-radiation).
+
+On dedicated Forge 47.4.10 with CraftTweaker 14.0.59, the first rule set measured 1.2 Rad/t for three apples, 1 Rad/t for a copper block, 2 Rad/t for 500 mB of flowing water, and zero for blacklisted dirt. The isotope and fuel values reached the item lookup, and the corresponding fluid queries returned the per-bucket values. GameStages 15.0.2 applied the scripted immunity and flipped it when the listed stage was granted. Changing and then deleting the script restored the config values and the original stage behavior. The multiplayer client read each food tooltip update and returned to the configured tooltip after removal. It exited with OpenAL No Output and zero focus activations, foreground samples, or visible windows.
+
+The same JAR measured 2 Rad/t from 500 mB in both an Ender IO 8.2.22-beta tank and a Mekanism 10.4.16.80 tank through their Forge fluid capabilities. Deleting the script restored 0.375 Rad/t in both tanks. Each tank kept its 500 mB after reload and dedicated-server restart. Clean Forge ran the stock Melter recipe, and all 229 local GameTests passed.
+
+The isolated 540-mod Auram snapshot loaded the same JAR, reproduced the source rates and GameStages behavior, and showed the scripted apple tooltip. The muted client loaded JEI, saved, and exited with zero focus activations, foreground samples, or visible windows.
 
 ### Food radiation
 
