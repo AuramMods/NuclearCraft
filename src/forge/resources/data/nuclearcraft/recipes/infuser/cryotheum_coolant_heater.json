@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:standard_coolant_heater"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "fluid": "nuclearcraft:cryotheum",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:cryotheum_coolant_heater",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:tag_empty",
+            "tag": "forge:dusts/cryotheum"
+        }
+    ]
+}

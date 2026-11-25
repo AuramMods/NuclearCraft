@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:fission_heater_port_standard"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "fluid": "nuclearcraft:liquid_helium",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:fission_heater_port_liquid_helium",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:empty_cooler_port"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:fluoromethane",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:fission_cooler_port_fluoromethane",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:empty_cooler"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:nitrogen",
+        "amount": 1000,
+        "legacy_fluid_aliases": true
+    },
+    "result": {
+        "item": "nuclearcraft:pebble_fission_cooler_nitrogen",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10
+}

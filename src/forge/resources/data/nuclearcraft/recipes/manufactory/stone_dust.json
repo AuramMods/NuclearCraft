@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:stone"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "forge:dusts/stone",
+        "count": 2
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/stone"
+            }
+        }
+    ]
+}

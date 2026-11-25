@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:dusts/coal_coke"
+            },
+            "count": 8
+        }
+    ],
+    "result": {
+        "tag": "forge:dusts/hop_graphite",
+        "count": 1
+    },
+    "ticks": 800,
+    "energy_per_tick": 40,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/coal_coke"
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/hop_graphite"
+            }
+        }
+    ]
+}

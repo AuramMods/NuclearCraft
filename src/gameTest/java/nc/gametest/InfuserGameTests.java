@@ -168,6 +168,39 @@ public final class InfuserGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 720)
+    public static void infusesPebbleCoolersAndMoltenSaltHeaterPorts(GameTestHelper helper) {
+        var cooler = prepareInfusion(helper, INFUSER, "empty_cooler", "oxygen");
+        var heaterPort = prepareInfusion(helper, INFUSER.east(), "fission_heater_port_standard", "cryotheum");
+
+        helper.succeedWhen(() -> {
+            checkInfusion(helper, cooler, "pebble_fission_cooler_oxygen");
+            checkInfusion(helper, heaterPort, "fission_heater_port_cryotheum");
+        });
+    }
+
+    private static ItemProcessorBlockEntity prepareInfusion(GameTestHelper helper, BlockPos pos, String input, String inputFluid) {
+        helper.setBlock(pos, Machine.INFUSER.block());
+        var processor = (ItemProcessorBlockEntity) helper.getBlockEntity(pos);
+        var items = processor.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.UP).orElseThrow(AssertionError::new);
+        var material = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id(inputFluid));
+        helper.assertTrue(items.insertItem(0, stack(input, 1), false).isEmpty(), "Insert one " + input + " through a face");
+        helper.assertTrue(fluid(processor, Direction.NORTH).fill(new FluidStack(material, 1000), FluidAction.EXECUTE) == 1000,
+                "Insert 1,000 mB of " + inputFluid + " through a face");
+        helper.assertTrue(power.receiveEnergy(6000, false) == 6000, "The Infuser accepts the full batch charge");
+        return processor;
+    }
+
+    private static void checkInfusion(GameTestHelper helper, ItemProcessorBlockEntity processor, String output) {
+        var items = processor.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var power = processor.getCapability(ForgeCapabilities.ENERGY, Direction.UP).orElseThrow(AssertionError::new);
+        ItemStack result = items.getStackInSlot(1);
+        helper.assertTrue(result.is(stack(output, 1).getItem()) && result.getCount() == 1, "Infuse one " + output);
+        helper.assertTrue(items.getStackInSlot(0).isEmpty() && fluid(processor, Direction.NORTH).getFluidInTank(0).isEmpty()
+                && power.getEnergyStored() == 0, "The batch consumes one part, 1,000 mB of fluid, and 6,000 FE");
+    }
+
     private static IFluidHandler fluid(ItemProcessorBlockEntity processor, Direction side) {
         return processor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).orElseThrow(AssertionError::new);
     }

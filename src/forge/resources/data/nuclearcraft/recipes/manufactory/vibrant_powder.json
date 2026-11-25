@@ -1,0 +1,30 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "c:gems/vibrant_crystal"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "enderio:vibrant_powder",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "enderio:vibrant_powder"
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "c:gems/vibrant_crystal"
+            }
+        }
+    ]
+}

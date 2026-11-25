@@ -1,0 +1,33 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:gems/certus_quartz"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "tag": "forge:dusts/certus_quartz",
+        "count": 1
+    },
+    "ticks": 200,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:gems/certus_quartz"
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:dusts/certus_quartz"
+            }
+        }
+    ]
+}
