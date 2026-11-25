@@ -1,0 +1,12 @@
+{
+    "type": "nuclearcraft:multiblock_infiltrator",
+    "item_inputs": [
+        { "ingredient": { "item": "minecraft:coal" }, "count": 1 }
+    ],
+    "fluid_inputs": [],
+    "result": { "item": "minecraft:charcoal" },
+    "time_multiplier": 0.02,
+    "power_multiplier": 0.1,
+    "heating_bonus": 1,
+    "radiation": 3
+}

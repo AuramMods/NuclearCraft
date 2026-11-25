@@ -199,6 +199,7 @@ public final class LargeElectrolyzer extends MachineController {
         if (possible <= 0) return false;
 
         setPower(power() - energyPerTick);
+        emitRadiation(recipe.radiation(), speed);
         int terminals = geometry.terminals().size();
         soundVolume = (float) (NCMachines.electrolyzerSoundVolume() * Math.log1p(
                 Math.sqrt(speed) / (4D * Math.sqrt(bounds.yLength() - 1D) * terminals * terminals)));

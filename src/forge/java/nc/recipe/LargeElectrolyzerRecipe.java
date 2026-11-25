@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -23,7 +22,8 @@ import java.util.List;
 
 public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, List<FluidIngredient> fluids,
                                      List<ItemStack> itemOutputs, List<FluidStack> fluidOutputs,
-                                     double time, double power, String electrolyte) implements Recipe<Container>, MachineInputs {
+                                     double time, double power, String electrolyte, double radiation)
+        implements ProcessingRecipe, MachineInputs {
     public static final int ITEM_OUTPUTS = 4;
     public static final int FLUID_OUTPUTS = 4;
 
@@ -32,6 +32,12 @@ public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, Li
         fluids = List.copyOf(fluids);
         itemOutputs = itemOutputs.stream().map(ItemStack::copy).toList();
         fluidOutputs = fluidOutputs.stream().map(FluidStack::copy).toList();
+    }
+
+    public LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, List<FluidIngredient> fluids,
+                                  List<ItemStack> itemOutputs, List<FluidStack> fluidOutputs,
+                                  double time, double power, String electrolyte) {
+        this(id, items, fluids, itemOutputs, fluidOutputs, time, power, electrolyte, 0D);
     }
 
     @Override public List<ItemStack> itemOutputs() { return itemOutputs.stream().map(ItemStack::copy).toList(); }
@@ -81,7 +87,8 @@ public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, Li
                     || !Double.isFinite(power) || power < 0 || electrolyte.isBlank()) {
                 throw new JsonSyntaxException("Invalid Electrolyzer recipe " + id);
             }
-            return new LargeElectrolyzerRecipe(id, items, fluids, itemOutputs, fluidOutputs, time, power, electrolyte);
+            return new LargeElectrolyzerRecipe(id, items, fluids, itemOutputs, fluidOutputs, time, power, electrolyte,
+                    ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override public LargeElectrolyzerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
@@ -92,7 +99,7 @@ public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, Li
             for (int i = 0; i < ITEM_OUTPUTS; i++) itemOutputs.add(buffer.readItem());
             for (int i = 0; i < FLUID_OUTPUTS; i++) fluidOutputs.add(buffer.readFluidStack());
             return new LargeElectrolyzerRecipe(id, items, fluids, itemOutputs, fluidOutputs,
-                    buffer.readDouble(), buffer.readDouble(), buffer.readUtf());
+                    buffer.readDouble(), buffer.readDouble(), buffer.readUtf(), buffer.readDouble());
         }
 
         @Override public void toNetwork(FriendlyByteBuf buffer, LargeElectrolyzerRecipe recipe) {
@@ -102,6 +109,7 @@ public record LargeElectrolyzerRecipe(ResourceLocation id, List<Input> items, Li
             buffer.writeDouble(recipe.time);
             buffer.writeDouble(recipe.power);
             buffer.writeUtf(recipe.electrolyte);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

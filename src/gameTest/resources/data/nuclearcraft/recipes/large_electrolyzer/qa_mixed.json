@@ -14,5 +14,6 @@
     ],
     "time_multiplier": 0.05,
     "power_multiplier": 0.1,
+    "radiation": 4,
     "electrolyte_group": "fluoride_solution"
 }

@@ -1,9 +1,11 @@
 package nc.gametest;
 
 import com.mojang.authlib.GameProfile;
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCGenerators;
 import nc.init.NCItemProcessors.Machine;
+import nc.init.NCMachines;
 import nc.init.NCRadiation;
 import nc.radiation.ChunkRadiationSource;
 import nc.radiation.PlayerRadiation;
@@ -12,11 +14,13 @@ import nc.radiation.RadiationShielding;
 import nc.radiation.ShieldingItem.Tier;
 import nc.radiation.RadiationSources;
 import nc.radiation.WorldRadiation;
+import nc.recipe.ProcessingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
@@ -25,6 +29,7 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
@@ -46,6 +51,34 @@ import java.util.UUID;
 @PrefixGameTestTemplate(false)
 public final class RadiationGameTests {
     private RadiationGameTests() {}
+
+    @GameTest(template = "empty")
+    public static void largeMachineRecipePacketsPreserveProcessRadiation(GameTestHelper helper) {
+        assertRadiationPacket(helper, NCMachines.DISTILLER_RECIPES.get(), NCMachines.DISTILLER_SERIALIZER.get(),
+                "distiller/qa_sparse", 2D);
+        assertRadiationPacket(helper, NCMachines.ELECTROLYZER_RECIPES.get(), NCMachines.ELECTROLYZER_SERIALIZER.get(),
+                "large_electrolyzer/qa_mixed", 4D);
+        assertRadiationPacket(helper, NCMachines.INFILTRATOR_RECIPES.get(), NCMachines.INFILTRATOR_SERIALIZER.get(),
+                "infiltrator/qa_radiation", 3D);
+        helper.succeed();
+    }
+
+    private static <R extends ProcessingRecipe> void assertRadiationPacket(GameTestHelper helper, RecipeType<R> type,
+                                                                          RecipeSerializer<R> serializer, String path,
+                                                                          double expected) {
+        var id = NuclearCraft.id(path);
+        var recipe = helper.getLevel().getRecipeManager().getAllRecipesFor(type).stream()
+                .filter(candidate -> candidate.getId().equals(id)).findFirst().orElseThrow();
+        var buffer = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(buffer, recipe);
+            var copy = serializer.fromNetwork(id, buffer);
+            helper.assertTrue(copy != null && copy.radiation() == expected && !buffer.isReadable(),
+                    "The synced recipe includes the declared radiation rate for " + id);
+        } finally {
+            buffer.release();
+        }
+    }
 
     @GameTest(template = "empty")
     public static void shieldingPreservesTheArmorAndCannotDowngradeIt(GameTestHelper helper) {

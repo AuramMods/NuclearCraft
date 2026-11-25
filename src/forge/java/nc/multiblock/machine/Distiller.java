@@ -326,6 +326,7 @@ public final class Distiller extends MachineController {
                 && power() < Math.min(energyCapacity(), (long) Math.ceil(duration / speed * power))) return false;
 
         setPower(power() - energyPerTick);
+        emitRadiation(recipe.radiation(), speed);
         soundVolume = (float) (NCMachines.distillerSoundVolume() * Math.log1p(Math.cbrt(speed)) / 128);
         progress += speed;
         int batches = Math.min(possible, (int) (progress / duration));

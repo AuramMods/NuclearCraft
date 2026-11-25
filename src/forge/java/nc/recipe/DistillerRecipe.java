@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
@@ -22,7 +21,7 @@ import java.util.List;
 
 public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
                               double timeMultiplier, double powerMultiplier, int sieveTrays,
-                              boolean stockBatch) implements Recipe<Container> {
+                              boolean stockBatch, double radiation) implements ProcessingRecipe {
     public static final int INPUT_COUNT = 2;
     public static final int OUTPUT_COUNT = 8;
 
@@ -34,6 +33,11 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
     public DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
                            double timeMultiplier, double powerMultiplier, int sieveTrays) {
         this(id, inputs, outputs, timeMultiplier, powerMultiplier, sieveTrays, false);
+    }
+
+    public DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
+                           double timeMultiplier, double powerMultiplier, int sieveTrays, boolean stockBatch) {
+        this(id, inputs, outputs, timeMultiplier, powerMultiplier, sieveTrays, stockBatch, 0D);
     }
 
     @Override public List<FluidStack> outputs() { return outputs.stream().map(FluidStack::copy).toList(); }
@@ -92,7 +96,8 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
                 throw new JsonSyntaxException("Invalid Distiller recipe " + id);
             }
             return new DistillerRecipe(id, inputs, outputs, time, power, trays,
-                    GsonHelper.getAsBoolean(json, "nuclearcraft_stock_batch", false));
+                    GsonHelper.getAsBoolean(json, "nuclearcraft_stock_batch", false),
+                    ProcessingRecipe.readRadiation(json, id));
         }
 
         @Override public DistillerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
@@ -100,7 +105,7 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             var outputs = new ArrayList<FluidStack>(OUTPUT_COUNT);
             for (int slot = 0; slot < OUTPUT_COUNT; slot++) outputs.add(buffer.readFluidStack());
             return new DistillerRecipe(id, inputs, outputs, buffer.readDouble(), buffer.readDouble(), buffer.readVarInt(),
-                    buffer.readBoolean());
+                    buffer.readBoolean(), buffer.readDouble());
         }
 
         @Override public void toNetwork(FriendlyByteBuf buffer, DistillerRecipe recipe) {
@@ -110,6 +115,7 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
             buffer.writeDouble(recipe.powerMultiplier);
             buffer.writeVarInt(recipe.sieveTrays);
             buffer.writeBoolean(recipe.stockBatch);
+            buffer.writeDouble(recipe.radiation);
         }
     }
 }

@@ -197,13 +197,18 @@ public final class DistillerGameTests {
                 .thenIdle(10)
                 .thenExecute(() -> {
                     var selected = helper.getBlockEntity(GAS_OUTPUT).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.SOUTH);
-                    helper.assertTrue(selected.orElseThrow(AssertionError::new).getFluidInTank(0).isEmpty(),
+                    helper.assertTrue(distiller.radiationEmission() == 0 && selected.orElseThrow(AssertionError::new).getFluidInTank(0).isEmpty(),
                             "A recipe requiring a tray stays idle in a packed-only tower");
                     for (int x = 2; x <= 3; x++) {
                         for (int z = 2; z <= 3; z++) helper.setBlock(new BlockPos(x, 2, z), NCMachines.block(Part.SIEVE_TRAY));
                     }
                 })
                 .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "Reinstalling the tray restores the recipe"))
+                .thenWaitUntil(() -> {
+                    double speed = 4 * (0.8 + 0.9) / 2 * 1.25 * 1.125;
+                    helper.assertTrue(Math.abs(distiller.radiationEmission() - 2 * speed) < 1E-9,
+                            "Distiller radiation scales with the reboiling and liquid distribution bonuses");
+                })
                 .thenWaitUntil(() -> helper.assertTrue(fluid(helper, GAS_OUTPUT, Direction.SOUTH).getFluidInTank(0)
                         .isFluidStackIdentical(stack("nuclearcraft:heavy_water", 250)), "The datapack product reaches output eight"))
                 .thenExecute(() -> {
@@ -214,7 +219,9 @@ public final class DistillerGameTests {
                     useMultitool(helper, false);
                     helper.assertTrue(fluid(helper, GAS_OUTPUT, Direction.SOUTH).drain(250, EXECUTE)
                             .isFluidStackIdentical(stack("nuclearcraft:heavy_water", 250)), "Forward selection restores output eight");
-                }).thenSucceed();
+                })
+                .thenWaitUntil(() -> helper.assertTrue(distiller.radiationEmission() == 0,
+                        "The idle Distiller stops emitting radiation")).thenSucceed();
     }
 
     @GameTest(template = "empty")

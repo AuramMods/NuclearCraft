@@ -148,6 +148,33 @@ public final class InfiltratorGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "empty")
+    public static void infiltratorRadiationFollowsPressureAndMachineState(GameTestHelper helper) {
+        var controller = build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The Infiltrator assembles"))
+                .thenExecute(() -> {
+                    helper.assertTrue(items(helper, ITEM_FIRST, Direction.NORTH)
+                            .insertItem(0, new ItemStack(Items.COAL), false).isEmpty(), "The scripted feed fits");
+                    energy(helper).receiveEnergy(100_000, false);
+                    helper.assertTrue(controller.radiationEmission() == 0, "No pressure means no emission");
+                    fluid(helper, PRESSURE, Direction.DOWN)
+                            .fill(new FluidStack(NCGasCoolants.HELIUM.cold(), 32_000), EXECUTE);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(controller.radiationEmission() == 6,
+                        "Two heated chambers with half pressure emit six Rad/t from a three Rad/t recipe"))
+                .thenExecute(() -> helper.setBlock(STOP.east(), Blocks.REDSTONE_BLOCK))
+                .thenWaitUntil(() -> helper.assertTrue(controller.radiationEmission() == 0, "Redstone halts radiation"))
+                .thenExecute(() -> helper.setBlock(STOP.east(), Blocks.AIR))
+                .thenWaitUntil(() -> helper.assertTrue(controller.radiationEmission() == 6,
+                        "Releasing the redstone hold restores emission"))
+                .thenExecute(() -> {
+                    helper.setBlock(CORNER, Blocks.AIR);
+                    helper.assertTrue(!controller.assembled() && controller.radiationEmission() == 0,
+                            "Breaking the shell drops the radiation source immediately");
+                }).thenSucceed();
+    }
+
     private static CompoundTag slot(int slot) {
         var tag = new CompoundTag();
         tag.putInt("Slot", slot);

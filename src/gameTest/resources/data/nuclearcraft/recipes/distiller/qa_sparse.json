@@ -23,7 +23,8 @@
             "amount": 250
         }
     ],
-    "time_multiplier": 0.001,
+    "time_multiplier": 0.02,
     "power_multiplier": 0,
+    "radiation": 2,
     "sieve_trays": 1
 }

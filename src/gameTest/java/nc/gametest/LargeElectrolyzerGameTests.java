@@ -146,11 +146,13 @@ public final class LargeElectrolyzerGameTests {
                 })
                 .thenIdle(10)
                 .thenExecute(() -> {
-                    helper.assertTrue(energy(helper).getEnergyStored() == 10_000
+                    helper.assertTrue(energy(helper).getEnergyStored() == 10_000 && machine.radiationEmission() == 0
                                     && items(helper, ITEM_OUTPUT, Direction.EAST).getStackInSlot(0).isEmpty(),
                             "A full fluid output also blocks the item product and FE consumption");
                     fluid(helper, PRODUCTS[3], Direction.SOUTH).drain(80_000, EXECUTE);
                 })
+                .thenWaitUntil(() -> helper.assertTrue(Math.abs(machine.radiationEmission() - 0.9216) < 1E-9,
+                        "Electrode geometry and electrolyte efficiency scale the recipe's radiation rate"))
                 .thenWaitUntil(() -> helper.assertTrue(items(helper, ITEM_OUTPUT, Direction.EAST).getStackInSlot(0).is(Items.CHARCOAL),
                         "The datapack recipe produces an item in product slot four"))
                 .thenExecute(() -> {

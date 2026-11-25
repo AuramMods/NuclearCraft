@@ -7,6 +7,7 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.MultiblockFrame;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.machine.MachinePartBlock.Part;
+import nc.radiation.ChunkRadiationSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -29,7 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-abstract class MachineController extends BlockEntity implements ComputerPort.Controller, AssemblyDiagnostic.Controller {
+abstract class MachineController extends BlockEntity
+        implements ComputerPort.Controller, AssemblyDiagnostic.Controller, ChunkRadiationSource {
     protected @Nullable Cuboid bounds;
     private final Part controllerPart;
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
@@ -41,6 +43,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     private AssemblyDiagnostic validation;
     private boolean halted;
     private long power;
+    private double radiationEmission;
 
     MachineController(BlockEntityType<?> type, BlockPos pos, BlockState state, Part controllerPart) {
         super(type, pos, state);
@@ -50,6 +53,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
 
     final void tick() {
         if (!(level instanceof ServerLevel server)) return;
+        radiationEmission = 0D;
         long time = server.getGameTime();
         if (dirty || bounds == null && time >= nextValidationTick) {
             assemble(server);
@@ -72,6 +76,15 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     public final boolean halted() { return halted; }
     final long power() { return power; }
 
+    @Override
+    public final double radiationEmission() {
+        return radiationEmission;
+    }
+
+    final void emitRadiation(double base, double speed) {
+        if (base > 0D) radiationEmission = Math.min(Double.MAX_VALUE, base * speed);
+    }
+
     final void setPower(long quantity) {
         if (power != quantity) {
             power = quantity;
@@ -86,6 +99,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
     final void setHalted(boolean halt) {
         if (halted != halt) {
             halted = halt;
+            if (halt) radiationEmission = 0D;
             setChanged();
         }
     }
@@ -206,6 +220,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
 
     private void disconnect() {
         if (bounds != null) beforeDisconnect();
+        radiationEmission = 0D;
         computerPorts.unbind();
         bounds = null;
         for (var port : ports) port.unbind(this);
@@ -299,6 +314,7 @@ abstract class MachineController extends BlockEntity implements ComputerPort.Con
 
     @Override public void load(CompoundTag tag) {
         super.load(tag);
+        radiationEmission = 0D;
         halted = tag.getBoolean("halted");
         power = Math.max(0, tag.getLong("energy"));
     }
