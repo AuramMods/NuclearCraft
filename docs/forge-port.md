@@ -468,6 +468,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Applied Flux | 1.3.4 | Forge Energy through Flux Accessors and ME FE Storage Cells |
 | Applied Mekanistics | 1.4.3 | Gas transfer through AE2 buses and ME chemical cells on sided processors |
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
+| ExtraStorage | 4.0.7 | Item and fluid transfers through Advanced Importers and Exporters |
 | Draconic Evolution | 3.1.2.621 | Forge Energy transfer through linked I/O, Relay, and Wireless Energy Crystals |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
@@ -648,6 +649,16 @@ The cross-chunk networks also kept one coal and 250 mB of water at their sources
 The isolated Auram instance with all 541 installed mod JARs loaded JEI and repeated the three patched circuits. The server observed all three chunks unload and verified a new chunk instance for each one on return. The saved region files held two coal in each item destination and 1,750 mB of water in the Infuser, with empty sources. The client ran with master volume zero and OpenAL No Output. The native observer saw zero focus activations, foreground samples, and visible windows.
 
 A fresh isolated copy with all 539 installed Auram mod JARs loaded the same processor routes and completed a second batch on each. The two fluid tanks reached 50 mB of liquid nitrogen apiece. Each item destination kept one coal dust from the dedicated test and received one Mekanism coal dust under Auram's unification rules. All sources and processor buffers saved empty. The client used master volume zero and OpenAL No Output, and the observer recorded zero desktop activations, foreground samples, and visible windows. Reopening the earlier test copy reproduced Psychedelicraft 1.20.1-port.4's missing player drug capability during login.
+
+### ExtraStorage advanced transfer devices
+
+On packaged Forge 47.4.10, Auram's ExtraStorage 4.0.7 and EdivadLib 2.0.1 ran with Refined Storage 1.12.4 and Ender IO 8.2.22-beta. The Advanced Exporters sent three coal to a Manufactory and 1,500 mB of water to an Infuser. The Advanced Importers pulled three graphite dust from a Manufactory to a barrel and 750 mB of water from a Melter to a tank. The four routes preserved supplies while the selected face was disabled or the receiving inventory could not accept the product. Both exporters delivered exactly once after their receiving processors were removed and replaced.
+
+The advanced devices use the Refined Storage adjacent lookup covered by the existing compatibility mixin. Each advanced device faced a NuclearCraft endpoint across a chunk boundary. The server confirmed that all four endpoint chunks unloaded and their tickets expired. Each route delivered another batch through the same installed devices after reload. A dedicated restart preserved the exact totals of six coal, 3,000 mB of Infuser water, six graphite dust, and 1,500 mB of collected Melter water.
+
+A solid-fuel reactor received 64 mB of water and one LECf-251 oxide pellet through Advanced Exporters. An Advanced Importer routed the resulting 256 mB of high-pressure steam directly to a turbine. Another collected the depleted pellet. The exhaust and 115 FE stayed in the turbine through chunk unload and restart. The saved exhaust amounted to 1,024 mB. The chain used the stock 2,000-tick fuel duration. A separate live check placed the test datapack after the mod packs with `datapack enable "file/extra_chain" last` and verified that the same recipe then reported 60 ticks.
+
+The same JAR repeated all four processor routes in the isolated 540-mod Auram instance. An Advanced Exporter fed one ice into a Melter and an Advanced Importer collected 1,000 mB of water. That batch spent exactly 4,000 FE. The client loaded JEI and saved and exited muted with zero observed focus changes or visible windows. All 277 local GameTests passed.
 
 ### Applied Flux
 
