@@ -97,6 +97,16 @@ Packaged Forge 47.4.18 started and saved on a dedicated server. The separate cli
 
 The original Hwyla hook returned its input tooltip as-is. Jade 11.13.2 in the isolated 539-mod Auram copy read the Melter’s Forge capabilities and reported 5,120 of 512,000 FE and 2,234 of 16,000 mB of water. The client logged in, initialized JEI with the consolidated tab, and exposed 1,059 NuclearCraft entries in Auram’s JEI catalog. Auram applied its configured uranium ingot unification. Both background clients used OpenAL No Output and exited with zero focus activations, foreground samples, or visible window samples. [Jade for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/jade/files/6855440)
 
+### Client languages
+
+The packaged mod includes Czech (`cs_cz`), German (`de_de`), French (`fr_fr`), Brazilian Portuguese (`pt_br`), Russian (`ru_ru`), and Simplified Chinese (`zh_cn`). Select a language in Minecraft's Language settings. The port carries over the original translations for matching blocks, items, fluids, and messages, adds bucket names based on the translated fluids, and supplies translations for the current machine controls. Some languages have fewer translations in the legacy source. Minecraft uses English where a localized entry is absent.
+
+When migrating a resource pack, place the translations in `assets/nuclearcraft/lang/<locale>.json`. Use the current namespaced block and item IDs to form keys such as `block.nuclearcraft.melter` and `item.nuclearcraft.oxygen_bucket`. Forge fluids use keys such as `fluid_type.nuclearcraft.oxygen`. The same key provides the name when the item appears in a menu or in JEI. [Forge localization](https://docs.minecraftforge.net/en/1.20.x/concepts/internationalization/)
+
+The packaged Forge 47.4.10 client loaded all 10,162 entries across the six locale files. It displayed `Fundição`, `Oxigênio`, and `Entrada de itens 7` after joining a dedicated server. After switching to French and reloading resources, it opened the same server's Melter as `Four à fusion`. An untranslated message fell back to English. All 231 GameTests passed locally. The client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
+
+The same JAR repeated the Portuguese checks in the isolated 540-mod Auram instance. JEI loaded, all dimensions saved, and the client exited with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
+
 ### Default processor recipes
 
 The world's `nuclearcraft-processors.toml` accepts the legacy `default_processor_recipes_global` switch and `default_processor_recipes` array. Both default to true. The 20 array positions match `processor_time`. Turning off the global switch removes all shipped processor recipes. Turning off one array entry removes that machine’s shipped recipes. Both switches include recipes discovered from material tags by the Melter and Pressurizer. The Electric Furnace still uses vanilla and modded furnace recipes, as it did in 2o.9.7.
