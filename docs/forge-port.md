@@ -452,6 +452,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
+| Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
 | Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors |
 | Tinkers’ Construct | 3.11.2.166 | Shared molten-material tags, fluid transfer, modular tools, bows, and armor |
@@ -654,6 +655,18 @@ An Entangled 1.3.20 block relayed an ice block from a hopper and 4,000 FE from a
 Satiscraftory 1.1.3 Mark 1 belts carried a copper ingot into a Manufactory and took its copper dust to a Satiscraftory Smelter. A Voltaic Pile powered the Smelter with 1,000 FE. With the output barrel full, the belt held the copper dust and the Smelter kept its full charge. The dust and charge survived a confirmed chunk unload and a dedicated restart. Freeing one slot let the Smelter spend the charge and deliver exactly one copper ingot. A second batch raised the destination count to two.
 
 The isolated client with all 541 installed Auram mod JARs loaded JEI and repeated the Tom's Simple Storage and Entangled routes. The saved region showed one Mekanism coal dust under the pack's unification rules, the charcoal still in the source, and exactly 1,000 mB of water in the Ender IO tank. Both NuclearCraft machines and the battery saved empty. The client used master volume zero and OpenAL No Output. The observer recorded zero foreground samples, focus activations, and visible window samples through exit.
+
+### Create pipes, funnels, and power
+
+On packaged Forge 47.4.10 with Auram's Create 6.0.8 and Create Crafts & Additions 1.3.3, the Infuser's closed faces kept 1,000 mB of water in the source Fluid Tank and one white concrete powder in the feed above the machine. The Alternator charged the Infuser while both inputs were closed. Opening the west fluid input and top item input in the Infuser menu allowed a Mechanical Pump and a pair of brass and andesite funnels to finish one concrete batch. Both inputs emptied. An output funnel delivered the concrete to the receiving funnel, where it waited for room in the barrel. [Create pump and pipe source](https://github.com/Creators-of-Create/Create/blob/mc1.20.1-6.0.8/src/main/java/com/simibubi/create/content/fluids/pump/PumpBlockEntity.java)
+
+A second Mechanical Pump drew from the Melter's east output. The Melter held 1,000 mB of water while the destination Fluid Tank was at its 8,000 mB capacity. Removing 1,000 mB from that tank let the pump deliver the entire batch. The tank returned to 8,000 mB, and the Melter emptied. For live side changes, use the processor menu or Multitool so the connected Create pipe receives a neighbor update.
+
+A dedicated-server restart preserved the held concrete item and the Melter's buffered water. Freeing a barrel slot admitted one concrete. The barrel and the 8,000 mB tank retained their contents through a confirmed chunk unload and reload, with both processors empty of their inputs and outputs.
+
+A Voltaic Pile held its 300,000 FE with the face toward an Electric Motor disabled. Opening that face as an output transferred Forge Energy and spun the motor and its attached shaft at 64 RPM. [Create Crafts & Additions](https://github.com/mrh0/createaddition)
+
+The same packaged JAR repeated both processor routes in the isolated instance with all 541 installed Auram mod JARs. JEI loaded, and the saved region files held one concrete, 8,000 mB of water, and empty processor inventories and fluid buffers. The dedicated-server test client and isolated Auram client ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
 
 ### Cyclic
 
