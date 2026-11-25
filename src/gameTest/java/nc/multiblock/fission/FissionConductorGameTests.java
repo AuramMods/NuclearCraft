@@ -140,7 +140,7 @@ public final class FissionConductorGameTests {
         helper.setBlock(BRIDGE, NCFission.CONDUCTOR.get());
         var bounds = new Cuboid(helper.absolutePos(MIN), helper.absolutePos(MAX));
         var neighborhood = FissionPlacementRules.neighborhood(helper.getLevel(), bounds,
-                FissionPlacementRules.Part.CELL, Set.of(), Set.of());
+                FissionPlacementRules.Part.CELL, Set.of(), Set.of(), Set.of());
         helper.assertTrue(neighborhood.test(FissionPlacementRules.Part.CONDUCTOR, helper.absolutePos(BRIDGE))
                         && !neighborhood.test(FissionPlacementRules.Part.CONDUCTOR, helper.absolutePos(END)),
                 "Placement rules count the passive conductor before it joins a hot cluster");

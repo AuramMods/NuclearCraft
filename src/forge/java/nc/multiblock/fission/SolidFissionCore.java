@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 final class SolidFissionCore {
@@ -51,6 +52,15 @@ final class SolidFissionCore {
 
     private record GasLoad(BlockPos pos, PebbleCoolant gas, double efficiency) {}
     private record SaltLoad(BlockPos pos, FissionCoolant coolant, double efficiency) {}
+
+    private enum NeutronEndpoint { FUEL, IRRADIATOR, REFLECTOR }
+
+    private record NeutronLine(BlockPos origin, Direction direction, int moderators,
+                               NeutronEndpoint endpoint, long shieldFlux) {
+        BlockPos end() {
+            return origin.relative(direction, moderators + 1);
+        }
+    }
 
     private static final class Irradiation {
         final FissionIrradiator part;
@@ -330,12 +340,10 @@ final class SolidFissionCore {
         }
         assembleBunches(reactions);
         Set<BlockPos> sourceTargets = reactions.isEmpty() ? Set.of() : primeFromWall(level, reactions);
-        Set<BlockPos> moderatorPositions = new HashSet<>();
+        var lines = new ArrayList<NeutronLine>();
         Set<BlockPos> failedSources = new HashSet<>();
-        Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux = new HashMap<>();
-        while (!distributeFlux(level, materials, reactions, irradiation, sourceTargets, moderatorPositions, shieldFlux, failedSources)) {
-            moderatorPositions.clear();
-            shieldFlux.clear();
+        while (!distributeFlux(level, materials, reactions, irradiation, sourceTargets, lines, failedSources)) {
+            lines.clear();
             for (Irradiation target : irradiation.values()) {
                 target.flux = 0;
             }
@@ -352,11 +360,30 @@ final class SolidFissionCore {
                 burning.add(pos);
             }
         }
+        Set<BlockPos> neutronParts = new HashSet<>();
+        Set<BlockPos> activeModerators = new HashSet<>();
+        Set<BlockPos> clusterAnchors = new HashSet<>();
+        Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux = new HashMap<>();
+        for (NeutronLine line : lines) {
+            BlockPos end = line.end();
+            boolean complete = switch (line.endpoint()) {
+                case FUEL -> burning.contains(end) || reactions.get(end).hasDecayHeat;
+                case IRRADIATOR -> irradiation.get(end).flux > 0;
+                case REFLECTOR -> true;
+            };
+            if (complete) {
+                recordModerators(level, materials, line, neutronParts, activeModerators, shieldFlux);
+                if (line.endpoint() == NeutronEndpoint.REFLECTOR) {
+                    neutronParts.add(end);
+                    clusterAnchors.add(end);
+                }
+            }
+        }
         Set<BlockPos> heatedParts = new HashSet<>(shieldFlux.keySet());
         irradiation.forEach((pos, target) -> {
             if (target.flux > 0) {
                 heatedParts.add(pos);
-                moderatorPositions.add(pos);
+                neutronParts.add(pos);
             }
         });
         Set<BlockPos> thermalCells = new HashSet<>(burning);
@@ -371,7 +398,8 @@ final class SolidFissionCore {
                     BlockPos neighbor = pos.relative(side);
                     if (layout.bounds().boundaryAxes(neighbor) == 0
                             && materials.moderator(level.getBlockState(neighbor)) != null) {
-                        moderatorPositions.add(neighbor);
+                        neutronParts.add(neighbor);
+                        activeModerators.add(neighbor);
                     }
                 }
             }
@@ -379,11 +407,13 @@ final class SolidFissionCore {
         if (decayPacking == null && fluidCooling && thermalCells.size() > burning.size()) {
             decayPacking = decayPacking(level);
         }
+        var coolingNeighbors = FissionPlacementRules.neighborhood(level, layout.bounds(), layout.variant().fuelPart(),
+                thermalCells, neutronParts, activeModerators);
         Map<BlockPos, PebbleCoolant> coolers = gasCooling == null ? Map.of()
-                : gasCooling.available(level, layout, thermalCells, moderatorPositions);
+                : gasCooling.available(level, layout, coolingNeighbors);
         Map<BlockPos, FissionCoolant> heaters = saltCooling == null ? Map.of()
-                : saltCooling.available(level, layout, thermalCells, moderatorPositions);
-        Set<BlockPos> sinks = fluidCooling ? Set.of() : availableSinks(level, thermalCells, moderatorPositions);
+                : saltCooling.available(level, layout, coolingNeighbors);
+        Set<BlockPos> sinks = fluidCooling ? Set.of() : availableSinks(level, coolingNeighbors);
         Set<BlockPos> cooledParts = switch (layout.variant()) {
             case SOLID -> sinks;
             case PEBBLE -> coolers.keySet();
@@ -391,13 +421,12 @@ final class SolidFissionCore {
         };
         Set<BlockPos> roots = new HashSet<>(thermalCells);
         roots.addAll(heatedParts);
-        for (BlockPos neutronPart : moderatorPositions) {
-            if (!irradiation.containsKey(neutronPart)) {
-                for (Direction side : Direction.values()) {
-                    BlockPos neighbor = neutronPart.relative(side);
-                    if (cooledParts.contains(neighbor) || conductors.contains(neighbor)) {
-                        roots.add(neighbor);
-                    }
+        clusterAnchors.addAll(activeModerators);
+        for (BlockPos neutronPart : clusterAnchors) {
+            for (Direction side : Direction.values()) {
+                BlockPos neighbor = neutronPart.relative(side);
+                if (cooledParts.contains(neighbor) || conductors.contains(neighbor)) {
+                    roots.add(neighbor);
                 }
             }
         }
@@ -421,7 +450,7 @@ final class SolidFissionCore {
         long raw = 0;
         long casing = 0;
         double effective = 0;
-        int usefulParts = moderatorPositions.size();
+        int usefulParts = neutronParts.size();
         boolean storedHeatChanged = false;
         if (measuredFuel != null) {
             reactions.forEach((pos, reaction) -> {
@@ -617,17 +646,15 @@ final class SolidFissionCore {
         }
     }
 
-    private Set<BlockPos> availableSinks(ServerLevel level, Set<BlockPos> burning,
-                                                     Set<BlockPos> moderatorPositions) {
+    private Set<BlockPos> availableSinks(ServerLevel level,
+                                        BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
         var candidates = new HashMap<String, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockState(pos).getBlock() instanceof SolidHeatSinkBlock sink) {
                 candidates.computeIfAbsent(sink.material(), ignored -> new ArrayList<>()).add(pos);
             }
         }
-        return NCFission.placementRules().active(candidates,
-                FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CELL,
-                        burning, moderatorPositions)).keySet();
+        return NCFission.placementRules().active(candidates, neighbors).keySet();
     }
 
     private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction<?>> reactions) {
@@ -677,8 +704,7 @@ final class SolidFissionCore {
 
     private boolean distributeFlux(ServerLevel level, FissionMaterials materials,
                                    Map<BlockPos, Reaction<?>> reactions, Map<BlockPos, Irradiation> irradiation,
-                                   Set<BlockPos> sourceTargets, Set<BlockPos> moderatorPositions,
-                                   Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux,
+                                   Set<BlockPos> sourceTargets, List<NeutronLine> lines,
                                    Set<BlockPos> failedSources) {
         ArrayDeque<BlockPos> pending = new ArrayDeque<>();
         Set<BlockPos> sources = new HashSet<>();
@@ -741,7 +767,7 @@ final class SolidFissionCore {
                         Reaction<?> target = reactions.get(pos);
                         if (target != null) {
                             target.receive(flux, efficiency);
-                            recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, false);
+                            lines.add(new NeutronLine(origin, direction, moderators, NeutronEndpoint.FUEL, moderatorFlux));
                             if (target.active()) {
                                 enqueueBunch(target, pending, sources, failedSources);
                             }
@@ -749,14 +775,13 @@ final class SolidFissionCore {
                             Irradiation sink = irradiation.get(pos);
                             sink.flux += flux;
                             source.receive(0, efficiency * sink.recipe.efficiency());
-                            recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators, moderatorFlux, true);
+                            lines.add(new NeutronLine(origin, direction, moderators, NeutronEndpoint.IRRADIATOR, 0));
                         } else if (moderators <= reach / 2) {
                             var reflector = materials.reflector(block);
                             if (reflector != null) {
                                 source.receive((long) (2D * flux * reflector.reflectivity()), efficiency * reflector.efficiency());
-                                recordModerators(level, materials, moderatorPositions, shieldFlux, origin, direction, moderators,
-                                        (long) (moderatorFlux * (1D + reflector.reflectivity())), false);
-                                moderatorPositions.add(pos);
+                                lines.add(new NeutronLine(origin, direction, moderators, NeutronEndpoint.REFLECTOR,
+                                        (long) (moderatorFlux * (1D + reflector.reflectivity()))));
                             }
                         }
                     }
@@ -858,23 +883,24 @@ final class SolidFissionCore {
         return packing;
     }
 
-    private void recordModerators(ServerLevel level, FissionMaterials materials, Set<BlockPos> positions,
-                                  Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux,
-                                  BlockPos origin, Direction direction, int count, long flux, boolean terminalSink) {
+    private static void recordModerators(ServerLevel level, FissionMaterials materials, NeutronLine line,
+                                         Set<BlockPos> neutronParts, Set<BlockPos> activeModerators,
+                                         Map<BlockPos, EnumMap<Direction.Axis, Long>> shieldFlux) {
+        boolean irradiator = line.endpoint() == NeutronEndpoint.IRRADIATOR;
         long prefixFlux = 0;
-        for (int distance = 1; distance <= count; distance++) {
-            BlockPos pos = origin.relative(direction, distance);
-            positions.add(pos);
-            if (!layout.shields().isEmpty()) {
-                var state = level.getBlockState(pos);
-                if (state.getBlock() instanceof FissionShieldBlock) {
-                    shieldFlux.computeIfAbsent(pos, ignored -> new EnumMap<>(Direction.Axis.class))
-                            .putIfAbsent(direction.getAxis(), terminalSink ? prefixFlux : flux);
-                } else if (terminalSink) {
-                    var moderator = materials.moderator(state);
-                    if (moderator != null) {
-                        prefixFlux += moderator.flux();
-                    }
+        for (int distance = 1; distance <= line.moderators(); distance++) {
+            BlockPos pos = line.origin().relative(line.direction(), distance);
+            neutronParts.add(pos);
+            var state = level.getBlockState(pos);
+            if (state.getBlock() instanceof FissionShieldBlock) {
+                shieldFlux.computeIfAbsent(pos, ignored -> new EnumMap<>(Direction.Axis.class))
+                        .putIfAbsent(line.direction().getAxis(), irradiator ? prefixFlux : line.shieldFlux());
+            } else {
+                if (distance == 1 || distance == line.moderators() && line.endpoint() == NeutronEndpoint.FUEL) {
+                    activeModerators.add(pos);
+                }
+                if (irradiator) {
+                    prefixFlux += materials.moderator(state).flux();
                 }
             }
         }

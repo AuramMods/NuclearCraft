@@ -1485,6 +1485,8 @@ A muted multiplayer client used the multitool on the source manager. It received
 
 ### Neutron moderator and reflector recipes
 
+Cooling placement rules count active moderators. In a completed neutron line between fuel parts, the ordinary moderators next to the fuel at either end activate. A line ending at a reflector or irradiator activates the ordinary moderator next to the emitting fuel. Middle moderators still add their flux and count toward the reactor's useful volume. Active moderators and reflectors can anchor adjacent heat clusters. Open shields still collect heat from completed lines.
+
 Use `nuclearcraft:fission_moderator` or `nuclearcraft:fission_reflector` recipes to give passive blocks a neutron role inside all three fission reactors. Set `input.block` to one block ID or `input.tag` to a Forge block tag. A moderator takes integer `flux` and `efficiency`. A reflector takes `reflectivity` from 0 to 1 and `efficiency`. The original five stock recipes inherit their values from the named server-config entries above through `legacy_profile`. The stock Graphite and Beryllium recipes use the shared Forge storage-block tags.
 
 ```json
@@ -1505,6 +1507,12 @@ On packaged Forge 47.4.10, a full reflector blocked a wall source in each reacto
 A separate multiplayer client displayed the server's 47-flux Heavy Water Moderator, the 90-flux Iron Block, and the Copper Block from the custom tag in JEI. A reload changed the iron rule to 93 flux, replaced the copper with a Diamond Block, and removed the full-reflector fixture. JEI reflected all three changes. The client used OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
 
 The isolated 540-mod Auram instance showed the KubeJS Iron Block recipe and the tagged Copper Block in JEI. The KubeJS removal of the stock Lead Steel Reflector recipe also reached JEI. All three reactors kept their fuel behind the custom full reflector. Replacing it with the custom partial reflector allowed each reactor to finish its pending batch. The client saved and exited with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
+
+All 246 local GameTests passed. The three reactor variants kept their end coolers active on a fuel-to-fuel line and left the middle cooler idle. On a reflected line, the moderator next to the fuel still activated its cooler. On clean packaged Forge 47.4.10, removing and restoring the middle moderator stopped and restarted all three reactions. Each end gas cooler saved 266 mB of hot fluorine and 117 mB of cold fluorine. Each end salt heater saved 22 mB of hot iron NaK and 228 mB of cold iron NaK. The middle coolers still held their original 250 mB, and all six tank balances held across a dedicated restart.
+
+The same packaged JAR repeated the three reactor layouts in the isolated Auram profile with all 540 installed mod JARs. Both end coolers heated fluid in the pebble-bed and molten-salt runs while each middle cooler kept its 250 mB of cold fluid. Removing and restoring the middle moderator stopped and restarted all three reactions. The client used master volume zero and OpenAL No Output and recorded zero desktop activations, foreground samples, or visible windows.
+
+The packaged JAR also repeated the separate vent routes with Ender IO 8.2.22-beta and Mekanism 10.4.16.80. The solid reactor supplied 4,000 mB of steam to an initially full Ender IO tank as it gained room. A Basic Mechanical Pipe carried 257 mB of heated emergency coolant from a pebble-bed reactor, and an Ender IO Fluid Conduit carried 383 mB from a molten-salt reactor. The exact volumes held across a dedicated restart and chunk reload.
 
 ### Scripted fission isotopes and fuels
 

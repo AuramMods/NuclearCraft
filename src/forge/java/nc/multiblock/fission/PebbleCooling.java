@@ -21,7 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -103,8 +103,8 @@ final class PebbleCooling {
         tank.setCapacity(Math.max(minimum, tank.getFluidAmount()));
     }
 
-    Map<BlockPos, PebbleCoolant> available(ServerLevel level, SolidFissionLayout layout, Set<BlockPos> chambers,
-                                            Set<BlockPos> moderators) {
+    Map<BlockPos, PebbleCoolant> available(ServerLevel level, SolidFissionLayout layout,
+                                          BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
         var eligible = new HashMap<String, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
@@ -114,9 +114,7 @@ final class PebbleCooling {
                 }
             }
         }
-        var active = NCPebbleFission.placementRules().active(eligible,
-                FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.CHAMBER,
-                        chambers, moderators));
+        var active = NCPebbleFission.placementRules().active(eligible, neighbors);
         var result = new HashMap<BlockPos, PebbleCoolant>();
         active.forEach((pos, id) -> result.put(pos, NCPebbleFission.coolants().get(id)));
         return result;

@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
@@ -83,7 +84,7 @@ final class SaltCooling {
     }
 
     Map<BlockPos, FissionCoolant> available(ServerLevel level, SolidFissionLayout layout,
-                                            Set<BlockPos> vessels, Set<BlockPos> moderators) {
+                                            BiPredicate<FissionPlacementRules.Part, BlockPos> neighbors) {
         var eligible = new HashMap<FissionCoolant, List<BlockPos>>();
         for (BlockPos pos : layout.sinks()) {
             if (level.getBlockEntity(pos) instanceof SaltHeater heater) {
@@ -93,9 +94,7 @@ final class SaltCooling {
                 }
             }
         }
-        return NCSaltFission.placementRules().active(eligible,
-                FissionPlacementRules.neighborhood(level, layout.bounds(), FissionPlacementRules.Part.VESSEL,
-                        vessels, moderators));
+        return NCSaltFission.placementRules().active(eligible, neighbors);
     }
 
     boolean heat(ServerLevel level, BlockPos pos, FissionCoolant coolant, double efficiency) {

@@ -31,6 +31,14 @@ public enum FissionVariant {
     String itemFilterKey() { return this == PEBBLE ? "pebble_filter" : "fuel_filter"; }
     String itemCircuitsKey() { return this == PEBBLE ? "pebble_fuel" : "item_fuel"; }
 
+    FissionPlacementRules.Part fuelPart() {
+        return switch (this) {
+            case SOLID -> FissionPlacementRules.Part.CELL;
+            case PEBBLE -> FissionPlacementRules.Part.CHAMBER;
+            case SALT -> FissionPlacementRules.Part.VESSEL;
+        };
+    }
+
     FissionWallBlock controller() {
         return switch (this) {
             case SOLID -> NCFission.CONTROLLER.get();
