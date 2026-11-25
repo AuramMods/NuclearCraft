@@ -204,7 +204,27 @@ Convert legacy `EnergyProcessorBuilder` and `UpgradableEnergyProcessorBuilder` r
     "item_outputs": 1,
     "process_time": 600,
     "process_power": 100,
-    "upgradable": true
+    "upgradable": true,
+    "particles": ["reddust", "depthsuspend"],
+    "gui_texture": "nuclearcraft:textures/gui/container/glowstone_aggregator.png",
+    "layout": {
+      "size": [176, 166],
+      "player": [8, 84],
+      "item_inputs": [[56, 35, 16, 16]],
+      "item_outputs": [[112, 31, 24, 24]],
+      "speed_upgrade": [132, 64, 16, 16],
+      "energy_upgrade": [152, 64, 16, 16],
+      "progress": [74, 35, 37, 16, 176, 3],
+      "energy": [8, 6, 16, 74, 176, 90],
+      "faces": [70, 17],
+      "overflow": [74, 55],
+      "redstone": [47, 63]
+    },
+    "jei": {
+      "background": [54, 29, 84, 28],
+      "tooltip": [73, 34, 38, 18],
+      "click_area": [73, 34, 38, 18]
+    }
   }
 }
 ```
@@ -222,17 +242,23 @@ The recipe type is `nuclearcraft:glowstone_aggregator`. Add this recipe in a dat
 
 Each definition accepts up to eight of each item or fluid input and output. Set `fluid_inputs`, `fluid_outputs`, `input_tank_capacity`, and `output_tank_capacity` for fluids. Each listed input has a distinct slot or tank, and the recipe matches ingredients in any order. Outputs follow the recipe's `results` and `fluid_results` order. Fluid ingredients accept an exact fluid or a fluid tag and an amount in mB. An item ingredient accepts `count` and the usual Forge item or tag matcher. A recipe may override the machine rates with `ticks` and `energy_per_tick`, or scale the defaults with `time_multiplier` and `power_multiplier`. The global processor time and power multipliers also apply.
 
-Set `generator` for Forge Energy output. Set `consumes_inputs` to reserve the matched ingredients when processing starts. This defaults to true for generators. Reserved inputs persist while processing is paused or saved. If a reload removes or invalidates the recipe, the machine returns the reserved ingredients when its input buffers can accept them. `loses_progress` restores the legacy progress decay behavior. The machine uses the ordinary redstone halt and item and fluid side controls.
+Set `generator` for Forge Energy output. Set `consumes_inputs` to reserve the matched ingredients when processing starts. This defaults to true for generators. Reserved inputs persist while processing is paused or saved. If a reload removes or invalidates the recipe, the machine returns the reserved ingredients when its input buffers can accept them. `loses_progress` restores the legacy progress decay behavior. `redstone_control` sets whether neighboring power initially halts the machine. The in-game button changes the setting for the placed block, and the block saves it.
 
-Supply the blockstates, models, translations, mining tags, loot tables, and crafting recipes through the pack. Use the Forge blockstate properties `facing` and `lit` for directional and running models. The menu arranges slots and tanks from the definition. It supports an optional `gui_texture` for that layout. JEI uses the block name and the processor recipe type by default. Set `jei_enabled` to false to hide the category. Convert old tile data into the new block entity's inventory, energy, and per-tank save fields when migrating a world.
+Supply blockstates, models, textures, translations, mining tags, loot tables, and crafting recipes through the pack. Use `facing` and `lit` in blockstates for directional and running models. The `particles` list emits effects from the front face while the machine runs. It accepts legacy aliases such as `reddust` and `depthsuspend` alongside Forge 1.20.1 particle specifications such as `minecraft:dust 0 1 0 1`. The server's `processor_particles` setting can disable scripted processor emissions.
 
-Migration support for legacy particle lists, arbitrary GUI coordinates, and custom JEI presentation remains pending.
+The optional `layout` object preserves the legacy screen size, player inventory origin, and item, upgrade, and fluid positions. Use `[x, y, width, height]` for wells and `[x, y, width, height, u, v]` for bars, where `u` and `v` locate the bar sprite on `gui_texture`. Item sprites center in their wells. Fluid tanks use the full rectangle. Set `texture_size` for a nonstandard atlas. The `faces`, `config`, `overflow`, and `redstone` points place the current controls. A point of `[-1, -1]` hides a control. All bar coordinates of `-1` hide that bar. Existing definitions can continue to use the generated menu.
+
+The optional `jei` object accepts a unique, namespaced `id`, a `title` translation key, a `texture` with optional `texture_size`, and a `background` crop. A custom crop uses the GUI texture by default. `tooltip` and `click_area` are rectangles in the original screen coordinates. JEI offsets ingredient wells and tooltips by the crop origin. Set `jei_enabled` to false to hide the category. Convert old tile data into the new block entity's inventory, energy, and per-tank save fields when migrating a world.
 
 All 208 local GameTests passed. On clean Forge 47.4.18, the Glowstone Aggregator spent exactly 60,000 FE and the custom generator made 1,200 FE. A mixed processor waited behind an incompatible output fluid, then reserved two item stacks and two fluid inputs, resumed after restart, and produced all four outputs. The products and generated charge persisted through chunk unload and reload. Reloading smaller ingredient quantities under the same recipe ID returned the complete reservation. The revised batch left one iron ingot, 250 mB of oxygen, and 72 mB of water.
 
 On dedicated Forge with the installed Ender IO 8.2.22-beta, Mekanism 10.4.16.80, and KubeJS 2001.6.5-build.16, each network transferred exactly 1,200 FE into a mixed processor, supplied both input fluids, and collected two item products and 144 mB of fluorine and 125 mB of nitrogen. The KubeJS recipe used 400 FE. The products and remaining 800 FE survived restart and confirmed chunk unload and reload.
 
 The isolated 539-mod Auram client ran both circuits and verified the custom block model, three JEI categories, and synchronized KubeJS recipe rates. The mixed processor's menu showed 70,000 mB and 66,000 mB while editing one tank's face independently. The client ran at master volume zero and used OpenAL No Output. It exited normally with zero recorded focus activations, foreground samples, or on-screen window samples.
+
+All 209 local GameTests passed after adding configurable presentation. Clean Forge matched the legacy Glowstone Aggregator's item, upgrade, player inventory, and hotbar coordinates. A powered machine obeyed the configured redstone halt, resumed with the control disabled, and kept running after restart with the setting saved. Both dedicated Auram networks repeated their exact product deliveries and retained 800 FE through restart and chunk reload.
+
+The muted Auram client displayed the original Glowstone Aggregator artwork with BigInventory 0.1.13 managing its player inventory viewport. The relocated redstone button resumed the powered machine. The inactive block emitted no particles. Its running south face emitted the legacy red dust and mycelium effects and a parameterized green dust effect. JEI displayed the custom category ID and translated title, the original 84 × 28 texture crop, and the correctly positioned ingredients. The configured tooltip and click area worked. A rectangular tank also retained its full 66,000 mB while its face changed independently. Both Auram circuits finished and saved their deliveries. The client used master volume zero and OpenAL No Output and exited normally with zero recorded focus activations, foreground samples, or on-screen window samples.
 
 ### Pressurizer plate discovery
 

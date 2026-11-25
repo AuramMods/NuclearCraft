@@ -46,9 +46,13 @@ final class ProcessorUpgrades extends ItemStackHandler {
     }
 
     void addMenuSlots(Consumer<Slot> add, int y) {
+        addMenuSlots(add, 132, y, 152, y);
+    }
+
+    void addMenuSlots(Consumer<Slot> add, int speedX, int speedY, int energyX, int energyY) {
         for (int slot = 0; slot < SLOTS; slot++) {
             int index = slot;
-            add.accept(new SlotItemHandler(this, slot, 132 + 20 * slot, y) {
+            add.accept(new SlotItemHandler(this, slot, slot == SPEED ? speedX : energyX, slot == SPEED ? speedY : energyY) {
                 @Override
                 public void setChanged() {
                     onContentsChanged(index);

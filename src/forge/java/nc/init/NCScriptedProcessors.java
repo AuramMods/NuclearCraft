@@ -8,9 +8,10 @@ import nc.processor.ItemProcessorBlockEntity;
 import nc.processor.ItemProcessorMenu;
 import nc.processor.ProcessorBlock;
 import nc.processor.ProcessorFluidTanks;
+import nc.processor.ProcessorLayout;
 import nc.processor.ProcessorProfile;
+import nc.processor.ScriptedProcessorBlock;
 import nc.recipe.ItemProcessorRecipe;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.MenuType;
@@ -122,13 +123,13 @@ final class NCScriptedProcessors {
         private final List<TankSlot> tanks;
         private final int inputCapacity;
         private final int outputCapacity;
-        private final int extension;
+        private final ProcessorLayout layout;
         private final boolean upgradable;
         private final boolean generator;
         private final boolean consumesInputs;
         private final boolean losesProgress;
         private final boolean jeiEnabled;
-        private final @Nullable ResourceLocation guiTexture;
+        private final boolean redstoneControl;
         private final RegistryObject<ProcessorBlock<ItemProcessorBlockEntity>> block;
         private final RegistryObject<Item> item;
         private final RegistryObject<BlockEntityType<ItemProcessorBlockEntity>> entity;
@@ -158,22 +159,28 @@ final class NCScriptedProcessors {
             upgradable = GsonHelper.getAsBoolean(json, "upgradable", false);
             losesProgress = GsonHelper.getAsBoolean(json, "loses_progress", false);
             jeiEnabled = GsonHelper.getAsBoolean(json, "jei_enabled", true);
-            guiTexture = json.has("gui_texture") ? ResourceLocation.tryParse(GsonHelper.getAsString(json, "gui_texture")) : null;
-            if (guiTexture == null && json.has("gui_texture")) {
-                throw new JsonSyntaxException("Invalid processor GUI texture");
+            redstoneControl = GsonHelper.getAsBoolean(json, "redstone_control", true);
+
+            layout = ProcessorLayout.read(id, json, itemInputs, itemOutputs, fluidInputs, fluidOutputs, upgradable);
+            var particleNames = new ArrayList<String>();
+            if (json.has("particles")) {
+                for (var element : GsonHelper.getAsJsonArray(json, "particles")) {
+                    String particle = GsonHelper.convertToString(element, "particle").strip();
+                    if (!particle.isEmpty()) {
+                        particleNames.add(particle);
+                    }
+                }
             }
+            List<String> particles = List.copyOf(particleNames);
+            List<TankSlot> tankSlots = new ArrayList<>(fluidInputs + fluidOutputs);
+            addTanks(tankSlots, layout.fluidInputs(), false);
+            addTanks(tankSlots, layout.fluidOutputs(), true);
+            tanks = List.copyOf(tankSlots);
 
-            List<TankSlot> layout = new ArrayList<>(fluidInputs + fluidOutputs);
-            addTanks(layout, fluidInputs, 27, 35 + 20 * ((itemInputs + 1) / 2), false);
-            addTanks(layout, fluidOutputs, 111, 35 + 20 * ((itemOutputs + 1) / 2), true);
-            tanks = List.copyOf(layout);
-            int rows = Math.max(1, Math.max(rows(itemInputs, fluidInputs), rows(itemOutputs, fluidOutputs)));
-            extension = rows * 20 - 17 + (upgradable ? 20 : 0);
-
-            block = NCRegistries.BLOCKS.register(id, () -> new ProcessorBlock<>(
+            block = NCRegistries.BLOCKS.register(id, () -> new ScriptedProcessorBlock(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                             .lightLevel(state -> state.getValue(ProcessorBlock.LIT) ? 7 : 0),
-                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory));
+                    this, particles));
             item = NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
                     (pos, state) -> new ItemProcessorBlockEntity(pos, state, this), block.get()).build(null));
@@ -184,13 +191,9 @@ final class NCScriptedProcessors {
             serializer = NCRegistries.RECIPE_SERIALIZERS.register(id, () -> new ItemProcessorRecipe.Serializer(this));
         }
 
-        private static int rows(int items, int fluids) {
-            return (items + 1) / 2 + (fluids + 1) / 2;
-        }
-
-        private static void addTanks(List<TankSlot> tanks, int count, int x, int y, boolean output) {
-            for (int slot = 0; slot < count; slot++) {
-                tanks.add(new TankSlot(x + 20 * (slot % 2), y + 20 * (slot / 2), 16, output));
+        private static void addTanks(List<TankSlot> tanks, List<ProcessorLayout.Rect> slots, boolean output) {
+            for (var slot : slots) {
+                tanks.add(new TankSlot(slot.x(), slot.y(), slot.width(), slot.height(), output));
             }
         }
 
@@ -198,21 +201,22 @@ final class NCScriptedProcessors {
         @Override public ProcessorProfile.Rates rate() { return rates; }
         @Override public int inputs() { return itemInputs; }
         @Override public int outputs() { return itemOutputs; }
-        @Override public int inputX(int slot) { return 27 + 20 * (slot % 2); }
-        @Override public int inputY(int slot) { return 35 + 20 * (slot / 2); }
-        @Override public int outputX(int slot) { return 111 + 20 * (slot % 2); }
-        @Override public int outputY(int slot) { return 35 + 20 * (slot / 2); }
-        @Override public int menuExtension() { return extension; }
-        @Override public int progressX() { return 70; }
-        @Override public int progressY() { return 35; }
-        @Override public int progressHeight() { return 16; }
+        @Override public int inputX(int slot) { return layout.itemInputs().get(slot).itemX(); }
+        @Override public int inputY(int slot) { return layout.itemInputs().get(slot).itemY(); }
+        @Override public int outputX(int slot) { return layout.itemOutputs().get(slot).itemX(); }
+        @Override public int outputY(int slot) { return layout.itemOutputs().get(slot).itemY(); }
+        @Override public int menuExtension() { return layout.size().y() - 166; }
+        @Override public int progressX() { return layout.progress().area().x(); }
+        @Override public int progressY() { return layout.progress().area().y(); }
+        @Override public int progressHeight() { return layout.progress().area().height(); }
         @Override public boolean losesProgress() { return losesProgress; }
         @Override public boolean hasUpgrades() { return upgradable; }
         @Override public boolean generator() { return generator; }
         @Override public boolean consumesInputs() { return consumesInputs; }
         @Override public boolean scripted() { return true; }
         @Override public boolean jeiEnabled() { return jeiEnabled; }
-        @Override public @Nullable ResourceLocation guiTexture() { return guiTexture; }
+        @Override public ProcessorLayout layout() { return layout; }
+        @Override public boolean defaultRedstoneControl() { return redstoneControl; }
         @Override public @Nullable TankSlot tank() { return tanks.isEmpty() ? null : tanks.get(0); }
         @Override public List<TankSlot> tanks() { return tanks; }
         @Override public int fluidInputs() { return fluidInputs; }

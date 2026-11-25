@@ -2,7 +2,6 @@ package nc.processor;
 
 import nc.init.NCItemProcessors.TankSlot;
 import nc.recipe.ItemProcessorRecipe;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -81,8 +80,12 @@ public interface ProcessorProfile {
         return true;
     }
 
-    default @Nullable ResourceLocation guiTexture() {
+    default @Nullable ProcessorLayout layout() {
         return null;
+    }
+
+    default boolean defaultRedstoneControl() {
+        return true;
     }
 
     interface Rates {

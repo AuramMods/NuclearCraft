@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorMenu;
 import nc.processor.ProcessorFluidActions;
+import nc.processor.ProcessorLayout;
 import nc.processor.ProcessorMenuNetwork;
 import nc.processor.ProcessorProfile;
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,22 +15,31 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumMap;
 
 public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProcessorMenu> {
     private static final ResourceLocation STANDARD_TEXTURE = NuclearCraft.id("textures/gui/container/manufactory.png");
     private final ResourceLocation texture;
+    private final @Nullable ProcessorLayout layout;
     private final EnumMap<Direction, Button> sideButtons = new EnumMap<>(Direction.class);
     private final ProcessorItemControls items;
     private Button slotConfig;
     private Button overflow;
+    private @Nullable Button redstone;
     private int selectedTank = -1;
 
     public ItemProcessorScreen(ItemProcessorMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         items = new ProcessorItemControls(menu, menu.items());
-        imageHeight += menu.machine().menuExtension();
+        layout = menu.machine().layout();
+        if (layout == null) {
+            imageHeight += menu.machine().menuExtension();
+        } else {
+            imageWidth = layout.size().x();
+            imageHeight = layout.size().y();
+        }
         texture = NuclearCraft.id("textures/gui/container/" + menu.machine().id() + ".png");
     }
 
@@ -39,25 +49,39 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         var machine = menu.machine();
         boolean fluidOutput = machine.hasFluidOutput();
         boolean compact = machine.menuExtension() == 0;
-        int sideY = machine.scripted() ? 53 + machine.menuExtension()
-                : compact ? 56 : fluidOutput ? 65 : 63 + machine.menuExtension();
+        var faces = layout == null
+                ? new ProcessorLayout.Point(27, compact ? 56 : fluidOutput ? 65 : 63 + machine.menuExtension())
+                : layout.faces();
         for (Direction face : Direction.values()) {
             int index = face.ordinal();
             Button button = Button.builder(Component.translatable("gui.nuclearcraft.face." + face.getName() + ".short"),
                     ignored -> send(selectedTank >= 0 || (!items.individual() && machine.tank() != null && hasShiftDown())
                             ? tankSideButton(Math.max(0, selectedTank), index) : items.button(face, index)))
-                    .bounds(leftPos + 27 + index * 17, topPos + sideY, 16, machine.scripted() || compact || fluidOutput ? 14 : 17)
+                    .bounds(leftPos + faces.x() + index * 17, topPos + faces.y(), 16, layout != null || compact || fluidOutput ? 14 : 17)
                     .build();
+            button.visible = faces.visible();
             sideButtons.put(face, addRenderableWidget(button));
         }
+        var config = layout == null ? new ProcessorLayout.Point(27, 17) : layout.config();
         slotConfig = addRenderableWidget(Button.builder(items.label(), button -> {
             selectedTank = -1;
             items.toggle();
-        }).bounds(leftPos + 27, topPos + 17, 39, 14).build());
-        slotConfig.visible = menu.items().slots() > 0;
+        }).bounds(leftPos + config.x(), topPos + config.y(), 39, 14).build());
+        slotConfig.visible = config.visible() && menu.items().slots() > 0;
+        var overflowOrigin = layout == null ? new ProcessorLayout.Point(136, 8) : layout.overflow();
         overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
                         ignored -> send(items.outputSelected() ? items.overflowButton() : tankPolicyButton(Math.max(0, selectedTank))))
-                .bounds(leftPos + 136, topPos + 8, 35, 14).build());
+                .bounds(leftPos + overflowOrigin.x(), topPos + overflowOrigin.y(), 35, 14).build());
+        if (layout != null && layout.redstone().visible()) {
+            var position = layout.redstone();
+            redstone = addRenderableWidget(Button.builder(redstoneLabel(), button -> send(ItemProcessorMenu.REDSTONE_BUTTON))
+                    .bounds(leftPos + position.x(), topPos + position.y(), 18, 14).build());
+        }
+    }
+
+    private Component redstoneLabel() {
+        int color = menu.redstoneControl() ? 0xFF7777 : 0xBBBBBB;
+        return Component.translatable("gui.nuclearcraft.processor.redstone").withStyle(style -> style.withColor(color));
     }
 
     private void send(int button) {
@@ -85,7 +109,7 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         var tanks = menu.machine().tanks();
         for (int index = 0; index < tanks.size(); index++) {
             var tank = tanks.get(index);
-            if (isHovering(tank.x(), tank.y(), tank.size(), tank.size(), x, y)) {
+            if (isHovering(tank.x(), tank.y(), tank.width(), tank.height(), x, y)) {
                 return index;
             }
         }
@@ -119,14 +143,19 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
                     ? Component.translatable("gui.nuclearcraft.fluid_side.tooltip", face, itemMode, menu.fluidSideMode(side).label())
                     : items.tooltip(side)));
         });
-        overflow.visible = items.individual() ? items.outputSelected()
-                : selectedTank >= 0 || (!menu.machine().scripted() && menu.machine().hasFluidOutput());
+        overflow.visible = (layout == null || layout.overflow().visible()) && (items.individual() ? items.outputSelected()
+                : selectedTank >= 0 || (layout == null && menu.machine().hasFluidOutput()));
         if (overflow.visible) {
             int tank = Math.max(0, selectedTank);
             overflow.setMessage(Component.translatable("gui.nuclearcraft.processor_items.overflow"));
             overflow.setTooltip(Tooltip.create(items.outputSelected() ? items.overflowTooltip()
                     : tank < menu.machine().fluidInputs() ? FluidTankControls.inputPolicy(menu.discardsFluidInput(tank))
                     : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.fluidOutputMode(tank).label())));
+        }
+        if (redstone != null) {
+            redstone.setMessage(redstoneLabel());
+            redstone.setTooltip(Tooltip.create(Component.translatable(menu.redstoneControl()
+                    ? "gui.nuclearcraft.processor.redstone_enabled" : "gui.nuclearcraft.processor.redstone_disabled")));
         }
         renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);
@@ -139,14 +168,13 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        if (menu.machine().menuExtension() == 0 && !usesCenteredTitle(menu.machine())) {
+        if (layout == null && menu.machine().menuExtension() == 0 && !usesCenteredTitle(menu.machine())) {
             super.renderLabels(graphics, mouseX, mouseY);
             return;
         }
         graphics.drawString(font, title, (imageWidth - font.width(title)) / 2, titleLabelY, 0x404040, false);
-        if (menu.machine().scripted()) {
-            graphics.drawString(font, playerInventoryTitle, inventoryLabelX, inventoryLabelY + menu.machine().menuExtension(),
-                    0x404040, false);
+        if (layout != null) {
+            graphics.drawString(font, playerInventoryTitle, layout.player().x(), layout.player().y() - 12, 0x404040, false);
         } else if (menu.machine().hasFluidOutput()) {
             graphics.drawString(font, playerInventoryTitle, inventoryLabelX, 84, 0x404040, false);
         }
@@ -155,8 +183,8 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
         var machine = menu.machine();
-        if (machine.scripted()) {
-            renderScriptedPanel(graphics, machine);
+        if (layout != null) {
+            renderScriptedPanel(graphics, machine, layout);
         } else if (machine.hasFluidOutput()) {
             graphics.blit(texture, leftPos, topPos, 0, 0, imageWidth, 61);
             graphics.blit(texture, leftPos, topPos + 61, imageWidth, 19, 0F, 60F, imageWidth, 1, 256, 256);
@@ -172,27 +200,26 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
                 graphics.fill(leftPos + 130, topPos + 62, leftPos + 170, topPos + 81, 0xFFC6C6C6);
             }
         }
-        int energyBar = machine.scripted() ? 45 + machine.menuExtension()
-                : 74 + (machine.hasFluidOutput() ? 0 : machine.menuExtension());
-        int energyHeight = (int) (energyBar * menu.energy());
-        int emptyHeight = energyBar - energyHeight;
-        if (machine.scripted()) {
-            graphics.fill(leftPos + 8, topPos + 6 + emptyHeight, leftPos + 24, topPos + 6 + energyBar, 0xFFD64224);
+        if (layout != null) {
+            renderBars(graphics, layout);
         } else {
+            int energyBar = 74 + (machine.hasFluidOutput() ? 0 : machine.menuExtension());
+            int energyHeight = (int) (energyBar * menu.energy());
+            int emptyHeight = energyBar - energyHeight;
             graphics.blit(texture, leftPos + 8, topPos + 6 + emptyHeight, 176, 90 + emptyHeight, 16, energyHeight);
+            int progressWidth = (int) (37 * menu.progress());
+            graphics.blit(texture, leftPos + machine.progressX(), topPos + machine.progressY(),
+                    176, 3, progressWidth, machine.progressHeight());
         }
-        int progressWidth = (int) (37 * menu.progress());
-        graphics.blit(machine.scripted() ? STANDARD_TEXTURE : texture, leftPos + machine.progressX(), topPos + machine.progressY(),
-                176, 3, progressWidth, machine.progressHeight());
         var tanks = machine.tanks();
         for (int index = 0; index < tanks.size(); index++) {
             var tank = tanks.get(index);
             int x = leftPos + tank.x();
             int y = topPos + tank.y();
-            FluidTankRenderer.draw(graphics, x, y, tank.size(),
+            FluidTankRenderer.draw(graphics, x, y, tank.width(), tank.height(),
                     menu.fluid(index), machine.tankCapacity(index));
             if (selectedTank == index) {
-                graphics.renderOutline(x - 1, y - 1, tank.size() + 2, tank.size() + 2, 0xFFFFD37C);
+                graphics.renderOutline(x - 1, y - 1, tank.width() + 2, tank.height() + 2, 0xFFFFD37C);
             }
         }
         if (machine.hasUpgrades()) {
@@ -201,29 +228,78 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         items.draw(graphics, leftPos, topPos);
     }
 
-    private void renderScriptedPanel(GuiGraphics graphics, ProcessorProfile machine) {
-        ResourceLocation custom = machine.guiTexture();
-        if (custom != null) {
-            graphics.blit(custom, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, Math.max(256, imageHeight));
+    private void renderBars(GuiGraphics graphics, ProcessorLayout layout) {
+        var energy = layout.energy();
+        var area = energy.area();
+        int filled = (int) (area.height() * menu.energy());
+        if (area.visible() && filled > 0) {
+            int gap = area.height() - filled;
+            if (layout.texture() != null && energy.sprite().visible()) {
+                graphics.blit(layout.texture(), leftPos + area.x(), topPos + area.y() + gap,
+                        energy.sprite().x(), energy.sprite().y() + gap, area.width(), filled,
+                        layout.textureSize().x(), layout.textureSize().y());
+            } else {
+                graphics.fill(leftPos + area.x(), topPos + area.y() + gap, leftPos + area.x() + area.width(),
+                        topPos + area.y() + area.height(), 0xFFD64224);
+            }
+        }
+        var progress = layout.progress();
+        area = progress.area();
+        int width = (int) (area.width() * menu.progress());
+        if (area.visible() && width > 0) {
+            if (layout.texture() != null && progress.sprite().visible()) {
+                graphics.blit(layout.texture(), leftPos + area.x(), topPos + area.y(),
+                        progress.sprite().x(), progress.sprite().y(), width, area.height(),
+                        layout.textureSize().x(), layout.textureSize().y());
+            } else if (area.width() == 37 && area.height() == 16) {
+                graphics.blit(STANDARD_TEXTURE, leftPos + area.x(), topPos + area.y(), 176, 3, width, area.height());
+            } else {
+                graphics.fill(leftPos + area.x(), topPos + area.y(), leftPos + area.x() + width,
+                        topPos + area.y() + area.height(), 0xFF626262);
+            }
+        }
+    }
+
+    private void renderScriptedPanel(GuiGraphics graphics, ProcessorProfile machine, ProcessorLayout layout) {
+        if (layout.texture() != null) {
+            graphics.blit(layout.texture(), leftPos, topPos, 0, 0, imageWidth, imageHeight,
+                    layout.textureSize().x(), layout.textureSize().y());
             return;
         }
         graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF373737);
         graphics.fill(leftPos + 3, topPos + 3, leftPos + imageWidth - 3, topPos + imageHeight - 3, 0xFFC6C6C6);
-        graphics.fill(leftPos + 8, topPos + 6, leftPos + 24, topPos + 51 + machine.menuExtension(), 0xFF444444);
-        for (var slot : menu.slots) {
-            drawWell(graphics, slot.x, slot.y, 16);
+        var energy = layout.energy().area();
+        if (energy.visible()) {
+            graphics.fill(leftPos + energy.x(), topPos + energy.y(),
+                    leftPos + energy.x() + energy.width(), topPos + energy.y() + energy.height(), 0xFF444444);
         }
-        for (var tank : machine.tanks()) {
-            drawWell(graphics, tank.x(), tank.y(), tank.size());
+        layout.itemInputs().forEach(slot -> drawWell(graphics, slot));
+        layout.itemOutputs().forEach(slot -> drawWell(graphics, slot));
+        layout.fluidInputs().forEach(tank -> drawWell(graphics, tank));
+        layout.fluidOutputs().forEach(tank -> drawWell(graphics, tank));
+        int playerStart = machine.slots();
+        if (machine.hasUpgrades()) {
+            drawWell(graphics, layout.speedUpgrade());
+            drawWell(graphics, layout.energyUpgrade());
+            playerStart += 2;
+        }
+        for (int slot = playerStart; slot < menu.slots.size(); slot++) {
+            var inventorySlot = menu.slots.get(slot);
+            drawWell(graphics, new ProcessorLayout.Rect(inventorySlot.x, inventorySlot.y, 16, 16));
         }
     }
 
-    private void drawWell(GuiGraphics graphics, int x, int y, int size) {
-        x += leftPos;
-        y += topPos;
-        graphics.fill(x - 1, y - 1, x + size + 1, y + size + 1, 0xFFFFFFFF);
-        graphics.fill(x - 1, y - 1, x + size, y + size, 0xFF373737);
-        graphics.fill(x, y, x + size, y + size, 0xFF8B8B8B);
+    private void drawWell(GuiGraphics graphics, ProcessorLayout.Rect area) {
+        if (!area.visible()) {
+            return;
+        }
+        int x = leftPos + area.x();
+        int y = topPos + area.y();
+        int right = x + area.width();
+        int bottom = y + area.height();
+        graphics.fill(x - 1, y - 1, right + 1, bottom + 1, 0xFFFFFFFF);
+        graphics.fill(x - 1, y - 1, right, bottom, 0xFF373737);
+        graphics.fill(x, y, right, bottom, 0xFF8B8B8B);
     }
 
     private static boolean usesCenteredTitle(ProcessorProfile machine) {

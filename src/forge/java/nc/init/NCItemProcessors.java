@@ -38,6 +38,7 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec.BooleanValue MEKANISM_GAS;
     private static final ForgeConfigSpec.BooleanValue ORE_PROCESSING;
     private static final ForgeConfigSpec.BooleanValue SMART_PROCESSOR_INPUT;
+    private static final ForgeConfigSpec.BooleanValue PROCESSOR_PARTICLES;
     private static final ForgeConfigSpec.BooleanValue DEFAULT_RECIPES_GLOBAL;
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DEFAULT_RECIPES;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
@@ -58,6 +59,8 @@ public final class NCItemProcessors {
                 .define("ore_processing", true);
         SMART_PROCESSOR_INPUT = builder.comment("Accept processor ingredients that can be combined with the other stored inputs.")
                 .define("smart_processor_input", true);
+        PROCESSOR_PARTICLES = builder.comment("Show configured particles from running scripted processors.")
+                .define("processor_particles", true);
         DEFAULT_RECIPES_GLOBAL = builder.comment("Enable the default recipe catalogs for NuclearCraft processors.")
                 .define("default_processor_recipes_global", true);
         var recipeDefaults = Collections.nCopies(Rate.values().length, true);
@@ -130,6 +133,10 @@ public final class NCItemProcessors {
         return value(SMART_PROCESSOR_INPUT);
     }
 
+    public static boolean processorParticles() {
+        return value(PROCESSOR_PARTICLES);
+    }
+
     public static boolean defaultRecipes(Rate rate) {
         return value(DEFAULT_RECIPES_GLOBAL) && value(DEFAULT_RECIPES).get(rate.ordinal());
     }
@@ -193,7 +200,11 @@ public final class NCItemProcessors {
         output.accept(ENERGY_UPGRADE.get());
     }
 
-    public record TankSlot(int x, int y, int size, boolean output) {}
+    public record TankSlot(int x, int y, int width, int height, boolean output) {
+        public TankSlot(int x, int y, int size, boolean output) {
+            this(x, y, size, size, output);
+        }
+    }
 
     // The order matches the two 1.12.2 processor config arrays.
     public enum Rate implements ProcessorProfile.Rates {

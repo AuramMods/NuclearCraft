@@ -4,6 +4,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.handlers.IGuiClickableArea;
@@ -46,6 +47,7 @@ import nc.init.NCRadiation;
 import nc.init.NCTurbine;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.processor.NuclearFurnaceMenu;
+import nc.processor.ProcessorLayout;
 import nc.processor.ProcessorProfile;
 import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
@@ -78,6 +80,7 @@ import nc.recipe.PressurizerPlateRecipes;
 import nc.radiation.RadiationDisplay;
 import nc.recipe.SupercoolerRecipe;
 import nc.recipe.TurbineRecipe;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -91,6 +94,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -173,10 +177,12 @@ public final class NuclearCraftJei implements IModPlugin {
                 new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
         for (ProcessorProfile machine : NCItemProcessors.profiles()) {
             if (machine.jeiEnabled()) {
+                var presentation = machine.layout();
+                var title = presentation != null && presentation.jei().title() != null
+                        ? Component.translatable(presentation.jei().title()) : machine.block().getName();
                 registration.addRecipeCategories(new Category<>(itemType(machine), machine.block(), gui,
                         NuclearCraftJei::itemRecipe, recipe -> energy(recipe.configuredTime(), recipe.configuredPower()),
-                        machine.block().getName(), machine.scripted() ? 176 : 0,
-                        machine.scripted() ? 48 + machine.menuExtension() : 0));
+                        title, presentation));
             }
         }
         for (Kind kind : Kind.values()) {
@@ -480,14 +486,19 @@ public final class NuclearCraftJei implements IModPlugin {
             @Override
             public Collection<IGuiClickableArea> getGuiClickableAreas(ItemProcessorScreen screen, double x, double y) {
                 ProcessorProfile machine = screen.getMenu().machine();
-                return machine.jeiEnabled() ? List.of(IGuiClickableArea.createBasic(machine.progressX(), machine.progressY(),
-                        37, machine.progressHeight(), itemType(machine))) : List.of();
+                var presentation = machine.layout();
+                var area = presentation == null ? new ProcessorLayout.Rect(machine.progressX(), machine.progressY(), 37,
+                        machine.progressHeight()) : presentation.jei().clickArea();
+                return machine.jeiEnabled() && area.visible() ? List.of(IGuiClickableArea.createBasic(area.x(), area.y(),
+                        area.width(), area.height(), itemType(machine))) : List.of();
             }
         });
     }
 
     private static RecipeType<ItemProcessorRecipe> itemType(ProcessorProfile machine) {
-        return RecipeType.create(NuclearCraft.MOD_ID, machine.id(), ItemProcessorRecipe.class);
+        var layout = machine.layout();
+        ResourceLocation id = layout == null ? NuclearCraft.id(machine.id()) : layout.jei().id();
+        return RecipeType.create(id.getNamespace(), id.getPath(), ItemProcessorRecipe.class);
     }
 
     private static String decimal(double value) {
@@ -558,50 +569,77 @@ public final class NuclearCraftJei implements IModPlugin {
 
     private static void itemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe) {
         ProcessorProfile machine = recipe.machine();
+        var presentation = machine.layout();
+        if (presentation != null) {
+            scriptedItemRecipe(layout, recipe, presentation);
+            return;
+        }
         boolean extended = machine.menuExtension() > 0 && !machine.hasFluidOutput();
         for (int index = 0; index < recipe.inputs().size(); index++) {
             ItemProcessorRecipe.Input input = recipe.inputs().get(index);
-            int x = machine.scripted() ? machine.inputX(index)
-                    : extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
-            int y = machine.scripted() ? machine.inputY(index) - 23 : extended ? machine.inputY(index) - 19 : 12;
+            int x = extended ? 20 + machine.inputX(index) - machine.inputX(0) : 20 + index * 23;
+            int y = extended ? machine.inputY(index) - 19 : 12;
             layout.addSlot(INPUT, x, y).setStandardSlotBackground().addItemStacks(
                     Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
         }
-        if (machine.scripted()) {
-            var tanks = machine.tanks();
-            for (int index = 0; index < machine.fluidInputs(); index++) {
-                var tank = tanks.get(index);
-                fluidSlot(layout, INPUT, tank.x(), tank.y() - 23, recipe.fluidInputs().get(index).alternatives());
-            }
-            var outputs = recipe.fluidOutputs();
-            for (int index = 0; index < outputs.size(); index++) {
-                var tank = tanks.get(machine.fluidInputs() + index);
-                fluidSlot(layout, OUTPUT, tank.x(), tank.y() - 23, List.of(outputs.get(index)));
-            }
-        } else {
-            var fluid = recipe.fluidInput();
-            if (fluid != null) {
-                fluidSlot(layout, INPUT, recipe.inputs().isEmpty() ? 20 : 43, fluid.alternatives());
-            }
-            if (machine.hasFluidOutput()) {
-                fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));
-            }
+        var fluid = recipe.fluidInput();
+        if (fluid != null) {
+            fluidSlot(layout, INPUT, recipe.inputs().isEmpty() ? 20 : 43, fluid.alternatives());
+        }
+        if (machine.hasFluidOutput()) {
+            fluidSlot(layout, OUTPUT, 132, List.of(recipe.fluidOutput()));
         }
         var products = recipe.products();
         for (int index = 0; index < machine.outputs(); index++) {
             var product = products.get(index);
-            var stack = product.stack();
-            int x = machine.scripted() ? machine.outputX(index)
-                    : machine == Machine.FUEL_REPROCESSOR ? machine.outputX(index) + 12 : 99 + index * 23;
-            int y = machine.scripted() ? machine.outputY(index) - 23 : extended ? machine.outputY(index) - 19 : 12;
-            var slot = layout.addSlot(OUTPUT, x, y).setOutputSlotBackground();
-            if (!stack.isEmpty()) {
-                slot.addItemStack(stack);
+            int x = machine == Machine.FUEL_REPROCESSOR ? machine.outputX(index) + 12 : 99 + index * 23;
+            int y = extended ? machine.outputY(index) - 19 : 12;
+            itemProduct(layout.addSlot(OUTPUT, x, y).setOutputSlotBackground(), product);
+        }
+    }
+
+    private static void scriptedItemRecipe(IRecipeLayoutBuilder layout, ItemProcessorRecipe recipe, ProcessorLayout presentation) {
+        var crop = presentation.jei().background();
+        boolean drawSlots = presentation.jei().texture() == null;
+        for (int index = 0; index < recipe.inputs().size(); index++) {
+            var area = presentation.itemInputs().get(index);
+            var input = recipe.inputs().get(index);
+            var slot = layout.addSlot(INPUT, area.itemX() - crop.x(), area.itemY() - crop.y());
+            if (drawSlots) {
+                slot.setStandardSlotBackground();
             }
-            if (product.chancePercent() < 100 && product.minCount() < stack.getCount()) {
-                slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
-                        "gui.nuclearcraft.jei.product_chance", product.minCount(), stack.getCount(), product.chancePercent())));
+            slot.addItemStacks(Arrays.stream(input.ingredient().getItems()).map(stack -> stack.copyWithCount(input.count())).toList());
+        }
+        var products = recipe.products();
+        for (int index = 0; index < products.size(); index++) {
+            var area = presentation.itemOutputs().get(index);
+            var slot = layout.addSlot(OUTPUT, area.itemX() - crop.x(), area.itemY() - crop.y());
+            if (drawSlots) {
+                slot.setOutputSlotBackground();
             }
+            itemProduct(slot, products.get(index));
+        }
+        for (int index = 0; index < recipe.fluidInputs().size(); index++) {
+            var area = presentation.fluidInputs().get(index);
+            fluidSlot(layout, INPUT, area.x() - crop.x(), area.y() - crop.y(), area.width(), area.height(),
+                    recipe.fluidInputs().get(index).alternatives(), drawSlots);
+        }
+        var outputs = recipe.fluidOutputs();
+        for (int index = 0; index < outputs.size(); index++) {
+            var area = presentation.fluidOutputs().get(index);
+            fluidSlot(layout, OUTPUT, area.x() - crop.x(), area.y() - crop.y(), area.width(), area.height(),
+                    List.of(outputs.get(index)), drawSlots);
+        }
+    }
+
+    private static void itemProduct(IRecipeSlotBuilder slot, ItemProcessorRecipe.Product product) {
+        var stack = product.stack();
+        if (!stack.isEmpty()) {
+            slot.addItemStack(stack);
+        }
+        if (product.chancePercent() < 100 && product.minCount() < stack.getCount()) {
+            slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
+                    "gui.nuclearcraft.jei.product_chance", product.minCount(), stack.getCount(), product.chancePercent())));
         }
     }
 
@@ -610,9 +648,17 @@ public final class NuclearCraftJei implements IModPlugin {
     }
 
     private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y, List<FluidStack> fluids) {
+        fluidSlot(layout, role, x, y, 16, 16, fluids, true);
+    }
+
+    private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y, int width, int height,
+                                  List<FluidStack> fluids, boolean drawSlot) {
         long capacity = fluids.stream().mapToInt(FluidStack::getAmount).max().orElse(1);
-        layout.addSlot(role, x, y).setStandardSlotBackground()
-                .setFluidRenderer(capacity, true, 16, 16).addIngredients(ForgeTypes.FLUID_STACK, fluids);
+        var slot = layout.addSlot(role, x, y);
+        if (drawSlot) {
+            slot.setStandardSlotBackground();
+        }
+        slot.setFluidRenderer(capacity, true, width, height).addIngredients(ForgeTypes.FLUID_STACK, fluids);
     }
 
     private static void poolRecipe(IRecipeLayoutBuilder layout, DecayPoolRecipe recipe) {
@@ -693,8 +739,7 @@ public final class NuclearCraftJei implements IModPlugin {
         private final IDrawable arrow;
         private final BiConsumer<IRecipeLayoutBuilder, R> layout;
         private final Function<R, Component> stats;
-        private final int width;
-        private final int height;
+        private final @Nullable ProcessorLayout processor;
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
                  Function<R, Component> stats) {
@@ -703,17 +748,16 @@ public final class NuclearCraftJei implements IModPlugin {
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
                  Function<R, Component> stats, Component title) {
-            this(type, block, gui, layout, stats, title, 0, 0);
+            this(type, block, gui, layout, stats, title, null);
         }
 
         Category(RecipeType<R> type, Block block, IGuiHelper gui, BiConsumer<IRecipeLayoutBuilder, R> layout,
-                 Function<R, Component> stats, Component title, int width, int height) {
+                 Function<R, Component> stats, Component title, @Nullable ProcessorLayout processor) {
             this.type = type;
             this.title = title;
             this.layout = layout;
             this.stats = stats;
-            this.width = width;
-            this.height = height;
+            this.processor = processor;
             icon = gui.createDrawableItemLike(block);
             arrow = gui.getRecipeArrow();
         }
@@ -723,8 +767,8 @@ public final class NuclearCraftJei implements IModPlugin {
         @Override public IDrawable getIcon() { return icon; }
         @Override
         public int getWidth() {
-            if (width > 0) {
-                return width;
+            if (processor != null) {
+                return processor.jei().background().width();
             }
             return switch (type.getUid().getPath()) {
                 case "fuel_reprocessor", "multiblock_distiller", "multiblock_infiltrator", "multiblock_electrolyzer", "electrolyzer_electrolyte" -> 178;
@@ -735,8 +779,8 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public int getHeight() {
-            if (height > 0) {
-                return height;
+            if (processor != null) {
+                return processor.jei().background().height();
             }
             return switch (type.getUid().getPath()) {
                 case "multiblock_electrolyzer" -> 82;
@@ -757,9 +801,19 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void getTooltip(ITooltipBuilder tooltip, R recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
-            int arrowY = getHeight() >= 70 ? 22 : 12;
-            if (mouseY < arrowY - 3 || mouseY >= arrowY + 18 || mouseX < 69 || mouseX >= 95) {
-                return;
+            if (processor != null) {
+                var crop = processor.jei().background();
+                if (!processor.jei().tooltip().contains(mouseX + crop.x(), mouseY + crop.y())) {
+                    return;
+                }
+                if (processor.jei().cropped()) {
+                    tooltip.add(stats.apply(recipe));
+                }
+            } else {
+                int arrowY = getHeight() >= 70 ? 22 : 12;
+                if (mouseY < arrowY - 3 || mouseY >= arrowY + 18 || mouseX < 69 || mouseX >= 95) {
+                    return;
+                }
             }
             if (recipe instanceof ProcessingRecipe processing && processing.radiation() > 0D) {
                 double rate = processing.radiation();
@@ -784,12 +838,43 @@ public final class NuclearCraftJei implements IModPlugin {
 
         @Override
         public void draw(R recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
-            arrow.draw(graphics, 69, getHeight() >= 70 ? 22 : 12);
-            graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, getHeight() - 13, 0x404040, false);
+            if (processor == null) {
+                arrow.draw(graphics, 69, getHeight() >= 70 ? 22 : 12);
+            } else if (recipe instanceof ItemProcessorRecipe item) {
+                drawProcessor(graphics, item);
+            }
+            if (processor == null || !processor.jei().cropped()) {
+                graphics.drawString(Minecraft.getInstance().font, stats.apply(recipe), 4, getHeight() - 13, 0x404040, false);
+            }
             if (recipe instanceof LargeElectrolyzerRecipe electrolyzer) {
                 graphics.drawString(Minecraft.getInstance().font,
                         Component.translatable("gui.nuclearcraft.jei.electrolyte_group", electrolyzer.electrolyte().replace('_', ' ')),
                         4, getHeight() - 24, 0x404040, false);
+            }
+        }
+
+        private void drawProcessor(GuiGraphics graphics, ItemProcessorRecipe recipe) {
+            var settings = processor.jei();
+            var crop = settings.background();
+            var texture = settings.texture();
+            var textureSize = settings.textureSize();
+            if (texture != null) {
+                graphics.blit(texture, 0, 0, crop.x(), crop.y(), crop.width(), crop.height(), textureSize.x(), textureSize.y());
+            }
+            var progress = processor.progress();
+            var area = progress.area();
+            if (!area.visible()) {
+                return;
+            }
+            int x = area.x() - crop.x();
+            int y = area.y() - crop.y();
+            if (texture != null && progress.sprite().visible()) {
+                double duration = Math.max(1D, recipe.configuredTime());
+                int width = (int) ((Util.getMillis() / 50D % duration) * area.width() / duration);
+                graphics.blit(texture, x, y, progress.sprite().x(), progress.sprite().y(), width, area.height(),
+                        textureSize.x(), textureSize.y());
+            } else {
+                arrow.draw(graphics, x, y);
             }
         }
     }

@@ -54,12 +54,14 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private double radiationEmission;
     private ResourceLocation activeRecipe;
     private @Nullable ProcessorInputs reserved;
+    private boolean redstoneControl;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
 
     public ItemProcessorBlockEntity(BlockPos pos, BlockState state, ProcessorProfile machine) {
         super(machine.entityType(), pos, state, machine.rate(), 512_000, machine.generator());
         this.machine = machine;
+        redstoneControl = machine.defaultRedstoneControl();
         recipes = RecipeManager.createCheck(machine.recipes());
         smeltingRecipes = machine == Machine.ELECTRIC_FURNACE ? RecipeManager.createCheck(RecipeType.SMELTING) : null;
         input = new ProcessorInputs(machine.inputs(), machine.fluidInputs());
@@ -95,7 +97,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {
-        boolean running = processor.process(level, MachineInterface.powered(level, pos, processor));
+        boolean running = processor.process(level, processor.redstoneControl && MachineInterface.powered(level, pos, processor));
         ProcessorBlock.setRunning(level, pos, state, running);
         if (!running) {
             processor.itemPorts.push(level);
@@ -120,6 +122,11 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     public void pushInterfaceEnergy(Direction side, IEnergyStorage recipient) {
         power.pushTo(recipient);
+    }
+
+    void toggleRedstoneControl() {
+        redstoneControl = !redstoneControl;
+        setChanged();
     }
 
     private void refreshInput() {
@@ -460,6 +467,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        if (machine.scripted()) {
+            tag.putBoolean("redstone_control", redstoneControl);
+        }
         if (activeRecipe != null) {
             tag.putString("recipe", activeRecipe.toString());
         }
@@ -489,6 +499,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        redstoneControl = machine.scripted() && tag.contains("redstone_control")
+                ? tag.getBoolean("redstone_control") : machine.defaultRedstoneControl();
         radiationEmission = 0D;
         activeRecipe = tag.contains("recipe") ? ResourceLocation.tryParse(tag.getString("recipe")) : null;
         reserved = null;
@@ -530,6 +542,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         ContainerData data = new ContainerData() {
             @Override
             public int get(int index) {
+                if (machine.scripted() && index == ItemProcessorMenu.redstoneDataIndex(machine)) {
+                    return redstoneControl ? 1 : 0;
+                }
                 if (machine.scripted() && fluid != null && index >= ItemProcessorMenu.DATA_COUNT) {
                     return ItemProcessorMenu.scriptedTankData(fluid, index);
                 }

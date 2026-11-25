@@ -31,6 +31,7 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     public static final int TANK_DISABLE = 7;
     public static final int TANK_CLEAR = 8;
     public static final int TANK_POLICY = 9;
+    public static final int REDSTONE_BUTTON = 199;
     private static final int SCRIPTED_TANK_BUTTON = 200;
     private static final int TANK_ACTIONS = 10;
     private static final int TANK_DATA = 6;
@@ -68,25 +69,40 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
                 }
             });
         }
-        int extraHeight = machine.menuExtension();
+        var layout = machine.layout();
+        var playerOrigin = layout == null ? new ProcessorLayout.Point(8, 84 + machine.menuExtension()) : layout.player();
         if (machine.hasUpgrades()) {
-            upgrades.addMenuSlots(this::addSlot, upgradeY());
+            if (layout == null) {
+                upgrades.addMenuSlots(this::addSlot, upgradeY());
+            } else {
+                var speed = layout.speedUpgrade();
+                var energy = layout.energyUpgrade();
+                upgrades.addMenuSlots(this::addSlot, speed.itemX(), speed.itemY(), energy.itemX(), energy.itemY());
+            }
         }
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addSlot(new Slot(player, column + row * 9 + 9, 8 + column * 18, 84 + extraHeight + row * 18));
+                addSlot(new Slot(player, column + row * 9 + 9, playerOrigin.x() + column * 18, playerOrigin.y() + row * 18));
             }
         }
         for (int column = 0; column < 9; column++) {
-            addSlot(new Slot(player, column, 8 + column * 18, 142 + extraHeight));
+            addSlot(new Slot(player, column, playerOrigin.x() + column * 18, playerOrigin.y() + 58));
         }
         addDataSlots(data);
         addDataSlots(items.data());
     }
 
     static int dataSize(ProcessorProfile machine) {
-        return machine.scripted() ? DATA_COUNT + machine.tanks().size() * TANK_DATA
+        return machine.scripted() ? redstoneDataIndex(machine) + 1
                 : machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
+    }
+
+    static int redstoneDataIndex(ProcessorProfile machine) {
+        return DATA_COUNT + machine.tanks().size() * TANK_DATA;
+    }
+
+    public boolean redstoneControl() {
+        return !machine.scripted() || data.get(redstoneDataIndex(machine)) != 0;
     }
 
     public ProcessorProfile machine() {
@@ -195,6 +211,10 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
         }
         ProcessorFluidTanks tanks = processor.fluidTanks();
         if (machine.scripted()) {
+            if (button == REDSTONE_BUTTON) {
+                processor.toggleRedstoneControl();
+                return true;
+            }
             if (button < SCRIPTED_TANK_BUTTON) {
                 return items.click(button);
             }
