@@ -5,6 +5,7 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
+import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.builder.ITooltipBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.gui.handlers.IGuiClickableArea;
@@ -72,6 +73,7 @@ import nc.recipe.ChemicalReactorRecipe;
 import nc.recipe.ElectrolyzerRecipe;
 import nc.recipe.EnricherRecipe;
 import nc.recipe.FluidBatch;
+import nc.recipe.FluidProduct;
 import nc.recipe.HeatExchangerRecipe;
 import nc.recipe.ItemProcessorRecipe;
 import nc.recipe.MelterRecipe;
@@ -627,12 +629,16 @@ public final class NuclearCraftJei implements IModPlugin {
                 var slot = layout.addSlot(OUTPUT, x, y).setOutputSlotBackground()
                         .setFluidRenderer(maximum.getAmount(), true, 16, 16)
                         .addIngredient(ForgeTypes.FLUID_STACK, maximum);
-                if (product.chancePercent() < 100) {
-                    slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
-                            "gui.nuclearcraft.jei.fluid_product_chance", product.chancePercent(), product.step() / factor,
-                            product.minAmount() / factor, maximum.getAmount())));
-                }
+                addFluidChance(slot, product, factor, maximum.getAmount());
             }
+        }
+    }
+
+    private static void addFluidChance(IRecipeSlotBuilder slot, FluidProduct product, int factor, int maximum) {
+        if (product.chancePercent() < 100) {
+            slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.translatable(
+                    "gui.nuclearcraft.jei.fluid_product_chance", product.chancePercent(), product.step() / factor,
+                    product.minAmount() / factor, maximum)));
         }
     }
 
@@ -735,18 +741,20 @@ public final class NuclearCraftJei implements IModPlugin {
         fluidSlot(layout, role, x, 12, fluids);
     }
 
-    private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y, List<FluidStack> fluids) {
-        fluidSlot(layout, role, x, y, 16, 16, fluids, true);
+    private static IRecipeSlotBuilder fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y,
+                                              List<FluidStack> fluids) {
+        return fluidSlot(layout, role, x, y, 16, 16, fluids, true);
     }
 
-    private static void fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y, int width, int height,
-                                  List<FluidStack> fluids, boolean drawSlot) {
+    private static IRecipeSlotBuilder fluidSlot(IRecipeLayoutBuilder layout, RecipeIngredientRole role, int x, int y,
+                                              int width, int height, List<FluidStack> fluids, boolean drawSlot) {
         long capacity = fluids.stream().mapToInt(FluidStack::getAmount).max().orElse(1);
         var slot = layout.addSlot(role, x, y);
         if (drawSlot) {
             slot.setStandardSlotBackground();
         }
         slot.setFluidRenderer(capacity, true, width, height).addIngredients(ForgeTypes.FLUID_STACK, fluids);
+        return slot;
     }
 
     private static void poolRecipe(IRecipeLayoutBuilder layout, DecayPoolRecipe recipe) {
@@ -764,12 +772,15 @@ public final class NuclearCraftJei implements IModPlugin {
     private static void distillerRecipe(IRecipeLayoutBuilder layout, DistillerRecipe recipe) {
         int factor = recipe.batchFactor();
         for (int slot = 0; slot < DistillerRecipe.INPUT_COUNT; slot++) {
-            fluidSlot(layout, INPUT, 20 + 20 * slot, 22, recipe.inputs().get(slot).alternatives(factor));
+            fluidSlot(layout, INPUT, 20 + 20 * slot, 22,
+                    slot < recipe.inputs().size() ? recipe.inputs().get(slot).alternatives(factor) : List.of());
         }
         for (int slot = 0; slot < DistillerRecipe.OUTPUT_COUNT; slot++) {
-            var product = FluidBatch.divide(recipe.product(slot), factor);
-            fluidSlot(layout, OUTPUT, 99 + (slot % 4) * 18, 12 + (slot / 4) * 20,
-                    product.isEmpty() ? List.of() : List.of(product));
+            var product = recipe.products().get(slot);
+            var maximum = FluidBatch.divide(product.stack(), factor);
+            var layoutSlot = fluidSlot(layout, OUTPUT, 99 + (slot % 4) * 18, 12 + (slot / 4) * 20,
+                    maximum.isEmpty() ? List.of() : List.of(maximum));
+            addFluidChance(layoutSlot, product, factor, maximum.getAmount());
         }
     }
 

@@ -1,0 +1,10 @@
+{
+  "type": "nuclearcraft:multiblock_distiller",
+  "fluid_inputs": [null, {"fluid": "minecraft:lava", "amount": 12}],
+  "fluid_outputs": [
+    {"fluid": "minecraft:water", "amount": 9},
+    null, null, null, null, null, null,
+    {"fluid": "nuclearcraft:heavy_water", "amount": 12, "min_amount": 6, "step": 3, "chance_percent": 0}
+  ],
+  "time_multiplier": 0.01
+}

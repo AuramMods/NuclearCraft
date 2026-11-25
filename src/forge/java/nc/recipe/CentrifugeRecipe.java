@@ -15,7 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
-public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<Product> products,
+public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<FluidProduct> products,
                                double duration, int energyPerTick, double radiation,
                                @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public static final int OUTPUTS = 6;
@@ -36,35 +36,25 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
 
     @Override
     public List<FluidStack> results() {
-        return products.stream().map(Product::stack).toList();
+        return products.stream().map(FluidProduct::stack).toList();
     }
 
     @Override
     public int outputFactor(int inputFactor) {
         int factor = inputFactor;
-        for (Product product : products) {
-            if (!product.stack.isEmpty()) {
-                factor = FluidBatch.gcd(factor, product.stack.getAmount());
-                if (product.chancePercent < 100) {
-                    factor = FluidBatch.gcd(FluidBatch.gcd(factor, product.minAmount), product.step);
-                }
-            }
+        for (FluidProduct product : products) {
+            factor = product.factor(factor);
         }
         return factor;
     }
 
     @Override
     public FluidStack rollResult(int slot, FluidStack maximum, RandomSource random) {
-        Product product = products.get(slot);
+        FluidProduct product = products.get(slot);
         if (maximum.isEmpty() || product.chancePercent() == 100) {
             return maximum;
         }
-        int amount = product.minAmount();
-        for (int units = amount; units < maximum.getAmount(); units += product.step()) {
-            if (random.nextInt(100) < product.chancePercent()) {
-                amount += product.step();
-            }
-        }
+        int amount = product.rollAmount(random);
         return amount == 0 ? FluidStack.EMPTY : new FluidStack(maximum, amount);
     }
 
@@ -76,19 +66,6 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
     @Override
     public RecipeType<?> getType() {
         return NCRegistries.CENTRIFUGING.get();
-    }
-
-    public record Product(FluidStack stack, int minAmount, int step, int chancePercent) {
-        private static final Product EMPTY = new Product(FluidStack.EMPTY, 0, 1, 100);
-
-        public Product {
-            stack = stack.copy();
-        }
-
-        @Override
-        public FluidStack stack() {
-            return stack.copy();
-        }
     }
 
     public static final class Serializer implements RecipeSerializer<CentrifugeRecipe> {
@@ -104,12 +81,12 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
             if (results.isEmpty() || results.size() > OUTPUTS) {
                 throw new JsonSyntaxException("Expected up to six fluid outputs for " + id);
             }
-            var products = new ArrayList<Product>(results.size());
+            var products = new ArrayList<FluidProduct>(results.size());
             for (var entry : results) {
-                products.add(entry.isJsonNull() ? Product.EMPTY
-                        : readProduct(id, GsonHelper.convertToJsonObject(entry, "result")));
+                products.add(entry.isJsonNull() ? FluidProduct.EMPTY
+                        : FluidProduct.fromJson(id, GsonHelper.convertToJsonObject(entry, "result")));
             }
-            if (products.stream().allMatch(product -> product.stack.isEmpty())) {
+            if (products.stream().allMatch(FluidProduct::isEmpty)) {
                 throw new JsonSyntaxException("Centrifuge recipe needs a fluid output for " + id);
             }
             return new CentrifugeRecipe(id, FluidIngredient.fromJson(GsonHelper.getAsJsonObject(json, "fluid_input"), id),
@@ -117,23 +94,10 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
                     ProcessorRecipeDefaults.fromJson(json));
         }
 
-        private static Product readProduct(ResourceLocation id, JsonObject json) {
-            FluidStack stack = FluidIngredient.readResult(json, id);
-            int minimum = GsonHelper.getAsInt(json, "min_amount", 0);
-            int step = GsonHelper.getAsInt(json, "step", 1);
-            int chance = GsonHelper.getAsInt(json, "chance_percent", 100);
-            if (chance < 0 || chance > 100 || step < 1 || minimum < 0 || minimum > stack.getAmount()
-                    || (stack.getAmount() - minimum) % step != 0) {
-                throw new JsonSyntaxException("Invalid Centrifuge fluid output for " + id);
-            }
-            return new Product(stack, minimum, step, chance);
-        }
-
         @Override
         public CentrifugeRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             FluidIngredient input = FluidIngredient.fromNetwork(buffer);
-            var products = buffer.readList(packet -> new Product(packet.readFluidStack(),
-                    packet.readVarInt(), packet.readVarInt(), packet.readUnsignedByte()));
+            var products = buffer.readList(FluidProduct::fromNetwork);
             return new CentrifugeRecipe(id, input, products, buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
@@ -141,12 +105,7 @@ public record CentrifugeRecipe(ResourceLocation id, FluidIngredient input, List<
         @Override
         public void toNetwork(FriendlyByteBuf buffer, CentrifugeRecipe recipe) {
             recipe.input.toNetwork(buffer);
-            buffer.writeCollection(recipe.products, (packet, product) -> {
-                packet.writeFluidStack(product.stack);
-                packet.writeVarInt(product.minAmount);
-                packet.writeVarInt(product.step);
-                packet.writeByte(product.chancePercent);
-            });
+            buffer.writeCollection(recipe.products, (packet, product) -> product.toNetwork(packet));
             buffer.writeDouble(recipe.duration);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);

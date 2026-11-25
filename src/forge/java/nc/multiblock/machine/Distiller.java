@@ -6,6 +6,8 @@ import nc.multiblock.Cuboid;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.multiblock.machine.MachinePartBlock.TrayPosition;
 import nc.recipe.DistillerRecipe;
+import nc.recipe.FluidBatch;
+import nc.recipe.FluidProduct;
 import nc.recipe.MachineMaterialRecipe;
 import nc.recipe.MachineMaterialRecipe.Kind;
 import net.minecraft.core.BlockPos;
@@ -14,6 +16,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.SimpleMenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
@@ -274,10 +277,9 @@ public final class Distiller extends MachineController {
     private boolean distill(ServerLevel server) {
         var first = inputs.get(0).getFluid();
         var second = inputs.get(1).getFluid();
-        var recipe = first.isEmpty() || second.isEmpty() ? null
-                : server.getRecipeManager().getAllRecipesFor(NCMachines.DISTILLER_RECIPES.get()).stream()
-                        .filter(candidate -> candidate.firstInput(first, second) >= 0)
-                        .min(Comparator.comparing(DistillerRecipe::id)).orElse(null);
+        var recipe = server.getRecipeManager().getAllRecipesFor(NCMachines.DISTILLER_RECIPES.get()).stream()
+                .filter(candidate -> candidate.firstInput(first, second, candidate.batchFactor()) >= 0)
+                .min(Comparator.comparing(DistillerRecipe::id)).orElse(null);
         if (recipe == null) {
             if (activeRecipe != null) resetProgress(null);
             duration = refluxBonus = reboilingBonus = distributionBonus = 0;
@@ -285,23 +287,19 @@ public final class Distiller extends MachineController {
             return false;
         }
         if (!recipe.id().equals(activeRecipe)) resetProgress(recipe.id());
-        int order = recipe.firstInput(first, second);
         int factor = recipe.batchFactor();
-        int firstAmount = recipe.inputs().get(order).amount() / factor;
-        int secondAmount = recipe.inputs().get(1 - order).amount() / factor;
-        int possible = Math.min(first.getAmount() / firstAmount, second.getAmount() / secondAmount);
-        List<FluidStack> products = recipe.outputs();
+        int order = recipe.firstInput(first, second, factor);
+        int firstAmount = recipe.inputAmount(order, factor);
+        int secondAmount = recipe.inputAmount(1 - order, factor);
+        int available = Math.min(firstAmount == 0 ? Integer.MAX_VALUE : first.getAmount() / firstAmount,
+                secondAmount == 0 ? Integer.MAX_VALUE : second.getAmount() / secondAmount);
+        List<FluidStack> maximums = recipe.products().stream().map(product -> FluidBatch.divide(product.stack(), factor)).toList();
         int gases = (isGas(first) ? 1 : 0) + (isGas(second) ? 1 : 0);
-        int fluidCount = 2;
-        for (int slot = 0; slot < products.size(); slot++) {
-            var result = products.get(slot);
-            if (result.isEmpty()) continue;
-            if (factor > 1) result.setAmount(result.getAmount() / factor);
+        int fluidCount = recipe.inputs().size();
+        for (var maximum : maximums) {
+            if (maximum.isEmpty()) continue;
             fluidCount++;
-            if (isGas(result)) gases++;
-            var tank = outputs.get(slot);
-            if (!tank.isEmpty() && !tank.getFluid().isFluidEqual(result)) possible = 0;
-            possible = Math.min(possible, Math.max(0, tank.getCapacity() - tank.getFluidAmount()) / result.getAmount());
+            if (isGas(maximum)) gases++;
         }
         refluxBonus = (double) refluxUnits * gases / ((double) area * fluidCount);
         reboilingBonus = (double) reboilers.size() * (fluidCount - gases) / ((double) area * fluidCount);
@@ -321,7 +319,8 @@ public final class Distiller extends MachineController {
         duration = nextDuration;
         double power = NCMachines.distillerPower() * recipe.powerMultiplier() * basePower;
         energyPerTick = (long) Math.ceil(power);
-        if (speed <= 0 || possible == 0 || recipe.sieveTrays() > trays || blockedByRedstone(server)) return false;
+        int room = outputSpace(maximums);
+        if (speed <= 0 || room == 0 || recipe.sieveTrays() > trays || blockedByRedstone(server)) return false;
         if (power() < energyPerTick || progress <= batchStart
                 && power() < Math.min(energyCapacity(), (long) Math.ceil(duration / speed * power))) return false;
 
@@ -329,22 +328,55 @@ public final class Distiller extends MachineController {
         emitRadiation(recipe.radiation(), speed);
         soundVolume = (float) (NCMachines.distillerSoundVolume() * Math.log1p(Math.cbrt(speed)) / 128);
         progress += speed;
-        int batches = Math.min(possible, (int) (progress / duration));
+        int batches = Math.min(available, (int) (progress / duration));
         if (batches > 0) {
-            inputs.get(0).drain(batches * firstAmount, EXECUTE);
-            inputs.get(1).drain(batches * secondAmount, EXECUTE);
-            for (int slot = 0; slot < products.size(); slot++) {
-                var result = products.get(slot);
-                if (!result.isEmpty()) outputs.get(slot).fill(new FluidStack(result, result.getAmount() * batches), EXECUTE);
+            int finished = 0;
+            while (finished < batches && room > 0) {
+                int count = Math.min(batches - finished, room);
+                produce(recipe.products(), count, factor, server.random);
+                finished += count;
+                room = outputSpace(maximums);
             }
-            progress = batches == possible ? 0 : Math.max(0, progress - batches * duration);
+            inputs.get(0).drain(finished * firstAmount, EXECUTE);
+            inputs.get(1).drain(finished * secondAmount, EXECUTE);
+            progress = finished == available || room == 0 ? 0 : Math.max(0, progress - finished * duration);
             batchStart = progress;
         }
         setChanged();
         return true;
     }
 
-    public static boolean isGas(FluidStack stack) { return stack.getFluid().getFluidType().getDensity(stack) < 0; }
+    private int outputSpace(List<FluidStack> maximums) {
+        int room = Integer.MAX_VALUE;
+        for (int slot = 0; slot < maximums.size(); slot++) {
+            var result = maximums.get(slot);
+            if (result.isEmpty()) continue;
+            var tank = outputs.get(slot);
+            if (!tank.isEmpty() && !tank.getFluid().isFluidEqual(result)) return 0;
+            room = Math.min(room, Math.max(0, tank.getCapacity() - tank.getFluidAmount()) / result.getAmount());
+        }
+        return room;
+    }
+
+    private void produce(List<FluidProduct> products, int batches, int factor, RandomSource random) {
+        for (int slot = 0; slot < products.size(); slot++) {
+            FluidProduct product = products.get(slot);
+            if (product.isEmpty()) continue;
+            int amount = product.rollAmount(random) / factor;
+            if (product.varies()) {
+                for (int batch = 1; batch < batches; batch++) {
+                    amount += product.rollAmount(random) / factor;
+                }
+            } else {
+                amount *= batches;
+            }
+            if (amount > 0) outputs.get(slot).fill(new FluidStack(product.stack(), amount), EXECUTE);
+        }
+    }
+
+    public static boolean isGas(FluidStack stack) {
+        return !stack.isEmpty() && stack.getFluid().getFluidType().getDensity(stack) < 0;
+    }
 
     @Override void afterTransfers(ServerLevel server) {
         if (soundVolume != lastSoundVolume || server.getGameTime() % 5 == 0

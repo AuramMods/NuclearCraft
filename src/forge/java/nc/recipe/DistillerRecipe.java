@@ -1,5 +1,6 @@
 package nc.recipe;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.NCItemProcessors;
@@ -19,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
+public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidProduct> products,
                               double timeMultiplier, double powerMultiplier, int sieveTrays,
                               boolean stockBatch, double radiation) implements ProcessingRecipe {
     public static final int INPUT_COUNT = 2;
@@ -27,45 +28,39 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
 
     public DistillerRecipe {
         inputs = List.copyOf(inputs);
-        outputs = outputs.stream().map(FluidStack::copy).toList();
+        products = List.copyOf(products);
     }
-
-    public DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
-                           double timeMultiplier, double powerMultiplier, int sieveTrays) {
-        this(id, inputs, outputs, timeMultiplier, powerMultiplier, sieveTrays, false);
-    }
-
-    public DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs, List<FluidStack> outputs,
-                           double timeMultiplier, double powerMultiplier, int sieveTrays, boolean stockBatch) {
-        this(id, inputs, outputs, timeMultiplier, powerMultiplier, sieveTrays, stockBatch, 0D);
-    }
-
-    @Override public List<FluidStack> outputs() { return outputs.stream().map(FluidStack::copy).toList(); }
-    public FluidStack product(int slot) { return outputs.get(slot).copy(); }
 
     public boolean accepts(FluidStack stack) { return inputs.stream().anyMatch(input -> input.accepts(stack)); }
 
     public boolean acceptsPair(FluidStack first, FluidStack second) {
-        return inputs.get(0).accepts(first) && inputs.get(1).accepts(second)
-                || inputs.get(1).accepts(first) && inputs.get(0).accepts(second);
+        return inputs.size() == INPUT_COUNT && (inputs.get(0).accepts(first) && inputs.get(1).accepts(second)
+                || inputs.get(1).accepts(first) && inputs.get(0).accepts(second));
     }
 
-    public int firstInput(FluidStack first, FluidStack second) {
-        int factor = batchFactor();
+    public int firstInput(FluidStack first, FluidStack second, int factor) {
         if (matches(0, first, factor) && matches(1, second, factor)) return 0;
         if (matches(1, first, factor) && matches(0, second, factor)) return 1;
         return -1;
     }
 
     private boolean matches(int index, FluidStack stack, int factor) {
-        return inputs.get(index).matches(stack, factor);
+        return index < inputs.size() ? inputs.get(index).matches(stack, factor) : stack.isEmpty();
+    }
+
+    public int inputAmount(int index, int factor) {
+        return index < inputs.size() ? inputs.get(index).amount() / factor : 0;
     }
 
     public int batchFactor() {
         if (!NCMachines.distillerFactorRecipes() && !(stockBatch && NCItemProcessors.factorRecipes())) {
             return 1;
         }
-        return FluidBatch.outputFactor(FluidBatch.inputFactor(inputs), outputs);
+        int factor = inputs.isEmpty() ? 0 : FluidBatch.inputFactor(inputs);
+        for (FluidProduct product : products) {
+            factor = product.factor(factor);
+        }
+        return Math.max(1, factor);
     }
 
     @Override public boolean matches(Container container, Level level) { return false; }
@@ -79,19 +74,26 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
 
     public static final class Serializer implements RecipeSerializer<DistillerRecipe> {
         @Override public DistillerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            var inputs = FluidIngredient.readPair(json, id);
+            var fluidInputs = GsonHelper.getAsJsonArray(json, "fluid_inputs");
+            if (fluidInputs.size() > INPUT_COUNT) throw new JsonSyntaxException("Too many Distiller inputs for " + id);
+            var inputs = new ArrayList<FluidIngredient>(fluidInputs.size());
+            for (var input : fluidInputs) {
+                if (!unusedSlot(input)) {
+                    inputs.add(FluidIngredient.fromJson(GsonHelper.convertToJsonObject(input, "fluid input"), id));
+                }
+            }
             var products = GsonHelper.getAsJsonArray(json, "fluid_outputs");
             if (products.size() > OUTPUT_COUNT) throw new JsonSyntaxException("Too many Distiller outputs for " + id);
-            var outputs = new ArrayList<>(Collections.nCopies(OUTPUT_COUNT, FluidStack.EMPTY));
+            var outputs = new ArrayList<>(Collections.nCopies(OUTPUT_COUNT, FluidProduct.EMPTY));
             for (int slot = 0; slot < products.size(); slot++) {
                 var product = products.get(slot);
-                if (!product.isJsonNull()) outputs.set(slot, FluidIngredient.readResult(
-                        GsonHelper.convertToJsonObject(product, "fluid output"), id));
+                if (!unusedSlot(product)) outputs.set(slot, FluidProduct.fromJson(id,
+                        GsonHelper.convertToJsonObject(product, "fluid output")));
             }
             double time = GsonHelper.getAsDouble(json, "time_multiplier", 1D);
             double power = GsonHelper.getAsDouble(json, "power_multiplier", 1D);
             int trays = GsonHelper.getAsInt(json, "sieve_trays", 0);
-            if (outputs.stream().allMatch(FluidStack::isEmpty) || time <= 0 || !Double.isFinite(time)
+            if (inputs.isEmpty() && outputs.stream().allMatch(FluidProduct::isEmpty) || time <= 0 || !Double.isFinite(time)
                     || power < 0 || !Double.isFinite(power) || trays < 0) {
                 throw new JsonSyntaxException("Invalid Distiller recipe " + id);
             }
@@ -100,17 +102,21 @@ public record DistillerRecipe(ResourceLocation id, List<FluidIngredient> inputs,
                     ProcessingRecipe.readRadiation(json, id));
         }
 
+        private static boolean unusedSlot(JsonElement element) {
+            return element.isJsonNull() || element.isJsonObject() && element.getAsJsonObject().size() == 0;
+        }
+
         @Override public DistillerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            var inputs = FluidIngredient.readPair(buffer);
-            var outputs = new ArrayList<FluidStack>(OUTPUT_COUNT);
-            for (int slot = 0; slot < OUTPUT_COUNT; slot++) outputs.add(buffer.readFluidStack());
+            var inputs = buffer.readList(FluidIngredient::fromNetwork);
+            var outputs = new ArrayList<FluidProduct>(OUTPUT_COUNT);
+            for (int slot = 0; slot < OUTPUT_COUNT; slot++) outputs.add(FluidProduct.fromNetwork(buffer));
             return new DistillerRecipe(id, inputs, outputs, buffer.readDouble(), buffer.readDouble(), buffer.readVarInt(),
                     buffer.readBoolean(), buffer.readDouble());
         }
 
         @Override public void toNetwork(FriendlyByteBuf buffer, DistillerRecipe recipe) {
-            for (var input : recipe.inputs) input.toNetwork(buffer);
-            for (var output : recipe.outputs) buffer.writeFluidStack(output);
+            buffer.writeCollection(recipe.inputs, (packet, input) -> input.toNetwork(packet));
+            for (var output : recipe.products) output.toNetwork(buffer);
             buffer.writeDouble(recipe.timeMultiplier);
             buffer.writeDouble(recipe.powerMultiplier);
             buffer.writeVarInt(recipe.sieveTrays);

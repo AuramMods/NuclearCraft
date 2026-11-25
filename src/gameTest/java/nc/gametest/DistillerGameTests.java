@@ -1,5 +1,7 @@
 package nc.gametest;
 
+import com.google.gson.JsonParser;
+import io.netty.buffer.Unpooled;
 import nc.NuclearCraft;
 import nc.init.NCHeatExchangers;
 import nc.init.NCMachines;
@@ -8,12 +10,15 @@ import nc.multiblock.machine.MachinePartBlock;
 import nc.multiblock.machine.MachinePartBlock.Mode;
 import nc.multiblock.machine.MachinePartBlock.Part;
 import nc.multiblock.machine.MachinePartBlock.TrayPosition;
+import nc.recipe.DistillerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -222,6 +227,73 @@ public final class DistillerGameTests {
                 })
                 .thenWaitUntil(() -> helper.assertTrue(distiller.radiationEmission() == 0,
                         "The idle Distiller stops emitting radiation")).thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void singleFeedRequiresRoomForMaximumChanceOutput(GameTestHelper helper) {
+        var distiller = build(helper);
+        port(helper, GAS_OUTPUT, Mode.FLUID_OUT, 7);
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(distiller.assembled(), "The tower assembles"))
+                .thenExecute(() -> {
+                    var power = helper.getBlockEntity(POWER).getCapability(ForgeCapabilities.ENERGY, Direction.WEST)
+                            .orElseThrow(AssertionError::new);
+                    power.receiveEnergy(1_000, false);
+                    var feed = fluid(helper, GAS_FEED, Direction.NORTH);
+                    helper.assertTrue(feed.fill(stack("minecraft:lava", 12), EXECUTE) == 12
+                                    && fluid(helper, WATER_FEED, Direction.NORTH).fill(stack("minecraft:lava", 12), SIMULATE) == 0,
+                            "A single feed works in the second tank, and smart input rejects a second copy");
+                    var state = distiller.saveWithoutMetadata();
+                    state.put("output_7", stack("nuclearcraft:heavy_water", 79_989).writeToNBT(new CompoundTag()));
+                    distiller.load(state);
+                })
+                .thenIdle(5)
+                .thenExecute(() -> {
+                    helper.assertTrue(distiller.saveWithoutMetadata().getLong("energy") == 1_000
+                                    && fluid(helper, GAS_FEED, Direction.NORTH).getFluidInTank(0).getAmount() == 12
+                                    && fluid(helper, WATER_OUTPUT, Direction.SOUTH).getFluidInTank(0).isEmpty(),
+                            "The batch stalls with only 11 mB free against a possible 12 mB output");
+                    fluid(helper, GAS_OUTPUT, Direction.SOUTH).drain(1, EXECUTE);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluid(helper, WATER_OUTPUT, Direction.SOUTH).getFluidInTank(0)
+                        .isFluidStackIdentical(stack("minecraft:water", 9)), "The fixed output fills once"))
+                .thenExecute(() -> helper.assertTrue(
+                        fluid(helper, GAS_OUTPUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 79_994
+                                && fluid(helper, GAS_FEED, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && fluid(helper, WATER_FEED, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "Only the 6 mB guaranteed chance product is added and only the actual feed is consumed"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void distillerRecipeSyncKeepsEmptyFeedAndChanceFields(GameTestHelper helper) {
+        var serializer = NCMachines.DISTILLER_SERIALIZER.get();
+        var id = NuclearCraft.id("distiller/qa_network");
+        var recipe = serializer.fromJson(id, JsonParser.parseString("""
+                {
+                  "fluid_inputs": [null, {}],
+                  "fluid_outputs": [{}, {"fluid": "minecraft:water", "amount": 12,
+                                          "min_amount": 6, "step": 3, "chance_percent": 50}]
+                }
+                """).getAsJsonObject());
+        var packet = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            serializer.toNetwork(packet, recipe);
+            DistillerRecipe synced = serializer.fromNetwork(id, packet);
+            var product = synced.products().get(1);
+            helper.assertTrue(synced.firstInput(FluidStack.EMPTY, FluidStack.EMPTY, 1) == 0
+                            && synced.firstInput(stack("minecraft:water", 1), FluidStack.EMPTY, 1) < 0
+                            && synced.products().get(0).isEmpty() && product.stack().getAmount() == 12
+                            && product.minAmount() == 6 && product.step() == 3 && product.chancePercent() == 50,
+                    "Recipe sync retains the empty feed and both the position and settings of a chance output");
+            var random = RandomSource.create(17);
+            var amounts = new java.util.HashSet<Integer>();
+            for (int i = 0; i < 64; i++) amounts.add(product.rollAmount(random));
+            helper.assertTrue(amounts.equals(java.util.Set.of(6, 9, 12)), "Chance products roll in 3 mB steps");
+        } finally {
+            packet.release();
+        }
+        helper.succeed();
     }
 
     @GameTest(template = "empty")
