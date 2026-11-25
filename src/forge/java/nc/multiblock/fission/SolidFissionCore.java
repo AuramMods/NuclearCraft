@@ -49,7 +49,9 @@ final class SolidFissionCore {
     record FuelStats(FissionFuelStats recipe, double ticks, double radiation, int baseHeat, double baseEfficiency,
                      boolean primed, boolean processing, double heating, double efficiency, int heatMultiplier, long flux) {}
     record ShieldStats(double heating, long flux) {}
-    record CoolerStats(boolean processing, double speed, int cooling) {}
+    record CoolerStats(double batchesPerTick, int cooling) {
+        boolean processing() { return batchesPerTick > 0D; }
+    }
 
     private record GasLoad(BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {}
     private record SaltLoad(BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {}
@@ -591,9 +593,9 @@ final class SolidFissionCore {
             for (GasLoad load : gasLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
                 weightedCoolantSpeed += speed * load.recipe().cooling();
-                boolean processing = gasCooling.heatGas(level, load.pos(), load.recipe(), speed);
+                double batchesPerTick = gasCooling.heatGas(level, load.pos(), load.recipe(), speed);
                 if (measuredCoolers != null) {
-                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed, load.recipe().cooling()));
+                    measuredCoolers.put(load.pos(), new CoolerStats(batchesPerTick, load.recipe().cooling()));
                 }
             }
         }
@@ -602,12 +604,12 @@ final class SolidFissionCore {
             for (SaltLoad load : saltLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
                 weightedCoolantSpeed += speed * load.recipe().cooling();
-                boolean processing = saltCooling.heat(level, load.pos(), load.recipe(), speed);
-                if (processing) {
+                double batchesPerTick = saltCooling.heat(level, load.pos(), load.recipe(), speed);
+                if (batchesPerTick > 0D) {
                     heating.add(load.pos());
                 }
                 if (measuredCoolers != null) {
-                    measuredCoolers.put(load.pos(), new CoolerStats(processing, speed, load.recipe().cooling()));
+                    measuredCoolers.put(load.pos(), new CoolerStats(batchesPerTick, load.recipe().cooling()));
                 }
             }
             heatingSalts = heating;

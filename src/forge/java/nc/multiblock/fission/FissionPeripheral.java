@@ -2,12 +2,12 @@ package nc.multiblock.fission;
 
 import dan200.computercraft.api.lua.LuaFunction;
 import dan200.computercraft.api.lua.MethodResult;
-import nc.init.NCFission;
 import nc.init.NCSaltCoolants;
 import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.multiblock.computer.MachinePeripheral;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
@@ -178,17 +178,12 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         }
         if (entity instanceof SaltHeater heater) {
             var coolant = heater.coolant();
-            var tanks = heater.tanks();
-            String name = coolant instanceof NCSaltCoolants stock ? stock.name().toLowerCase(Locale.ROOT) : coolant.id();
-            return coolerStats(core.coolerStats(pos), name,
-                    tanks.tank(false), tanks.tank(true),
-                    controller.heaterProgress(pos, coolant), coolant.cooling(), core.isCooling(pos));
+            String name = coolant instanceof NCSaltCoolants stock ? stock.material() : coolant.id();
+            return coolerStats(core.coolerStats(pos), name, heater.tanks(), null, controller.heaterProgress(pos, coolant));
         }
         if (entity instanceof PebbleCooler cooler) {
-            var gas = cooler.gas();
-            var tanks = cooler.tanks();
-            return coolerStats(core.coolerStats(pos), gas.id(), tanks.cold, tanks.hot,
-                    controller.gasProgress(pos), gas.cooling(), core.isCooling(pos));
+            return coolerStats(core.coolerStats(pos), cooler.gas().id(), cooler.tanks(), cooler.filter(),
+                    controller.gasProgress(pos));
         }
         if (state.getBlock() instanceof FissionShieldBlock) {
             var shield = core.shieldStats(pos);
@@ -222,11 +217,15 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
     }
 
     private static Map<String, Object> coolerStats(@Nullable SolidFissionCore.CoolerStats stats,
-                                                   String type, @Nullable FluidTank in, @Nullable FluidTank out,
-                                                   double progress, int cooling, boolean valid) {
-        return Map.of("coolant", ComputerValues.fluid(fluid(in)), "hot_coolant", ComputerValues.fluid(fluid(out)),
-                "type", type, "cooling", valid ? stats == null ? cooling : stats.cooling() : 0, "speed_multiplier", stats == null ? 0D : stats.speed(),
-                "is_processing", stats != null && stats.processing(), "current_time", progress, "base_process_time", 1D);
+                                                   String type, CoolantTanks tanks, @Nullable ResourceLocation filter,
+                                                   double progress) {
+        boolean processing = stats != null && stats.processing();
+        var recipe = processing ? null : tanks.matchingRecipe(filter);
+        int cooling = processing ? stats.cooling() : recipe == null ? 0 : recipe.cooling();
+        return Map.of("coolant", ComputerValues.fluid(tanks.cold.getFluid()),
+                "hot_coolant", ComputerValues.fluid(tanks.hot.getFluid()), "type", type, "cooling", cooling,
+                "speed_multiplier", processing ? stats.batchesPerTick() : 0D, "is_processing", processing,
+                "current_time", progress, "base_process_time", 1D);
     }
 
     private static FluidStack fluid(@Nullable FluidTank tank) {

@@ -107,21 +107,21 @@ final class PebbleCooling {
         return recipes;
     }
 
-    boolean heatGas(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double multiplier) {
+    double heatGas(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double multiplier) {
         if (multiplier <= 0 || !(level.getBlockEntity(pos) instanceof PebbleCooler cooler)) {
-            return false;
+            return 0D;
         }
         CoolantTanks tanks = tanks(cooler);
         if (tanks.ready(cooler.filter()) != recipe) {
-            return false;
+            return 0D;
         }
         int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
-        double progress = credit.getOrDefault(pos, 0D)
-                + multiplier * recipe.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
+        double batchesPerTick = multiplier * recipe.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
+        double progress = credit.getOrDefault(pos, 0D) + batchesPerTick;
         credit.put(pos, progress - Math.floor(progress));
         tanks.process(cooler.filter(), recipe, (int) progress, level.random);
         owner.setChanged();
-        return true;
+        return batchesPerTick;
     }
 
     FissionTankTotals tankTotals(ServerLevel level, SolidFissionLayout layout) {

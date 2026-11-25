@@ -66,14 +66,19 @@ final class CoolantTanks {
     }
 
     @Nullable FissionCoolantRecipe ready(@Nullable ResourceLocation partFilter) {
+        var recipe = matchingRecipe(partFilter);
+        return recipe != null && recipe.cooling() > 0 && recipe.product().batchesIn(hot.getFluid(), hot.getCapacity()) > 0
+                ? recipe : null;
+    }
+
+    @Nullable FissionCoolantRecipe matchingRecipe(@Nullable ResourceLocation partFilter) {
         FluidStack input = cold.getFluid();
         if (input.isEmpty() || !matches(input, filter()) || !matches(input, partFilter)) {
             return null;
         }
         for (var recipe : recipes()) {
             if (recipe.input().matches(input)) {
-                return recipe.cooling() > 0 && recipe.product().batchesIn(hot.getFluid(), hot.getCapacity()) > 0
-                        ? recipe : null;
+                return recipe;
             }
         }
         return null;
