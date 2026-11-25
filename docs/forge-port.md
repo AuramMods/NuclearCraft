@@ -49,7 +49,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Pebble-bed reactors have their own controller, chamber, and fuel port. The 27 legacy TRISO recipes retain their burn time, heat, efficiency, criticality, intrinsic flux, and self-priming values. Neighboring chambers with the same fuel share flux and criticality. The shell uses the shared graphite and beryllium moderation and neutron sources.
 - All 16 gas cooler and port variants have independent Forge tanks, configurable cooling rates, and the legacy default placement rules. Each cooler turns 1 mB of cold gas into 2 mB of hot gas. Dry or blocked coolers stop conducting heat. The idle reactor can use separate emergency coolant vents. The turbine accepts every hot gas and produces 2 mB of the matching exhaust per mB of input.
 - Headless tests sent the reactor’s hot gas to a turbine, verified mixed oxygen and nitrogen circuits with exact amounts through reassembly, and confirmed that a dry, detached chamber overheats before the casing. A silent, hidden client opened the controller, received both gas tank levels and a custom cooling rate from the server, and found all TRISO, cooler, and hot gas recipes in JEI. All 16 cooler and 32 molten-salt heater placement rules use named Forge server settings. The items show their effective server rule in the tooltip.
-- Condensers convert 16 mB of exhaust steam or 32 mB of low-quality steam into 1 mB of condensate. The original copper, hard-carbon, and thermoconducting tubes have separately configurable faces. Use the Multitool to cycle the clicked face, or sneak to configure the opposite face. Connected tubes form independent steam circuits. A shell inlet accepts a fluid at or below 300 K, and the shell keeps its coolant during operation.
+- Condensers convert 16 mB of exhaust steam or 32 mB of low-quality steam into 1 mB of condensate. The original copper, hard-carbon, and thermoconducting tubes have separately configurable faces. Use the Multitool to cycle the clicked face, or sneak to configure the opposite face. Connected tubes form independent steam circuits. By default, a shell inlet accepts registered source fluids at or below 300 K. Datapacks and scripts can change the list. The shell keeps its coolant during operation.
 - Headless tests verified the exact volumes from two independent circuits, dry-shell and full-output stalls, outward capability access and simulation, and restoring buffers after breaking and rebuilding the shell. A silent, hidden multiplayer client confirmed the shell gauge, circuit count, and both JEI recipes. The native focus observer recorded no visible windows or focus changes.
 - Heat exchangers share the condenser's casing, ports, tube controls, and sided Forge fluid handlers. Standalone baffles and closed tube faces direct shell flow. Each tube circuit transfers heat only along shortest paths that meet the shell flow. Tube material, flow direction, temperature, and free space in both outputs limit transfer.
 - The heat exchanger datapack contains all 70 legacy recipes. The catalog includes six water and steam recipes, recovery for 16 hot gases and their exhaust, and cooling for 32 NaK fluids. The condenser and exchanger controllers can be crafted into one another.
@@ -1047,6 +1047,32 @@ On the packaged Forge 47.4.18 server, Ender IO 8.2.22-beta conduits and Mekanism
 Glass shell walls show the exchanger's two shell fluids and the condenser's coolant. The exchanger uses the original gas opacity based on tank fill. The condenser shows liquid coolant at its proportional height. The server sends the shell geometry and visible fluids on assembly and clears the display on disassembly.
 
 All 167 local GameTests passed, including the condenser's explicit display-clearing packet. The exact packaged JAR loaded on clean Forge 47.4.18 and in the isolated Auram instance. The muted Auram client showed 360,000 mB of exchanger input and 900,000 mB of shell output, cleared both immediately when the frame broke, and recovered both when repaired. It also rendered the condenser's 340,000 mB of coolant. The focus monitor recorded zero activation, foreground, or visible-window samples.
+
+### Condenser shell coolants
+
+NuclearCraft generates a `nuclearcraft:condenser_dissipation_fluid` recipe for each nonempty registered source fluid whose default Forge temperature is between 0 and 300 K. The recipe ID is `nuclearcraft:condenser_dissipation_fluid/<fluid namespace>/<fluid path>`. Vanilla water uses `nuclearcraft:condenser_dissipation_fluid/minecraft/water`. Each generated recipe has priority `-1` and requires at least 1 mB. JEI lists the effective coolants and their temperatures under Condenser Coolants.
+
+A datapack recipe may specify a `fluid` ID or a Forge fluid `tag` in `input`. Set `temperature` in kelvin and optionally set `input.amount` as the minimum shell volume in mB. The defaults are 300 K and 1 mB. The shell can take partial fills and starts exchanging heat when it reaches the minimum. The condenser keeps its coolant and uses the recipe temperature to calculate heat transfer. The shell can accept coolant warmer than the steam recipe’s output temperature. At that temperature, steam stays buffered.
+
+Custom recipes default to priority `0`. Higher priorities win, then exact fluids outrank tags at the same priority, then IDs sort alphabetically. For example, this recipe adds vanilla lava to the catalog for a pack with its own cooling mechanic.
+
+```json
+{
+  "type": "nuclearcraft:condenser_dissipation_fluid",
+  "input": { "fluid": "minecraft:lava", "amount": 1000 },
+  "temperature": 275
+}
+```
+
+Replace the generated recipe by ID to edit a default. To disable one in a datapack, put a `forge:conditional` recipe with a `forge:false` condition at that ID. Reloading recipes rechecks fluids already in the shell. When a recipe disappears, its coolant stays in the tank and can be drained from a shell outlet. Condensation resumes when a matching recipe becomes available. [Forge custom recipes](https://docs.minecraftforge.net/en/1.20.1/resources/server/recipes/custom/) and [Forge recipe conditions](https://docs.minecraftforge.net/en/1.20.1/resources/server/conditional/)
+
+Migrate CraftTweaker’s `mods.nuclearcraft.CondenserDissipationFluid` calls to the `<recipetype:nuclearcraft:condenser_dissipation_fluid>` manager. Use `addJsonRecipe` with the same fields, `removeByName` for a specific recipe ID, and `removeAll` to clear the catalog. KubeJS can use `event.custom` and `event.remove` with the corresponding IDs. [CraftTweaker recipe managers](https://docs.blamejared.com/1.20.1/en/tutorial/Recipes/RecipeManagers/)
+
+All 232 local Forge GameTests passed. The condenser test covered generated water, a custom fluid tag, exact-fluid precedence, and the minimum volume. On clean packaged Forge 47.4.10, a conditional recipe disabled stock water while preserving existing coolant and steam. Replacing the water recipe let the condenser finish the batch, and the buffers survived a restart.
+
+In a second run of the packaged JAR on Forge 47.4.10, Ender IO 8.2.22-beta fluid conduits and Mekanism 10.4.16.80 Basic Mechanical Pipes each supplied 16,000 mB of scripted coolant. A 460 K recipe admitted the coolant and left the steam buffered. After a reload set the coolant to 275 K, each condenser processed 1,600 mB of steam and exported 100 mB of condensate. Removing the recipe paused a second batch with its fluids intact. CraftTweaker 14.0.59 restored the recipe and each pipe exported another 100 mB. Both collectors held 200 mB after a restart, and both condensers still held 16,000 mB of coolant.
+
+The isolated Auram client loaded all 540 installed mod JARs. KubeJS 2001.6.5-build.16 removed the stock water recipe and added a 275 K coolant. JEI showed the custom recipe and omitted stock water. The assembled condenser used that coolant to turn 1,600 mB of exhaust into 100 mB of condensate. The client used master volume zero and OpenAL No Output. The native observer recorded zero activations, foreground samples, and visible window samples.
 
 ### Scripted heat-exchanger tubes
 

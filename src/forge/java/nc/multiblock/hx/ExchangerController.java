@@ -7,6 +7,7 @@ import nc.multiblock.computer.ComputerPort;
 import nc.multiblock.computer.ComputerValues;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCHeatExchangers;
+import nc.recipe.CondenserCoolants;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
@@ -71,7 +72,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         super((state.is(NCHeatExchangers.CONDENSER.get())
                 ? NCHeatExchangers.CONDENSER_ENTITY : NCHeatExchangers.CONTROLLER_ENTITY).get(), pos, state);
         condenser = state.is(NCHeatExchangers.CONDENSER.get());
-        shell = new Circuit(stack -> condenser ? !stack.isEmpty() && temperature(stack) <= 300 : exchangeRecipe(stack) != null);
+        shell = new Circuit(stack -> condenser ? CondenserCoolants.find(level, stack) != null : exchangeRecipe(stack) != null);
     }
 
     @Override
@@ -106,14 +107,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             if (on && !shell.input.isEmpty()) {
                 int before = shell.input.getFluidAmount();
                 if (condenser) {
-                    int shellTemperature = temperature(shell.input.getFluid());
-                    double shellFraction = Math.min(1D, (double) shell.input.getFluidAmount() / shell.input.getCapacity());
-                    for (ExchangerLayout.Network network : layout.networks()) {
-                        condense(network, circuits.get(network.tubeAnchor()), shellTemperature, shellFraction);
-                    }
-                    if (activeTubes > 0) {
-                        temperatureDifference /= activeTubes;
-                    }
+                    condenseShell();
                 } else {
                     HeatExchange.Activity activity = HeatExchange.tick(layout.networks(), shell, circuits, this::exchangeRecipe);
                     activeCircuits = activity.circuits();
@@ -135,6 +129,21 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         BlockState state = getBlockState();
         if (state.getValue(ExchangerWallBlock.ACTIVE) != on) {
             server.setBlock(worldPosition, state.setValue(ExchangerWallBlock.ACTIVE, on), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    private void condenseShell() {
+        var coolant = shell.input.getFluid();
+        var recipe = CondenserCoolants.find(level, coolant);
+        if (recipe == null || coolant.getAmount() < recipe.input().amount()) {
+            return;
+        }
+        double shellFraction = Math.min(1D, (double) coolant.getAmount() / shell.input.getCapacity());
+        for (ExchangerLayout.Network network : layout.networks()) {
+            condense(network, circuits.get(network.tubeAnchor()), recipe.temperature(), shellFraction);
+        }
+        if (activeTubes > 0) {
+            temperatureDifference /= activeTubes;
         }
     }
 
@@ -181,10 +190,6 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             }
         }
         return null;
-    }
-
-    private static int temperature(FluidStack stack) {
-        return stack.getFluid().getFluidType().getTemperature(stack);
     }
 
     private void pushOutputs(ServerLevel server) {

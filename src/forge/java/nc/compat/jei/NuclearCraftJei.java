@@ -57,6 +57,7 @@ import nc.processor.ProcessorProfile;
 import nc.processor.FluidProcessorBlockEntity;
 import nc.radiation.ShieldingItem.Tier;
 import nc.recipe.CentrifugeRecipe;
+import nc.recipe.CondenserCoolants;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.DecayGeneratorRecipe;
 import nc.recipe.DecayPoolRecipe;
@@ -190,6 +191,7 @@ public final class NuclearCraftJei implements IModPlugin {
     public void registerCategories(IRecipeCategoryRegistration registration) {
         IGuiHelper gui = registration.getJeiHelpers().getGuiHelper();
         registration.addRecipeCategories(new CollectorCategory(gui), new GasCoolerCategory(gui),
+                new CondenserCoolantCategory(gui),
                 new FissionMaterialCategory(FissionMaterialCategory.MODERATORS, NCFission.HEAVY_WATER_MODERATOR.get(), gui),
                 new FissionMaterialCategory(FissionMaterialCategory.REFLECTORS, NCFission.BERYLLIUM_CARBON_REFLECTOR.get(), gui));
         for (ProcessorProfile machine : NCItemProcessors.profiles()) {
@@ -411,6 +413,7 @@ public final class NuclearCraftJei implements IModPlugin {
         registration.addRecipes(GasCoolerCategory.TYPE, NCPebbleFission.coolers().stream()
                 .filter(cooler -> cooler.gas().cold() != Fluids.EMPTY && cooler.gas().hot() != Fluids.EMPTY).toList());
         registration.addRecipes(CONDENSER, recipes.getAllRecipesFor(NCHeatExchangers.RECIPES.get()));
+        registration.addRecipes(CondenserCoolantCategory.TYPE, new CondenserCoolants(recipes).entries());
         registration.addRecipes(HEAT_EXCHANGER, recipes.getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get()));
         registration.addRecipes(TURBINE, recipes.getAllRecipesFor(NCTurbine.RECIPES.get()));
     }
@@ -513,7 +516,8 @@ public final class NuclearCraftJei implements IModPlugin {
         for (var controller : List.of(NCFission.CONTROLLER, NCPebbleFission.CONTROLLER, NCSaltFission.CONTROLLER)) {
             registration.addRecipeCatalyst(controller.get(), FissionMaterialCategory.MODERATORS, FissionMaterialCategory.REFLECTORS);
         }
-        registration.addRecipeCatalyst(NCHeatExchangers.CONDENSER.get(), CONDENSER);
+        registration.addRecipeCatalyst(NCHeatExchangers.CONDENSER.get(), CONDENSER, CondenserCoolantCategory.TYPE);
+        registration.addRecipeCatalyst(NCHeatExchangers.INLET.get(), CondenserCoolantCategory.TYPE);
         registration.addRecipeCatalyst(NCHeatExchangers.CONTROLLER.get(), HEAT_EXCHANGER);
         registration.addRecipeCatalyst(NCTurbine.CONTROLLER.get(), TURBINE);
     }

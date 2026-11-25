@@ -9,6 +9,7 @@ import nc.multiblock.hx.ExchangerPartBlock.Part;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerWallBlock;
 import nc.multiblock.machine.MachinePartBlock;
+import nc.recipe.CondenserCoolantRecipe;
 import nc.recipe.CondenserRecipe;
 import nc.recipe.HeatExchangerRecipe;
 import nc.multiblock.fission.FissionMultitool;
@@ -38,6 +39,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -119,6 +121,11 @@ public final class NCHeatExchangers {
             NCRegistries.RECIPE_TYPES.register("condenser", () -> RecipeType.simple(NuclearCraft.id("condenser")));
     public static final RegistryObject<RecipeSerializer<CondenserRecipe>> SERIALIZER =
             NCRegistries.RECIPE_SERIALIZERS.register("condenser", CondenserRecipe.Serializer::new);
+    public static final RegistryObject<RecipeType<CondenserCoolantRecipe>> COOLANT_RECIPES =
+            NCRegistries.RECIPE_TYPES.register(NCCondenserCoolants.RECIPE_ID,
+                    () -> RecipeType.simple(NuclearCraft.id(NCCondenserCoolants.RECIPE_ID)));
+    public static final RegistryObject<RecipeSerializer<CondenserCoolantRecipe>> COOLANT_SERIALIZER =
+            NCRegistries.RECIPE_SERIALIZERS.register(NCCondenserCoolants.RECIPE_ID, CondenserCoolantRecipe.Serializer::new);
 
     public static final RegistryObject<RecipeType<HeatExchangerRecipe>> HEAT_EXCHANGER_RECIPES =
             NCRegistries.RECIPE_TYPES.register("heat_exchanger", () -> RecipeType.simple(NuclearCraft.id("heat_exchanger")));
@@ -170,7 +177,7 @@ public final class NCHeatExchangers {
 
     private NCHeatExchangers() {}
 
-    static void register() {
-        // Populate the shared deferred registers before Forge's registry events.
+    static void register(IEventBus bus) {
+        bus.addListener(NCCondenserCoolants::addPack);
     }
 }

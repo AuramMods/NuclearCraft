@@ -7,6 +7,7 @@ import nc.init.NCFluids;
 import nc.multiblock.hx.ExchangerController;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerTubeBlock.Setting;
+import nc.recipe.CondenserCoolants;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -28,6 +29,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.registries.ForgeRegistries;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -89,6 +91,56 @@ public final class CondenserGameTests {
                     IFluidHandler coolant = fluid(helper, COOLANT, Direction.NORTH);
                     helper.assertTrue(coolant.getFluidInTank(0).getAmount() == coolant.getTankCapacity(0),
                             "Cooling fluid must remain in the shell");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void condenserUsesReloadableCoolantRecipes(GameTestHelper helper) {
+        build(helper);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, COOLANT, Direction.NORTH))
+                .thenExecute(() -> {
+                    var level = helper.getLevel();
+                    var water = CondenserCoolants.find(level, new FluidStack(Fluids.WATER, 1));
+                    helper.assertTrue(water != null && water.temperature() == 300
+                                    && water.input().amount() == 1 && water.priority() == -1,
+                            "Vanilla water must have a generated, editable 300 K recipe");
+                    var helium = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("liquid_helium"));
+                    var tagged = CondenserCoolants.find(level, new FluidStack(helium, 1));
+                    helper.assertTrue(tagged != null && tagged.temperature() == 285 && tagged.input().tag(),
+                            "Custom tags must override generated exact results at their default priority");
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    var lava = new FluidStack(Fluids.LAVA, 299999);
+                    var exact = CondenserCoolants.find(level, lava);
+                    helper.assertTrue(exact != null && exact.temperature() == 275 && exact.input().amount() == 300000,
+                            "At the same priority, an exact recipe must override a matching tag recipe");
+                    helper.assertTrue(coolant.fill(lava, FluidAction.SIMULATE) == lava.getAmount()
+                                    && coolant.getFluidInTank(0).isEmpty(),
+                            "The shell must simulate partial fills of a fluid admitted by a datapack");
+                    helper.assertTrue(coolant.fill(lava, FluidAction.EXECUTE) == lava.getAmount(),
+                            "A fluid admitted by a datapack can enter until the minimum is met");
+                    var input = fluid(helper, FIRST_IN, Direction.WEST);
+                    helper.assertTrue(input.fill(new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 16),
+                            FluidAction.EXECUTE) == 16, "The steam circuit must accept one batch");
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(6, () -> {
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 16
+                                    && fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0).isEmpty(),
+                            "The recipe minimum must prevent processing while the tank is one mB short");
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    helper.assertTrue(coolant.fill(new FluidStack(Fluids.LAVA, 1), FluidAction.EXECUTE) == 1,
+                            "The shell must accept the final mB");
+                })
+                .thenWaitUntil(() -> {
+                    var product = fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0);
+                    helper.assertTrue(product.getFluid() == NCFluids.CONDENSATE_WATER.source().get()
+                                    && product.getAmount() == 1,
+                            "The recipe temperature must allow one batch of condensate");
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).isEmpty()
+                                    && fluid(helper, COOLANT, Direction.NORTH).getFluidInTank(0).getAmount() == 300000,
+                            "The condenser must consume the steam and retain all of its coolant");
                 })
                 .thenSucceed();
     }

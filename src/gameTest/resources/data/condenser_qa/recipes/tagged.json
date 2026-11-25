@@ -1,0 +1,5 @@
+{
+    "type": "nuclearcraft:condenser_dissipation_fluid",
+    "input": { "tag": "condenser_qa:coolants" },
+    "temperature": 285
+}
