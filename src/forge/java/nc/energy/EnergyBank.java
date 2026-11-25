@@ -1,11 +1,14 @@
 package nc.energy;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
 final class EnergyBank {
+    private static final int PARTIAL_SIGNAL_STEPS = 14;
+    private static final BigInteger WIDE_SIGNAL_STEPS = BigInteger.valueOf(PARTIAL_SIGNAL_STEPS);
     private final List<EnergyBankBlockEntity> members;
     private final long[] partCapacities;
     private final long capacity;
@@ -133,6 +136,11 @@ final class EnergyBank {
     }
 
     int comparator() {
-        return charge == 0 ? 0 : charge == capacity ? 15 : (int) (1 + 14D * charge / capacity);
+        if (charge == 0) return 0;
+        if (charge == capacity) return 15;
+        if (charge <= Long.MAX_VALUE / PARTIAL_SIGNAL_STEPS) {
+            return 1 + (int) (PARTIAL_SIGNAL_STEPS * charge / capacity);
+        }
+        return 1 + BigInteger.valueOf(charge).multiply(WIDE_SIGNAL_STEPS).divide(BigInteger.valueOf(capacity)).intValueExact();
     }
 }

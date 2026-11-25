@@ -240,6 +240,30 @@ public final class BatteryGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void scriptedBatteryComparatorKeepsExactLongCapacityThresholds(GameTestHelper helper) {
+        var block = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id(SCRIPTED_ID));
+        helper.setBlock(CENTER, block);
+        var battery = battery(helper, CENTER);
+        var level = helper.getLevel();
+        var state = battery.getBlockState();
+        var pos = battery.getBlockPos();
+
+        seed(battery, Long.MAX_VALUE / 2);
+        helper.assertTrue(block.getAnalogOutputSignal(state, level, pos) == 7,
+                "The last charge below half capacity stays below the next comparator step");
+        seed(battery, Long.MAX_VALUE / 2 + 1);
+        helper.assertTrue(block.getAnalogOutputSignal(state, level, pos) == 8,
+                "The first charge above half capacity reaches the next comparator step");
+        seed(battery, Long.MAX_VALUE - 1);
+        helper.assertTrue(block.getAnalogOutputSignal(state, level, pos) == 14,
+                "One FE of room keeps the strongest non-full signal");
+        seed(battery, Long.MAX_VALUE);
+        helper.assertTrue(block.getAnalogOutputSignal(state, level, pos) == 15,
+                "Only the full battery reaches signal 15");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void scriptedBatteryCarriesLongChargeThroughCraftingAndPlacement(GameTestHelper helper) {
         var level = helper.getLevel();
         var grid = MaterialGameTests.craftingGrid(2, 1);

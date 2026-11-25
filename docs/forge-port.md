@@ -1319,9 +1319,21 @@ Copy the stock Voltaic Pile loot table and change the dropped item ID. Its `copy
 
 Scripted and stock batteries join the same bank. Banks and items keep long-valued charge, and the Forge Energy view caps its reported values at 2,147,483,647 FE. Charged crafting rejects a sum above the output capacity without consuming the inputs. [Forge capabilities](https://docs.minecraftforge.net/en/1.20.1/datastorage/capabilities/)
 
+A battery bank reports comparator signal 0 when empty and 15 when full. Partial charge uses signals 1 through 14. The calculation uses the full stored charge and capacity, so even banks near the signed 64-bit limit change signal at the exact FE threshold.
+
 All 200 local GameTests passed. The scripted battery test crafted and placed 7,000,000,000 FE, verified that simulation leaves charge unchanged, and rejected a sum above the 64-bit limit. The packaged Forge 47.4.18 server with KubeJS 2001.6.5-build.16 preserved 5,000,000,000 FE and the output face in a mined battery item. A mixed scripted and stock bank crossed a chunk boundary and retained its 600,000 FE through chunk unload and restart. A separate unit retained 9,223,372,036,854,775,807 FE.
 
 In the isolated 539-mod Auram instance, Ender IO 8.2.22-beta conduits and Mekanism 10.4.16.80 Basic Universal Cables powered separate furnaces through mixed scripted and stock battery banks. Each furnace smelted one iron ingot. The client loaded the three face models, received the scripted charged-crafting recipe, and displayed the full 5,000,000,000 out of 8,000,000,000 charge. It ran with master volume zero and OpenAL No Output. The focus monitor recorded zero activations, foreground samples, and visible windows.
+
+All 242 local GameTests passed, including the exact midpoint and full-charge thresholds of a battery with 9,223,372,036,854,775,807 FE capacity. In the packaged Forge 47.4.10 server, a vanilla comparator next to a 1,600,000 FE Voltaic Pile returned 7 at 799,999 FE, 8 at 800,000 FE, 14 at 1,599,999 FE, and 15 at 1,600,000 FE. Emptying the pile returned signal 0.
+
+With Ender IO 8.2.22-beta and Mekanism 10.4.16.80 together, a Basic Universal Cable delivered 8,500 FE from a Voltaic Pile to a Basic Capacitor Bank after the source face was switched from off to output. A separate cable delivered 8,500 FE to a Voltaic Pile with exactly that much room. Its comparator changed from 14 to 15. Both routes passed live checks and retained their charge on a dedicated restart.
+
+The capacitor bank route kept renewing a chunk ticket after force-loading was removed. An experimental loaded-only lookup let the server fully evict the chunk. With the bank's default BOTH face, reloading left 5,300 FE in the bank and zero in the cable. With the receiving face explicitly set to PULL, all 8,500 FE survived complete eviction and a dedicated restart. A control with only a capacitor bank and a cable also retained all 8,500 FE. The experimental lookup was discarded. The mixed route with its default active output still needs verified persistence through genuine chunk eviction.
+
+On the packaged port, setting the Ender IO bank's redstone control to Never Active after the live transfer stopped its active output. The server then fully evicted both fixture chunks. Both routes retained the exact charge and marker contents after reload and a dedicated restart. This passed separately with the capacitor bank's receiving face set to PULL and to BOTH.
+
+The packaged port also passed the live transfers in the isolated 540-mod Auram instance. A KubeJS battery with the maximum signed 64-bit capacity changed its vanilla comparator from 14 to 15 when its stored charge went from one FE short to full. Both fixtures retained their exact charge and markers when force-loading was restored during the run. At least one chunk holder remained throughout the observation window. The client ran at master volume zero with OpenAL No Output and joined the world with JEI loaded. The native monitor recorded zero focus activations, foreground samples, or visible window samples.
 
 ### Molten-salt vessel tanks and ports
 
