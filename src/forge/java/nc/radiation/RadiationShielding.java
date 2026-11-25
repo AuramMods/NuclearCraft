@@ -105,4 +105,12 @@ public final class RadiationShielding {
         String value = RadiationDisplay.format(Math.abs(resistance), 0, digits, "").strip();
         return resistance < 0 ? "-" + value : value;
     }
+
+    static double rawRate(double effective, double resistance) {
+        // Invert the legacy resistance curve for the aggregate effective reading.
+        if (resistance > 0 && effective > 0) {
+            return (effective + Math.sqrt(effective) * Math.sqrt(effective + 4 * resistance)) / 2;
+        }
+        return resistance < 0 ? effective / (1 - resistance) : effective;
+    }
 }

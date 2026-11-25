@@ -27,7 +27,7 @@ public final class PlayerRadiation {
     private static final String DATA = "nuclearcraft:radiation";
     private static final String DOSE = "dose";
     private static final String RATE = "rate";
-    private static final String RAW_RATE = "raw_rate";
+    static final String RAW_RATE = "raw_rate";
     private static final String RAD_X_USED = "rad_x_used";
     private static final String RADAWAY_COOLDOWN = "radaway_cooldown";
     private static final String IMMUNITY = "immunity_ticks";
@@ -118,7 +118,7 @@ public final class PlayerRadiation {
             dose = Mth.clamp(dose + rate * ticks, 0, max);
         }
         data.putDouble(RATE, rate);
-        data.putDouble(RAW_RATE, rawRate(rate, resistance));
+        data.putDouble(RAW_RATE, RadiationShielding.rawRate(rate, resistance));
         data.putDouble(IMMUNITY, immunity);
         if (fatal && dose >= max) {
             data.putDouble(DOSE, dose);
@@ -161,19 +161,13 @@ public final class PlayerRadiation {
         }
     }
 
-    private static double rawRate(double effective, double resistance) {
-        // Invert the legacy resistance curve for the aggregate effective reading.
-        if (resistance > 0 && effective > 0) {
-            return (effective + Math.sqrt(effective) * Math.sqrt(effective + 4 * resistance)) / 2;
-        }
-        return resistance < 0 ? effective / (1 - resistance) : effective;
-    }
-
     private static double drain(CompoundTag data, String key, String recentKey, double limit) {
         double buffer = data.getDouble(key);
         double amount = Math.min(buffer, limit);
         if (amount > 0) {
             remainder(data, key, recentKey, buffer - amount);
+        } else if (buffer <= 0 && recentKey != null) {
+            data.remove(recentKey);
         }
         return amount;
     }
@@ -229,6 +223,10 @@ public final class PlayerRadiation {
 
     static boolean enabled() {
         return RadiationConfig.ENABLED.get();
+    }
+
+    static boolean isImmune(ServerPlayer player) {
+        return read(player).getDouble(IMMUNITY) > 0 || hasUntimedImmunity(player);
     }
 
     private static boolean hasUntimedImmunity(Player player) {
@@ -301,11 +299,11 @@ public final class PlayerRadiation {
         save(player, data);
     }
 
-    private static CompoundTag read(Player player) {
+    static CompoundTag read(Player player) {
         return player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG).getCompound(DATA);
     }
 
-    private static void save(Player player, CompoundTag data) {
+    static void save(Player player, CompoundTag data) {
         CompoundTag persisted = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
         persisted.put(DATA, data);
         player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persisted);

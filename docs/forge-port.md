@@ -1633,6 +1633,33 @@ All 229 local GameTests passed. On packaged Forge 47.4.10 with GameStages 15.0.2
 
 The isolated client loaded JEI with all 541 installed Auram mod JARs. GameStages commands granted immunity with either listed stage, preserved it when one listed stage replaced the other, and restored exposure when the last listed stage was removed. The client reading followed each change and continued to show 2 Rad/t. The client used master volume zero and OpenAL No Output, and the world saved. The observer reached its shutdown wait limit before writing a focus report. A separate Forge 47.4.10 client with GameStages and Bookshelf repeated the stage and HUD checks, saved, and exited cleanly. Its native observer recorded zero focus activations, foreground samples, and visible windows.
 
+### CraftTweaker recipes and entity radiation
+
+CraftTweaker scripts can remove recipes by registered ID and add recipes using the same JSON fields as datapacks. Use the modern recipe type ID in the bracket and the current registry IDs for ingredients and products. If the serializer uses a different ID, name it in the JSON's `type` field. CraftTweaker gives newly added recipes the `crafttweaker` namespace. This example replaces the Melter's ice recipe. [CraftTweaker recipe managers for 1.20.1](https://docs.blamejared.com/1.20.1/en/tutorial/Recipes/RecipeManagers/)
+
+```zenscript
+val melter = <recipetype:nuclearcraft:melter>;
+melter.removeByName("nuclearcraft:melter/ice");
+melter.addJsonRecipe("ice_melting", {
+    ingredient: {item: "minecraft:ice"},
+    result: {fluid: "minecraft:water", amount: 673},
+    ticks: 2,
+    energy_per_tick: 20
+});
+```
+
+The legacy entity expansion methods are available on `crafttweaker.api.entity.LivingEntity`. Call them from server events. `getRadiation` reads accumulated dose. `getRadiationLevel` and `getRawRadiationLevel` read effective and unshielded exposure in Rad/t. `addRadiation` and `setRadiation` clamp dose to the entity's maximum. Pass `true` to either method to respect the player's UUID, GameStages, and timed immunity. The optional argument defaults to `false`.
+
+`addRadawayBuffer`, `setRadawayBuffer`, and `getRadawayBuffer` use the normal treatment buffer by default. Pass `true` to select Slow RadAway. Use the corresponding `add`, `set`, and `get` methods for `PoisonBuffer` and `RadiationResistance`. The buffers have a minimum of zero. Internal resistance accepts negative values. These methods change the same saved state as ordinary exposure and treatment. [CraftTweaker server event example for 1.20.1](https://docs.blamejared.com/1.20.1/en/forge/api/event/entity/player/PlayerLoggedInEvent/)
+
+To migrate static `Radiation.setRadiationLevel` calls to server configuration, use `radiation_items` for item IDs, `radiation_ores` for Forge item tag IDs, and `radiation_fluids` for fluid IDs. Use the respective `_blacklist` lists for `addToRadiationBlacklist` entries. Map `setFoodRadiationStats` to `radiation_foods`. The config formats and units are documented under [Environmental radiation](#environmental-radiation) and [Food radiation](#food-radiation).
+
+On packaged Forge 47.4.10 with CraftTweaker 14.0.59, a cow’s scripted dose capped at 500 Rad. Scripts read normal and slow treatment separately and preserved signed resistance. Clearing the normal RadAway and poison buffers let the next update discard the previous treatment amounts. Adding 1 Rad of treatment and 2 Rad of poison then started from those amounts. On clean Forge the stock Melter recipe still produced 1,000 mB of water.
+
+On the same packaged build, a scripted player login ended at 23 Rad. The configured UUID exemption blocked the guarded addition. The Melter produced 673 mB from the initial ZenCode recipe and 674 mB after a script reload. Both tanks retained their water after restart, and the revived cow retained its dose, treatment buffer, and resistance. All 229 local GameTests passed. The background multiplayer client used OpenAL No Output and recorded zero focus activations, foreground samples, and visible windows.
+
+The same JAR loaded JEI in an isolated copy of the current 540-mod Auram snapshot, which no longer included Distant Horizons. CraftTweaker reported 23 Rad on login and read distinct raw and effective rates. It also read back all scripted cow values and supplied the recipe that produced 673 mB of water in-world. The test removed its fixtures, saved, and exited with OpenAL No Output and zero focus activations, foreground samples, or visible windows.
+
 ### Food radiation
 
 `radiation_foods` in `world/serverconfig/nuclearcraft-radiation.toml` accepts `namespace:item_dose_resistance`. Convert legacy metadata to registered item IDs, including `minecraft:enchanted_golden_apple` and `minecraft:pufferfish`. A negative dose queues gradual RadAway treatment. A positive dose queues internal exposure that bypasses armor resistance and water and rain multipliers. Signed resistance temporarily protects the player or increases exposure, and is subject to the Rad-X cooldown. The poison duration keeps its original `radiation_poison_time` setting. Food sounds use entry 3 of `radiation_sound_volumes`.

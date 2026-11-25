@@ -85,6 +85,7 @@ repositories {
         content {
             includeGroup 'vazkii.patchouli'
             includeGroup 'net.darkhax.gamestages'
+            includeGroup 'com.blamejared.crafttweaker'
         }
     }
     maven {
@@ -114,6 +115,9 @@ dependencies {
     compileOnly fg.deobf("top.theillusivec4.curios:curios-forge:${curios_version}:api")
     compileOnly fg.deobf("vazkii.patchouli:Patchouli:${patchouli_version}:api")
     compileOnly('net.darkhax.gamestages:GameStages-Forge-1.20.1:15.0.2') {
+        transitive = false
+    }
+    compileOnly('com.blamejared.crafttweaker:CraftTweaker-forge-1.20.1:14.0.59') {
         transitive = false
     }
     compileOnly "mekanism:Mekanism:${mekanism_version}:api"
