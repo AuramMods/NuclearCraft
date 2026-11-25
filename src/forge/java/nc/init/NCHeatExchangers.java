@@ -158,15 +158,17 @@ public final class NCHeatExchangers {
     public static BlockItem createScriptedTubeItem(String blockId) {
         var id = ResourceLocation.tryParse(blockId);
         var block = id == null ? null : ForgeRegistries.BLOCKS.getValue(id);
-        if (!(block instanceof ExchangerTubeBlock)) {
+        if (!(block instanceof ExchangerTubeBlock tube)) {
             throw new IllegalArgumentException("No NuclearCraft heat exchanger tube with ID " + blockId);
         }
-        return new BlockItem(block, new Item.Properties());
+        return new ExchangerTubeBlock.TubeItem(tube, new Item.Properties());
     }
 
     private static <T extends Block> RegistryObject<T> block(String id, Supplier<T> factory) {
         RegistryObject<T> block = NCRegistries.BLOCKS.register(id, factory);
-        NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
+        NCRegistries.ITEMS.register(id, () -> block.get() instanceof ExchangerTubeBlock tube
+                ? new ExchangerTubeBlock.TubeItem(tube, new Item.Properties())
+                : new BlockItem(block.get(), new Item.Properties()));
         PARTS.add(block);
         return block;
     }

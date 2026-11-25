@@ -8,8 +8,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -39,6 +41,10 @@ public final class ExchangerTubeBlock extends ExchangerPartBlock {
         Setting(boolean open, boolean baffle) {
             this.open = open;
             this.baffle = baffle;
+        }
+
+        Setting withOpen(boolean open) {
+            return open ? (baffle ? OPEN_BAFFLE : OPEN) : (baffle ? CLOSED_BAFFLE : CLOSED);
         }
 
         Setting next() {
@@ -138,6 +144,99 @@ public final class ExchangerTubeBlock extends ExchangerPartBlock {
 
     static Setting setting(BlockState state, Direction side) {
         return state.getValue(property(side));
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        var level = context.getLevel();
+        var pos = context.getClickedPos();
+        Direction attached = context.getClickedFace().getOpposite();
+        BlockState adjacent = level.getBlockState(pos.relative(attached));
+        BlockState placed = defaultBlockState();
+        if (adjacent.getBlock() instanceof ExchangerTubeBlock) {
+            Setting connection = setting(adjacent, attached.getOpposite());
+            if (context.isSecondaryUseActive()) {
+                for (Direction side : Direction.values()) {
+                    placed = withSetting(placed, side, setting(adjacent, side));
+                }
+            } else {
+                connection = connection.withOpen(true);
+            }
+            placed = withSetting(placed, attached, connection);
+        }
+        for (Direction side : List.of(attached, attached.getOpposite())) {
+            Part part = part(level.getBlockState(pos.relative(side)));
+            if (part == Part.INLET || part == Part.OUTLET) {
+                return withSetting(placed, side, Setting.OPEN);
+            }
+        }
+        return placed;
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState next, boolean moving) {
+        if (level instanceof ServerLevel server && !(next.getBlock() instanceof ExchangerTubeBlock)
+                && !moving && !level.restoringBlockSnapshots) {
+            for (Direction side : Direction.values()) {
+                BlockPos neighbor = pos.relative(side);
+                if (setting(state, side).open && level.hasChunkAt(neighbor)) {
+                    setNeighborOpen(server, neighbor, side.getOpposite(), false);
+                }
+            }
+        }
+        super.onRemove(state, level, pos, next, moving);
+    }
+
+    private static void setNeighborOpen(ServerLevel level, BlockPos pos, Direction side, boolean open) {
+        BlockState state = level.getBlockState(pos);
+        if (state.getBlock() instanceof ExchangerTubeBlock) {
+            Setting previous = setting(state, side);
+            if (previous.open != open) {
+                level.setBlockAndUpdate(pos, withSetting(state, side, previous.withOpen(open)));
+            }
+        }
+    }
+
+    public static final class TubeItem extends BlockItem {
+        public TubeItem(ExchangerTubeBlock tube, Properties properties) {
+            super(tube, properties);
+        }
+
+        @Override
+        public InteractionResult place(BlockPlaceContext context) {
+            InteractionResult result = super.place(context);
+            if (result.consumesAction() && context.getLevel() instanceof ServerLevel level) {
+                var pos = context.getClickedPos();
+                var placed = level.getBlockState(pos);
+                if (placed.is(getBlock())) {
+                    connectPlacement(level, pos, placed, context.getClickedFace().getOpposite(),
+                            context.isSecondaryUseActive());
+                }
+            }
+            return result;
+        }
+
+        private static void connectPlacement(ServerLevel level, BlockPos pos, BlockState placed,
+                                             Direction attached, boolean copy) {
+            BlockPos source = pos.relative(attached);
+            BlockState sourceState = level.getBlockState(source);
+            if (!(sourceState.getBlock() instanceof ExchangerTubeBlock)) {
+                return;
+            }
+            if (copy) {
+                for (Direction side : Direction.values()) {
+                    if (side == attached || !setting(sourceState, side).open || !setting(placed, side).open) {
+                        continue;
+                    }
+                    BlockState template = level.getBlockState(source.relative(side));
+                    if (template.getBlock() instanceof ExchangerTubeBlock && setting(template, side.getOpposite()).open) {
+                        setNeighborOpen(level, pos.relative(side), side.getOpposite(), true);
+                    }
+                }
+            } else if (setting(placed, attached).open) {
+                setNeighborOpen(level, source, attached.getOpposite(), true);
+            }
+        }
     }
 
     @Override

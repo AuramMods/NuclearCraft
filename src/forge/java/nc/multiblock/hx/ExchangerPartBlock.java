@@ -59,7 +59,7 @@ public class ExchangerPartBlock extends Block {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean moving) {
         super.onPlace(state, level, pos, old, moving);
-        if (level instanceof ServerLevel server && state.getBlock() != old.getBlock()) {
+        if (level instanceof ServerLevel server && state.getBlock() != old.getBlock() && !level.restoringBlockSnapshots) {
             notifyChange(server, pos);
         }
     }
@@ -67,7 +67,7 @@ public class ExchangerPartBlock extends Block {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState next, boolean moving) {
         super.onRemove(state, level, pos, next, moving);
-        if (level instanceof ServerLevel server && state.getBlock() != next.getBlock()) {
+        if (level instanceof ServerLevel server && state.getBlock() != next.getBlock() && !level.restoringBlockSnapshots) {
             notifyChange(server, pos);
         }
     }

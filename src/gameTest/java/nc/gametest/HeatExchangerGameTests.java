@@ -13,16 +13,20 @@ import net.minecraft.gametest.framework.GameTestAssertException;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.event.level.BlockEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -32,6 +36,9 @@ import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -48,6 +55,8 @@ public final class HeatExchangerGameTests {
     public static void registerScriptedTube(RegisterEvent event) {
         event.register(ForgeRegistries.Keys.BLOCKS, helper -> helper.register(NuclearCraft.id("heat_exchanger_tube_qa"),
                 NCHeatExchangers.createScriptedTube(64D, 0.5D)));
+        event.register(ForgeRegistries.Keys.ITEMS, helper -> helper.register(NuclearCraft.id("heat_exchanger_tube_qa"),
+                NCHeatExchangers.createScriptedTubeItem("nuclearcraft:heat_exchanger_tube_qa")));
     }
 
     @GameTest(template = "turbine", timeoutTicks = 180)
@@ -225,6 +234,125 @@ public final class HeatExchangerGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void heatExchangerConnectsTubesThroughNormalPlacement(GameTestHelper helper) {
+        buildShell(helper, 3);
+        var tube = NCHeatExchangers.THERMOCONDUCTING.get();
+        for (int z = 1; z <= 3; z++) {
+            placeTube(helper, tube, new BlockPos(3, 3, z), Direction.SOUTH, false);
+        }
+        for (int z = 2; z <= 4; z++) {
+            helper.assertTrue(helper.getBlockState(new BlockPos(3, 3, z)) == straightTube(tube),
+                    "Placing tubes from the inlet to the outlet must open the whole run");
+        }
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 1024));
+                    fill(helper, SHELL_IN, Direction.EAST, new FluidStack(Fluids.WATER, 64));
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> assertOutputs(helper, SHELL_OUT))
+                .thenExecute(() -> {
+                    var oldPort = helper.getBlockEntity(TUBE_OUT)
+                            .getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.SOUTH);
+                    BlockPos removed = new BlockPos(3, 3, 3);
+                    rejectPlacement(helper, tube, removed, Direction.WEST);
+                    helper.assertTrue(helper.getBlockState(removed) == straightTube(tube)
+                                    && helper.getBlockState(removed.west()).isAir() && oldPort.isPresent(),
+                            "Forge cancellation must restore both faces and keep the assembled port available");
+                    helper.assertTrue(helper.getLevel().destroyBlock(helper.absolutePos(removed), false),
+                            "Breaking a tube must remove the selected block");
+                    helper.assertTrue(helper.getBlockState(removed.north()) == ExchangerTubeBlock.withSetting(
+                                    tube.defaultBlockState(), Direction.NORTH, Setting.OPEN)
+                                    && helper.getBlockState(removed.south()) == ExchangerTubeBlock.withSetting(
+                                    tube.defaultBlockState(), Direction.SOUTH, Setting.OPEN),
+                            "Breaking the middle tube must close the two exposed arms and keep both port links");
+                    helper.assertTrue(!oldPort.isPresent(), "Breaking a tube invalidates the old fluid handler");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine")
+    public static void scriptedTubeCopiesConnectionsAndPreservesBaffles(GameTestHelper helper) {
+        var stock = NCHeatExchangers.COPPER.get();
+        var scripted = ForgeRegistries.ITEMS.getValue(NuclearCraft.id("heat_exchanger_tube_qa"));
+        BlockPos source = new BlockPos(2, 2, 2);
+        BlockPos placed = source.east();
+        BlockState template = ExchangerTubeBlock.withSetting(stock.defaultBlockState(), Direction.EAST, Setting.CLOSED_BAFFLE);
+        template = ExchangerTubeBlock.withSetting(template, Direction.SOUTH, Setting.OPEN);
+        template = ExchangerTubeBlock.withSetting(template, Direction.UP, Setting.OPEN_BAFFLE);
+        helper.setBlock(source, template);
+        helper.setBlock(source.south(), ExchangerTubeBlock.withSetting(stock.defaultBlockState(), Direction.NORTH, Setting.OPEN));
+        BlockState baffle = ExchangerTubeBlock.withSetting(stock.defaultBlockState(), Direction.NORTH, Setting.CLOSED_BAFFLE);
+        helper.setBlock(placed.south(), baffle);
+
+        placeTube(helper, scripted, source, Direction.EAST, true);
+        var customTube = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("heat_exchanger_tube_qa"));
+        BlockState copied = ExchangerTubeBlock.withSetting(customTube.defaultBlockState(), Direction.WEST, Setting.CLOSED_BAFFLE);
+        copied = ExchangerTubeBlock.withSetting(copied, Direction.EAST, Setting.CLOSED_BAFFLE);
+        copied = ExchangerTubeBlock.withSetting(copied, Direction.SOUTH, Setting.OPEN);
+        copied = ExchangerTubeBlock.withSetting(copied, Direction.UP, Setting.OPEN_BAFFLE);
+        helper.assertTrue(helper.getBlockState(placed) == copied,
+                "Sneak-placement must copy the tube settings and mirror the contact face");
+        helper.assertTrue(helper.getBlockState(source) == template
+                        && helper.getBlockState(placed.south()) == ExchangerTubeBlock.withSetting(
+                        baffle, Direction.NORTH, Setting.OPEN_BAFFLE),
+                "The copied side run must open its companion without modifying the template or losing the baffle");
+
+        helper.getLevel().destroyBlock(helper.absolutePos(placed), false);
+        helper.assertTrue(helper.getBlockState(placed.south()) == baffle,
+                "Breaking a connected tube must retain the baffle when closing the neighbor");
+        placeTube(helper, stock, source, Direction.EAST, false);
+        helper.assertTrue(helper.getBlockState(placed) == ExchangerTubeBlock.withSetting(
+                        stock.defaultBlockState(), Direction.WEST, Setting.OPEN_BAFFLE)
+                        && helper.getBlockState(source) == ExchangerTubeBlock.withSetting(template, Direction.EAST, Setting.OPEN_BAFFLE),
+                "Normal installation opens the paired connection and inherits the attached baffle");
+        helper.succeed();
+    }
+
+    private static void rejectPlacement(GameTestHelper helper, ItemLike tube, BlockPos pos, Direction side) {
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        var placement = helper.absolutePos(pos.relative(side));
+        var cancelled = new AtomicBoolean();
+        Consumer<BlockEvent.EntityMultiPlaceEvent> guard = event -> {
+            if (event.getEntity() == player && event.getPos().equals(placement)) {
+                cancelled.set(true);
+                event.setCanceled(true);
+            }
+        };
+        MinecraftForge.EVENT_BUS.addListener(guard);
+        try {
+            helper.assertTrue(useTube(helper, tube, pos, side, false) == InteractionResult.FAIL && cancelled.get(),
+                    "Forge must be able to cancel placement of both changed blocks");
+        } finally {
+            MinecraftForge.EVENT_BUS.unregister(guard);
+        }
+    }
+
+    private static void placeTube(GameTestHelper helper, ItemLike item, BlockPos anchor, Direction face, boolean sneak) {
+        helper.assertTrue(useTube(helper, item, anchor, face, sneak).consumesAction(),
+                "The tube block item must place against its clicked neighbor");
+    }
+
+    private static InteractionResult useTube(GameTestHelper helper, ItemLike item, BlockPos anchor, Direction face, boolean sneak) {
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        var previousItem = player.getMainHandItem();
+        boolean previousSneak = player.isShiftKeyDown();
+        var held = new ItemStack(item);
+        try {
+            player.setItemInHand(InteractionHand.MAIN_HAND, held);
+            player.setShiftKeyDown(sneak);
+            BlockPos clicked = helper.absolutePos(anchor);
+            var hit = new BlockHitResult(Vec3.atCenterOf(clicked), face, clicked, false);
+            var context = new UseOnContext(player, InteractionHand.MAIN_HAND, hit);
+            return held.useOn(context);
+        } finally {
+            player.setShiftKeyDown(previousSneak);
+            player.setItemInHand(InteractionHand.MAIN_HAND, previousItem);
+        }
+    }
+
     private static void assertOutputs(GameTestHelper helper, BlockPos shellOutlet) {
         var gas = fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0);
         var steam = fluid(helper, shellOutlet, Direction.WEST).getFluidInTank(0);
@@ -235,6 +363,13 @@ public final class HeatExchangerGameTests {
     }
 
     private static void build(GameTestHelper helper, int shellHeight) {
+        buildShell(helper, shellHeight);
+        for (int z = 2; z <= 4; z++) {
+            helper.setBlock(new BlockPos(3, 3, z), straightTube(NCHeatExchangers.THERMOCONDUCTING.get()));
+        }
+    }
+
+    private static void buildShell(GameTestHelper helper, int shellHeight) {
         for (BlockPos pos : BlockPos.betweenClosed(new BlockPos(1, 1, 1), new BlockPos(5, 5, 5))) {
             if (pos.getX() == 1 || pos.getX() == 5 || pos.getY() == 1 || pos.getY() == 5
                     || pos.getZ() == 1 || pos.getZ() == 5) {
@@ -246,9 +381,6 @@ public final class HeatExchangerGameTests {
         helper.setBlock(TUBE_OUT, NCHeatExchangers.OUTLET.get());
         helper.setBlock(new BlockPos(5, shellHeight, 3), NCHeatExchangers.INLET.get());
         helper.setBlock(new BlockPos(1, shellHeight, 3), NCHeatExchangers.OUTLET.get());
-        for (int z = 2; z <= 4; z++) {
-            helper.setBlock(new BlockPos(3, 3, z), straightTube(NCHeatExchangers.THERMOCONDUCTING.get()));
-        }
     }
 
     private static BlockState straightTube(Block tube) {
