@@ -34,6 +34,7 @@ import nc.init.NCWasteland;
 import nc.init.NCTerrainRecipes;
 import nc.init.NCTinkersMaterials;
 import nc.processor.CommonCapabilitiesRecipes;
+import nc.recipe.FluidExistsCondition;
 import nc.recipe.MaterialRecipeOutputs;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModList;
@@ -53,6 +54,7 @@ public final class NuclearCraft {
     public NuclearCraft(FMLJavaModLoadingContext context) {
         NCScriptAddons.register(context.getModEventBus());
         context.getModEventBus().addListener(NCAdvancements::setup);
+        context.getModEventBus().addListener(FluidExistsCondition::register);
         NCBatteries.register(context);
         NCCollectors.register(context);
         NCComputerPorts.register(context);

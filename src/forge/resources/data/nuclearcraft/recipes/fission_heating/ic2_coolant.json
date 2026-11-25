@@ -1,0 +1,22 @@
+{
+    "type": "nuclearcraft:fission_heating",
+    "conditions": [
+        {
+            "type": "nuclearcraft:fluid_exists",
+            "fluid": "ic2:coolant"
+        },
+        {
+            "type": "nuclearcraft:fluid_exists",
+            "fluid": "ic2:hotcoolant"
+        }
+    ],
+    "input": {
+        "fluid": "ic2:coolant",
+        "amount": 1
+    },
+    "result": {
+        "fluid": "ic2:hotcoolant",
+        "amount": 1
+    },
+    "legacy_profile": "ic2"
+}

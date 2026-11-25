@@ -45,6 +45,7 @@ public final class NCItemProcessors {
     private static final ForgeConfigSpec.ConfigValue<List<Boolean>> DEFAULT_RECIPES;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> MANUFACTORY_WOOD;
     private static final ForgeConfigSpec.BooleanValue FACTOR_RECIPES;
+    private static final ForgeConfigSpec.IntValue RF_PER_EU;
     private static final ForgeConfigSpec.DoubleValue TIME_MULTIPLIER;
     private static final ForgeConfigSpec.DoubleValue POWER_MULTIPLIER;
     private static final ForgeConfigSpec.ConfigValue<List<Integer>> PROCESSOR_TIMES;
@@ -78,6 +79,8 @@ public final class NCItemProcessors {
                 "manufactory_wood", List.of(6, 4), 1, 64);
         FACTOR_RECIPES = builder.comment("Divide stock fluid-only batches and their durations by their greatest common divisor.")
                 .define("factor_recipes", false);
+        RF_PER_EU = builder.comment("Legacy conversion factor used for the IndustrialCraft coolant heating recipe.")
+                .defineInRange("rf_per_eu", 16, 1, 65_536);
         builder.push("rates");
         TIME_MULTIPLIER = builder.defineInRange("processor_time_multiplier", 1D, 0.001D, 255D);
         POWER_MULTIPLIER = builder.defineInRange("processor_power_multiplier", 1D, 0D, 255D);
@@ -142,6 +145,10 @@ public final class NCItemProcessors {
 
     public static boolean techRebornFluidRecipesEnabled() {
         return value(FLUID_RECIPE_EXPANSION).get(1);
+    }
+
+    public static int rfPerEu() {
+        return value(RF_PER_EU);
     }
 
     public static boolean oreProcessing() {

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonSyntaxException;
 import nc.init.HeatExchangerConfig;
 import nc.init.NCFission;
+import nc.init.NCItemProcessors;
 import nc.init.NCPebbleFission;
 import nc.processor.ProcessorInputs;
 import net.minecraft.core.RegistryAccess;
@@ -24,7 +25,7 @@ import java.util.Locale;
 public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidProduct product, double baseHeat,
                                 @Nullable Profile profile, boolean emergency) implements Recipe<Container> {
     public enum Profile {
-        GAS, NAK, EMERGENCY
+        GAS, NAK, EMERGENCY, IC2
     }
 
     public double heatPerMb() {
@@ -35,6 +36,7 @@ public record FissionHeatRecipe(ResourceLocation id, FluidInput input, FluidProd
             case GAS -> Math.max(1, (int) (NCPebbleFission.heatPerMb() * NCFission.heatingGasMultiplier()));
             case NAK -> Math.max(1, (int) (HeatExchangerConfig.nakHeatPerMb() * NCFission.heatingNakMultiplier()));
             case EMERGENCY -> NCFission.emergencyCoolingMultiplier();
+            case IC2 -> 10D * NCItemProcessors.rfPerEu();
         };
     }
 
