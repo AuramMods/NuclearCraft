@@ -27,7 +27,7 @@ final class SaltCooling {
     private final SolidFissionController owner;
     private final Map<FissionCoolant, CoolantTanks> circuits = new HashMap<>();
     private final Set<FissionCoolant> connected = new HashSet<>();
-    private final Map<BlockPos, Fraction> credit = new HashMap<>();
+    private final Map<BlockPos, Fraction> legacyProgress = new HashMap<>();
     private record Fraction(FissionCoolant coolant, double amount) {}
 
     SaltCooling(SolidFissionController owner) {
@@ -46,14 +46,9 @@ final class SaltCooling {
         return connected.contains(coolant) ? circuits.get(coolant) : null;
     }
 
-    double progress(BlockPos pos, FissionCoolant coolant) {
-        Fraction fraction = credit.get(pos);
-        return fraction != null && coolant.equals(fraction.coolant()) ? fraction.amount() : 0;
-    }
-
     void clearMaterial() {
         circuits.values().forEach(CoolantTanks::clear);
-        credit.clear();
+        legacyProgress.clear();
         owner.setChanged();
     }
 
@@ -74,7 +69,6 @@ final class SaltCooling {
         for (var coolant : connected) {
             circuit(coolant).resize((long) VOLUME_PER_HEATER * counts.getOrDefault(coolant, 0));
         }
-        credit.keySet().retainAll(layout.sinks());
     }
 
     Map<BlockPos, FissionCoolantRecipe> available(ServerLevel level, SolidFissionLayout layout,
@@ -102,23 +96,35 @@ final class SaltCooling {
         if (tanks.ready(null) != recipe) {
             return 0D;
         }
-        FissionCoolant coolant = heater.coolant();
         int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
         double batchesPerTick = efficiency * recipe.cooling() / (HeatExchangerConfig.nakHeatPerMb() * inputAmount);
-        double progress = progress(pos, coolant) + batchesPerTick;
-        credit.put(pos, new Fraction(coolant, progress - Math.floor(progress)));
+        double progress = heater.progress().amount() + batchesPerTick;
+        heater.progress().set(progress - Math.floor(progress));
         tanks.process(null, recipe, (int) progress, level.random);
-        owner.setChanged();
         return batchesPerTick;
     }
 
-    void discardBlockedProgress(ServerLevel level) {
-        boolean removed = credit.entrySet().removeIf(saved ->
-                !(level.getBlockEntity(saved.getKey()) instanceof SaltHeater heater)
-                || !heater.coolant().equals(saved.getValue().coolant())
-                || heater.tanks().processableRecipe(null) == null);
-        if (removed) {
-            owner.setChanged();
+    void restoreLegacyProgress(ServerLevel level, SolidFissionLayout layout) {
+        if (legacyProgress.isEmpty()) {
+            return;
+        }
+        for (BlockPos pos : layout.sinks()) {
+            var saved = legacyProgress.get(pos);
+            if (saved != null && SaltHeaterBlock.entity(level, pos) instanceof SaltHeater heater
+                    && heater.coolant().equals(saved.coolant())) {
+                heater.progress().restoreFromController(saved.amount());
+            }
+        }
+        legacyProgress.clear();
+        owner.setChanged();
+    }
+
+    void discardBlockedProgress(ServerLevel level, SolidFissionLayout layout) {
+        for (BlockPos pos : layout.sinks()) {
+            if (level.getBlockEntity(pos) instanceof SaltHeater heater && heater.progress().amount() > 0D
+                    && heater.tanks().processableRecipe(null) == null) {
+                heater.progress().set(0D);
+            }
         }
     }
 
@@ -141,18 +147,16 @@ final class SaltCooling {
         CompoundTag tag = new CompoundTag();
         circuits.forEach((coolant, circuit) -> tag.put(coolant.id(), circuit.save()));
         ListTag savedCredit = new ListTag();
-        credit.forEach((pos, fraction) -> {
-            if (fraction.amount() > 0) {
-                CompoundTag state = new CompoundTag();
-                state.putLong("pos", pos.asLong());
-                state.putDouble("amount", fraction.amount());
-                if (fraction.coolant() instanceof NCSaltCoolants stock) {
-                    state.putInt("coolant", stock.ordinal());
-                } else {
-                    state.putString("coolant_id", fraction.coolant().id());
-                }
-                savedCredit.add(state);
+        legacyProgress.forEach((pos, fraction) -> {
+            CompoundTag state = new CompoundTag();
+            state.putLong("pos", pos.asLong());
+            state.putDouble("amount", fraction.amount());
+            if (fraction.coolant() instanceof NCSaltCoolants stock) {
+                state.putInt("coolant", stock.ordinal());
+            } else {
+                state.putString("coolant_id", fraction.coolant().id());
             }
+            savedCredit.add(state);
         });
         tag.put("fractions", savedCredit);
         return tag;
@@ -165,7 +169,7 @@ final class SaltCooling {
                 circuit(coolant).load(tag.getCompound(coolant.id()));
             }
         }
-        credit.clear();
+        legacyProgress.clear();
         var stock = NCSaltCoolants.values();
         for (Tag entry : tag.getList("fractions", Tag.TAG_COMPOUND)) {
             CompoundTag state = (CompoundTag) entry;
@@ -174,7 +178,7 @@ final class SaltCooling {
             FissionCoolant coolant = state.contains("coolant_id", Tag.TAG_STRING)
                     ? coolants.get(state.getString("coolant_id")) : kind >= 0 && kind < stock.length ? stock[kind] : null;
             if (amount > 0 && amount < 1 && coolant != null) {
-                credit.put(BlockPos.of(state.getLong("pos")), new Fraction(coolant, amount));
+                legacyProgress.put(BlockPos.of(state.getLong("pos")), new Fraction(coolant, amount));
             }
         }
     }

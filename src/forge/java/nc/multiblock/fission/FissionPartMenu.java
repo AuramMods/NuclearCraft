@@ -255,8 +255,8 @@ public final class FissionPartMenu extends AbstractContainerMenu {
             set(FILTER, BuiltInRegistries.FLUID.getId(fluid));
             set(GAS_BLOCK, BuiltInRegistries.BLOCK.getId(entity.getBlockState().getBlock()));
             set(COOLING, recipe.cooling());
-            if (controller != null && !kind.port() && !local) {
-                progress = controller.gasProgress(pos);
+            if (controller != null && entity instanceof PebbleCooler cooler && !local) {
+                progress = cooler.progress().amount();
                 processing = controller.isCooling(pos);
             }
         }

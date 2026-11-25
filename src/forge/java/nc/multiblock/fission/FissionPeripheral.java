@@ -179,11 +179,11 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         if (entity instanceof SaltHeater heater) {
             var coolant = heater.coolant();
             String name = coolant instanceof NCSaltCoolants stock ? stock.material() : coolant.id();
-            return coolerStats(core.coolerStats(pos), name, heater.tanks(), null, controller.heaterProgress(pos, coolant));
+            return coolerStats(core.coolerStats(pos), name, heater.tanks(), null, heater.progress().amount());
         }
         if (entity instanceof PebbleCooler cooler) {
             return coolerStats(core.coolerStats(pos), cooler.gas().id(), cooler.tanks(), cooler.filter(),
-                    controller.gasProgress(pos));
+                    cooler.progress().amount());
         }
         if (state.getBlock() instanceof FissionShieldBlock) {
             var shield = core.shieldStats(pos);

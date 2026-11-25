@@ -155,7 +155,7 @@ public final class SaltFissionGameTests {
         var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
         var state = controller.saveWithoutMetadata();
         var circuit = new CompoundTag();
-        circuit.put("output", stack("iron_nak_hot", 1289).writeToNBT(new CompoundTag()));
+        circuit.put("output", stack("iron_nak_hot", 1288).writeToNBT(new CompoundTag()));
         var storage = new CompoundTag();
         storage.put("qa_salt_recipe", circuit);
         state.put("salt_cooling", storage);
@@ -173,6 +173,10 @@ public final class SaltFissionGameTests {
                     helper.assertTrue(menu.coolantInput() != null && menu.coolantInput().amount() == 18 && menu.cooling() == 180
                                     && menu.filter().getFluid() == stack("iron_nak", 1).getFluid(),
                             "The higher-priority recipe is selected and displays the actual alternative fluid");
+                    var oldHeater = helper.getBlockEntity(FIRST_VESSEL.below());
+                    var oldPart = oldHeater.saveWithoutMetadata();
+                    oldPart.remove("progress");
+                    oldHeater.load(oldPart);
                     var saved = controller.saveWithoutMetadata();
                     var fractions = new ListTag();
                     var paid = new CompoundTag();
@@ -184,8 +188,19 @@ public final class SaltFissionGameTests {
                     controller.load(saved);
                 })
                 .thenExecuteAfter(5, () -> {
-                    helper.assertTrue(controller.saveWithoutMetadata().getCompound("salt_cooling")
-                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
+                    var saved = controller.saveWithoutMetadata();
+                    var cooling = saved.getCompound("salt_cooling");
+                    helper.assertTrue(cooling.getList("fractions", Tag.TAG_COMPOUND).isEmpty()
+                                    && helper.getBlockEntity(FIRST_VESSEL.below()).saveWithoutMetadata()
+                                            .getDouble("progress") == 0.75D,
+                            "An old named heater fraction moves to its existing block entity");
+                    cooling.getCompound("qa_salt_recipe").put("output",
+                            stack("iron_nak_hot", 1289).writeToNBT(new CompoundTag()));
+                    controller.load(saved);
+                })
+                .thenExecuteAfter(5, () -> {
+                    helper.assertTrue(helper.getBlockEntity(FIRST_VESSEL.below()).saveWithoutMetadata()
+                                    .getDouble("progress") == 0D,
                             "An unpowered heater discards progress when its selected maximum product will not fit");
                     fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 180), EXECUTE);
                     helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
@@ -207,8 +222,8 @@ public final class SaltFissionGameTests {
                             "The 18 mB recipe makes 3 mB of product and the 10 mB fallback makes no product");
                 })
                 .thenExecute(() -> {
-                    helper.assertTrue(controller.saveWithoutMetadata().getCompound("salt_cooling")
-                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
+                    helper.assertTrue(helper.getBlockEntity(FIRST_VESSEL.below()).saveWithoutMetadata()
+                                    .getDouble("progress") == 0D,
                             "The incomplete feed left by the empty-product batch clears progress");
                     var player = saltInspector(helper);
                     helper.useBlock(NAK_IN, player);

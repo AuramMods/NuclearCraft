@@ -205,10 +205,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (layout != null) {
             // A shared tank may have been exhausted by the last cooler or heater to run.
             if (gasCooling != null) {
-                gasCooling.discardBlockedProgress(server);
+                gasCooling.discardBlockedProgress(server, layout);
             }
             if (saltCooling != null) {
-                saltCooling.discardBlockedProgress(server);
+                saltCooling.discardBlockedProgress(server, layout);
             }
             long lost = NCFission.casingHeatLost(casingHeat, layout.bounds().exteriorSurfaceArea(), requested);
             if (lost > 0) {
@@ -238,6 +238,12 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (found == null) {
             disassemble();
             return;
+        }
+        if (gasCooling != null) {
+            gasCooling.restoreLegacyProgress(server, found);
+        }
+        if (saltCooling != null) {
+            saltCooling.restoreLegacyProgress(server, found);
         }
         if (found.equals(layout)) {
             return;
@@ -558,10 +564,6 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return core != null && core.isCooling(pos);
     }
 
-    double gasProgress(BlockPos pos) {
-        return gasCooling == null ? 0D : gasCooling.progress(pos);
-    }
-
     void computerClear() {
         if (itemFuel != null) {
             itemFuel.clear();
@@ -578,6 +580,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             for (BlockPos pos : layout.sinks()) {
                 if (level.getBlockEntity(pos) instanceof PebbleCooler cooler) {
                     cooler.localTanks().clear();
+                    cooler.progress().set(0D);
                 }
             }
         }
@@ -587,6 +590,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             for (BlockPos pos : layout.sinks()) {
                 if (level.getBlockEntity(pos) instanceof SaltHeater heater) {
                     heater.localTanks().clear();
+                    heater.progress().set(0D);
                 }
             }
         }
@@ -651,10 +655,6 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     @Nullable CoolantTanks connectedSaltCoolant(FissionCoolant coolant) {
         return !assembled() || saltCooling == null ? null : saltCooling.connectedTanks(coolant);
-    }
-
-    double heaterProgress(BlockPos pos, FissionCoolant coolant) {
-        return saltCooling == null ? 0 : saltCooling.progress(pos, coolant);
     }
 
     boolean containsPart(BlockPos pos) {

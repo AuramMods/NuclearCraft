@@ -161,6 +161,15 @@ public final class PebbleFissionGameTests {
                     helper.assertTrue(menu.gasInput() != null && menu.gasInput().tag()
                                     && menu.gasInput().amount() == 18 && menu.cooling() == 210,
                             "The reactor port reports the selected counted dose and rate");
+                    var oldCooler = helper.getBlockEntity(CHAMBER.below());
+                    var oldPart = oldCooler.saveWithoutMetadata();
+                    oldPart.remove("progress");
+                    oldCooler.load(oldPart);
+                    var convertedCooler = helper.getBlockEntity(CHAMBER.above());
+                    var convertedPart = convertedCooler.saveWithoutMetadata();
+                    convertedPart.remove("progress");
+                    convertedPart.putDouble("time", 0.375D);
+                    convertedCooler.load(convertedPart);
                     var saved = controller(helper).saveWithoutMetadata();
                     var fractions = new ListTag();
                     var paid = new CompoundTag();
@@ -173,8 +182,25 @@ public final class PebbleFissionGameTests {
                 .thenExecuteAfter(5, () -> {
                     var fractions = controller(helper).saveWithoutMetadata().getCompound("gas_cooling")
                             .getList("fractions", Tag.TAG_COMPOUND);
-                    helper.assertTrue(fractions.size() == 1 && fractions.getCompound(0).getDouble("value") == 0.625D,
-                            "An unpowered cooler with a valid batch keeps its saved progress");
+                    helper.assertTrue(fractions.isEmpty() && helper.getBlockEntity(CHAMBER.below())
+                                    .saveWithoutMetadata().getDouble("progress") == 0.625D,
+                            "An unpowered cooler imports its old controller progress with a valid batch");
+                    helper.assertTrue(helper.getBlockEntity(CHAMBER.above()).saveWithoutMetadata()
+                                    .getDouble("progress") == 0.375D,
+                            "The 1.12.2 cooler's saved time loads as local progress");
+                    helper.setBlock(CHAMBER.below(), Blocks.AIR);
+                    helper.setBlock(CHAMBER.below(), cooler);
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var player = inspector(helper);
+                    helper.useBlock(CHAMBER.below(), player);
+                    helper.assertTrue(player.containerMenu instanceof FissionPartMenu menu && menu.connected()
+                                    && menu.progress() == 0F,
+                            "A replacement cooler starts at zero while the shared tank is still ready");
+                    helper.assertTrue(helper.getBlockEntity(CHAMBER.above()).saveWithoutMetadata()
+                                    .getDouble("progress") == 0.375D,
+                            "The surviving cooler still holds its progress through reassembly");
                     items(helper, FUEL_IN, Direction.DOWN).insertItem(0, new ItemStack(item("leu_235_triso")), false);
                     runReactor(helper);
                 })
@@ -185,9 +211,11 @@ public final class PebbleFissionGameTests {
                             "An 18 mB dose and a 10 mB dose leave 3 mB of feed and produce 6 mB of hot nitrogen");
                 })
                 .thenExecute(() -> {
-                    helper.assertTrue(controller(helper).saveWithoutMetadata().getCompound("gas_cooling")
-                                    .getList("fractions", Tag.TAG_COMPOUND).isEmpty(),
-                            "The short remainder clears progress on every cooler sharing the circuit");
+                    for (Direction side : new Direction[]{Direction.UP, Direction.DOWN, Direction.NORTH, Direction.SOUTH}) {
+                        helper.assertTrue(helper.getBlockEntity(CHAMBER.relative(side)).saveWithoutMetadata()
+                                        .getDouble("progress") == 0D,
+                                "The short remainder clears progress on every cooler sharing the circuit");
+                    }
                     var player = inspector(helper);
                     helper.useBlock(COLD, player);
                     var menu = (FissionPartMenu) player.containerMenu;

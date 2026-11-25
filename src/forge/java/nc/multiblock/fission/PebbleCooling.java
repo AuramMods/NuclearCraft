@@ -22,7 +22,7 @@ final class PebbleCooling {
     private final SolidFissionController owner;
     private final Map<Channel, CoolantTanks> circuits = new LinkedHashMap<>();
     private final Map<BlockPos, Channel> coolerRoutes = new HashMap<>();
-    private final Map<BlockPos, Double> credit = new HashMap<>();
+    private final Map<BlockPos, Double> legacyProgress = new HashMap<>();
 
     record Channel(PebbleCoolant gas, @Nullable ResourceLocation filter) {}
 
@@ -41,12 +41,8 @@ final class PebbleCooling {
 
     void clearMaterial() {
         circuits.values().forEach(CoolantTanks::clear);
-        credit.clear();
+        legacyProgress.clear();
         owner.setChanged();
-    }
-
-    double progress(BlockPos pos) {
-        return credit.getOrDefault(pos, 0D);
     }
 
     void resize(ServerLevel level, SolidFissionLayout layout) {
@@ -75,7 +71,6 @@ final class PebbleCooling {
                     36L * coolerCounts.getOrDefault(entry.getKey(), 0));
             tanks.resize(capacity);
         }
-        credit.keySet().retainAll(layout.sinks());
     }
 
     private static @Nullable Channel route(PebbleCooler cooler, List<Channel> channels) {
@@ -117,18 +112,32 @@ final class PebbleCooling {
         }
         int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
         double batchesPerTick = multiplier * recipe.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
-        double progress = credit.getOrDefault(pos, 0D) + batchesPerTick;
-        credit.put(pos, progress - Math.floor(progress));
+        double progress = cooler.progress().amount() + batchesPerTick;
+        cooler.progress().set(progress - Math.floor(progress));
         tanks.process(cooler.filter(), recipe, (int) progress, level.random);
-        owner.setChanged();
         return batchesPerTick;
     }
 
-    void discardBlockedProgress(ServerLevel level) {
-        boolean removed = credit.keySet().removeIf(pos -> !(level.getBlockEntity(pos) instanceof PebbleCooler cooler)
-                || tanks(cooler).processableRecipe(cooler.filter()) == null);
-        if (removed) {
-            owner.setChanged();
+    void restoreLegacyProgress(ServerLevel level, SolidFissionLayout layout) {
+        if (legacyProgress.isEmpty()) {
+            return;
+        }
+        for (BlockPos pos : layout.sinks()) {
+            Double saved = legacyProgress.get(pos);
+            if (saved != null && PebbleCoolerBlock.entity(level, pos) instanceof PebbleCooler cooler) {
+                cooler.progress().restoreFromController(saved);
+            }
+        }
+        legacyProgress.clear();
+        owner.setChanged();
+    }
+
+    void discardBlockedProgress(ServerLevel level, SolidFissionLayout layout) {
+        for (BlockPos pos : layout.sinks()) {
+            if (level.getBlockEntity(pos) instanceof PebbleCooler cooler && cooler.progress().amount() > 0D
+                    && tanks(cooler).processableRecipe(cooler.filter()) == null) {
+                cooler.progress().set(0D);
+            }
         }
     }
 
@@ -162,14 +171,12 @@ final class PebbleCooling {
         }
         tag.put("filtered", filtered);
         ListTag fractions = new ListTag();
-        for (var entry : credit.entrySet()) {
-            if (entry.getValue() > 0) {
-                CompoundTag value = new CompoundTag();
-                value.putLong("pos", entry.getKey().asLong());
-                value.putDouble("value", entry.getValue());
-                fractions.add(value);
-            }
-        }
+        legacyProgress.forEach((pos, amount) -> {
+            CompoundTag value = new CompoundTag();
+            value.putLong("pos", pos.asLong());
+            value.putDouble("value", amount);
+            fractions.add(value);
+        });
         tag.put("fractions", fractions);
         return tag;
     }
@@ -198,12 +205,12 @@ final class PebbleCooling {
                 tanks.load(new CompoundTag());
             }
         });
-        credit.clear();
+        legacyProgress.clear();
         for (Tag stored : tag.getList("fractions", Tag.TAG_COMPOUND)) {
             CompoundTag fraction = (CompoundTag) stored;
             double value = fraction.getDouble("value");
             if (value > 0 && value < 1) {
-                credit.put(BlockPos.of(fraction.getLong("pos")), value);
+                legacyProgress.put(BlockPos.of(fraction.getLong("pos")), value);
             }
         }
     }

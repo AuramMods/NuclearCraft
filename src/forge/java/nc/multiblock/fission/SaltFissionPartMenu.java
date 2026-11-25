@@ -243,8 +243,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         set(RESERVED, fluidId(reserved.getFluid()));
         set(RESERVED_AMOUNT, reserved.getAmount());
         double progress = part.vessel != null ? part.vessel.progressForInspection()
-                : part.coolant != null && !kind.port() && part.controller != null
-                    ? part.controller.heaterProgress(pos, part.coolant) : 0;
+                : part.heater != null && part.controller != null ? part.heater.progress().amount() : 0;
         set(PROGRESS, (int) (1000 * progress));
         set(COOLING, recipe == null ? 0 : recipe.cooling());
         var heat = part.controller == null || kind.port() ? SolidFissionCore.PartHeat.NONE : part.controller.partHeat(pos);

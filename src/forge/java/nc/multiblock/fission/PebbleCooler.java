@@ -16,6 +16,7 @@ import java.util.Objects;
 public final class PebbleCooler extends BlockEntity {
     private final PebbleCoolant gas;
     private final CoolantTanks local;
+    private final CoolantProgress progress = new CoolantProgress(this);
     private @Nullable SolidFissionController controller;
     private @Nullable ResourceLocation filter;
 
@@ -28,6 +29,7 @@ public final class PebbleCooler extends BlockEntity {
     PebbleCoolant gas() { return gas; }
     @Nullable ResourceLocation filter() { return filter; }
     CoolantTanks localTanks() { return local; }
+    CoolantProgress progress() { return progress; }
 
     @Nullable SolidFissionController controller() {
         return controller != null && controller.assembled() ? controller : null;
@@ -57,6 +59,7 @@ public final class PebbleCooler extends BlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("gas", local.save());
+        progress.save(tag);
         if (filter != null) {
             tag.putString("gas_filter", filter.toString());
         }
@@ -66,6 +69,7 @@ public final class PebbleCooler extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         local.load(tag.getCompound("gas"));
+        progress.load(tag);
         var previous = filter;
         filter = tag.contains("gas_filter") ? ResourceLocation.tryParse(tag.getString("gas_filter")) : null;
         if (!Objects.equals(filter, previous) && level instanceof ServerLevel server) {

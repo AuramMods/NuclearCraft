@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 public final class SaltHeater extends BlockEntity {
     private final FissionCoolant coolant;
     private final CoolantTanks local;
+    private final CoolantProgress progress = new CoolantProgress(this);
     private @Nullable SolidFissionController controller;
 
     public SaltHeater(BlockPos pos, BlockState state) {
@@ -20,6 +21,7 @@ public final class SaltHeater extends BlockEntity {
 
     FissionCoolant coolant() { return coolant; }
     CoolantTanks localTanks() { return local; }
+    CoolantProgress progress() { return progress; }
 
     @Nullable SolidFissionController controller() {
         return controller != null && controller.assembled() ? controller : null;
@@ -39,11 +41,13 @@ public final class SaltHeater extends BlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("coolant", local.save());
+        progress.save(tag);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         local.load(tag.getCompound("coolant"));
+        progress.load(tag);
     }
 }
