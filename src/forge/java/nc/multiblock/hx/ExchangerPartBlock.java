@@ -8,11 +8,13 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import org.jetbrains.annotations.Nullable;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -95,6 +97,46 @@ public class ExchangerPartBlock extends Block {
         @Override
         protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
             builder.add(MultiblockFrame.EDGE);
+        }
+    }
+
+    public static final class Redstone extends ExchangerPartBlock {
+        public Redstone(Properties properties) {
+            super(properties, Part.REDSTONE);
+            registerDefaultState(defaultBlockState().setValue(ExchangerWallBlock.ACTIVE, false));
+        }
+
+        @Override
+        protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+            builder.add(ExchangerWallBlock.ACTIVE);
+        }
+
+        @Override
+        public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction side) {
+            return side != null;
+        }
+
+        @Override
+        public void onPlace(BlockState state, Level level, BlockPos pos, BlockState old, boolean moving) {
+            super.onPlace(state, level, pos, old, moving);
+            if (state.getBlock() != old.getBlock()) {
+                updateSignal(state, level, pos);
+            }
+        }
+
+        @Override
+        public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, BlockPos source, boolean moving) {
+            super.neighborChanged(state, level, pos, neighbor, source, moving);
+            updateSignal(state, level, pos);
+        }
+
+        static void updateSignal(BlockState state, Level level, BlockPos pos) {
+            if (!level.isClientSide) {
+                boolean powered = level.hasNeighborSignal(pos);
+                if (powered != state.getValue(ExchangerWallBlock.ACTIVE)) {
+                    level.setBlock(pos, state.setValue(ExchangerWallBlock.ACTIVE, powered), Block.UPDATE_CLIENTS);
+                }
+            }
         }
     }
 

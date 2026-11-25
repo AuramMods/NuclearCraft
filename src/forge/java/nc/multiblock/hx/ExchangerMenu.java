@@ -9,16 +9,30 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 
 public final class ExchangerMenu extends AbstractContainerMenu {
-    static final int ENABLED = 0;
-    static final int NETWORKS = 1;
-    static final int ACTIVE_NETWORKS = 2;
-    static final int ACTIVE_TUBES = 3;
-    static final int COOLANT = 4;
-    static final int RATE_LOW = 5;
-    static final int RATE_HIGH = 6;
-    static final int SHELL_OUTPUT = 7;
-    static final int DATA_COUNT = 8;
+    static final int LENGTH_X = 0;
+    static final int LENGTH_Y = 1;
+    static final int LENGTH_Z = 2;
+    static final int FLAGS = 3;
+    static final int MANUAL = 1;
+    static final int RUNNING = 2;
+
+    // Container properties use 16-bit words. Counts, tank volumes and floating points use two.
+    static final int NETWORKS = 4;
+    static final int ACTIVE_NETWORKS = 6;
+    static final int TUBES = 8;
+    static final int ACTIVE_TUBES = 10;
+    static final int SHELL_INPUT = 12;
+    static final int SHELL_INPUT_CAPACITY = 14;
+    static final int SHELL_OUTPUT = 16;
+    static final int SHELL_OUTPUT_CAPACITY = 18;
+    static final int TUBE_RATE = 20;
+    static final int SHELL_RATE = 22;
+    static final int HEAT_RATE = 24;
+    static final int TEMPERATURE_DIFFERENCE = 26;
+    static final int DATA_COUNT = 28;
+
     public static final int TOGGLE = 0;
+    public static final int CLEAR = 1;
 
     private final ContainerLevelAccess access;
     private final ContainerData data;
@@ -45,8 +59,15 @@ public final class ExchangerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean clickMenuButton(Player player, int id) {
-        if (id == TOGGLE && controller != null && stillValid(player)) {
+        if (controller == null || !stillValid(player)) {
+            return false;
+        }
+        if (id == TOGGLE) {
             controller.toggle();
+            return true;
+        }
+        if (id == CLEAR && player.mayBuild() && player.level().mayInteract(player, controller.getBlockPos())) {
+            controller.computerClear();
             return true;
         }
         return false;
@@ -57,35 +78,26 @@ public final class ExchangerMenu extends AbstractContainerMenu {
         return ItemStack.EMPTY;
     }
 
-    public boolean enabled() {
-        return data.get(ENABLED) != 0;
-    }
+    public boolean condenser() { return condenser; }
+    public boolean enabled() { return (data.get(FLAGS) & MANUAL) != 0; }
+    public boolean running() { return (data.get(FLAGS) & RUNNING) != 0; }
+    public int lengthX() { return data.get(LENGTH_X); }
+    public int lengthY() { return data.get(LENGTH_Y); }
+    public int lengthZ() { return data.get(LENGTH_Z); }
+    public int networks() { return unpack(NETWORKS); }
+    public int activeNetworks() { return unpack(ACTIVE_NETWORKS); }
+    public int tubes() { return unpack(TUBES); }
+    public int activeTubes() { return unpack(ACTIVE_TUBES); }
+    public int shellInput() { return unpack(SHELL_INPUT); }
+    public int shellInputCapacity() { return unpack(SHELL_INPUT_CAPACITY); }
+    public int shellOutput() { return unpack(SHELL_OUTPUT); }
+    public int shellOutputCapacity() { return unpack(SHELL_OUTPUT_CAPACITY); }
+    public float tubeInputRate() { return Float.intBitsToFloat(unpack(TUBE_RATE)); }
+    public int shellInputRate() { return unpack(SHELL_RATE); }
+    public float heatRate() { return Float.intBitsToFloat(unpack(HEAT_RATE)); }
+    public float temperatureDifference() { return Float.intBitsToFloat(unpack(TEMPERATURE_DIFFERENCE)); }
 
-    public int networks() {
-        return data.get(NETWORKS);
-    }
-
-    public int activeNetworks() {
-        return data.get(ACTIVE_NETWORKS);
-    }
-
-    public int activeTubes() {
-        return data.get(ACTIVE_TUBES);
-    }
-
-    public float coolant() {
-        return data.get(COOLANT) / 1000F;
-    }
-
-    public boolean condenser() {
-        return condenser;
-    }
-
-    public float shellOutput() {
-        return data.get(SHELL_OUTPUT) / 1000F;
-    }
-
-    public int cooling() {
-        return (data.get(RATE_HIGH) & 0xFFFF) << 16 | data.get(RATE_LOW) & 0xFFFF;
+    private int unpack(int field) {
+        return (data.get(field) & 0xffff) | ((data.get(field + 1) & 0xffff) << 16);
     }
 }

@@ -1074,6 +1074,18 @@ In a second run of the packaged JAR on Forge 47.4.10, Ender IO 8.2.22-beta fluid
 
 The isolated Auram client loaded all 540 installed mod JARs. KubeJS 2001.6.5-build.16 removed the stock water recipe and added a 275 K coolant. JEI showed the custom recipe and omitted stock water. The assembled condenser used that coolant to turn 1,600 mB of exhaust into 100 mB of condensate. The client used master volume zero and OpenAL No Output. The native observer recorded zero activations, foreground samples, and visible window samples.
 
+### Heat exchanger and condenser controller displays
+
+The controller title shows the interior dimensions. The screen lists active and installed tubes, tube input consumed on the last tick, heat transfer or dissipation, and the mean temperature difference at the active contacts. Hold Shift or Control to see active and installed networks and, on a heat exchanger, shell input consumed on the last tick. Hover over a shell gauge for its exact volume and capacity.
+
+Hold Shift or Control to activate the Clear button. It empties the shell and all saved tube circuits, including any buffered output and accumulated recipe heat. The server checks that the menu still belongs to the assembled controller, the player is within reach, and normal build permissions allow modification. The manual enable button is independent of the controller’s external redstone state. Each redstone port uses the original powered texture when its own input is active.
+
+All 235 local GameTests passed. The menu test verified a 70,001 mB input above the 16-bit sync limit, active flow readings, and rejection of a clear request from outside the menu’s range. Clean packaged Forge 47.4.10 placed a redstone port beside an existing signal. The condenser processed 1,600 mB of exhaust into 100 mB of condensate, held 70,001 mB of coolant, and kept both the port signal and tank contents through restart. Removing the signal switched off the port and condenser.
+
+A separate clean Forge multiplayer client received the full 70,001 mB volume and 320,000 mB capacity. It displayed 784 mB/t of exhaust consumption, about 1,575 H/t of dissipation, and a 150 K mean difference from a live batch. The client loaded the corresponding powered and unpowered redstone textures, kept the tanks on an unmodified Clear press, and received empty tank and circuit data after a menu clear request.
+
+The isolated 540-mod Auram client opened both menus on Forge 47.4.10 and finished loading JEI. A temporary copper conductivity of 1.25 H/t/K kept the fixtures running while the client sampled them. The heat exchanger reported 32 mB/t on the tube side, 1 mB/t on the shell side, 125 H/t, and 100 K. The condenser reported 64 mB/t, about 123 H/t, and 150 K. Both showed the original powered and unpowered textures and synced cleared tanks and circuits. The test removed its fixtures and restored the copied config. The clean and Auram clients used master volume zero and OpenAL No Output with zero focus activations, foreground samples, or visible windows.
+
 ### Placing and removing heat exchanger tubes
 
 Place a stock or scripted tube against another tube to open both touching faces. Any baffle on the existing face carries across to the new connection. A fluid inlet or outlet along the placement axis opens the face of the new tube that touches it. Sneak-place against a tube to copy its settings and match the face at the contact. If the original tube has a connected branch, the copy can open the matching face of a tube in the parallel branch.

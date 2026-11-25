@@ -61,6 +61,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     private double shellSpeed;
     private double temperatureDifference;
     private int shellInputRate;
+    private long tubeInputRate;
     private FluidStack renderedInput = FluidStack.EMPTY;
     private FluidStack renderedOutput = FluidStack.EMPTY;
     private @Nullable RenderVolume renderVolume;
@@ -102,6 +103,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         activeCircuits = activeTubes = 0;
         heatRate = shellSpeed = temperatureDifference = 0D;
         shellInputRate = 0;
+        tubeInputRate = 0L;
         boolean on = computerOn();
         if (layout != null) {
             if (on && !shell.input.isEmpty()) {
@@ -115,6 +117,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                     heatRate = activity.heatRate();
                     shellSpeed = activity.shellSpeed();
                     temperatureDifference = activity.temperatureDifference();
+                    tubeInputRate = activity.tubeInputRate();
                 }
                 shellInputRate = before - shell.input.getFluidAmount();
             }
@@ -166,7 +169,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             heatRate += rate;
             shellSpeed += rate / recipe.cooling();
             temperatureDifference += mean * network.usefulTubes();
-            circuit.process(recipe.id(), recipe.input().amount(), product, recipe.cooling(), capacity, rate);
+            tubeInputRate += circuit.process(recipe.id(), recipe.input().amount(), product, recipe.cooling(), capacity, rate);
         }
     }
 
@@ -240,6 +243,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         layout = result.layout();
         MultiblockFrame.set(server, layout.frames(), true);
         computerPorts.bind(server, layout.computers());
+        for (BlockPos redstone : layout.redstone()) {
+            ExchangerPartBlock.Redstone.updateSignal(server.getBlockState(redstone), server, redstone);
+        }
         var bounds = layout.bounds();
         BlockState state = getBlockState();
         if (state.getValue(ExchangerWallBlock.FACING) != bounds.outward(worldPosition)) {
@@ -463,6 +469,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         shell.clear();
         circuits.values().forEach(Circuit::clear);
         legacyCircuits.clear();
+        if (level instanceof ServerLevel server && layout != null && layout.glass()) {
+            syncRender(server);
+        }
         setChanged();
     }
 
@@ -535,17 +544,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         return new ExchangerMenu(id, condenser, this, ContainerLevelAccess.create(player.level(), worldPosition), new ContainerData() {
             @Override
             public int get(int index) {
-                return switch (index) {
-                    case ExchangerMenu.ENABLED -> enabled ? 1 : 0;
-                    case ExchangerMenu.NETWORKS -> layout == null ? 0 : layout.networks().size();
-                    case ExchangerMenu.ACTIVE_NETWORKS -> activeCircuits;
-                    case ExchangerMenu.ACTIVE_TUBES -> activeTubes;
-                    case ExchangerMenu.COOLANT -> shell.input.fillLevel();
-                    case ExchangerMenu.SHELL_OUTPUT -> condenser ? 0 : shell.output.fillLevel();
-                    case ExchangerMenu.RATE_LOW -> (int) Math.min(Integer.MAX_VALUE, heatRate) & 0xFFFF;
-                    case ExchangerMenu.RATE_HIGH -> (int) Math.min(Integer.MAX_VALUE, heatRate) >>> 16;
-                    default -> 0;
-                };
+                int field = index < ExchangerMenu.NETWORKS ? index : index & ~1;
+                int value = menuValue(field);
+                return index < ExchangerMenu.NETWORKS ? value : value >>> (16 * (index & 1)) & 0xffff;
             }
 
             @Override
@@ -556,6 +557,32 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
                 return ExchangerMenu.DATA_COUNT;
             }
         });
+    }
+
+    private int menuValue(int field) {
+        if (layout == null) {
+            return 0;
+        }
+        return switch (field) {
+            case ExchangerMenu.LENGTH_X -> layout.bounds().xLength() - 2;
+            case ExchangerMenu.LENGTH_Y -> layout.bounds().yLength() - 2;
+            case ExchangerMenu.LENGTH_Z -> layout.bounds().zLength() - 2;
+            case ExchangerMenu.FLAGS -> (enabled ? ExchangerMenu.MANUAL : 0)
+                    | (getBlockState().getValue(ExchangerWallBlock.ACTIVE) ? ExchangerMenu.RUNNING : 0);
+            case ExchangerMenu.NETWORKS -> layout.networks().size();
+            case ExchangerMenu.ACTIVE_NETWORKS -> activeCircuits;
+            case ExchangerMenu.TUBES -> layout.tubes().size();
+            case ExchangerMenu.ACTIVE_TUBES -> activeTubes;
+            case ExchangerMenu.SHELL_INPUT -> shell.input.getFluidAmount();
+            case ExchangerMenu.SHELL_INPUT_CAPACITY -> shell.input.getCapacity();
+            case ExchangerMenu.SHELL_OUTPUT -> condenser ? 0 : shell.output.getFluidAmount();
+            case ExchangerMenu.SHELL_OUTPUT_CAPACITY -> condenser ? 0 : shell.output.getCapacity();
+            case ExchangerMenu.TUBE_RATE -> Float.floatToIntBits(tubeInputRate);
+            case ExchangerMenu.SHELL_RATE -> shellInputRate;
+            case ExchangerMenu.HEAT_RATE -> Float.floatToIntBits((float) Math.min(Float.MAX_VALUE, heatRate));
+            case ExchangerMenu.TEMPERATURE_DIFFERENCE -> Float.floatToIntBits((float) temperatureDifference);
+            default -> 0;
+        };
     }
 
     final class Circuit {
@@ -580,18 +607,20 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
             return id.equals(recipe) ? Math.min(credit, Math.nextDown(required)) : 0D;
         }
 
-        void process(ResourceLocation id, int inputAmount, FluidStack product, double required, int capacity, double rate) {
+        int process(ResourceLocation id, int inputAmount, FluidStack product, double required, int capacity, double rate) {
             double heat = Math.min(credit(id, required) + rate, required * capacity);
             int batches = Math.min(capacity, (int) (heat / required));
             recipe = id;
             credit = Math.max(0D, heat - batches * required);
-            if (batches > 0) {
+            int consumed = batches * inputAmount;
+            if (consumed > 0) {
                 FluidStack produced = product.copy();
                 produced.setAmount(produced.getAmount() * batches);
                 output.fill(produced, FluidAction.EXECUTE);
-                input.drain(batches * inputAmount, FluidAction.EXECUTE);
+                input.drain(consumed, FluidAction.EXECUTE);
             }
             setChanged();
+            return consumed;
         }
 
         void clear() {
@@ -624,10 +653,6 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     final class Tank extends FluidTank {
         Tank(int capacity, Predicate<FluidStack> validator) {
             super(capacity, validator);
-        }
-
-        int fillLevel() {
-            return (int) (1000L * Math.min(getFluidAmount(), getCapacity()) / getCapacity());
         }
 
         @Override

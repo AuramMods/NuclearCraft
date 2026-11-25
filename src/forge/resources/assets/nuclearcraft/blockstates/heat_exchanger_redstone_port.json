@@ -1,7 +1,6 @@
 {
     "variants": {
-        "": {
-            "model": "nuclearcraft:block/heat_exchanger_redstone_port"
-        }
+        "active=false": { "model": "nuclearcraft:block/heat_exchanger_redstone_port" },
+        "active=true": { "model": "nuclearcraft:block/heat_exchanger_redstone_port_on" }
     }
 }

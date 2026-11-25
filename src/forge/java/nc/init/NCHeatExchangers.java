@@ -55,8 +55,8 @@ public final class NCHeatExchangers {
             () -> new ExchangerPartBlock.Casing(metal()));
     public static final RegistryObject<ExchangerPartBlock> GLASS = block("heat_exchanger_glass",
             () -> new ExchangerPartBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).noOcclusion(), Part.GLASS));
-    public static final RegistryObject<ExchangerPartBlock> REDSTONE = block("heat_exchanger_redstone_port",
-            () -> new ExchangerPartBlock(metal(), Part.REDSTONE));
+    public static final RegistryObject<ExchangerPartBlock.Redstone> REDSTONE = block("heat_exchanger_redstone_port",
+            () -> new ExchangerPartBlock.Redstone(metal()));
     public static final RegistryObject<ExchangerPartBlock> BAFFLE = block("heat_exchanger_baffle",
             () -> new ExchangerPartBlock(metal(), Part.BAFFLE));
     public static final RegistryObject<ExchangerWallBlock> CONDENSER = wall("condenser_controller", Part.CONDENSER);

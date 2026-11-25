@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 final class HeatExchange {
-    record Activity(int circuits, int tubes, double heatRate, double shellSpeed, double temperatureDifference) {
-        static final Activity IDLE = new Activity(0, 0, 0D, 0D, 0D);
+    record Activity(int circuits, int tubes, double heatRate, double shellSpeed, double temperatureDifference, long tubeInputRate) {
+        static final Activity IDLE = new Activity(0, 0, 0D, 0D, 0D, 0L);
     }
 
     private record Batch(Circuit circuit, HeatExchangerRecipe recipe, FluidStack product, double heat, int batches) {
@@ -35,8 +35,8 @@ final class HeatExchange {
             return batches * heat - circuit.credit(recipe.id(), heat);
         }
 
-        void exchange(double rate) {
-            circuit.process(recipe.id(), recipe.input().amount(), product, heat, batches, rate);
+        int exchange(double rate) {
+            return circuit.process(recipe.id(), recipe.input().amount(), product, heat, batches, rate);
         }
     }
 
@@ -82,9 +82,10 @@ final class HeatExchange {
         double shellExchange = 0D;
         double totalDifference = 0D;
         int usefulTubes = 0;
+        long tubeInputRate = 0L;
         for (Proposal proposal : proposals) {
             double exchanged = proposal.shared() * shellRate;
-            proposal.tube().exchange(exchanged * proposal.tubeMultiplier());
+            tubeInputRate += proposal.tube().exchange(exchanged * proposal.tubeMultiplier());
             shellExchange += exchanged * proposal.shellMultiplier();
             heatRate += exchanged * proposal.network().conductivity();
             usefulTubes += proposal.network().usefulTubes();
@@ -92,7 +93,7 @@ final class HeatExchange {
         }
         shellBatch.exchange(shellExchange);
         return new Activity(proposals.size(), usefulTubes, heatRate, shellExchange / shellBatch.heat(),
-                usefulTubes == 0 ? 0D : totalDifference / usefulTubes);
+                usefulTubes == 0 ? 0D : totalDifference / usefulTubes, tubeInputRate);
     }
 
     private static double meanDifference(ExchangerLayout.Network network, HeatExchangerRecipe tube, HeatExchangerRecipe shell) {

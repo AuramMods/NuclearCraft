@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import org.jetbrains.annotations.Nullable;
 
 public final class ExchangerWallBlock extends ExchangerPartBlock implements EntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
@@ -65,6 +67,11 @@ public final class ExchangerWallBlock extends ExchangerPartBlock implements Enti
     @Override
     public BlockState mirror(BlockState state, Mirror mirror) {
         return state.setValue(FACING, mirror.mirror(state.getValue(FACING)));
+    }
+
+    @Override
+    public boolean canConnectRedstone(BlockState state, BlockGetter level, BlockPos pos, @Nullable Direction side) {
+        return part(state).controller() && side != null;
     }
 
     @Override

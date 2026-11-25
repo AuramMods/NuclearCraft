@@ -4,8 +4,11 @@ import nc.NuclearCraft;
 import nc.init.NCGasCoolants;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFluids;
+import nc.multiblock.hx.ExchangerController;
+import nc.multiblock.hx.ExchangerMenu;
 import nc.multiblock.hx.ExchangerTubeBlock;
 import nc.multiblock.hx.ExchangerTubeBlock.Setting;
+import nc.multiblock.hx.ExchangerWallBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
@@ -351,6 +354,65 @@ public final class HeatExchangerGameTests {
             player.setShiftKeyDown(previousSneak);
             player.setItemInHand(InteractionHand.MAIN_HAND, previousItem);
         }
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void exchangerReportsRatesAndClearsThroughItsController(GameTestHelper helper) {
+        build(helper, 3);
+        BlockPos redstone = new BlockPos(4, 3, 1);
+        helper.setBlock(redstone, NCHeatExchangers.REDSTONE.get());
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        var controller = (ExchangerController) helper.getBlockEntity(CONTROLLER);
+        ExchangerMenu menu = controller.createMenu(0, player.getInventory(), player);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 12000));
+                    fill(helper, SHELL_IN, Direction.EAST, new FluidStack(Fluids.WATER, 70001));
+                    helper.assertTrue(menu.lengthX() == 3 && menu.lengthY() == 3 && menu.lengthZ() == 3
+                                    && menu.networks() == 1 && menu.tubes() == 3,
+                            "Expose the interior dimensions and installed networks and tubes");
+                    helper.assertTrue(menu.shellInput() == 70001 && menu.shellInputCapacity() == 500000
+                                    && menu.shellOutputCapacity() == 2000000,
+                            "Preserve complete tank amounts and capacities across the 16-bit menu words");
+                    helper.assertTrue(!menu.running() && !menu.enabled()
+                                    && !helper.getBlockState(redstone).getValue(ExchangerWallBlock.ACTIVE),
+                            "The controller starts without a manual or redstone signal");
+                    helper.setBlock(redstone.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(menu.running() && !menu.enabled()
+                                    && helper.getBlockState(redstone).getValue(ExchangerWallBlock.ACTIVE),
+                            "An external signal powers the redstone port and starts the controller");
+                    helper.assertTrue(menu.activeNetworks() == 1 && menu.activeTubes() == 1 && menu.shellInputRate() > 0
+                                    && menu.tubeInputRate() > 0 && menu.heatRate() > 0 && menu.temperatureDifference() > 0,
+                            "Both flows must report consumed fluid alongside heat and temperature");
+                })
+                .thenExecute(() -> helper.setBlock(redstone.north(), Blocks.AIR))
+                .thenWaitUntil(() -> helper.assertTrue(!menu.running()
+                                && !helper.getBlockState(redstone).getValue(ExchangerWallBlock.ACTIVE)
+                                && menu.shellInputRate() == 0 && menu.tubeInputRate() == 0 && menu.heatRate() == 0,
+                        "The redstone port and processing readings turn off when the signal ends"))
+                .thenExecute(() -> {
+                    var oldPosition = player.position();
+                    Vec3 center = Vec3.atCenterOf(helper.absolutePos(CONTROLLER));
+                    try {
+                        player.setPos(center.x + 20, center.y, center.z);
+                        helper.assertTrue(!menu.clickMenuButton(player, ExchangerMenu.CLEAR)
+                                        && menu.shellInput() > 0 && menu.shellOutput() > 0,
+                                "Reject clear requests outside the registered controller's menu range");
+                        player.setPos(center.x, center.y, center.z - 1);
+                        helper.assertTrue(menu.clickMenuButton(player, ExchangerMenu.CLEAR),
+                                "The nearby player can clear the assembled exchanger");
+                    } finally {
+                        player.setPos(oldPosition.x, oldPosition.y, oldPosition.z);
+                    }
+                    helper.assertTrue(menu.shellInput() == 0 && menu.shellOutput() == 0
+                                    && fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                    && fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0).isEmpty(),
+                            "Clearing must empty both the shell and tube circuit, including output");
+                })
+                .thenSucceed();
     }
 
     private static void assertOutputs(GameTestHelper helper, BlockPos shellOutlet) {

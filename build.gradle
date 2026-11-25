@@ -330,6 +330,7 @@ tasks.named('processResources', ProcessResources) {
         include 'assets/nuclearcraft/textures/gui/container/fission_irradiator_port.png'
         include 'assets/nuclearcraft/textures/gui/container/fission_heater_port.png'
         include 'assets/nuclearcraft/textures/blocks/heat_exchanger/**/*.png'
+        include 'assets/nuclearcraft/textures/gui/container/heat_exchanger_controller.png'
         include 'assets/nuclearcraft/textures/gui/container/condenser_controller.png'
         include 'assets/nuclearcraft/textures/gui/container/decay_pool_controller.png'
         include 'assets/nuclearcraft/textures/items/multitool.png'
