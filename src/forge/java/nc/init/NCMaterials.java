@@ -13,8 +13,11 @@ import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.RecordItem;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
@@ -22,7 +25,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.furnace.FurnaceFuelBurnTimeEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +46,7 @@ final class NCMaterials {
     private NCMaterials() {}
 
     static void register() {
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, NCMaterials::addSugarFuels);
         for (String name : List.of("copper", "tin", "lead", "thorium", "uranium", "boron", "lithium", "magnesium")) {
             block(name + "_ore", BlockBehaviour.Properties.copy(Blocks.IRON_ORE));
         }
@@ -138,6 +146,13 @@ final class NCMaterials {
         }
     }
 
+    private static void addSugarFuels(FurnaceFuelBurnTimeEvent event) {
+        ItemStack stack = event.getItemStack();
+        if (event.getBurnTime() == 0 && (stack.is(Items.SUGAR_CANE) || stack.is(Items.SUGAR))) {
+            event.setBurnTime(200);
+        }
+    }
+
     private static void food(String id, int nutrition, float saturation, boolean meat, int ticks, int amplifier,
                              boolean display, MobEffect... effects) {
         var food = new FoodProperties.Builder().nutrition(nutrition).saturationMod(saturation);
@@ -167,7 +182,15 @@ final class NCMaterials {
     }
 
     private static RegistryObject<Item> item(String id, Item.Properties properties) {
-        var item = NCRegistries.ITEMS.register(id, () -> new Item(properties));
+        var item = NCRegistries.ITEMS.register(id, () -> switch (id) {
+            case "graphite_ingot", "graphite_dust", "coal_dust" -> new Item(properties) {
+                @Override
+                public int getBurnTime(ItemStack stack, @Nullable RecipeType<?> recipeType) {
+                    return 1_600;
+                }
+            };
+            default -> new Item(properties);
+        });
         MATERIALS.add(item);
         return item;
     }
@@ -198,6 +221,14 @@ final class NCMaterials {
             };
             default -> new Block(properties);
         });
-        MATERIALS.add(NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties())));
+        MATERIALS.add(NCRegistries.ITEMS.register(id, () -> switch (id) {
+            case "graphite_block" -> new BlockItem(block.get(), new Item.Properties()) {
+                @Override
+                public int getBurnTime(ItemStack stack, @Nullable RecipeType<?> recipeType) {
+                    return 16_000;
+                }
+            };
+            default -> new BlockItem(block.get(), new Item.Properties());
+        }));
     }
 }

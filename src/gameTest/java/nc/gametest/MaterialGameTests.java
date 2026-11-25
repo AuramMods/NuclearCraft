@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.gametest.GameTestHolder;
@@ -29,6 +30,25 @@ import net.minecraftforge.registries.ForgeRegistries;
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class MaterialGameTests {
+    @GameTest(template = "empty")
+    public static void legacyFurnaceFuelsKeepTheirBurnTimes(GameTestHelper helper) {
+        for (String id : new String[]{"graphite_ingot", "graphite_dust", "coal_dust"}) {
+            helper.assertTrue(ForgeHooks.getBurnTime(item(id).getDefaultInstance(), RecipeType.SMELTING) == 1_600,
+                    id + " burns for 1,600 ticks");
+        }
+        helper.assertTrue(ForgeHooks.getBurnTime(item("graphite_block").getDefaultInstance(), RecipeType.SMELTING)
+                == 16_000, "A graphite block burns for 16,000 ticks");
+        for (Item sugar : new Item[]{Items.SUGAR_CANE, Items.SUGAR}) {
+            helper.assertTrue(ForgeHooks.getBurnTime(sugar.getDefaultInstance(), RecipeType.SMELTING) == 200,
+                    sugar + " burns for 200 ticks");
+        }
+        helper.assertTrue(ForgeHooks.getBurnTime(Items.COAL.getDefaultInstance(), RecipeType.SMELTING) == 1_600,
+                "Vanilla coal retains its original burn time");
+        helper.assertTrue(ForgeHooks.getBurnTime(item("boron_nitride_dust").getDefaultInstance(), RecipeType.SMELTING)
+                == 0, "Other dusts do not become furnace fuel");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty")
     public static void taggedMaterialPackingKeepsItsMatchingRulesAfterSync(GameTestHelper helper) {
         var id = NuclearCraft.id("materials/packing/copper_block");

@@ -2022,6 +2022,16 @@ The final JAR placed part of a naturally generated vault nine chunks from its en
 
 The same JAR logged in and loaded JEI in the isolated 539-JAR Auram snapshot on Forge 47.4.18. On shutdown the integrated server saved four natural vaults with 29, 33, 32, and 30 pieces. The client used OpenAL No Output and exited with zero activation, foreground, and visible window samples. The snapshot used Imperium 1.0.9. The live pack updated to 1.0.10 during the test.
 
+### Vanilla furnace fuels
+
+Graphite ingots, graphite dust, and coal dust each burn for 1,600 ticks. A graphite block burns for 16,000 ticks. Sugar cane and sugar each burn for 200 ticks. These are the 2o.9.7 values used by the Forge furnace fuel interface.
+
+When converting an inventory or script, map metadata 8 of the legacy ingot, dust, and ingot storage block to `nuclearcraft:graphite_ingot`, `nuclearcraft:graphite_dust`, and `nuclearcraft:graphite_block`. Map metadata 7 of the legacy gem dust to `nuclearcraft:coal_dust`. Sugar cane and sugar use `minecraft:sugar_cane` and `minecraft:sugar`.
+
+All 243 local GameTests passed. On clean packaged Forge 47.4.10, vanilla hoppers supplied each of the six fuels to separate furnaces. Each furnace smelted one iron ingot. With Auram's installed Ender IO 8.2.22-beta and Mekanism 10.4.16.80, an Item Conduit supplied graphite dust and a Basic Logistical Transporter supplied sugar cane to two more furnaces. Both batches completed. The exact output counts survived confirmed chunk eviction and a dedicated restart.
+
+KubeJS packs can set `item.burnTime` in `ItemEvents.modification`, with zero disabling the fuel. In the isolated Auram profile with all 540 installed mod JARs, JEI listed graphite dust at the scripted 400 ticks and omitted the disabled sugar cane. A vanilla furnace smelted two raw iron with one graphite dust, another left the disabled sugar cane in its fuel slot, and a third smelted one raw iron with one sugar. The client used master volume zero and OpenAL No Output. The observer recorded zero activations, foreground samples, or visible window samples.
+
 ### Nuclear Furnace
 
 The block, item, block entity, and menu use `nuclearcraft:nuclear_furnace`. The original recipe surrounds a furnace with Basic Plating at the corners and Tough Alloy along the edges. The Nuclear Furnace uses the server's `minecraft:smelting` recipes and displays them through JEI's smelting category. It cooks one input in ten ticks, preserves recipe output counts, and ignites fresh fuel only when a recipe result can fit. Forge-tagged uranium ingots and dusts burn for 320 ticks and uranium storage blocks burn for 3,200 ticks. The furnace emits the legacy LEU-235 fission radiation rate during its burn. [Forge furnace support](https://raw.githubusercontent.com/MinecraftForge/MinecraftForge/1.20.1/patches/minecraft/net/minecraft/world/level/block/entity/AbstractFurnaceBlockEntity.java.patch)
