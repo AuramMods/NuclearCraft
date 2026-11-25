@@ -9,6 +9,7 @@
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
+        "compat.EnderIoCapabilityLookups",
         "compat.RefinedStorageLookups",
         "compat.DraconicCrystalLookups",
         "compat.EslEnergyAdapter",
