@@ -2,6 +2,7 @@
     "required": true,
     "minVersion": "0.8",
     "package": "nc.mixin",
+    "plugin": "nc.mixin.CompatibilityMixinPlugin",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
         "IntegratedServerHandshake",
@@ -9,6 +10,7 @@
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
+        "compat.BetterChunkLoadingWaiting",
         "compat.EnderIoCapabilityLookups",
         "compat.RefinedStorageLookups",
         "compat.DraconicCrystalLookups",

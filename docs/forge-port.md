@@ -504,6 +504,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Satiscraftory | 1.1.3 | Conveyor transfer on sided processors and battery power for the Smelter |
 | Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
+| Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
 | Almost Unified | 0.11.0 | Recipe and output unification for common Forge material tags |
 
@@ -2445,6 +2446,14 @@ A dedicated Forge 47.4.10 server reproduced that loss with NuclearCraft absent. 
 In `config/betterchunkloading.json`, setting `optimizeWaiting.optimizeWaiting` to `false` preserved all four circuits through three confirmed evictions and a dedicated restart. `enableFasterChunkTasks` remained enabled in that test. Disabling only `enableFasterChunkTasks` reproduced the loss. With `optimizeWaiting` enabled, Better Chunk Loading 5.4 can schedule a second task for a pending chunk status and take whichever future completes first.
 
 Changing just `optimizeWaiting` in the isolated 540-mod Auram copy preserved all six fresh fixtures through complete eviction and reload. The fluid-only control retained its 500 mB of water and its nine-diamond barrel. The other fixtures kept their exact charge, fluids, items, and markers. The test used the same packaged NuclearCraft JAR and installed mod versions.
+
+### Better Chunk Loading
+
+With Better Chunk Loading 5.4 on Forge 1.20.1, NuclearCraft bypasses the duplicate scheduling path in `optimizeWaiting`. That path removes a pending status future from its chunk holder, schedules a second task for the same status, and takes the first result. The compatibility patch uses the existing future. It applies to that Better Chunk Loading release and kept `config/betterchunkloading.json` byte-identical in the dedicated test. [Better Chunk Loading 5.4](https://www.curseforge.com/minecraft/mc-mods/better-chunk-loading-forge-fabric/files/6210180)
+
+The previous JAR lost the water and marker barrels in three of four control chunks in a repeat of the dedicated Forge 47.4.10 test. The patched JAR retained 500 mB of water and nine diamonds in each of the four controls through three confirmed chunk evictions and a dedicated restart. Both Chemical Reactor circuits also retained their 1,000 mB of hydrofluoric acid and 333 mB of calcium sulfate solution through the Ender IO 8.2.22-beta and Mekanism 10.4.16.80 outlets. Both configuration flags, `optimizeWaiting` and `enableFasterChunkTasks`, were true on disk for both runs. All 279 local GameTests passed. The packaged JAR also completed all 40 coolant part Infuser recipes on clean dedicated Forge.
+
+With the original configuration in the isolated 540-mod Auram copy, all six fixtures fully evicted and retained their data on reload. A fresh client reopened the save and verified the same six marker barrels, 500 mB of water, both Chemical Reactor products, 17 iron ingots, and both energy routes. The config file stayed byte-identical. Both clients loaded JEI, used master volume zero and OpenAL No Output, and recorded zero focus activations, foreground samples, or visible windows.
 
 ### Processor radiation
 
