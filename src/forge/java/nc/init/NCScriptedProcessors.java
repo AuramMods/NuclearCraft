@@ -10,7 +10,6 @@ import nc.processor.ProcessorBlock;
 import nc.processor.ProcessorFluidTanks;
 import nc.processor.ProcessorLayout;
 import nc.processor.ProcessorProfile;
-import nc.processor.ScriptedProcessorBlock;
 import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.flag.FeatureFlags;
@@ -177,10 +176,10 @@ final class NCScriptedProcessors {
             addTanks(tankSlots, layout.fluidOutputs(), true);
             tanks = List.copyOf(tankSlots);
 
-            block = NCRegistries.BLOCKS.register(id, () -> new ScriptedProcessorBlock(
+            block = NCRegistries.BLOCKS.register(id, () -> new ProcessorBlock<>(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                             .lightLevel(state -> state.getValue(ProcessorBlock.LIT) ? 7 : 0),
-                    this, particles));
+                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory, particles));
             item = NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
                     (pos, state) -> new ItemProcessorBlockEntity(pos, state, this), block.get()).build(null));

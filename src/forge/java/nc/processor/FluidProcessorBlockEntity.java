@@ -1,7 +1,6 @@
 package nc.processor;
 
 import nc.radiation.ChunkRadiationSource;
-import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Rate;
@@ -65,7 +64,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
-        boolean running = machine.process(level, MachineInterface.powered(level, pos, machine));
+        boolean running = machine.process(level, machine.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, running);
         machine.fluids.push(level);
         if (!running) {
@@ -298,6 +297,9 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 }
                 if (index == FluidProcessorMenu.separationIndex(machine)) {
                     return fluids.separatesInputs() ? 1 : 0;
+                }
+                if (index == FluidProcessorMenu.redstoneIndex(machine)) {
+                    return redstoneControl() ? 1 : 0;
                 }
                 int tank = (index - FluidProcessorMenu.FIRST_TANK) / FluidProcessorMenu.TANK_DATA_SIZE;
                 return switch ((index - FluidProcessorMenu.FIRST_TANK) % FluidProcessorMenu.TANK_DATA_SIZE) {

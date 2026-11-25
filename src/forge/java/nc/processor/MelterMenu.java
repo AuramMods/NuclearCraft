@@ -23,7 +23,8 @@ public final class MelterMenu extends AbstractContainerMenu {
     static final int FLUID_ID = 3;
     static final int FLUID_SIDES = 4;
     static final int FLUID_OUTPUT_MODE = 5;
-    static final int DATA_COUNT = 6;
+    static final int REDSTONE = 6;
+    static final int DATA_COUNT = 7;
     public static final int FIRST_FLUID_SIDE_BUTTON = 6;
     public static final int FLUID_OUTPUT_BUTTON = 12;
     public static final int UPGRADE_Y = 64;
@@ -70,6 +71,10 @@ public final class MelterMenu extends AbstractContainerMenu {
         if (melter == null || button < 0 || !stillValid(player)) {
             return false;
         }
+        if (button == ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON) {
+            melter.toggleRedstoneControl();
+            return true;
+        }
         if (button < ProcessorItemPorts.SIDES.length) {
             melter.itemPorts().cycleGroup(Direction.from3DDataValue(button));
             return true;
@@ -83,6 +88,10 @@ public final class MelterMenu extends AbstractContainerMenu {
             return true;
         }
         return items.click(button) || ProcessorFluidActions.click(melter.fluidTanks(), button);
+    }
+
+    public boolean redstoneControl() {
+        return data.get(REDSTONE) != 0;
     }
 
     public float progress() {

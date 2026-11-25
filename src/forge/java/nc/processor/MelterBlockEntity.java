@@ -1,7 +1,6 @@
 package nc.processor;
 
 import nc.radiation.ChunkRadiationSource;
-import nc.automation.MachineInterface;
 import nc.automation.MachineInterfaceTarget;
 import nc.init.NCItemProcessors.Rate;
 
@@ -74,7 +73,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
-        boolean processing = melter.process(level, MachineInterface.powered(level, pos, melter));
+        boolean processing = melter.process(level, melter.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, processing);
         melter.fluids.push(level);
         if (!processing) {
@@ -205,6 +204,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                     case MelterMenu.FLUID_ID -> BuiltInRegistries.FLUID.getId(fluids.stored(0).getFluid());
                     case MelterMenu.FLUID_SIDES -> fluids.sideModes(0);
                     case MelterMenu.FLUID_OUTPUT_MODE -> fluids.setting(0);
+                    case MelterMenu.REDSTONE -> redstoneControl() ? 1 : 0;
                     default -> 0;
                 };
             }

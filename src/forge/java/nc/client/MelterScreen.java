@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.processor.MelterMenu;
 import nc.processor.ProcessorFluidActions;
 import nc.processor.ProcessorFluidTanks;
+import nc.processor.ProcessorMenuNetwork;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -49,6 +50,8 @@ public final class MelterScreen extends AbstractContainerScreen<MelterMenu> {
         overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.processor_items.overflow"),
                         ignored -> send(MelterMenu.FLUID_OUTPUT_BUTTON))
                 .bounds(leftPos + 136, topPos + 8, 35, 14).build());
+        addRenderableWidget(new ProcessorRedstoneButton(leftPos + 108, topPos + 17,
+                menu::redstoneControl, ignored -> send(ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON)));
     }
 
     private void send(int button) {

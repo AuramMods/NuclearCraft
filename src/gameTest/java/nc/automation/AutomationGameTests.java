@@ -110,6 +110,10 @@ public final class AutomationGameTests {
     public static void interfaceRunsACompleteMelterBatchAndRelaysRedstone(GameTestHelper helper) {
         helper.setBlock(INTERFACE, NCAutomation.MACHINE_INTERFACE.get());
         helper.setBlock(TARGET, NCRegistries.MELTER.get());
+        var melter = helper.getBlockEntity(TARGET);
+        var savedMode = melter.saveWithoutMetadata();
+        savedMode.putBoolean("redstone_control", true);
+        melter.load(savedMode);
         helper.setBlock(INTERFACE.north(), Blocks.REDSTONE_BLOCK);
         var bridge = helper.getBlockEntity(INTERFACE);
         helper.startSequence()

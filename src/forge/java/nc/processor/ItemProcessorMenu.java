@@ -93,16 +93,18 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataSize(ProcessorProfile machine) {
-        return machine.scripted() ? redstoneDataIndex(machine) + 1
-                : machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
+        return redstoneDataIndex(machine) + 1;
     }
 
     static int redstoneDataIndex(ProcessorProfile machine) {
-        return DATA_COUNT + machine.tanks().size() * TANK_DATA;
+        if (machine.scripted()) {
+            return DATA_COUNT + machine.tanks().size() * TANK_DATA;
+        }
+        return machine.tank() == null ? DATA_COUNT : FLUID_OUTPUT_MODE + 1;
     }
 
     public boolean redstoneControl() {
-        return !machine.scripted() || data.get(redstoneDataIndex(machine)) != 0;
+        return data.get(redstoneDataIndex(machine)) != 0;
     }
 
     public ProcessorProfile machine() {
@@ -209,12 +211,12 @@ public final class ItemProcessorMenu extends AbstractContainerMenu {
             processor.cycleSide(SIDES[button]);
             return true;
         }
+        if (button == (machine.scripted() ? REDSTONE_BUTTON : ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON)) {
+            processor.toggleRedstoneControl();
+            return true;
+        }
         ProcessorFluidTanks tanks = processor.fluidTanks();
         if (machine.scripted()) {
-            if (button == REDSTONE_BUTTON) {
-                processor.toggleRedstoneControl();
-                return true;
-            }
             if (button < SCRIPTED_TANK_BUTTON) {
                 return items.click(button);
             }

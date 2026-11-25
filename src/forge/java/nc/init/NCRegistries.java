@@ -88,7 +88,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> ELECTROLYZER =
             BLOCKS.register("electrolyzer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.ELECTROLYZER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+                    () -> NCRegistries.ELECTROLYZER_ENTITY.get(), FluidProcessorBlockEntity::tick, null,
+                    NCItemProcessors.Rate.ELECTROLYZER.particles()));
     public static final RegistryObject<Item> ELECTROLYZER_ITEM =
             ITEMS.register("electrolyzer", () -> new BlockItem(ELECTROLYZER.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> ELECTROLYZER_ENTITY =
@@ -105,7 +106,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> SALT_MIXER =
             BLOCKS.register("salt_mixer", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.SALT_MIXER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+                    () -> NCRegistries.SALT_MIXER_ENTITY.get(), FluidProcessorBlockEntity::tick, null,
+                    NCItemProcessors.Rate.SALT_MIXER.particles()));
     public static final RegistryObject<Item> SALT_MIXER_ITEM =
             ITEMS.register("salt_mixer", () -> new BlockItem(SALT_MIXER.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> SALT_MIXER_ENTITY =
@@ -122,7 +124,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> CHEMICAL_REACTOR =
             BLOCKS.register("chemical_reactor", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+                    () -> NCRegistries.CHEMICAL_REACTOR_ENTITY.get(), FluidProcessorBlockEntity::tick, null,
+                    NCItemProcessors.Rate.CHEMICAL_REACTOR.particles()));
     public static final RegistryObject<Item> CHEMICAL_REACTOR_ITEM =
             ITEMS.register("chemical_reactor", () -> new BlockItem(CHEMICAL_REACTOR.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> CHEMICAL_REACTOR_ENTITY =
@@ -139,7 +142,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> ENRICHER =
             BLOCKS.register("enricher", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.ENRICHER_ENTITY.get(), FluidProcessorBlockEntity::tick, FluidProcessorBlockEntity::inventory));
+                    () -> NCRegistries.ENRICHER_ENTITY.get(), FluidProcessorBlockEntity::tick, FluidProcessorBlockEntity::inventory,
+                    NCItemProcessors.Rate.ENRICHER.particles()));
     public static final RegistryObject<Item> ENRICHER_ITEM =
             ITEMS.register("enricher", () -> new BlockItem(ENRICHER.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> ENRICHER_ENTITY =
@@ -156,7 +160,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> SUPERCOOLER =
             BLOCKS.register("supercooler", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.SUPERCOOLER_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+                    () -> NCRegistries.SUPERCOOLER_ENTITY.get(), FluidProcessorBlockEntity::tick, null,
+                    NCItemProcessors.Rate.SUPERCOOLER.particles()));
     public static final RegistryObject<Item> SUPERCOOLER_ITEM =
             ITEMS.register("supercooler", () -> new BlockItem(SUPERCOOLER.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> SUPERCOOLER_ENTITY =
@@ -173,7 +178,8 @@ public final class NCRegistries {
 
     public static final RegistryObject<ProcessorBlock<FluidProcessorBlockEntity>> CENTRIFUGE =
             BLOCKS.register("centrifuge", () -> new ProcessorBlock<>(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK),
-                    () -> NCRegistries.CENTRIFUGE_ENTITY.get(), FluidProcessorBlockEntity::tick, null));
+                    () -> NCRegistries.CENTRIFUGE_ENTITY.get(), FluidProcessorBlockEntity::tick, null,
+                    NCItemProcessors.Rate.CENTRIFUGE.particles()));
     public static final RegistryObject<Item> CENTRIFUGE_ITEM =
             ITEMS.register("centrifuge", () -> new BlockItem(CENTRIFUGE.get(), new Item.Properties()));
     public static final RegistryObject<BlockEntityType<FluidProcessorBlockEntity>> CENTRIFUGE_ENTITY =

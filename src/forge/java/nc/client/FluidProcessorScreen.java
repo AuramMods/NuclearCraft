@@ -4,6 +4,7 @@ import nc.NuclearCraft;
 import nc.processor.ProcessorFluidActions;
 import nc.processor.FluidProcessorMenu;
 import nc.processor.ProcessorFluidTanks;
+import nc.processor.ProcessorMenuNetwork;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
@@ -92,6 +93,8 @@ public final class FluidProcessorScreen extends AbstractContainerScreen<FluidPro
             selectedTank = ITEM_INPUT;
             items.toggle();
         }).bounds(leftPos + (multipleInputs ? 64 : 50), topPos + 16, multipleInputs ? 37 : 40, 14).build());
+        addRenderableWidget(new ProcessorRedstoneButton(leftPos + 27, topPos + (multipleInputs ? 53 : 16),
+                menu::redstoneControl, ignored -> send(ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON)));
     }
 
     private void send(int button) {

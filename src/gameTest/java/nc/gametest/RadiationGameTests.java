@@ -327,6 +327,9 @@ public final class RadiationGameTests {
         helper.setBlock(hastenerPos, Machine.DECAY_HASTENER.block());
         helper.setBlock(crystallizerPos, Machine.CRYSTALLIZER.block());
         var hastener = helper.getBlockEntity(hastenerPos);
+        var savedMode = hastener.saveWithoutMetadata();
+        savedMode.putBoolean("redstone_control", true);
+        hastener.load(savedMode);
         var crystallizer = helper.getBlockEntity(crystallizerPos);
         var hasteSource = (ChunkRadiationSource) hastener;
         var crystalSource = (ChunkRadiationSource) crystallizer;

@@ -27,7 +27,6 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
     private final ProcessorItemControls items;
     private Button slotConfig;
     private Button overflow;
-    private @Nullable Button redstone;
     private int selectedTank = -1;
 
     public ItemProcessorScreen(ItemProcessorMenu menu, Inventory inventory, Component title) {
@@ -72,16 +71,12 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
         overflow = addRenderableWidget(Button.builder(Component.translatable("gui.nuclearcraft.electrolyzer.overflow"),
                         ignored -> send(items.outputSelected() ? items.overflowButton() : tankPolicyButton(Math.max(0, selectedTank))))
                 .bounds(leftPos + overflowOrigin.x(), topPos + overflowOrigin.y(), 35, 14).build());
-        if (layout != null && layout.redstone().visible()) {
-            var position = layout.redstone();
-            redstone = addRenderableWidget(Button.builder(redstoneLabel(), button -> send(ItemProcessorMenu.REDSTONE_BUTTON))
-                    .bounds(leftPos + position.x(), topPos + position.y(), 18, 14).build());
+        var redstone = layout == null ? new ProcessorLayout.Point(108, 17) : layout.redstone();
+        if (redstone.visible()) {
+            int buttonId = machine.scripted() ? ItemProcessorMenu.REDSTONE_BUTTON : ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON;
+            addRenderableWidget(new ProcessorRedstoneButton(leftPos + redstone.x(), topPos + redstone.y(),
+                    menu::redstoneControl, ignored -> send(buttonId)));
         }
-    }
-
-    private Component redstoneLabel() {
-        int color = menu.redstoneControl() ? 0xFF7777 : 0xBBBBBB;
-        return Component.translatable("gui.nuclearcraft.processor.redstone").withStyle(style -> style.withColor(color));
     }
 
     private void send(int button) {
@@ -151,11 +146,6 @@ public final class ItemProcessorScreen extends AbstractContainerScreen<ItemProce
             overflow.setTooltip(Tooltip.create(items.outputSelected() ? items.overflowTooltip()
                     : tank < menu.machine().fluidInputs() ? FluidTankControls.inputPolicy(menu.discardsFluidInput(tank))
                     : Component.translatable("gui.nuclearcraft.electrolyzer.output_mode", menu.fluidOutputMode(tank).label())));
-        }
-        if (redstone != null) {
-            redstone.setMessage(redstoneLabel());
-            redstone.setTooltip(Tooltip.create(Component.translatable(menu.redstoneControl()
-                    ? "gui.nuclearcraft.processor.redstone_enabled" : "gui.nuclearcraft.processor.redstone_disabled")));
         }
         renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, partialTick);

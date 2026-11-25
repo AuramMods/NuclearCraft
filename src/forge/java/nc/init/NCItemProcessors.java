@@ -59,7 +59,7 @@ public final class NCItemProcessors {
                 .define("ore_processing", true);
         SMART_PROCESSOR_INPUT = builder.comment("Accept processor ingredients that can be combined with the other stored inputs.")
                 .define("smart_processor_input", true);
-        PROCESSOR_PARTICLES = builder.comment("Show configured particles from running scripted processors.")
+        PROCESSOR_PARTICLES = builder.comment("Show particles from running stock and scripted processors.")
                 .define("processor_particles", true);
         DEFAULT_RECIPES_GLOBAL = builder.comment("Enable the default recipe catalogs for NuclearCraft processors.")
                 .define("default_processor_recipes_global", true);
@@ -208,18 +208,39 @@ public final class NCItemProcessors {
 
     // The order matches the two 1.12.2 processor config arrays.
     public enum Rate implements ProcessorProfile.Rates {
-        MANUFACTORY(400, 20), SEPARATOR(800, 10), DECAY_HASTENER(800, 10), FUEL_REPROCESSOR(400, 20),
-        ALLOY_FURNACE(400, 10), INFUSER(600, 10), MELTER(800, 40), SUPERCOOLER(600, 20),
-        ELECTROLYZER(3200, 40), ASSEMBLER(600, 10), INGOT_FORMER(400, 0), PRESSURIZER(600, 40),
-        CHEMICAL_REACTOR(800, 10), SALT_MIXER(600, 20), CRYSTALLIZER(1600, 10), ENRICHER(600, 10),
-        EXTRACTOR(2400, 10), CENTRIFUGE(1200, 10), ROCK_CRUSHER(400, 20), ELECTRIC_FURNACE(200, 20);
+        MANUFACTORY(400, 20, "crit", "reddust"),
+        SEPARATOR(800, 10, "reddust", "smoke"),
+        DECAY_HASTENER(800, 10, "reddust"),
+        FUEL_REPROCESSOR(400, 20, "reddust", "smoke"),
+        ALLOY_FURNACE(400, 10, "reddust", "smoke"),
+        INFUSER(600, 10, "portal", "reddust"),
+        MELTER(800, 40, "flame", "lava"),
+        SUPERCOOLER(600, 20, "smoke", "snowshovel"),
+        ELECTROLYZER(3200, 40, "reddust", "splash"),
+        ASSEMBLER(600, 10, "crit", "smoke"),
+        INGOT_FORMER(400, 0, "smoke"),
+        PRESSURIZER(600, 40, "smoke"),
+        CHEMICAL_REACTOR(800, 10, "reddust"),
+        SALT_MIXER(600, 20, "endRod", "reddust"),
+        CRYSTALLIZER(1600, 10, "depthsuspend"),
+        ENRICHER(600, 10, "depthsuspend", "splash"),
+        EXTRACTOR(2400, 10, "depthsuspend", "reddust"),
+        CENTRIFUGE(1200, 10, "depthsuspend", "endRod"),
+        ROCK_CRUSHER(400, 20, "smoke"),
+        ELECTRIC_FURNACE(200, 20, "reddust", "smoke");
 
         private final int stockTime;
         private final int stockPower;
+        private final List<String> particles;
 
-        Rate(int stockTime, int stockPower) {
+        Rate(int stockTime, int stockPower, String... particles) {
             this.stockTime = stockTime;
             this.stockPower = stockPower;
+            this.particles = List.of(particles);
+        }
+
+        public List<String> particles() {
+            return particles;
         }
 
         @Override
@@ -311,7 +332,7 @@ public final class NCItemProcessors {
             block = NCRegistries.BLOCKS.register(id, () -> new ProcessorBlock<>(
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                             .lightLevel(state -> state.getValue(ProcessorBlock.LIT) ? 7 : 0),
-                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory));
+                    this::entityType, ItemProcessorBlockEntity::tick, ItemProcessorBlockEntity::inventory, rate.particles()));
             item = NCRegistries.ITEMS.register(id, () -> new BlockItem(block.get(), new Item.Properties()));
             entity = NCRegistries.BLOCK_ENTITIES.register(id, () -> BlockEntityType.Builder.of(
                     (pos, state) -> new ItemProcessorBlockEntity(pos, state, this), block.get()).build(null));

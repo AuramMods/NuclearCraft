@@ -6,6 +6,9 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class ProcessorMenuNetwork {
+    // Stock menus use the vanilla signed-byte button packet.
+    public static final int STOCK_REDSTONE_BUTTON = 121;
+
     private static final String PROTOCOL = "1";
     private static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(NuclearCraft.id("processor_menu"),
             () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);

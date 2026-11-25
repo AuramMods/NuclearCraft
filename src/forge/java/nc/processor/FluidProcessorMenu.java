@@ -69,11 +69,19 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     }
 
     static int dataCount(Machine type) {
-        return separationIndex(type) + 1;
+        return redstoneIndex(type) + 1;
     }
 
     static int separationIndex(Machine type) {
         return FIRST_TANK + type.tanks() * TANK_DATA_SIZE;
+    }
+
+    static int redstoneIndex(Machine type) {
+        return separationIndex(type) + 1;
+    }
+
+    public boolean redstoneControl() {
+        return data.get(redstoneIndex(type)) != 0;
     }
 
     public ProcessorItemSettings items() {
@@ -129,6 +137,10 @@ public final class FluidProcessorMenu extends AbstractContainerMenu {
     public boolean clickMenuButton(Player player, int button) {
         if (machine == null || !stillValid(player) || button < 0) {
             return false;
+        }
+        if (button == ProcessorMenuNetwork.STOCK_REDSTONE_BUTTON) {
+            machine.toggleRedstoneControl();
+            return true;
         }
         if (button < outputModeButton(0)) {
             machine.cycleSide(button / SIDES.length, SIDES[button % SIDES.length]);

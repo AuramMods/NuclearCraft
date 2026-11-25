@@ -1,5 +1,6 @@
 package nc.processor;
 
+import nc.automation.MachineInterface;
 import nc.init.NCItemProcessors;
 import nc.processor.ProcessorProfile.Rates;
 import net.minecraft.core.BlockPos;
@@ -21,21 +22,41 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     final Rates rate;
     private final int baseCapacity;
     private final boolean generator;
+    private boolean redstoneControl;
     private double basePower;
     double batchTicks;
     double progressHalfTicks;
 
     UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rates rate, int baseCapacity) {
-        this(type, pos, state, rate, baseCapacity, false);
+        this(type, pos, state, rate, baseCapacity, false, false);
     }
 
     UpgradableProcessorBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, Rates rate,
-                                   int baseCapacity, boolean generator) {
+                                   int baseCapacity, boolean generator, boolean redstoneControl) {
         super(type, pos, state);
         this.rate = rate;
         this.baseCapacity = baseCapacity;
         this.generator = generator;
+        this.redstoneControl = redstoneControl;
         power = new ProcessorEnergy(this, Integer.MAX_VALUE, this::energyCapacity, generator);
+    }
+
+    final boolean redstoneControl() {
+        return redstoneControl;
+    }
+
+    final boolean redstoneHalted(Level level, BlockPos pos) {
+        return redstoneControl && MachineInterface.powered(level, pos, this);
+    }
+
+    final void toggleRedstoneControl() {
+        redstoneControl = !redstoneControl;
+        setChanged();
+    }
+
+    boolean missingRedstoneControl() {
+        // Older Forge saves paused stock processors whenever they were powered.
+        return true;
     }
 
     void updateRates(double rawTicks, double configuredTicks, double configuredPower) {
@@ -112,6 +133,7 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        tag.putBoolean("redstone_control", redstoneControl);
         tag.put("upgrades", upgrades.serializeNBT());
         tag.putInt("energy", power.getEnergyStored());
         long whole = (long) progressHalfTicks;
@@ -129,6 +151,13 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (tag.contains("redstone_control")) {
+            redstoneControl = tag.getBoolean("redstone_control");
+        } else if (tag.contains("redstoneControl")) {
+            redstoneControl = tag.getBoolean("redstoneControl");
+        } else {
+            redstoneControl = missingRedstoneControl();
+        }
         CompoundTag storedUpgrades = tag.getCompound("upgrades").copy();
         storedUpgrades.putInt("Size", ProcessorUpgrades.SLOTS);
         upgrades.deserializeNBT(storedUpgrades);
