@@ -27,6 +27,7 @@ import nc.init.NCOres;
 import nc.init.NCProcessorAvailability;
 import nc.init.NCMachines;
 import nc.init.NCRadiation;
+import nc.init.NCScriptAddons;
 import nc.init.NCQuantum;
 import nc.init.NCRegistries;
 import nc.init.NCWasteland;
@@ -49,6 +50,7 @@ public final class NuclearCraft {
     }
 
     public NuclearCraft(FMLJavaModLoadingContext context) {
+        NCScriptAddons.register(context.getModEventBus());
         context.getModEventBus().addListener(NCAdvancements::setup);
         NCBatteries.register(context);
         NCCollectors.register(context);
