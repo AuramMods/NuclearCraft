@@ -3,6 +3,7 @@ package nc.worldgen.structure.vault;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 import nc.NuclearCraft;
+import nc.init.NCBatteries;
 import nc.init.NCGenerators;
 import nc.init.NCProcessorAvailability;
 import nc.init.NCRegistries;
@@ -276,7 +277,8 @@ final class VaultPiece extends StructurePiece {
             }
 
             BlockState crateState = Blocks.OAK_PLANKS.defaultBlockState();
-            BlockState voltaicState = block("voltaic_pile_basic", Blocks.IRON_BLOCK);
+            boolean voltaicEnabled = NCBatteries.Family.VOLTAIC_PILE.enabled();
+            BlockState voltaicState = NCBatteries.Tier.VOLTAIC_PILE_BASIC.block().defaultBlockState();
             BlockState slabState = Blocks.SMOOTH_STONE_SLAB.defaultBlockState().setValue(BlockStateProperties.SLAB_TYPE, SlabType.DOUBLE);
             BlockState furnaceState = (NCProcessorAvailability.nuclearFurnaceEnabled()
                     ? NCRegistries.NUCLEAR_FURNACE.get() : Blocks.FURNACE).defaultBlockState();
@@ -300,6 +302,9 @@ final class VaultPiece extends StructurePiece {
             for (int attempt = 0; attempt < maxAttempts && placedDecorations < targetDecorations; ++attempt) {
                 int totalWeight = 0;
                 for (VaultDecoration decoration : VaultDecoration.values()) {
+                    if (decoration == VaultDecoration.VOLTAIC_PILE && !voltaicEnabled) {
+                        continue;
+                    }
                     int weight = decoration.getWeight(roomType);
                     totalWeight += Math.max(0, weight);
                 }
@@ -310,6 +315,9 @@ final class VaultPiece extends StructurePiece {
                 int roll = random.nextInt(totalWeight);
                 VaultDecoration decoration = VaultDecoration.CRATE_PILE;
                 for (VaultDecoration candidate : VaultDecoration.values()) {
+                    if (candidate == VaultDecoration.VOLTAIC_PILE && !voltaicEnabled) {
+                        continue;
+                    }
                     int weight = candidate.getWeight(roomType);
                     weight = Math.max(0, weight);
                     if (weight == 0) {

@@ -4,6 +4,8 @@ import nc.init.NCBatteries;
 import nc.init.NCHeatExchangers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.StringRepresentable;
@@ -13,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Blocks;
@@ -66,13 +69,18 @@ public final class BatteryBlock extends BaseEntityBlock {
     }
 
     @Override
+    public @Nullable BlockState getStateForPlacement(BlockPlaceContext context) {
+        return definition.enabled() ? super.getStateForPlacement(context) : null;
+    }
+
+    @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof BatteryBlockEntity battery) {
             battery.setPlacedCharge(BatteryItem.stored(stack));
             var tag = stack.getTag();
-            if (tag != null && tag.contains(BatteryItem.STORAGE)) {
+            if (tag != null && (tag.contains(BatteryItem.STORAGE) || Mode.hasSavedModes(tag))) {
                 if (placer == null || placer.isShiftKeyDown()) {
-                    battery.setModes(tag.getInt("energy_sides"));
+                    battery.setModes(Mode.load(tag));
                 } else {
                     battery.setMode(Direction.orderedByNearest(placer)[0].getOpposite(), Mode.OUT);
                 }
@@ -126,6 +134,10 @@ public final class BatteryBlock extends BaseEntityBlock {
     }
 
     public interface Definition {
+        default boolean enabled() {
+            return true;
+        }
+
         BlockEntityType<BatteryBlockEntity> entity();
 
         long capacity();
@@ -153,6 +165,34 @@ public final class BatteryBlock extends BaseEntityBlock {
         public static Mode read(int modes, Direction face) {
             int id = modes >>> (2 * face.ordinal()) & 3;
             return id < ALL.length ? ALL[id] : IN;
+        }
+
+        private static boolean hasSavedModes(CompoundTag tag) {
+            if (tag.contains("energy_sides", Tag.TAG_ANY_NUMERIC)) {
+                return true;
+            }
+            for (Direction face : Direction.values()) {
+                if (tag.contains("energyConnections" + face.ordinal(), Tag.TAG_ANY_NUMERIC)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static int load(CompoundTag tag) {
+            if (tag.contains("energy_sides", Tag.TAG_ANY_NUMERIC)) {
+                return tag.getInt("energy_sides");
+            }
+            int packed = 0;
+            for (Direction face : Direction.values()) {
+                Mode mode = switch (tag.getInt("energyConnections" + face.ordinal())) {
+                    case 1 -> OUT;
+                    case 3 -> OFF;
+                    default -> IN;
+                };
+                packed |= mode.ordinal() << (2 * face.ordinal());
+            }
+            return packed;
         }
 
         Mode next() {

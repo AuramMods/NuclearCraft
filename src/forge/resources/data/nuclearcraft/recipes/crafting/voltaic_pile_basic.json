@@ -1,5 +1,11 @@
 {
     "type": "minecraft:crafting_shaped",
+    "conditions": [
+        {
+            "type": "nuclearcraft:battery_enabled",
+            "family": "voltaic_pile"
+        }
+    ],
     "category": "redstone",
     "pattern": [
         "PSP",

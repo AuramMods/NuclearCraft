@@ -31,6 +31,7 @@ import nc.client.ItemProcessorScreen;
 import nc.client.ScrubberScreen;
 import nc.client.MelterScreen;
 import nc.client.NuclearFurnaceScreen;
+import nc.init.NCBatteries;
 import nc.init.NCCollectors;
 import nc.init.NCHeatExchangers;
 import nc.init.NCFission;
@@ -438,6 +439,11 @@ public final class NuclearCraftJei implements IModPlugin {
         for (var machine : FluidProcessorBlockEntity.Machine.values()) {
             if (!machine.rate().enabled()) {
                 disabled.add(new ItemStack(machine.block()));
+            }
+        }
+        for (var tier : NCBatteries.Tier.values()) {
+            if (!tier.enabled()) {
+                disabled.add(new ItemStack(tier.block()));
             }
         }
         if (!disabled.isEmpty()) {

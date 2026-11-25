@@ -123,6 +123,40 @@ public final class BatteryGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void batteriesRestoreLegacyFaceSettings(GameTestHelper helper) {
+        var basic = Tier.VOLTAIC_PILE_BASIC.block();
+        helper.setBlock(WEST, basic);
+        helper.setBlock(EAST, basic);
+        var saved = new CompoundTag();
+        saved.putLong("energy", 27_000);
+        saved.putInt("energyConnections2", 1);
+        saved.putInt("energyConnections3", 3);
+        var converted = battery(helper, WEST);
+        converted.load(saved);
+        helper.assertTrue(converted.stored() == 27_000 && converted.mode(Direction.NORTH) == Mode.OUT
+                        && converted.mode(Direction.SOUTH) == Mode.OFF && converted.mode(Direction.UP) == Mode.IN,
+                "Converted block data restores the legacy output and disabled faces");
+        helper.assertTrue(energy(converted, Direction.NORTH).extractEnergy(100, true) == 100
+                        && !converted.getCapability(ForgeCapabilities.ENERGY, Direction.SOUTH).isPresent(),
+                "The saved modes control the sided Forge Energy handlers");
+
+        var item = new ItemStack(basic);
+        item.setTag(saved.copy());
+        BatteryItem.store(item, 13_000);
+        var fromItem = battery(helper, EAST);
+        basic.setPlacedBy(helper.getLevel(), fromItem.getBlockPos(), fromItem.getBlockState(), null, item);
+        helper.assertTrue(fromItem.stored() == 13_000 && fromItem.mode(Direction.NORTH) == Mode.OUT
+                        && fromItem.mode(Direction.SOUTH) == Mode.OFF,
+                "Restoring saved modes accepts legacy item tags and charge");
+
+        saved.putInt("energy_sides", 0);
+        converted.load(saved);
+        helper.assertTrue(converted.mode(Direction.NORTH) == Mode.IN && converted.mode(Direction.SOUTH) == Mode.IN,
+                "An explicit modern face mask takes precedence over the legacy data");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void batterySharesAndCraftingPreserveFullCharge(GameTestHelper helper) {
         var elite = Tier.LITHIUM_ION_BATTERY_ELITE.block();
         helper.setBlock(WEST, elite);

@@ -1,5 +1,11 @@
 {
     "type": "nuclearcraft:charged_crafting",
+    "conditions": [
+        {
+            "type": "nuclearcraft:battery_enabled",
+            "family": "voltaic_pile"
+        }
+    ],
     "category": "redstone",
     "pattern": [
         "PMP",

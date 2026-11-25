@@ -52,6 +52,10 @@ public final class BatteryItem {
         long capacity();
 
         int transfer();
+
+        default boolean acceptsCharge() {
+            return true;
+        }
     }
 
     public static final class BlockBattery extends BlockItem implements Chargeable {
@@ -64,6 +68,7 @@ public final class BatteryItem {
 
         @Override public long capacity() { return definition.capacity(); }
         @Override public int transfer() { return definition.transfer(); }
+        @Override public boolean acceptsCharge() { return definition.enabled(); }
         @Override public int getBarColor(ItemStack stack) { return BAR_COLOR; }
         @Override public int getBarWidth(ItemStack stack) { return barWidth(stack); }
         @Override public boolean isBarVisible(ItemStack stack) { return stored(stack) > 0; }
@@ -118,7 +123,7 @@ public final class BatteryItem {
 
         @Override
         public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-            return cap == ForgeCapabilities.ENERGY && canReceive() ? handler.cast() : LazyOptional.empty();
+            return cap == ForgeCapabilities.ENERGY && stack.getCount() == 1 ? handler.cast() : LazyOptional.empty();
         }
 
         @Override
@@ -149,7 +154,7 @@ public final class BatteryItem {
 
         @Override public int getEnergyStored() { return (int) Math.min(stored(stack), Integer.MAX_VALUE); }
         @Override public int getMaxEnergyStored() { return (int) Math.min(item.capacity(), Integer.MAX_VALUE); }
-        @Override public boolean canReceive() { return stack.getCount() == 1; }
-        @Override public boolean canExtract() { return canReceive(); }
+        @Override public boolean canReceive() { return stack.getCount() == 1 && item.acceptsCharge(); }
+        @Override public boolean canExtract() { return stack.getCount() == 1; }
     }
 }

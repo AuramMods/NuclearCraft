@@ -57,12 +57,12 @@ public final class BatteryBlockEntity extends EnergyBankBlockEntity implements M
 
     @Override
     protected boolean sharesBankWith(EnergyBankBlockEntity other) {
-        return other instanceof BatteryBlockEntity;
+        return other instanceof BatteryBlockEntity battery && definition.enabled() && battery.definition.enabled();
     }
 
     @Override
     protected boolean canReceive(Direction face) {
-        return mode(face) == Mode.IN;
+        return definition.enabled() && mode(face) == Mode.IN;
     }
 
     @Override
@@ -115,7 +115,7 @@ public final class BatteryBlockEntity extends EnergyBankBlockEntity implements M
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        setModes(tag.getInt("energy_sides"));
+        setModes(Mode.load(tag));
     }
 
     @Override
