@@ -116,6 +116,35 @@ public final class SaltMixerGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 660)
+    public static void bothStockEthanolRecipesAcceptAnotherTaggedFluid(GameTestHelper helper) {
+        BlockPos slurryPos = MIXER.east();
+        helper.setBlock(MIXER, NCRegistries.SALT_MIXER.get());
+        helper.setBlock(slurryPos, NCRegistries.SALT_MIXER.get());
+        var redstoneMixer = helper.getBlockEntity(MIXER);
+        var slurryMixer = helper.getBlockEntity(slurryPos);
+        var redstone = fluids(redstoneMixer, Direction.NORTH);
+        var slurry = fluids(slurryMixer, Direction.NORTH);
+        // The GameTest datapack supplies phenol as a second member of the ethanol tag.
+        helper.assertTrue(redstone.fill(stack("phenol", 251), EXECUTE) == 251
+                        && redstone.fill(stack("redstone", 200), EXECUTE) == 200
+                        && slurry.fill(stack("ice", 1000), EXECUTE) == 1000
+                        && slurry.fill(stack("phenol", 251), EXECUTE) == 251,
+                "Both recipes must accept the tagged alternative through their normal fluid handlers");
+        energy(redstoneMixer).receiveEnergy(6000, false);
+        energy(slurryMixer).receiveEnergy(12000, false);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(redstone.getFluidInTank(2).isFluidStackIdentical(stack("redstone_ethanol", 250))
+                            && slurry.getFluidInTank(2).isFluidStackIdentical(stack("slurry_ice", 1000)),
+                    "The alternative input produces the same two legacy outputs");
+            helper.assertTrue(redstone.getFluidInTank(0).isFluidStackIdentical(stack("phenol", 1))
+                            && slurry.getFluidInTank(1).isFluidStackIdentical(stack("phenol", 1))
+                            && redstone.getFluidInTank(1).isEmpty() && slurry.getFluidInTank(0).isEmpty()
+                            && energy(redstoneMixer).getEnergyStored() == 0 && energy(slurryMixer).getEnergyStored() == 0,
+                    "Each recipe consumes 250 mB of the delivered alternative and its original FE cost");
+        });
+    }
+
     @GameTest(template = "empty", timeoutTicks = 15000)
     public static void hydroxideMeltingAndElectrolysisSupplyNaK(GameTestHelper helper) {
         BlockPos sodiumCell = MIXER.west();

@@ -6,7 +6,7 @@
             "amount": 1000
         },
         {
-            "fluid": "nuclearcraft:ethanol",
+            "tag": "forge:ethanol",
             "amount": 250
         }
     ],

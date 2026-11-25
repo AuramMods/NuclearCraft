@@ -471,6 +471,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Draconic Evolution | 3.1.2.621 | Forge Energy transfer through linked I/O, Relay, and Wireless Energy Crystals |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
+| Create Diesel Generators | 1.3.8 | Shared ethanol into Salt Mixers and NuclearCraft ethanol into diesel engines |
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
 | Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
@@ -723,6 +724,16 @@ A dedicated-server restart preserved the held concrete item and the Melter's buf
 A Voltaic Pile held its 300,000 FE with the face toward an Electric Motor disabled. Opening that face as an output transferred Forge Energy and spun the motor and its attached shaft at 64 RPM. [Create Crafts & Additions](https://github.com/mrh0/createaddition)
 
 The same packaged JAR repeated both processor routes in the isolated instance with all 541 installed Auram mod JARs. JEI loaded, and the saved region files held one concrete, 8,000 mB of water, and empty processor inventories and fluid buffers. The dedicated-server test client and isolated Auram client ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
+### Shared ethanol
+
+The Salt Mixer accepts `forge:ethanol` for both Redstone Ethanol and Slurry Ice. Each batch consumes 250 mB of the fluid actually supplied and keeps the original output and energy cost. The Chemical Reactor, Centrifuge, and Radiation Scrubber still produce NuclearCraft ethanol. Its tag lets compatible machines from other mods accept it as ethanol. [Forge fluid tags](https://docs.minecraftforge.net/en/1.20.1/resources/server/tags/)
+
+All 239 local GameTests passed. Clean packaged Forge 47.4.10 completed both recipes with NuclearCraft ethanol. With Auram's installed mods, a Mekanism 10.4.16.80 Mechanical Pipe supplied 251 mB of Create Diesel Generators 1.3.8 ethanol, and an Ender IO 8.2.22-beta Fluid Conduit supplied 251 mB of Immersive Engineering 10.2.0-183 ethanol. Full outputs held the inputs and FE through a dedicated restart. After clearing the outputs, the mixers made 250 mB of Redstone Ethanol and 1,000 mB of Slurry Ice. Each kept 1 mB of its original ethanol. The exact amounts survived chunk unload and reload.
+
+The Chemical Reactor also made 250 mB of NuclearCraft ethanol and sent it directly into the bottom of a Diesel Engine. The engine retained all 250 mB through a dedicated restart while disabled by redstone. Removing the signal let it burn the ethanol and drive a Create 6.0.8 shaft at 96 RPM. The reactor retained the 250 mB of sulfur trioxide from the same batch.
+
+The isolated Auram client repeated these routes with all 540 installed mod JARs. A third mixer accepted 251 mB of PneumaticCraft 6.0.22 ethanol through a Mechanical Pipe and produced 1,000 mB of Slurry Ice, retaining 1 mB of ethanol. Both stock recipes listed NuclearCraft, Create Diesel Generators, Immersive Engineering, and PneumaticCraft ethanol in JEI. The client saved and exited with master volume zero and OpenAL No Output. The native observer saw zero focus activations, foreground samples, or visible windows.
 
 ### Create: New Age electrical connectors
 

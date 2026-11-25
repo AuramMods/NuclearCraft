@@ -2,7 +2,7 @@
     "type": "nuclearcraft:salt_mixer",
     "fluid_inputs": [
         {
-            "fluid": "nuclearcraft:ethanol",
+            "tag": "forge:ethanol",
             "amount": 250
         },
         {

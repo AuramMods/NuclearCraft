@@ -1,0 +1,8 @@
+{
+    "replace": false,
+    "values": [
+        "nuclearcraft:ethanol",
+        "nuclearcraft:flowing_ethanol",
+        "nuclearcraft:phenol"
+    ]
+}
