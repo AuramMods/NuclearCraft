@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.fluid.FluidConfig;
 import nc.init.NCFluidProducts;
 import nc.init.NCFluids;
 import nc.radiation.RadiationSources;
@@ -8,14 +9,17 @@ import nc.radiation.WorldRadiation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.monster.Zombie;
+import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -26,6 +30,18 @@ public final class FluidHazardGameTests {
     private static final BlockPos CELL = new BlockPos(1, 2, 1);
 
     private FluidHazardGameTests() {}
+
+    @GameTest(template = "empty")
+    public static void optionalFluidPlacementPreservesBucketAndTankTransfers(GameTestHelper helper) {
+        for (String name : new String[]{"copper", "aluminum", "iron_nak", "iron_nak_hot", "uranium",
+                "leu_235_fluoride_flibe"}) {
+            checkPlacement(helper, name, FluidConfig.optionalFluidBlocksEnabled());
+        }
+        for (String name : new String[]{"sulfur", "nak", "nak_hot", "molybdenum", "strontium_90"}) {
+            checkPlacement(helper, name, true);
+        }
+        helper.succeed();
+    }
 
     @GameTest(template = "empty")
     public static void acidBurnsAndHazmatReducesContactDamage(GameTestHelper helper) {
@@ -142,6 +158,30 @@ public final class FluidHazardGameTests {
         }
         subject.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.ARMOR).setBaseValue(0);
         return subject;
+    }
+
+    private static void checkPlacement(GameTestHelper helper, String name, boolean allowed) {
+        var level = helper.getLevel();
+        var pos = helper.absolutePos(CELL);
+        var bucket = (BucketItem) ForgeRegistries.ITEMS.getValue(NuclearCraft.id(name + "_bucket"));
+        var stack = bucket.getDefaultInstance();
+        var fluid = FluidUtil.getFluidContained(stack).orElseThrow();
+        helper.assertTrue(fluid.getFluid() == bucket.getFluid() && fluid.getAmount() == 1000,
+                name + " bucket must expose one source through Forge");
+
+        helper.setBlock(CELL, Blocks.AIR);
+        helper.assertTrue(bucket.emptyContents(null, level, pos, null, stack) == allowed,
+                name + " bucket placement must follow the world setting");
+        helper.assertBlockPresent(allowed ? liquid(name) : Blocks.AIR, CELL);
+
+        helper.setBlock(CELL, Blocks.AIR);
+        var tank = new FluidTank(1000);
+        tank.setFluid(fluid.copy());
+        helper.assertTrue(FluidUtil.tryPlaceFluid(null, level, InteractionHand.MAIN_HAND, pos, tank, fluid) == allowed,
+                name + " tank placement must follow the world setting");
+        helper.assertTrue(tank.getFluidAmount() == (allowed ? 0 : 1000),
+                name + " tank must drain exactly one source on successful placement");
+        helper.assertBlockPresent(allowed ? liquid(name) : Blocks.AIR, CELL);
     }
 
     private static void equip(Zombie subject, EquipmentSlot slot, String name) {

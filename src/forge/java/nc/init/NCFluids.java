@@ -1,20 +1,26 @@
 package nc.init;
 
 import nc.NuclearCraft;
+import nc.fluid.FluidConfig;
 import nc.fluid.FluidHazard.Kind;
 import nc.fluid.NCFlowingFluid;
 import nc.fluid.NCLiquidBlock;
+import nc.fluid.NCLiquidBucket;
+import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.common.SoundActions;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -71,7 +77,7 @@ public final class NCFluids {
         molten("sodium", 0xC1898C);
         molten("potassium", 0xB8C503);
         molten("alumina", 0x919880);
-        molten("aluminum", 0xB5ECD5);
+        coolantMaterial("aluminum", 0xB5ECD5);
         molten("holmium", 0xDCB49C);
         molten("dysprosium", 0xC381E4);
         molten("beryllium", 0xD4DBC2);
@@ -79,11 +85,19 @@ public final class NCFluids {
     }
 
     static RegisteredFluid molten(String name, int tint) {
-        return molten(name, tint, name.equals("glowstone") ? Kind.GLOWSTONE : Kind.MOLTEN);
+        return molten(name, tint, Kind.MOLTEN, false);
+    }
+
+    static RegisteredFluid coolantMaterial(String name, int tint) {
+        return molten(name, tint, name.equals("glowstone") ? Kind.GLOWSTONE : Kind.MOLTEN, true);
     }
 
     static RegisteredFluid fission(String name, int tint) {
-        return molten(name, tint, Kind.FISSION);
+        return molten(name, tint, Kind.FISSION, false);
+    }
+
+    static RegisteredFluid optionalFission(String name, int tint) {
+        return molten(name, tint, Kind.FISSION, true);
     }
 
     private static RegisteredFluid corium(String name, int color) {
@@ -92,12 +106,12 @@ public final class NCFluids {
                 MOLTEN_STILL, MOLTEN_FLOW, color));
     }
 
-    private static RegisteredFluid molten(String name, int tint, Kind kind) {
-        return new RegisteredFluid(name, 10, kind, () -> tintedFluid(
+    private static RegisteredFluid molten(String name, int tint, Kind kind, boolean optionalBlock) {
+        return new RegisteredFluid(name, 10, kind, optionalBlock, () -> tintedFluid(
                 FluidType.Properties.create().density(5000).viscosity(8000).temperature(1200).lightLevel(10)
                         .sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
                         .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA),
-                MOLTEN_STILL, MOLTEN_FLOW, 0xFF000000 | tint));
+                MOLTEN_STILL, MOLTEN_FLOW, 0xFF000000 | tint, optionalBlock));
     }
 
     private static RegisteredFluid liquid(String name, String texture, int density, int tint) {
@@ -132,13 +146,14 @@ public final class NCFluids {
                 NuclearCraft.id("block/fluids/" + texture + "_flow"), 0xFF000000 | tint));
     }
 
-    static RegisteredFluid saltCoolant(String name, int tint, boolean hot) {
+    static RegisteredFluid saltCoolant(String name, int tint, boolean hot, boolean optionalBlock) {
         int light = hot ? 7 : 0;
-        return new RegisteredFluid(name, light, hot ? Kind.HOT_COOLANT : Kind.COOLANT, () -> tintedFluid(FluidType.Properties.create()
+        return new RegisteredFluid(name, light, hot ? Kind.HOT_COOLANT : Kind.COOLANT, optionalBlock,
+                () -> tintedFluid(FluidType.Properties.create()
                 .density(hot ? 4000 : 5000).viscosity(hot ? 10000 : 15000).temperature(hot ? 800 : 400)
                 .lightLevel(light).sound(SoundActions.BUCKET_FILL, SoundEvents.BUCKET_FILL_LAVA)
                 .sound(SoundActions.BUCKET_EMPTY, SoundEvents.BUCKET_EMPTY_LAVA), MOLTEN_STILL, MOLTEN_FLOW,
-                0xFF000000 | tint));
+                0xFF000000 | tint, optionalBlock));
     }
 
     private static RegisteredFluid steam(String name, int temperature, int tint) {
@@ -190,7 +205,18 @@ public final class NCFluids {
 
     private static FluidType tintedFluid(FluidType.Properties properties, ResourceLocation still,
                                          ResourceLocation flowing, int tint) {
+        return tintedFluid(properties, still, flowing, tint, false);
+    }
+
+    private static FluidType tintedFluid(FluidType.Properties properties, ResourceLocation still,
+                                         ResourceLocation flowing, int tint, boolean optionalBlock) {
         return new FluidType(properties) {
+            @Override
+            public BlockState getBlockForFluidState(BlockAndTintGetter level, BlockPos pos, FluidState state) {
+                return optionalBlock && !FluidConfig.optionalFluidBlocksEnabled() ? Blocks.AIR.defaultBlockState()
+                        : super.getBlockForFluidState(level, pos, state);
+            }
+
             @Override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
@@ -221,13 +247,19 @@ public final class NCFluids {
         private final RegistryObject<Item> bucket;
 
         private RegisteredFluid(String name, int light, Kind kind, Supplier<FluidType> fluidType) {
+            this(name, light, kind, false, fluidType);
+        }
+
+        private RegisteredFluid(String name, int light, Kind kind, boolean optionalBlock, Supplier<FluidType> fluidType) {
             type = TYPES.register(name, fluidType);
             source = FLUIDS.register(name, () -> new NCFlowingFluid.Source(properties(kind), kind));
             flowing = FLUIDS.register("flowing_" + name, () -> new NCFlowingFluid.Flowing(properties(kind), kind));
             block = NCRegistries.BLOCKS.register(name, () -> new NCLiquidBlock(source,
                     BlockBehaviour.Properties.copy(light == 0 ? Blocks.WATER : Blocks.LAVA).lightLevel(state -> light), kind));
-            bucket = NCRegistries.ITEMS.register(name + "_bucket",
-                    () -> new BucketItem(source, new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1)));
+            bucket = NCRegistries.ITEMS.register(name + "_bucket", () -> {
+                var properties = new Item.Properties().craftRemainder(Items.BUCKET).stacksTo(1);
+                return optionalBlock ? new NCLiquidBucket(source, properties) : new BucketItem(source, properties);
+            });
         }
 
         private ForgeFlowingFluid.Properties properties(Kind kind) {

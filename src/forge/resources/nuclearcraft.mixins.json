@@ -4,6 +4,10 @@
     "package": "nc.mixin",
     "compatibilityLevel": "JAVA_17",
     "mixins": [
-        "IntegratedServerHandshake"
+        "IntegratedServerHandshake",
+        "compat.PneumaticCraftFluidPlacement",
+        "compat.CreateFluidPlacement",
+        "compat.ForegoingFluidPlacement",
+        "compat.MekanismFluidPlacement"
     ]
 }

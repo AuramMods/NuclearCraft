@@ -57,8 +57,9 @@ public enum NCSaltCoolants implements FissionCoolant {
         for (NCSaltCoolants coolant : values()) {
             int cold = coolant == NAK ? coolant.color : blend(coolant.color, 0xFFE5BC);
             int hot = coolant == NAK ? 0xFFD5AC : blend(coolant.color, 0xFFD5AC);
-            coolant.cold = NCFluids.saltCoolant(coolant.id, cold, false);
-            coolant.hot = NCFluids.saltCoolant(coolant.id + "_hot", hot, true);
+            boolean optionalBlock = coolant != NAK;
+            coolant.cold = NCFluids.saltCoolant(coolant.id, cold, false, optionalBlock);
+            coolant.hot = NCFluids.saltCoolant(coolant.id + "_hot", hot, true, optionalBlock);
         }
     }
 

@@ -4,8 +4,8 @@ final class NCFissionFluids {
     private NCFissionFluids() {}
 
     static void registerFuels() {
-        NCFluids.fission("thorium", 0x292929);
-        NCFluids.fission("uranium", 0x375437);
+        NCFluids.optionalFission("thorium", 0x292929);
+        NCFluids.optionalFission("uranium", 0x375437);
         NCFluids.fission("strontium_90", 0xB8BE88);
         NCFluids.fission("ruthenium_106", 0xA3A3A3);
         NCFluids.fission("caesium_137", 0xADADAD);
@@ -92,9 +92,9 @@ final class NCFissionFluids {
     }
 
     static void fuel(String name, int color) {
-        NCFluids.fission(name, color);
-        NCFluids.fission(name + "_fluoride", blendWithSalt(color, 0xD3C85D, 7, 8));
-        NCFluids.fission(name + "_fluoride_flibe", blendWithSalt(color, 0xC1C8B0, 3, 5));
+        NCFluids.optionalFission(name, color);
+        NCFluids.optionalFission(name + "_fluoride", blendWithSalt(color, 0xD3C85D, 7, 8));
+        NCFluids.optionalFission(name + "_fluoride_flibe", blendWithSalt(color, 0xC1C8B0, 3, 5));
     }
 
     private static int blendWithSalt(int base, int salt, int baseWeight, int totalWeight) {

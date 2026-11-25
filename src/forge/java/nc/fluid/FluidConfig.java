@@ -1,6 +1,7 @@
 package nc.fluid;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -17,6 +18,9 @@ public final class FluidConfig {
     private static final ForgeConfigSpec.BooleanValue CORIUM_IS_BLACKLIST = BUILDER
             .define("corium_solidification_list_type", false);
     private static final ForgeConfigSpec.BooleanValue PLASMA_FIRE = BUILDER.define("fusion_plasma_craziness", true);
+    private static final ForgeConfigSpec.BooleanValue OPTIONAL_FLUID_BLOCKS = BUILDER.comment(
+            "Allow placement of the legacy optional molten material, alloy coolant, isotope, and fuel blocks.")
+            .define("register_fluid_blocks", false);
     private static final ForgeConfigSpec SPEC = BUILDER.build();
 
     private FluidConfig() {}
@@ -31,5 +35,13 @@ public final class FluidConfig {
 
     static boolean plasmaFire() {
         return PLASMA_FIRE.get();
+    }
+
+    public static boolean optionalFluidBlocksEnabled() {
+        return SPEC.isLoaded() && OPTIONAL_FLUID_BLOCKS.get();
+    }
+
+    public static boolean blocksPlacement(Fluid fluid) {
+        return !optionalFluidBlocksEnabled() && fluid.getBucket() instanceof NCLiquidBucket;
     }
 }
