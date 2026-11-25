@@ -8,6 +8,7 @@
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
+        "compat.RefinedStorageLookups",
         "compat.ForegoingFluidPlacement",
         "compat.MekanismFluidPlacement"
     ]
