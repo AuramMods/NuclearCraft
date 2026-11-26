@@ -1,0 +1,21 @@
+{
+    "type": "nuclearcraft:melter",
+    "ingredient": {
+        "alternatives": [
+            {
+                "ingredient": {"item": "minecraft:calcite"},
+                "count": 2
+            },
+            {
+                "ingredient": {
+                    "type": "forge:nbt",
+                    "item": "minecraft:blaze_rod",
+                    "nbt": "{melter_qa:1b}"
+                }
+            }
+        ]
+    },
+    "result": {"fluid": "minecraft:water", "amount": 25},
+    "ticks": 2,
+    "energy_per_tick": 4
+}

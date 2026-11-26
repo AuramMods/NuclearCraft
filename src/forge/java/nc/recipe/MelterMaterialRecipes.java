@@ -3,6 +3,7 @@ package nc.recipe;
 import nc.NuclearCraft;
 import nc.init.NCItemProcessors;
 import nc.init.NCItemProcessors.Rate;
+import nc.init.NCRegistries;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -21,8 +22,10 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Mod;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -58,13 +61,7 @@ public final class MelterMaterialRecipes {
         event.addListener((barrier, resources, preparation, reload, background, game) ->
                 barrier.wait(Unit.INSTANCE).thenRunAsync(() -> {
                     var catalog = new Catalog(recipes, context.getAllTags(Registries.ITEM), context.getAllTags(Registries.FLUID));
-                    Map<Item, MelterRecipe> byItem = new LinkedHashMap<>();
-                    for (MelterRecipe recipe : catalog.discover()) {
-                        for (ItemStack stack : recipe.input().alternatives()) {
-                            byItem.putIfAbsent(stack.getItem(), recipe);
-                        }
-                    }
-                    SERVER_RECIPES.put(recipes, Map.copyOf(byItem));
+                    SERVER_RECIPES.put(recipes, Map.copyOf(catalog.discover()));
                 }, game));
     }
 
@@ -74,8 +71,36 @@ public final class MelterMaterialRecipes {
     }
 
     public static List<MelterRecipe> fromSyncedTags(RecipeManager recipes) {
-        return new Catalog(recipes, tags(BuiltInRegistries.ITEM), tags(BuiltInRegistries.FLUID))
-                .discover().stream().filter(MelterMaterialRecipes::enabled).toList();
+        var explicitInputs = alwaysMatchedItems(recipes);
+        var discovered = new Catalog(recipes, tags(BuiltInRegistries.ITEM), tags(BuiltInRegistries.FLUID)).discover();
+        var visible = new LinkedHashMap<MelterRecipe, List<ItemStack>>();
+        discovered.forEach((item, recipe) -> {
+            if (enabled(recipe) && !explicitInputs.contains(item)) {
+                visible.computeIfAbsent(recipe, ignored -> new ArrayList<>()).add(item.getDefaultInstance());
+            }
+        });
+        return visible.entrySet().stream().map(entry -> {
+            var recipe = entry.getKey();
+            var input = new ItemProcessorRecipe.Input(Ingredient.of(entry.getValue().stream()), 1);
+            return new MelterRecipe(recipe.id(), input, recipe.fluidProduct(), recipe.ticks(),
+                    recipe.energyPerTick(), recipe.radiation(), recipe.defaults());
+        }).toList();
+    }
+
+    private static Set<Item> alwaysMatchedItems(RecipeManager recipes) {
+        var items = new HashSet<Item>();
+        for (MelterRecipe recipe : recipes.getAllRecipesFor(NCRegistries.MELTING.get())) {
+            var input = recipe.input();
+            var alternatives = input instanceof ItemInput.Alternatives group
+                    ? group.choices() : List.of((ItemProcessorRecipe.Input) input);
+            for (var alternative : alternatives) {
+                // A counted or NBT-sensitive recipe can leave the generated fallback reachable.
+                if (alternative.count() == 1 && alternative.ingredient().isSimple()) {
+                    alternative.alternatives().forEach(stack -> items.add(stack.getItem()));
+                }
+            }
+        }
+        return items;
     }
 
     private static boolean enabled(MelterRecipe recipe) {
@@ -90,8 +115,8 @@ public final class MelterMaterialRecipes {
 
     private record Catalog(RecipeManager recipes, Map<ResourceLocation, ? extends Collection<Holder<Item>>> items,
                            Map<ResourceLocation, ? extends Collection<Holder<Fluid>>> fluids) {
-        List<MelterRecipe> discover() {
-            var result = new LinkedHashMap<ResourceLocation, MelterRecipe>();
+        Map<Item, MelterRecipe> discover() {
+            var result = new LinkedHashMap<Item, MelterRecipe>();
             optionalRecipes(result);
             var materials = new TreeSet<>(LEGACY_METALS);
             materials.add("silicon_carbide");
@@ -101,10 +126,10 @@ public final class MelterMaterialRecipes {
             materials.removeAll(EXCLUDED);
             materials.remove("cesium_137");
             materials.forEach(material -> addMaterial(result, material));
-            return List.copyOf(result.values());
+            return result;
         }
 
-        private void addMaterial(Map<ResourceLocation, MelterRecipe> result, String material) {
+        private void addMaterial(Map<Item, MelterRecipe> result, String material) {
             String fluidName = material.equals("silicon_carbide") ? "sic_vapor" : material;
             Fluid fluid = BuiltInRegistries.FLUID.getOptional(NuclearCraft.id(fluidName))
                     .orElseGet(() -> source(MOLTEN + fluidName));
@@ -135,7 +160,7 @@ public final class MelterMaterialRecipes {
             }
         }
 
-        private void optionalRecipes(Map<ResourceLocation, MelterRecipe> result) {
+        private void optionalRecipes(Map<Item, MelterRecipe> result) {
             add(result, "brine", source("brine"), 15, 200, 20, taggedItems("dusts/salt", "salt"));
             Fluid glass = preferredSource("tconstruct:molten_glass", "molten_glass");
             add(result, "sand", glass, 1000, 1200, 60, taggedItems("sand"));
@@ -193,12 +218,13 @@ public final class MelterMaterialRecipes {
                     .filter(fluid -> fluid.isSource(fluid.defaultFluidState())).findFirst().orElse(null);
         }
 
-        private void add(Map<ResourceLocation, MelterRecipe> result, String path, @Nullable Fluid fluid,
+        private void add(Map<Item, MelterRecipe> result, String path, @Nullable Fluid fluid,
                          int amount, double ticks, int power, Set<Item> inputs) {
             ResourceLocation id = NuclearCraft.id("melter/" + path);
             if (fluid != null && !inputs.isEmpty() && recipes.byKey(id).isEmpty()) {
-                result.put(id, new MelterRecipe(id, new ItemProcessorRecipe.Input(Ingredient.of(inputs.stream().map(Item::getDefaultInstance)), 1),
-                        FluidProduct.fixed(new FluidStack(fluid, amount)), ticks, power, 0D, null));
+                var input = new ItemProcessorRecipe.Input(Ingredient.of(inputs.stream().map(Item::getDefaultInstance)), 1);
+                var recipe = new MelterRecipe(id, input, FluidProduct.fixed(new FluidStack(fluid, amount)), ticks, power, 0D, null);
+                inputs.forEach(item -> result.putIfAbsent(item, recipe));
             }
         }
     }

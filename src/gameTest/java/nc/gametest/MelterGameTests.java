@@ -48,6 +48,36 @@ public final class MelterGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void melterDisplaysOnlyReachableDiscoveredInputs(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var recipes = level.getRecipeManager();
+        var catalog = MelterMaterialRecipes.fromSyncedTags(recipes);
+        var overlap = catalog.stream()
+                .filter(recipe -> recipe.id().equals(NuclearCraft.id("melter/materials/test_overlap/unit")))
+                .findFirst().orElseThrow();
+        helper.assertTrue(!overlap.input().accepts(new ItemStack(Items.COAL))
+                        && !overlap.input().accepts(new ItemStack(Items.AMETHYST_SHARD)),
+                "Stock coal and the first discovered gem recipe retain their own inputs");
+        helper.assertTrue(overlap.input().accepts(new ItemStack(Items.FLINT))
+                        && overlap.input().accepts(new ItemStack(Items.CALCITE))
+                        && overlap.input().accepts(new ItemStack(Items.BLAZE_ROD)),
+                "Keep unique inputs and fallbacks for counted and NBT-sensitive overrides");
+        var calcite = new ItemStack(Items.CALCITE);
+        var rod = new ItemStack(Items.BLAZE_ROD);
+        var type = NCRegistries.MELTING.get();
+        helper.assertTrue(recipes.getRecipeFor(type, new SimpleContainer(calcite), level).isEmpty()
+                        && recipes.getRecipeFor(type, new SimpleContainer(rod), level).isEmpty()
+                        && MelterMaterialRecipes.find(recipes, calcite).id().equals(overlap.id())
+                        && MelterMaterialRecipes.find(recipes, rod).id().equals(overlap.id()),
+                "The generated fallback is available for a single plain item");
+        rod.getOrCreateTag().putBoolean("melter_qa", true);
+        helper.assertTrue(recipes.getRecipeFor(type, new SimpleContainer(calcite.copyWithCount(2)), level).isPresent()
+                        && recipes.getRecipeFor(type, new SimpleContainer(rod), level).isPresent(),
+                "The explicit recipe still matches its counted and tagged inputs");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 830)
     public static void melterCarriesFractionalNuggetProgress(GameTestHelper helper) {
         helper.setBlock(MACHINE, NCRegistries.MELTER.get());
