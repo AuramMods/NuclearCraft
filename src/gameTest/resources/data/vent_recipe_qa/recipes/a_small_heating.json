@@ -1,0 +1,6 @@
+{
+  "type": "nuclearcraft:fission_heating",
+  "input": {"tag": "vent_recipe_qa:alcohol", "amount": 10},
+  "result": {"fluid": "nuclearcraft:high_pressure_steam", "amount": 3},
+  "heat_per_mb": 1
+}

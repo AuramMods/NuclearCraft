@@ -1,0 +1,6 @@
+{
+  "type": "nuclearcraft:fission_emergency_cooling",
+  "input": {"tag": "vent_recipe_qa:alcohol", "amount": 10},
+  "result": {"fluid": "nuclearcraft:emergency_coolant_heated", "amount": 3},
+  "heat_per_mb": 1
+}

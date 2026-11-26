@@ -28,6 +28,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -356,6 +357,51 @@ public final class PebbleFissionGameTests {
                                     && controller(helper).saveWithoutMetadata().getLong("heat") == 22,
                             "The idle vent removes 100 casing heat and passive cooling removes another 1 H");
                 })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 100)
+    public static void emergencyRecipesMatchTheStoredDoseBeforeSpendingHeat(GameTestHelper helper) {
+        buildReactor(helper);
+        helper.setBlock(COLD_NITROGEN, NCFission.VENT.get());
+        helper.setBlock(HOT_NITROGEN, output(NCFission.VENT.get()));
+        var coolant = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ethanol")), 10);
+        var fallbackProduct = new FluidStack(NCFluids.HEATED_EMERGENCY_COOLANT.source().get(), 3);
+        var exactProduct = new FluidStack(Fluids.WATER, 5);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    helper.assertTrue(fluids(helper, COLD_NITROGEN, Direction.NORTH).fill(coolant, FluidAction.EXECUTE) == 10,
+                            "The vent accepts a complete small dose");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    saved.putLong("heat", 28);
+                    controller(helper).load(saved);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, HOT_NITROGEN, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(fallbackProduct)
+                                && amount(helper, COLD_NITROGEN, Direction.NORTH) == 0,
+                        "A short volume selects the tag recipe and produces exactly three millibuckets"))
+                .thenExecute(() -> {
+                    var outlet = fluids(helper, HOT_NITROGEN, Direction.SOUTH);
+                    helper.assertTrue(outlet.drain(3, FluidAction.EXECUTE).isFluidStackIdentical(fallbackProduct)
+                                    && fluids(helper, COLD_NITROGEN, Direction.NORTH)
+                                            .fill(new FluidStack(coolant, 18), FluidAction.EXECUTE) == 18,
+                            "Empty the first product and fill a complete exact dose");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    saved.putLong("heat", 35);
+                    controller(helper).load(saved);
+                })
+                .thenExecuteAfter(4, () -> {
+                    helper.assertTrue(amount(helper, COLD_NITROGEN, Direction.NORTH) == 18
+                                    && amount(helper, HOT_NITROGEN, Direction.SOUTH) == 0,
+                            "The exact-fluid recipe waits for its heat budget");
+                    var saved = controller(helper).saveWithoutMetadata();
+                    saved.putLong("heat", 36);
+                    controller(helper).load(saved);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, HOT_NITROGEN, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(exactProduct)
+                                && amount(helper, COLD_NITROGEN, Direction.NORTH) == 0,
+                        "Enough heat runs the exact recipe whose whole dose fits"))
                 .thenSucceed();
     }
 

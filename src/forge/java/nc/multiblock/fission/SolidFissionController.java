@@ -490,15 +490,23 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         setChanged();
     }
 
+    private List<FissionHeatRecipe> casingRecipes() {
+        var type = variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE;
+        return level == null ? List.of() : level.getRecipeManager().getAllRecipesFor(type.get());
+    }
+
+    private boolean acceptsCasingInput(FluidStack fluid) {
+        return !fluid.isEmpty() && casingRecipes().stream().anyMatch(recipe -> recipe.input().accepts(fluid));
+    }
+
     private @Nullable FissionHeatRecipe casingRecipe(FluidStack fluid) {
-        if (level == null || fluid.isEmpty()) {
+        if (fluid.isEmpty()) {
             return null;
         }
-        var type = variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE;
         FissionHeatRecipe selected = null;
         boolean selectedTag = false;
-        for (FissionHeatRecipe recipe : level.getRecipeManager().getAllRecipesFor(type.get())) {
-            var choice = recipe.input().matchingChoice(fluid, 1, Integer.MAX_VALUE);
+        for (FissionHeatRecipe recipe : casingRecipes()) {
+            var choice = recipe.input().matchingChoice(fluid, 1, fluid.getAmount());
             if (choice != null && (selected == null
                     || selectedTag && !choice.tag()
                     || selectedTag == choice.tag() && recipe.id().compareTo(selected.id()) < 0)) {
@@ -579,7 +587,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (recipe == null || !(effectiveHeating > 0)) {
             return 0D;
         }
-        int dose = recipe.input().matchedAmount(coolant.getFluid(), 1, Integer.MAX_VALUE);
+        int dose = recipe.input().matchedAmount(coolant.getFluid(), 1);
         return dose > 0 ? recipe.product().stack().getAmount() * effectiveHeating / (dose * recipe.heatPerMb()) : 0D;
     }
 
@@ -890,7 +898,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     private final class ReactorTank extends FluidTank {
         ReactorTank(boolean input) {
-            super(BASE_TANK_CAPACITY, fluid -> !input || casingRecipe(fluid) != null);
+            super(BASE_TANK_CAPACITY, fluid -> !input || acceptsCasingInput(fluid));
         }
 
         @Override

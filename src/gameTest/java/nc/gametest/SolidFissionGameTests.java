@@ -199,17 +199,82 @@ public final class SolidFissionGameTests {
     }
 
     @GameTest(template = "fission", timeoutTicks = 100)
+    public static void solidCasingRecipesMatchTheStoredDose(GameTestHelper helper) {
+        buildReactor(helper);
+        var coolant = new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ethanol")), 9);
+        var fallbackProduct = new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 3);
+        var exactProduct = new FluidStack(NCGasCoolants.OXYGEN.hot(), 8);
+        var player = inspector(helper);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, WATER_IN, Direction.NORTH);
+                    helper.assertTrue(inlet.isFluidValid(0, coolant) && inlet.fill(coolant, FluidAction.SIMULATE) == 9
+                                    && inlet.getFluidInTank(0).isEmpty() && inlet.fill(coolant, FluidAction.EXECUTE) == 9,
+                            "A vent accepts a partial dose without consuming it in simulation");
+                    items(helper, FUEL_IN, Direction.DOWN)
+                            .insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.useBlock(CONTROLLER, player);
+                    var menu = (SolidFissionMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.predicted() && menu.outputRate() == 0D,
+                            "The forecast waits until the tank can supply a complete dose");
+                    helper.assertTrue(inlet.fill(new FluidStack(coolant, 1), FluidAction.EXECUTE) == 1,
+                            "Another millibucket completes the tag recipe");
+                })
+                .thenExecuteAfter(1, () -> {
+                    var menu = (SolidFissionMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.predicted() && menu.outputRate() > 0D,
+                            "The forecast selects the tag recipe whose input is ready");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(fallbackProduct)
+                                && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "Ten millibuckets run the smaller tag recipe"))
+                .thenExecute(() -> helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH)
+                        .fill(new FluidStack(coolant, 18), FluidAction.EXECUTE) == 18, "The inlet accepts a bulk dose"))
+                .thenExecuteAfter(4, () -> {
+                    var outlet = fluids(helper, STEAM_OUT, Direction.SOUTH);
+                    helper.assertTrue(fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).getAmount() == 18
+                                    && outlet.drain(3, FluidAction.EXECUTE).isFluidStackIdentical(fallbackProduct),
+                            "The selected exact recipe waits for its own product tank even though the fallback product fits");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluids(helper, STEAM_OUT, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(exactProduct)
+                                && fluids(helper, WATER_IN, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "A full bulk dose runs the exact-fluid recipe"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 100)
     public static void casingHeatProcessesBothCoolantAlternatives(GameTestHelper helper) {
         buildReactor(helper);
+        var player = inspector(helper);
+        double[] smallerDoseRate = new double[1];
         helper.startSequence()
                 .thenWaitUntil(() -> requireAssembled(helper))
                 .thenExecute(() -> {
                     var inlet = fluids(helper, WATER_IN, Direction.NORTH);
                     var helium = NCFluids.HELIUM_3.source().get();
-                    helper.assertTrue(inlet.fill(new FluidStack(helium, 28), FluidAction.EXECUTE) == 28,
-                            "The vent must accept its custom coolant");
+                    helper.assertTrue(inlet.fill(new FluidStack(helium, 10), FluidAction.EXECUTE) == 10,
+                            "The vent accepts the smaller coolant dose");
                     items(helper, FUEL_IN, Direction.DOWN)
                             .insertItem(0, new ItemStack(NCFission.LECF_251_OXIDE.get()), false);
+                    helper.useBlock(CONTROLLER, player);
+                    var menu = (SolidFissionMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    smallerDoseRate[0] = menu.outputRate();
+                    helper.assertTrue(menu.predicted() && smallerDoseRate[0] > 0D,
+                            "The forecast uses its only complete alternative");
+                    helper.assertTrue(inlet.fill(new FluidStack(helium, 18), FluidAction.EXECUTE) == 18,
+                            "Adding 18 millibuckets makes the preferred dose available");
+                })
+                .thenExecuteAfter(1, () -> {
+                    var menu = (SolidFissionMenu) player.containerMenu;
+                    menu.broadcastChanges();
+                    helper.assertTrue(menu.predicted() && Math.abs(smallerDoseRate[0] - 1.8D * menu.outputRate()) < 1E-9,
+                            "A forecast with both doses available uses the preferred 18-millibucket input");
                     helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
                 })
                 .thenWaitUntil(() -> {

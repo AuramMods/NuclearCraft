@@ -1,0 +1,6 @@
+{
+  "type": "nuclearcraft:fission_emergency_cooling",
+  "input": {"fluid": "nuclearcraft:ethanol", "amount": 18},
+  "result": {"fluid": "minecraft:water", "amount": 5},
+  "heat_per_mb": 2
+}

@@ -1,0 +1,6 @@
+{
+  "type": "nuclearcraft:fission_heating",
+  "input": {"fluid": "nuclearcraft:ethanol", "amount": 18},
+  "result": {"fluid": "nuclearcraft:oxygen_hot", "amount": 8},
+  "heat_per_mb": 1
+}
