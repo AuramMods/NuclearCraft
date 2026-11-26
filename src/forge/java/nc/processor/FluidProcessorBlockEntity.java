@@ -75,9 +75,8 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
     public static void tick(Level level, BlockPos pos, BlockState state, FluidProcessorBlockEntity machine) {
         boolean running = machine.process(level, machine.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, running);
-        machine.fluids.push(level);
-        if (!running) {
-            machine.itemInput.ports.push(level);
+        if (!running && !state.getValue(ProcessorBlock.LIT)) {
+            machine.autoEject(level);
         }
     }
 
@@ -198,9 +197,8 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                     fluids.produce(index + machine.inputs, FluidBatch.divide(rolled, factor));
                 }
             }
-            itemInput.ports.push(level);
+            autoEject(level);
             if (fluids.discardsUnusableInputs()) {
-                fluids.push(level);
                 refreshInput();
                 FluidProcessorRecipe nextBatch = findRecipe(level);
                 if (nextBatch == null || !hasOutputSpace(nextBatch.results(), nextBatch.batchFactor())) {

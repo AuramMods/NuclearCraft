@@ -119,11 +119,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     public static void tick(Level level, BlockPos pos, BlockState state, ItemProcessorBlockEntity processor) {
         boolean running = processor.process(level, processor.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, running);
-        if (!running) {
-            processor.itemPorts.push(level);
-        }
-        if (processor.fluid != null) {
-            processor.fluid.push(level);
+        if (!running && !state.getValue(ProcessorBlock.LIT)) {
+            processor.autoEject(level);
         }
         if (processor.machine.generator()) {
             for (Direction side : ProcessorItemPorts.SIDES) {
@@ -300,9 +297,8 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                     fluid.produce(machine.fluidInputs() + index, recipe.fluidProducts().get(index).roll(level.random));
                 }
             }
-            itemPorts.push(level);
+            autoEject(level);
             if (fluid != null && fluid.discardsUnusableInputs()) {
-                fluid.push(level);
                 refreshInput();
                 ItemProcessorRecipe nextBatch = findRecipe(level);
                 if (nextBatch == null || !hasOutputSpace(nextBatch.products(), nextBatch.fluidOutputs())) {

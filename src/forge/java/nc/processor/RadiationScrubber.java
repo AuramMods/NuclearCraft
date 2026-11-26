@@ -81,9 +81,9 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
     public static void tick(Level level, BlockPos pos, BlockState state, RadiationScrubber machine) {
         boolean active = machine.process(level, machine.redstoneControl && MachineInterface.powered(level, pos, machine));
         ProcessorBlock.setRunning(level, pos, state, active);
-        machine.tanks.push(level);
-        if (!active) {
+        if (!active && !state.getValue(ProcessorBlock.LIT)) {
             machine.itemPorts.push(level);
+            machine.tanks.push(level);
         }
         if (active && level instanceof ServerLevel server && level.getGameTime() >= machine.nextEnvironmentCheck) {
             machine.refreshEnvironment(server);
@@ -107,8 +107,8 @@ public final class RadiationScrubber extends BlockEntity implements MachineInter
             }
             clearBatch();
             itemPorts.push(level);
+            tanks.push(level);
             if (tanks.discardsUnusableInputs()) {
-                tanks.push(level);
                 ScrubberRecipe nextBatch = findUnreservedRecipe(level);
                 if (nextBatch == null || !canProduce(nextBatch)) {
                     tanks.discardUnusableInputs();

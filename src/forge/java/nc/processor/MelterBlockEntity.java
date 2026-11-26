@@ -90,9 +90,8 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
     public static void tick(Level level, BlockPos pos, BlockState state, MelterBlockEntity melter) {
         boolean processing = melter.process(level, melter.redstoneHalted(level, pos));
         ProcessorBlock.setRunning(level, pos, state, processing);
-        melter.fluids.push(level);
-        if (!processing) {
-            melter.inventory.ports.push(level);
+        if (!processing && !state.getValue(ProcessorBlock.LIT)) {
+            melter.autoEject(level);
         }
     }
 
@@ -144,7 +143,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                 fluids.produce(0, recipe.fluidProduct().roll(level.random));
             }
             inventory.extractItem(0, recipe.input().matchedCount(recipeInput.getItem(0)), false);
-            inventory.ports.push(level);
+            autoEject(level);
             progressHalfTicks = Math.max(0, progressHalfTicks - batch);
             if (progressHalfTicks > 0) {
                 recipeInput.setItem(0, inventory.getStackInSlot(0));

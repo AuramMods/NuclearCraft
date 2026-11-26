@@ -72,6 +72,12 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
 
     abstract @Nullable ProcessorFluidTanks fluidTanks();
 
+    final void autoEject(Level level) {
+        itemPorts().push(level);
+        var tanks = fluidTanks();
+        if (tanks != null) tanks.push(level);
+    }
+
     boolean allowsSettingsCopy() {
         return true;
     }
