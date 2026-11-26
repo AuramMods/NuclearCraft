@@ -34,6 +34,10 @@ On clean Forge, a converted Large Electrolyzer kept ten paid ticks, 500 mB of wa
 
 In a fresh isolated copy with all 540 installed Auram mod JARs, the packaged JAR loaded a saved world and initialized JEI. The crafting menu produced the chassis, servo, and plates for two Melters, and a survival player placed both. The same crafting run used Elite Plating for the Molten Salt Controller and Radiation Scrubber. Mekanism cables powered one stock ice recipe and one packed-ice recipe replaced by KubeJS. JEI showed both recipes, and the saved chunks retained 1,000 mB and 777 mB of water after confirmed chunk eviction and reload. The client used master volume zero and OpenAL No Output and exited with zero focus activations, foreground samples, or visible windows.
 
+The controlled-gate migration build, SHA-256 `d931ab67c46fd3bfc4d75686b842cdd339d86ed028b72749ea27260eacbc48da`, passed all 336 local GameTests. Both packaged Forge 47.4.10 reactor-to-turbine chains completed again and kept their measured products through chunk eviction and dedicated restart.
+
+The same JAR reopened the saved Auram progression world in isolated 540-mod snapshots with AuramCore 1.0.52 and 1.0.53. The stock and KubeJS Melter recipes remained visible in JEI, and their saved products retained the expected volumes. A migrated controlled-X gate used its legacy target, and both qubits measured one. The updated gate and measurements survived chunk eviction and were present in the saved world. Both clients ran at master volume zero with OpenAL No Output and reported zero focus activations, foreground samples, or visible windows.
+
 ## Gameplay coverage
 
 - The Melter has an in-world block, menu, datapack recipes for ice, packed ice, and sulfur dust, and a Forge fluid registration for molten sulfur.
@@ -675,6 +679,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
 | Create Diesel Generators | 1.3.8 | Shared ethanol into Salt Mixers and NuclearCraft ethanol into diesel engines |
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
+| Ars Technica and Ars Nouveau | 1.4.2 and 4.12.7 | Source Engine and Alternator powering a Melter with Mekanism collecting its output |
 | Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
 | Create: Steam ’n’ Rails | 1.6.15-beta | Fuel Tank fill and drain through Ender IO and Mekanism |
 | Create: Occult Engineering and Occultism | 0.11.3 and 1.157.0 | Mechanical Pulverizer crushing a NuclearCraft ore and feeding its dust into a Melter |
@@ -689,6 +694,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | ProjectRed Expansion | 4.21.0 | Transposers and Pneumatic Tubes on a sided Manufactory |
 | Imperium | 1.0.10 | Voltaic Pile power to a linked Roh Energy Tap |
 | RFTools Base and McJtyLib | 5.0.6 and 8.0.7 | Forge Energy from a sided Voltaic Pile into a Machine Infuser |
+| Nature's Aura | 39.4 | Forge Energy from an Energetic Aura Forge into a sided Voltaic Pile |
 | Cognition | 2.4.10 | Experience Obelisk transfer between scripted Melter and Infuser recipes |
 | Theurgy | 1.26.0 | Liquefaction Cauldron supplied with NuclearCraft copper ore and a scripted Melter solvent |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
@@ -754,6 +760,10 @@ In the same test world, a Mekanism Logistical Transporter moved one NuclearCraft
 On packaged Forge 47.4.10, an RFTools Machine Infuser accepted exactly 4,096 FE after the Voltaic Pile's output face opened. A simulated transfer left its stored charge unchanged. A Cognition Experience Obelisk rejected water from a Melter and then accepted the scripted Melter recipe's 135 mB of Cognitium through an Ender IO conduit. A Mekanism Mechanical Pipe carried that fluid into a scripted Infuser, which used 100 mB and 250 FE and retained 35 mB. A confirmed chunk eviction and a dedicated restart preserved the item, fluid, and energy balances.
 
 Theurgy's Liquefaction Cauldron rejected water through an Ender IO Fluid Conduit and accepted one NuclearCraft copper ore from a Mekanism Logistical Transporter. With a fueled Pyromantic Brazier, its stock recipe used 10 mB of the scripted Melter's 45 mB of Sal Ammoniac. An Ender IO Item Conduit exported five Copper Alchemical Sulfur with the copper ore tag recorded as their source. The five items and 35 mB of solvent survived a confirmed chunk eviction and dedicated restart.
+
+On packaged Forge 47.4.10, an empty Ars Nouveau Source Jar left the Melter unpowered. Filling the jar started the Ars Technica Source Engine configured for 128 RPM. A Create Crafts & Additions Alternator supplied Forge Energy and the Melter finished its stock ice batch. Redstone stopped the engine, and a Mekanism Mechanical Pipe moved exactly 1,000 mB of water to a Basic Fluid Tank. The tank retained that amount through confirmed chunk eviction and dedicated restart.
+
+An Energetic Aura Forge loaded with 6,144 FE retained its entire charge against a closed Voltaic Pile face. Opening the input let it transfer exactly 1 FE into the nearly full pile. After space opened, it transferred the remaining 6,143 FE. The stored amounts and sided input persisted through confirmed chunk eviction and dedicated restart on packaged Forge 47.4.10.
 
 Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
 
@@ -1187,7 +1197,9 @@ Circuits whose vectors exceed 8 MiB store the amplitudes in compressed `.qstate`
 
 Install CC: Tweaked to craft the Quantum Computer Port with a wired modem, networking cable, and basic computer. The port retains the legacy peripheral type `nc_quantum_computer` and the Lua methods `isComplete`, `getNumberOfQubits`, `getStateDim`, `getStateVector`, and `getProbs`. Existing OpenComputers scripts can migrate the discovery call to `peripheral.find("nc_quantum_computer")`. State vectors return one-based Lua tables of real and imaginary pairs. Disassembly pauses access to the live state and removing a port detaches the peripheral.
 
-The controller, qubit, connector, and port keep their block IDs. For the two 12-variant gate blocks, metadata 0 through 11 maps in order to `x`, `y`, `z`, `h`, `s`, `sdg`, `t`, `tdg`, `p`, `rx`, `ry`, and `rz`. Append the name to `quantum_computer_gate_single_`, or prepend `c` to the name for `quantum_computer_gate_control_`. The two Swap suffixes are `swap` and `cswap` in metadata order. The code generator suffixes are `qasm` and `qiskit`. Map the block entities to `nuclearcraft:quantum_computer_part`. Move the old multiblock's `size` and `vector` fields to the controller's `circuit` compound and preserve the qubit IDs and measurements. Gate selections can still be read from their original `nQubits`, `cQubits`, `iQubits`, and `jQubits` compounds.
+The controller, qubit, connector, and port keep their block IDs. For the two 12-variant gate blocks, metadata 0 through 11 maps in order to `x`, `y`, `z`, `h`, `s`, `sdg`, `t`, `tdg`, `p`, `rx`, `ry`, and `rz`. Append the name to `quantum_computer_gate_single_`, or prepend `c` to the name for `quantum_computer_gate_control_`. The two Swap suffixes are `swap` and `cswap` in metadata order. The code generator suffixes are `qasm` and `qiskit`. Map the block entities to `nuclearcraft:quantum_computer_part`. Move the old multiblock's `size` and `vector` fields to the controller's `circuit` compound and preserve the qubit IDs and measurements. Gate selections can be read from their original `nQubits`, `cQubits`, `tQubits`, `iQubits`, and `jQubits` compounds. The controlled gate's legacy `tQubits` targets are written as the current `nQubits` array on the next save.
+
+A converted two-qubit circuit on packaged Forge 47.4.10 retained its original inline vector and qubit IDs. A redstone pulse applied the controlled-X gate to its legacy target, and both qubits measured one. Chunk eviction and dedicated restart preserved the vector, target, and measurements.
 
 All 162 local GameTests passed, including Multitool recording through the placed generator. The packaged JAR started on clean Forge 47.4.18. With CC: Tweaked 1.120.2 installed, an in-world Lua computer read the amplitudes of a two-qubit circuit prepared by redstone pulses. It saw the port pause when a distant circuit chunk unloaded. The measured state and port connection returned after reloading, and the state persisted across a dedicated-server restart. Removing the port detached it from the computer. Qiskit 2.2.3 imported both export formats and verified equivalent operators for a circuit with phase, rotation, Swap, Controlled Swap, and multiple Toffoli targets.
 

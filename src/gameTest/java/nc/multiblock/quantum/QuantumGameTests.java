@@ -8,6 +8,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.UseOnContext;
@@ -30,6 +31,33 @@ import java.util.UUID;
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class QuantumGameTests {
+    @GameTest(template = "empty")
+    public static void controlledGateImportsLegacyTargets(GameTestHelper helper) {
+        var pos = new BlockPos(2, 2, 2);
+        helper.setBlock(pos, NCQuantum.block(QuantumPart.CX));
+        var gate = part(helper, pos);
+        var legacy = new CompoundTag();
+        var controls = new CompoundTag();
+        controls.putIntArray("ints", new int[] {1});
+        legacy.put("cQubits", controls);
+        var targets = new CompoundTag();
+        targets.putIntArray("ints", new int[] {0});
+        legacy.put("tQubits", targets);
+
+        gate.load(legacy);
+        var circuit = new QuantumCircuit((ids, measured) -> {});
+        circuit.reshape(2);
+        circuit.apply(new QuantumOperationWrapper.X(circuit, new int[] {1}));
+        circuit.apply(gate.part().operation(circuit, gate));
+        close(helper, circuit.probability(new int[] {0, 1}, 3), 1D,
+                "The migrated controlled gate flips the legacy target");
+
+        var saved = gate.saveWithoutMetadata();
+        helper.assertTrue(Arrays.equals(saved.getIntArray("nQubits"), new int[] {0}),
+                "The migrated target survives in the current save format");
+        helper.succeed();
+    }
+
     @GameTest(template = "empty")
     public static void queuedLoadDoesNotRestoreRemovedQuantumController(GameTestHelper helper) {
         var level = helper.getLevel();

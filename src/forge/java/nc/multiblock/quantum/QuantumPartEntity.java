@@ -230,6 +230,10 @@ public final class QuantumPartEntity extends BlockEntity {
                 selections.put(setting, tag.getCompound(key).getIntArray("ints"));
             }
         });
+        if (part.role == QuantumPart.Role.CONTROL && !selections.containsKey(Setting.TARGETS)
+                && tag.contains("tQubits", Tag.TAG_COMPOUND)) {
+            selections.put(Setting.TARGETS, tag.getCompound("tQubits").getIntArray("ints"));
+        }
         if (computer != null) {
             if (tag.contains("circuit", Tag.TAG_COMPOUND)) {
                 computer.load(tag.getCompound("circuit"));
