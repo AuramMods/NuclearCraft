@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:pressurizer",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "techreborn:carbon_mesh"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "techreborn:carbon_plate",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 40,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "techreborn:carbon_mesh"
+        },
+        {
+            "type": "forge:item_exists",
+            "item": "techreborn:carbon_plate"
+        }
+    ]
+}

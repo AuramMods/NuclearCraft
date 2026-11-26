@@ -1,0 +1,34 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/electrum"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:redstone",
+        "amount": 200
+    },
+    "result": {
+        "item": "redstone_arsenal:flux_ingot",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:item_exists",
+            "item": "redstone_arsenal:flux_ingot"
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:tag_empty",
+                "tag": "forge:ingots/electrum"
+            }
+        }
+    ]
+}

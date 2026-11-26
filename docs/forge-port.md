@@ -461,6 +461,18 @@ Ender IO 8.2.22-beta delivered the copper ingot and 24,000 FE, and Mekanism 10.4
 
 A clean dedicated server supplied a plate tag that was absent from the client installation. The multiplayer client showed its output in JEI and updated it after a live tag reload. In the isolated Auram instance, JEI listed 32 discovered plate families. Both JEI and the working Pressurizer selected the Embers copper plate from the pack's copper tag. Both clients used master volume zero and OpenAL No Output. The native observer reported zero focus changes and visible window samples.
 
+### Tech Reborn and Redstone Arsenal recipes
+
+The Pressurizer converts one Tech Reborn Carbon Mesh into one Carbon Plate in 600 ticks for 24,000 FE at stock settings. The recipe ID is `nuclearcraft:pressurizer/carbon_plate`. Use `techreborn:carbon_mesh` and `techreborn:carbon_plate` for the legacy `techreborn:part` metadata 34 and `techreborn:plates` metadata 2. [Tech Reborn Carbon Mesh](https://wiki.techreborn.ovh/docs/items/parts/carbon_mesh/)
+
+The Infuser combines one electrum ingot or dust with 200 mB from `forge:redstone` and produces the corresponding Redstone Arsenal Flux Ingot or Flux Dust. Each recipe takes 600 ticks and 6,000 FE at stock settings. The recipe IDs are `nuclearcraft:infuser/flux_ingot` and `nuclearcraft:infuser/flux_dust`. The input tags are `forge:ingots/electrum` and `forge:dusts/electrum`. [Redstone Arsenal 8.0.1.24](https://www.curseforge.com/minecraft/mc-mods/redstone-arsenal/files/5372745)
+
+These recipes load when the relevant materials are available and honor the global and per-machine default recipe switches. Datapacks and KubeJS can replace them by ID.
+
+On packaged Forge 47.4.10 with Redstone Arsenal 8.0.1.24, Thermal Foundation 11.0.6.70, and Tech Reborn 5.8.13 through Sinytra Connector beta 47, all three recipes preserved their feeds and charge behind full machine outputs through chunk eviction and restart. Ender IO 8.2.22-beta supplied Thermal liquid redstone, and Mekanism 10.4.16.80 supplied NuclearCraft liquid redstone. Each Infuser used 200 mB and left exactly 1 mB. Both networks collected the matching flux product. Ender IO collected the Carbon Plate. All three products survived another eviction and restart. Clean packaged Forge omitted the three recipes. The global defaults switch removed all three, and each machine's switch removed just its own recipes. All 281 local GameTests passed.
+
+A muted multiplayer client on the same optional mod setup displayed all three recipes in JEI. The isolated client with all 540 installed Auram mod JARs omitted the three optional recipes and displayed and ran the stock Signalum Infuser and Pyrolytic Carbon Pressurizer recipes. Both clients used master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, and visible windows.
+
 ### Isotope fluoride recovery
 
 The 22 single-block isotope recipes use `nuclearcraft:electrolyzer/<isotope>_fluoride` IDs. Each turns 72 mB of fluoride into 72 mB of its original isotope in the first product tank and 500 mB of fluorine in the second. The legacy default is 1,600 ticks at 40 FE/t. The Chemical Reactor can use those same fluids to make the fluoride again.
@@ -537,6 +549,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Satiscraftory | 1.1.3 | Conveyor transfer on sided processors and battery power for the Smelter |
 | Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
+| Tesseract | 1.0.38 | Item, fluid, and Forge Energy channels between a Distributor, an Infuser, and remote storage |
 | Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
 | Large Ore Deposits and ForgeEndertech | 8.1.8.0 build 1850 and 11.1.10.0 build 2048 | Deposit generation during reload and saved deposits in new Overworld and Wasteland terrain |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
@@ -854,6 +867,12 @@ A Starbuncle with a Wyrm Degree waited until the Manufactory's west input opened
 A Starbucket drew steam from the south-facing outlet of an assembled solid-fission reactor and carried it to a jar in another chunk. The worker retained 1,000 mB in transit and the reactor retained the other 3,000 mB while the jar was full. Both amounts survived confirmed chunk unload and reload and a dedicated restart. Freeing 4,000 mB of room let the same worker deliver the complete batch.
 
 The isolated 540-mod Auram instance repeated the liquid ender and 3,000 FE routes and loaded JEI. The client saved and exited with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
+
+### Tesseract channels
+
+On packaged Forge 47.4.10, Auram's Tesseract 1.0.38 carried one glass block, 1,000 mB of tritium, and 6,000 FE from a Distributor Outlet to an Infuser across three channels. A full output kept all supplies in the Infuser through chunk eviction and restart. After the output cleared, the Infuser made one Tritium Lamp. An Ender IO 8.2.22-beta Item Conduit sent it through a separate Tesseract channel to a remote barrel. The single lamp and the empty source and processor buffers survived another eviction and restart. [Tesseract 1.0.38 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/tesseract/files/6865509)
+
+The isolated Auram instance repeated the circuit with all 540 installed mod JARs and the original Tesseract configuration. The region files contained exactly one remote lamp and empty input and energy buffers after eviction and shutdown. The client loaded JEI and ran with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
 
 ### Tools and Armor
 
