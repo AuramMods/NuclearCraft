@@ -1,0 +1,63 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ores/dilithium"
+                },
+                {
+                    "tag": "c:ores/dilithium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "preferred_tag": "forge:dusts/dilithium",
+        "tag": "c:dusts/dilithium",
+        "count": 2
+    },
+    "ticks": 500,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ores/dilithium"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ores/dilithium"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/dilithium"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/dilithium"
+                    }
+                }
+            ]
+        }
+    ]
+}

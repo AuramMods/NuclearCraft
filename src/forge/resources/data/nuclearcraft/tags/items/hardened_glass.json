@@ -1,0 +1,17 @@
+{
+    "replace": false,
+    "values": [
+        {
+            "id": "#forge:glass/hardened",
+            "required": false
+        },
+        {
+            "id": "#c:glass_blocks/hardened",
+            "required": false
+        },
+        {
+            "id": "#enderio:fused_quartz",
+            "required": false
+        }
+    ]
+}

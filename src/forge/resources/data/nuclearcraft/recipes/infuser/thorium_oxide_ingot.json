@@ -1,0 +1,49 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:ingots/thorium"
+                },
+                {
+                    "tag": "c:ingots/thorium"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "forge:oxygen",
+        "amount": 1000,
+        "legacy_fluid_aliases": true
+    },
+    "result": {
+        "preferred_tag": "forge:ingots/thorium_oxide",
+        "tag": "c:ingots/thorium_oxide",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/thorium_oxide"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/thorium_oxide"
+                    }
+                }
+            ]
+        }
+    ]
+}

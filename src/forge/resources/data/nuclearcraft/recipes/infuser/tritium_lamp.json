@@ -1,22 +1,68 @@
 {
-    "type": "nuclearcraft:infuser",
-    "ingredients": [
+    "type": "forge:conditional",
+    "recipes": [
         {
-            "ingredient": {
-                "tag": "forge:glass"
-            },
-            "count": 1
+            "conditions": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "nuclearcraft:hardened_glass"
+                    }
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:infuser",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "nuclearcraft:hardened_glass"
+                        },
+                        "count": 1
+                    }
+                ],
+                "fluid_input": {
+                    "fluid": "nuclearcraft:tritium",
+                    "amount": 1000,
+                    "legacy_fluid_aliases": true
+                },
+                "result": {
+                    "item": "nuclearcraft:tritium_lamp",
+                    "count": 1
+                },
+                "ticks": 600,
+                "energy_per_tick": 10
+            }
+        },
+        {
+            "conditions": [
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "nuclearcraft:hardened_glass"
+                }
+            ],
+            "recipe": {
+                "type": "nuclearcraft:infuser",
+                "ingredients": [
+                    {
+                        "ingredient": {
+                            "tag": "forge:glass"
+                        },
+                        "count": 1
+                    }
+                ],
+                "fluid_input": {
+                    "fluid": "nuclearcraft:tritium",
+                    "amount": 1000,
+                    "legacy_fluid_aliases": true
+                },
+                "result": {
+                    "item": "nuclearcraft:tritium_lamp",
+                    "count": 1
+                },
+                "ticks": 600,
+                "energy_per_tick": 10
+            }
         }
-    ],
-    "fluid_input": {
-        "fluid": "nuclearcraft:tritium",
-        "amount": 1000,
-        "legacy_fluid_aliases": true
-    },
-    "result": {
-        "item": "nuclearcraft:tritium_lamp",
-        "count": 1
-    },
-    "ticks": 600,
-    "energy_per_tick": 10
+    ]
 }
