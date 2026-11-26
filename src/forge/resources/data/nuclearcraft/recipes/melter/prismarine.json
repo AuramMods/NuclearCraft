@@ -9,6 +9,12 @@
         },
         {
             "tag": "forge:dusts/prismarine"
+        },
+        {
+            "tag": "c:gems/prismarine"
+        },
+        {
+            "tag": "c:dusts/prismarine"
         }
     ],
     "result": {

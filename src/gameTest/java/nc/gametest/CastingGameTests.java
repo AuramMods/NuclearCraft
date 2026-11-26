@@ -100,6 +100,29 @@ public final class CastingGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 850)
+    public static void ingotFormerPreservesEachChocolateForm(GameTestHelper helper) {
+        String[] forms = {"cocoa_butter", "unsweetened_chocolate", "dark_chocolate", "milk_chocolate"};
+        helper.setBlock(PROCESSOR, Machine.INGOT_FORMER.block());
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(PROCESSOR);
+        var tank = machine.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.WEST).orElseThrow(AssertionError::new);
+        var outlet = machine.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.EAST).orElseThrow(AssertionError::new);
+        var sequence = helper.startSequence();
+        for (String form : forms) {
+            var item = ForgeRegistries.ITEMS.getValue(NuclearCraft.id(form));
+            sequence.thenExecute(() -> helper.assertTrue(tank.fill(fluid(form, 144), EXECUTE) == 144,
+                            "Supply one batch of " + form))
+                    .thenIdle(198)
+                    .thenExecute(() -> helper.assertTrue(outlet.getStackInSlot(0).isEmpty(),
+                            "The cast takes the full 200 ticks"))
+                    .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(outlet.getStackInSlot(0), new ItemStack(item))
+                                    && tank.getFluidInTank(0).isEmpty(),
+                            "Cast the corresponding " + form + " item without power"))
+                    .thenExecute(() -> outlet.extractItem(0, 1, false));
+        }
+        sequence.thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 3300)
     public static void crystallizerRecoversCalciumSulfateAcrossReload(GameTestHelper helper) {
         var manager = helper.getLevel().getRecipeManager();

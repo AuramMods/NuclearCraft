@@ -6,7 +6,8 @@
         "amount": 250
     },
     "result": {
-        "item": "minecraft:glowstone_dust"
+        "item": "minecraft:glowstone_dust",
+        "preferred_tag": "forge:ingots/glowstone"
     },
     "ticks": 100,
     "power_multiplier": 1

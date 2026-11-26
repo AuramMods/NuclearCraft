@@ -183,7 +183,6 @@ public final class GhoulGameTests {
         for (var pos : BlockPos.betweenClosed(spawn, neighbor.above())) {
             wasteland.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
         }
-        wasteland.setBlockAndUpdate(spawn.below(), Blocks.GRASS_BLOCK.defaultBlockState());
         helper.startSequence()
                 .thenWaitUntil(() -> helper.assertTrue(wasteland.areEntitiesLoaded(chunk.toLong()),
                         "The Wasteland has loaded the spawn chunk's entities"))
@@ -195,6 +194,8 @@ public final class GhoulGameTests {
     }
 
     private static void assertWastelandSpawnChecks(GameTestHelper helper, ServerLevel wasteland, BlockPos spawn, BlockPos neighbor) {
+        // Wasteland terrain processing can replace grass while the spawn chunk loads.
+        wasteland.setBlockAndUpdate(spawn.below(), Blocks.GRASS_BLOCK.defaultBlockState());
         var cow = EntityType.COW.create(wasteland);
         var villager = EntityType.VILLAGER.create(wasteland);
         var feral = NCEntities.FERAL_GHOUL.get().create(wasteland);

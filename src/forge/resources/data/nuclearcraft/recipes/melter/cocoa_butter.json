@@ -1,8 +1,13 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:cocoa_butter"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:cocoa_butter"
+        },
+        {
+            "tag": "forge:ingots/cocoa_butter"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:cocoa_butter",
         "amount": 144

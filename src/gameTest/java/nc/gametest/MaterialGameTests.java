@@ -6,6 +6,7 @@ import nc.NuclearCraft;
 import nc.init.NCGasCoolants;
 import nc.init.NCRegistries;
 import nc.recipe.FluidContainerRecipe;
+import nc.recipe.ItemProcessorRecipe;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -18,6 +19,7 @@ import net.minecraft.world.inventory.TransientCraftingContainer;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.CraftingRecipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.common.ForgeHooks;
@@ -159,6 +161,9 @@ public final class MaterialGameTests {
         assertCrafts(helper, grid, item("fish_a_la_fred"), 1);
         fillGrid(grid, item("flour"), item("cocoa_solids"), item("flour"));
         assertCrafts(helper, grid, Items.COOKIE, 8);
+        fillGrid(grid, item("graham_cracker"), item("dark_chocolate"), item("marshmallow"), item("graham_cracker"));
+        helper.assertTrue(recipes.getRecipeFor(RecipeType.CRAFTING, grid, helper.getLevel()).isEmpty(),
+                "The stock s'more uses the milk chocolate bar");
         Item previous = item("graham_cracker");
         for (String id : new String[]{"smore", "moresmore", "foursmore"}) {
             Item next = item(id);
@@ -175,6 +180,34 @@ public final class MaterialGameTests {
         var obsidian = item("obsidian_dust");
         fillGrid(grid, obsidian, obsidian, item("end_stone_dust"), obsidian, obsidian);
         assertCrafts(helper, grid, item("dimensional_blend"), 2);
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void prismarineShardsMakeCoolingPartsAndCrystals(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var recipes = level.getRecipeManager();
+        var grinding = (ItemProcessorRecipe) recipes.byKey(NuclearCraft.id("manufactory/prismarine_dust")).orElseThrow();
+        helper.assertTrue(grinding.acceptsItem(Items.PRISMARINE_SHARD.getDefaultInstance())
+                        && !grinding.acceptsItem(Items.PRISMARINE_CRYSTALS.getDefaultInstance())
+                        && ItemStack.matches(grinding.getResultItem(level.registryAccess()), Items.PRISMARINE_CRYSTALS.getDefaultInstance())
+                        && grinding.ticks() == 400 && grinding.energyPerTick() == 20,
+                "Grinding makes a different prismarine item for 8,000 FE");
+
+        var grid = craftingGrid(3, 3);
+        var parts = new String[][]{
+                {"prismarine_heat_sink", "empty_sink"},
+                {"prismarine_coolant_heater", "standard_coolant_heater"},
+                {"fission_heater_port_prismarine", "fission_heater_port_standard"}
+        };
+        for (String[] pair : parts) {
+            var recipe = (CraftingRecipe) recipes.byKey(NuclearCraft.id("crafting/" + pair[0])).orElseThrow();
+            fillGrid(grid, Items.AIR, Items.PRISMARINE_SHARD, Items.AIR, Items.PRISMARINE_SHARD, item(pair[1]),
+                    Items.PRISMARINE_SHARD, Items.AIR, Items.PRISMARINE_SHARD, Items.AIR);
+            helper.assertTrue(recipe.matches(grid, level), "Craft " + pair[0] + " with four prismarine shards");
+            grid.setItem(1, Items.PRISMARINE_CRYSTALS.getDefaultInstance());
+            helper.assertTrue(!recipe.matches(grid, level), "Crystals cannot replace shards in " + pair[0]);
+        }
         helper.succeed();
     }
 

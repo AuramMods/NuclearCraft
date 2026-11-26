@@ -1,8 +1,13 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:unsweetened_chocolate"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:unsweetened_chocolate"
+        },
+        {
+            "tag": "forge:ingots/unsweetened_chocolate"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:unsweetened_chocolate",
         "amount": 144

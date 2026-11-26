@@ -7,7 +7,7 @@
     },
     "result": {
         "item": "nuclearcraft:unsweetened_chocolate",
-        "preferred_tag": "forge:ingots/chocolate"
+        "preferred_tag": "forge:ingots/unsweetened_chocolate"
     },
     "ticks": 200,
     "power_multiplier": 0.5

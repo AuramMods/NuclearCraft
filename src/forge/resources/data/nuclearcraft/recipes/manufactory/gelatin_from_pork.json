@@ -1,0 +1,17 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "minecraft:porkchop"
+            },
+            "count": 1
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:gelatin",
+        "count": 8
+    },
+    "ticks": 200,
+    "energy_per_tick": 10
+}

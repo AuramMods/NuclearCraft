@@ -6,7 +6,8 @@
         "amount": 100
     },
     "result": {
-        "item": "minecraft:redstone"
+        "item": "minecraft:redstone",
+        "preferred_tag": "forge:ingots/redstone"
     },
     "ticks": 100,
     "power_multiplier": 1

@@ -11,7 +11,7 @@
             "item": "nuclearcraft:fission_heater_port_standard"
         },
         "R": {
-            "item": "minecraft:prismarine_crystals"
+            "tag": "forge:dusts/prismarine"
         }
     },
     "result": {

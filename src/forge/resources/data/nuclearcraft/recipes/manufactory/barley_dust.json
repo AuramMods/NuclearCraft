@@ -1,0 +1,63 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "tag": "forge:crops/barley"
+                },
+                {
+                    "tag": "c:crops/barley"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "preferred_tag": "forge:dusts/barley",
+        "tag": "c:dusts/barley",
+        "count": 1
+    },
+    "ticks": 100,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:crops/barley"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:crops/barley"
+                    }
+                }
+            ]
+        },
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/barley"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/barley"
+                    }
+                }
+            ]
+        }
+    ]
+}

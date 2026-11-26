@@ -1,8 +1,13 @@
 {
     "type": "nuclearcraft:melter",
-    "ingredient": {
-        "item": "nuclearcraft:dark_chocolate"
-    },
+    "ingredient": [
+        {
+            "item": "nuclearcraft:dark_chocolate"
+        },
+        {
+            "tag": "forge:ingots/dark_chocolate"
+        }
+    ],
     "result": {
         "fluid": "nuclearcraft:dark_chocolate",
         "amount": 144

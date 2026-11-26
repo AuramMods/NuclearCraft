@@ -1,8 +1,6 @@
 {
     "replace": false,
     "values": [
-        "nuclearcraft:unsweetened_chocolate",
-        "nuclearcraft:dark_chocolate",
         "nuclearcraft:milk_chocolate"
     ]
 }

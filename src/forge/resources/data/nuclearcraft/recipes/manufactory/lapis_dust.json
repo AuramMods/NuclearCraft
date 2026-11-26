@@ -1,0 +1,47 @@
+{
+    "type": "nuclearcraft:manufactory",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:lapis_lazuli"
+                },
+                {
+                    "tag": "forge:gems/lapis"
+                },
+                {
+                    "tag": "c:gems/lapis"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "result": {
+        "preferred_tag": "forge:dusts/lapis",
+        "tag": "c:dusts/lapis",
+        "count": 1
+    },
+    "ticks": 400,
+    "energy_per_tick": 20,
+    "conditions": [
+        {
+            "type": "forge:or",
+            "values": [
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/lapis"
+                    }
+                },
+                {
+                    "type": "forge:not",
+                    "value": {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/lapis"
+                    }
+                }
+            ]
+        }
+    ]
+}

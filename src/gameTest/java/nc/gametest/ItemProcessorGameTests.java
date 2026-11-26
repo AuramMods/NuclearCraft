@@ -11,6 +11,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeType;
@@ -121,6 +122,37 @@ public final class ItemProcessorGameTests {
                     helper.assertTrue(inventory.getStackInSlot(0).isEmpty() && energy.getEnergyStored() == 0,
                             "The two processes consume exactly one coal and 5,000 FE");
                 }).thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 430)
+    public static void manufactoryGrindsPorkAndRawFishIntoGelatin(GameTestHelper helper) {
+        var recipes = helper.getLevel().getRecipeManager();
+        var fish = (ItemProcessorRecipe) recipes.byKey(NuclearCraft.id("manufactory/gelatin_from_fish")).orElseThrow();
+        for (var item : new Item[]{Items.COD, Items.SALMON, Items.TROPICAL_FISH, Items.PUFFERFISH}) {
+            helper.assertTrue(fish.acceptsItem(item.getDefaultInstance()), "Include all four legacy fish variants");
+        }
+        helper.assertTrue(!fish.acceptsItem(Items.COOKED_COD.getDefaultInstance()), "The recipe uses raw fish");
+
+        helper.setBlock(POS, Machine.MANUFACTORY.block());
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(POS);
+        var inventory = items(machine, Direction.UP);
+        var power = machine.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+        helper.assertTrue(inventory.insertItem(0, Items.PORKCHOP.getDefaultInstance(), false).isEmpty()
+                        && power.receiveEnergy(4_000, false) == 4_000,
+                "Supply one raw porkchop and two batches of charge");
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(inventory.getStackInSlot(1), stack("gelatin", 8))
+                                && power.getEnergyStored() == 2_000,
+                        "The pork recipe produces eight gelatin for 2,000 FE"))
+                .thenExecute(() -> {
+                    inventory.extractItem(1, 8, false);
+                    helper.assertTrue(inventory.insertItem(0, Items.COD.getDefaultInstance(), false).isEmpty(),
+                            "Supply a raw cod through the same input");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(inventory.getStackInSlot(1), stack("gelatin", 4))
+                                && inventory.getStackInSlot(0).isEmpty() && power.getEnergyStored() == 0,
+                        "The fish recipe produces four gelatin for 2,000 FE"))
+                .thenSucceed();
     }
 
     @GameTest(template = "empty", timeoutTicks = 520)
