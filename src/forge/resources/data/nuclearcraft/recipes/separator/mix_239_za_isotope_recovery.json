@@ -1,0 +1,25 @@
+{
+    "type": "nuclearcraft:separator",
+    "ingredients": [
+        {
+            "ingredient": {
+                "tag": "forge:ingots/mix_239_za"
+            },
+            "count": 9
+        }
+    ],
+    "ticks": 800,
+    "energy_per_tick": 10,
+    "results": [
+        {
+            "item": "nuclearcraft:uranium_238_za_ingot",
+            "preferred_tag": "forge:ingots/uranium_238_za",
+            "count": 8
+        },
+        {
+            "item": "nuclearcraft:plutonium_239_za_ingot",
+            "preferred_tag": "forge:ingots/plutonium_239_za",
+            "count": 1
+        }
+    ]
+}

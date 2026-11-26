@@ -22,6 +22,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
@@ -39,6 +40,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEntity implements MachineInterfaceTarget, MenuProvider, ChunkRadiationSource {
@@ -55,6 +57,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     private @Nullable ProcessorInputs reserved;
     private @Nullable SmeltingRecipe cachedSmeltingSource;
     private @Nullable ItemProcessorRecipe cachedSmeltingRecipe;
+    private @Nullable Map<ResourceLocation, Recipe<?>> separatorCatalog;
+    private ItemStack separatorInput = ItemStack.EMPTY;
+    private @Nullable ItemProcessorRecipe separatorRecipe;
 
     public ItemProcessorBlockEntity(BlockPos pos, BlockState state, ProcessorProfile machine) {
         super(machine.entityType(), pos, state, machine.rate(), 512_000, machine.generator(),
@@ -206,6 +211,9 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
     }
 
     private @Nullable ItemProcessorRecipe findRecipe(Level level) {
+        if (machine == Machine.SEPARATOR) {
+            return findSeparatorRecipe(level);
+        }
         ItemProcessorRecipe recipe = recipes.getRecipeFor(input, level).orElse(null);
         if (recipe != null || input.getItem(0).isEmpty()) {
             return recipe;
@@ -219,6 +227,29 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         ItemProcessorRecipe smelting = electricSmelting(source, level);
         return smelting.matches(input, level) ? smelting : null;
+    }
+
+    private @Nullable ItemProcessorRecipe findSeparatorRecipe(Level level) {
+        var stack = input.getItem(0);
+        var catalog = level.getRecipeManager().recipes.get(machine.recipes());
+        if (catalog == separatorCatalog && ItemStack.matches(stack, separatorInput)) {
+            return separatorRecipe;
+        }
+        separatorCatalog = catalog;
+        separatorInput = stack.copy();
+        separatorRecipe = recipes.getRecipeFor(input, level).orElse(null);
+        if (separatorRecipe == null || stack.getCount() <= 1) {
+            return separatorRecipe;
+        }
+        int count = separatorRecipe.inputs().get(0).matchedCount(stack);
+        for (var candidate : level.getRecipeManager().getAllRecipesFor(machine.recipes())) {
+            int candidateCount = candidate.inputs().get(0).matchedCount(stack);
+            if (candidateCount > count && candidate.matches(input, level)) {
+                separatorRecipe = candidate;
+                count = candidateCount;
+            }
+        }
+        return separatorRecipe;
     }
 
     private ItemProcessorRecipe electricSmelting(SmeltingRecipe source, Level level) {
@@ -247,6 +278,21 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             }
             refreshInput();
             recipe = findRecipe(level);
+        }
+        if (machine == Machine.SEPARATOR && recipe != null && progressHalfTicks > 0 && activeRecipe != null
+                && !activeRecipe.equals(recipe.id())
+                && level.getRecipeManager().byKey(activeRecipe).orElse(null) instanceof ItemProcessorRecipe running
+                && running.machine() == machine && running.matches(input, level)) {
+            if (recipe.inputs().get(0).matchedCount(input.getItem(0)) > running.inputs().get(0).matchedCount(input.getItem(0))
+                    && recipe.configuredTime() == running.configuredTime()
+                    && recipe.configuredPower() == running.configuredPower()
+                    && recipe.radiation() == running.radiation()
+                    && hasOutputSpace(recipe.products(), recipe.fluidOutputs())) {
+                activeRecipe = recipe.id();
+                setChanged();
+            } else {
+                recipe = running;
+            }
         }
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {

@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, FluidProduct fluidProduct,
-                              int ticks, int energyPerTick, double radiation,
+                              double duration, int energyPerTick, double radiation,
                               @Nullable ProcessorRecipeDefaults defaults) implements FluidProcessorRecipe {
     public SaltMixerRecipe {
         inputs = List.copyOf(inputs);
@@ -22,6 +22,11 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, Flui
 
     public FluidStack product() {
         return fluidProduct.stack();
+    }
+
+    @Override
+    public int ticks() {
+        return (int) Math.ceil(duration);
     }
 
     @Override
@@ -42,11 +47,12 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, Flui
     public static final class Serializer implements RecipeSerializer<SaltMixerRecipe> {
         @Override
         public SaltMixerRecipe fromJson(ResourceLocation id, JsonObject json) {
-            int ticks = GsonHelper.getAsInt(json, "ticks");
+            double ticks = GsonHelper.getAsDouble(json, "ticks");
             int energy = GsonHelper.getAsInt(json, "energy_per_tick");
             var inputs = FluidInput.readPair(json, id);
             var result = FluidProduct.readSlot(id, json.get("result"));
-            if (ticks < 1 || energy < 0 || (inputs.stream().allMatch(FluidInput::isEmpty) && result.isEmpty())) {
+            if (!Double.isFinite(ticks) || ticks < 1 || ticks > Integer.MAX_VALUE || energy < 0
+                    || (inputs.stream().allMatch(FluidInput::isEmpty) && result.isEmpty())) {
                 throw new JsonSyntaxException("Invalid Salt Mixer recipe " + id);
             }
             return new SaltMixerRecipe(id, inputs, result, ticks, energy, ProcessingRecipe.readRadiation(json, id),
@@ -56,7 +62,7 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, Flui
         @Override
         public SaltMixerRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             var inputs = FluidInput.readPair(buffer);
-            return new SaltMixerRecipe(id, inputs, FluidProduct.fromNetwork(buffer), buffer.readVarInt(), buffer.readVarInt(), buffer.readDouble(),
+            return new SaltMixerRecipe(id, inputs, FluidProduct.fromNetwork(buffer), buffer.readDouble(), buffer.readVarInt(), buffer.readDouble(),
                     ProcessorRecipeDefaults.fromNetwork(buffer));
         }
 
@@ -64,7 +70,7 @@ public record SaltMixerRecipe(ResourceLocation id, List<FluidInput> inputs, Flui
         public void toNetwork(FriendlyByteBuf buffer, SaltMixerRecipe recipe) {
             recipe.inputs.forEach(input -> FluidInput.write(buffer, input));
             recipe.fluidProduct.toNetwork(buffer);
-            buffer.writeVarInt(recipe.ticks);
+            buffer.writeDouble(recipe.duration);
             buffer.writeVarInt(recipe.energyPerTick);
             buffer.writeDouble(recipe.radiation);
             ProcessorRecipeDefaults.toNetwork(buffer, recipe.defaults);

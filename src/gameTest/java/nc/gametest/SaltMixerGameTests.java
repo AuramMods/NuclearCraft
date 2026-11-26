@@ -117,6 +117,43 @@ public final class SaltMixerGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 2_120)
+    public static void saltMixerKeepsTheLegacyLithiumDurationAcrossBatches(GameTestHelper helper) {
+        var id = NuclearCraft.id("salt_mixer/lithium");
+        var recipe = helper.getLevel().getRecipeManager().getAllRecipesFor(NCRegistries.MIXING.get()).stream()
+                .filter(candidate -> candidate.id().equals(id)).findFirst().orElseThrow();
+        helper.assertTrue(Math.abs(recipe.duration() - 2_000D / 3) < 1E-9,
+                "The stock lithium recipe takes 666 and two-thirds ticks");
+
+        helper.setBlock(MIXER, NCRegistries.SALT_MIXER.get());
+        BlockEntity machine = helper.getBlockEntity(MIXER);
+        IFluidHandler tanks = fluids(machine, Direction.NORTH);
+        helper.assertTrue(tanks.fill(stack("lithium_7", 432), EXECUTE) == 432
+                        && tanks.fill(stack("lithium_6", 48), EXECUTE) == 48,
+                "Supply enough of each isotope for three batches");
+        energy(machine).receiveEnergy(40_000, false);
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(tanks.getFluidInTank(2).isFluidStackIdentical(stack("lithium", 160)),
+                        "The first batch produces 160 mB of lithium"))
+                .thenExecute(() -> {
+                    CompoundTag saved = machine.saveWithoutMetadata();
+                    helper.assertTrue(saved.getDouble("progress_fraction") > 0, "The first batch leaves paid fractional work");
+                    helper.setBlock(MIXER, Blocks.AIR);
+                    helper.setBlock(MIXER, NCRegistries.SALT_MIXER.get());
+                    helper.getBlockEntity(MIXER).load(saved);
+                })
+                .thenWaitUntil(() -> {
+                    BlockEntity restored = helper.getBlockEntity(MIXER);
+                    IFluidHandler restoredTanks = fluids(restored, Direction.NORTH);
+                    helper.assertTrue(restoredTanks.getFluidInTank(2).isFluidStackIdentical(stack("lithium", 480))
+                                    && restoredTanks.getFluidInTank(0).isEmpty() && restoredTanks.getFluidInTank(1).isEmpty()
+                                    && energy(restored).getEnergyStored() == 0,
+                            "Three batches consume exactly 40,000 FE across the reload");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 660)
     public static void bothStockEthanolRecipesAcceptAnotherTaggedFluid(GameTestHelper helper) {
         BlockPos slurryPos = MIXER.east();

@@ -14,6 +14,6 @@
         "fluid": "nuclearcraft:lithium",
         "amount": 160
     },
-    "ticks": 666,
+    "ticks": 666.6666666666667,
     "energy_per_tick": 20
 }

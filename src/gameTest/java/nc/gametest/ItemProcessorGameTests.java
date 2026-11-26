@@ -21,6 +21,8 @@ import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.util.ArrayList;
+
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class ItemProcessorGameTests {
@@ -234,6 +236,54 @@ public final class ItemProcessorGameTests {
             var result = recipe.assemble(crafting, level.registryAccess());
             helper.assertTrue(result.is(stack("leu_235_pellet", 1).getItem()) && result.getCount() == 9,
                     "The separated materials can craft nine LEU-235 pellets");
+        });
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 850)
+    public static void separatorRecoversMixedFuelIsotopesWithoutReplacingSmallBatches(GameTestHelper helper) {
+        var results = new ArrayList<Runnable>();
+        for (int mass : new int[]{239, 241}) {
+            for (String form : new String[]{"", "_carbide", "_za"}) {
+                int index = results.size();
+                BlockPos pos = new BlockPos(1 + 2 * (index % 3), 1, 1 + 2 * (index / 3));
+                helper.setBlock(pos, Machine.SEPARATOR.block());
+                var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(pos);
+                var input = items(machine, Direction.UP);
+                var power = machine.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+                String fuel = "mix_" + mass + switch (form) {
+                    case "_za" -> "_za";
+                    case "_carbide" -> "_pellet_carbide";
+                    default -> "_pellet";
+                };
+                helper.assertTrue(input.insertItem(0, stack(fuel, 1), false).isEmpty(), "Accept " + fuel);
+                power.receiveEnergy(8_000, false);
+                helper.runAtTickTime(5, () -> {
+                    if (!form.isEmpty()) {
+                        helper.assertTrue(machine.saveWithoutMetadata().getLong("progress_half_ticks") > 0,
+                                "The single-item " + fuel + " recipe has already used some of the energy");
+                    }
+                    helper.assertTrue(input.insertItem(0, stack(fuel, 8), false).isEmpty(), "Complete the " + fuel + " batch");
+                });
+                results.add(() -> helper.assertTrue(input.getStackInSlot(0).isEmpty()
+                                && ItemStack.matches(input.getStackInSlot(1), stack("uranium_238" + form + "_ingot", 8))
+                                && ItemStack.matches(input.getStackInSlot(2), stack("plutonium_" + mass + form + "_ingot", 1))
+                                && power.getEnergyStored() == 0,
+                        "Nine " + fuel + " recover the original isotopes for exactly 8,000 FE"));
+            }
+        }
+        BlockPos fallback = new BlockPos(1, 1, 5);
+        helper.setBlock(fallback, Machine.SEPARATOR.block());
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(fallback);
+        var input = items(machine, Direction.UP);
+        helper.assertTrue(input.insertItem(0, stack("mix_239_pellet_carbide", 1), false).isEmpty(),
+                "The single-pellet recipe still accepts smaller batches");
+        machine.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new).receiveEnergy(8_000, false);
+        helper.succeedWhen(() -> {
+            results.forEach(Runnable::run);
+            helper.assertTrue(input.getStackInSlot(0).isEmpty()
+                            && ItemStack.matches(input.getStackInSlot(1), stack("mix_239_pellet", 1))
+                            && ItemStack.matches(input.getStackInSlot(2), stack("graphite_dust", 1)),
+                    "One carbide pellet separates into the pellet and its graphite");
         });
     }
 
