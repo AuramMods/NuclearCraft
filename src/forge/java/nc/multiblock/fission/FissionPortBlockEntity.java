@@ -1,6 +1,7 @@
 package nc.multiblock.fission;
 
 import nc.init.NCFission;
+import nc.multiblock.Cuboid;
 import nc.multiblock.fission.FissionPartBlock.Role;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -37,6 +38,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
     private @Nullable ItemPortHandler detachedItemPort;
     private LazyOptional<IItemHandler> detachedItems = LazyOptional.empty();
     private @Nullable Binding binding;
+    // A pipe can tick before the controller has restored its assembly.
+    private @Nullable AssemblyLink lastAssembly;
     private boolean detachedCapabilities = true;
     private @Nullable ResourceLocation fuelFilter;
     private @Nullable ResourceLocation gasFilter;
@@ -64,14 +67,24 @@ public final class FissionPortBlockEntity extends BlockEntity {
         irradiationItems = FissionPartBlock.role(state) == Role.IRRADIATOR_PORT ? new IrradiatorItems(this) : null;
     }
 
-    void bind(SolidFissionController controller, SolidFissionLayout.Port port) {
+    void bind(SolidFissionController controller, SolidFissionLayout.Port port, Cuboid bounds) {
+        if (hasLocalFluid() || localFuelItems != null || irradiationItems != null) {
+            var link = new AssemblyLink(controller.getBlockPos(), bounds);
+            if (!link.equals(lastAssembly)) {
+                lastAssembly = link;
+                setChanged();
+            }
+        }
         Binding next = new Binding(controller, port);
         if (!next.equals(binding)) {
             rebind(next);
         }
     }
 
-    void unbind() {
+    void unbind(boolean suspended) {
+        if (!suspended) {
+            clearAssemblyLink();
+        }
         rebind(null);
     }
 
@@ -158,7 +171,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     public void invalidateCaps() {
         detachedCapabilities = false;
         super.invalidateCaps();
-        unbind();
+        unbind(true);
     }
 
     @Override
@@ -181,7 +194,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 return power.cast();
             }
         }
-        if (current == null && detachedCapabilities && !isRemoved()
+        if (current == null && lastAssembly == null && detachedCapabilities && !isRemoved()
                 && (side == null || side == getBlockState().getValue(FissionWallBlock.FACING))) {
             if (capability == ForgeCapabilities.FLUID_HANDLER && hasLocalFluid()) {
                 return detachedFluidHandler().cast();
@@ -294,7 +307,10 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return controller == null ? localIrradiatorItems() : controller.irradiatorItems(localIrradiatorItems());
     }
 
-    void exportOutput(ServerLevel level) {
+    void tick(ServerLevel level) {
+        if (binding == null && lastAssembly != null) {
+            restoreAssembly(level);
+        }
         Binding current = binding;
         if (current == null || !current.port.output() || !connected(current)) {
             return;
@@ -317,6 +333,28 @@ public final class FissionPortBlockEntity extends BlockEntity {
             target.getCapability(ForgeCapabilities.ITEM_HANDLER, side).ifPresent(destination -> pushItems(inventory, destination));
         } else if (output != null) {
             target.getCapability(ForgeCapabilities.FLUID_HANDLER, side).ifPresent(destination -> pushFluid(output, destination));
+        }
+    }
+
+    private void restoreAssembly(ServerLevel level) {
+        var previous = lastAssembly;
+        if (!previous.bounds.isLoaded(level)) {
+            return;
+        }
+        if (level.getBlockEntity(previous.controller) instanceof SolidFissionController controller
+                && !controller.restorePortBinding(level)) {
+            return;
+        }
+        if (binding == null) {
+            clearAssemblyLink();
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+    }
+
+    private void clearAssemblyLink() {
+        if (lastAssembly != null) {
+            lastAssembly = null;
+            setChanged();
         }
     }
 
@@ -386,6 +424,13 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        if (lastAssembly != null) {
+            CompoundTag link = new CompoundTag();
+            link.putLong("controller", lastAssembly.controller.asLong());
+            link.putLong("min", lastAssembly.bounds.min().asLong());
+            link.putLong("max", lastAssembly.bounds.max().asLong());
+            tag.put("reactor_link", link);
+        }
         if (localFuelItems != null) {
             localFuelItems.save(tag);
         }
@@ -412,6 +457,15 @@ public final class FissionPortBlockEntity extends BlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        if (binding == null) {
+            CompoundTag link = tag.getCompound("reactor_link");
+            if (link.contains("controller") && link.contains("min") && link.contains("max")) {
+                lastAssembly = new AssemblyLink(BlockPos.of(link.getLong("controller")),
+                        new Cuboid(BlockPos.of(link.getLong("min")), BlockPos.of(link.getLong("max"))));
+                invalidateDetachedFluid();
+                invalidateDetachedItems();
+            }
+        }
         if (localSaltCoolant != null) {
             var previous = localSaltCoolant.filter();
             localSaltCoolant.load(tag.getCompound("heater_coolant"));
@@ -459,6 +513,8 @@ public final class FissionPortBlockEntity extends BlockEntity {
             }
         }
     }
+
+    private record AssemblyLink(BlockPos controller, Cuboid bounds) {}
 
     private void detachedItemFilterLoaded() {
         invalidateDetachedItems();

@@ -311,6 +311,41 @@ public final class PebbleFissionGameTests {
     }
 
     @GameTest(template = "fission", timeoutTicks = 340)
+    public static void pebblePortRestoresItsSharedRouteBeforeAcceptingAutomation(GameTestHelper helper) {
+        buildReactor(helper);
+        var oxygen = NCGasCoolants.OXYGEN;
+        var supply = new FluidStack(oxygen.cold(), 2_000);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var port = helper.getBlockEntity(COLD);
+                    var saved = port.saveWithoutMetadata();
+                    helper.assertTrue(fluids(helper, COLD, Direction.NORTH).fill(supply, FluidAction.EXECUTE) == 1_296,
+                            "The assembled circuit receives its initial gas");
+                    helper.setBlock(COLD, NCFission.CASING.get());
+                    helper.setBlock(COLD, NCPebbleFission.port(oxygen));
+                    var restored = helper.getBlockEntity(COLD);
+                    restored.load(saved);
+                    helper.assertTrue(!restored.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH).isPresent(),
+                            "A reloaded reactor port cannot accept gas into its detached tank before rebinding");
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(inlet.getFluidInTank(0).getAmount() == 1_296
+                                    && inlet.fill(supply, FluidAction.EXECUTE) == 0,
+                            "After rebinding the inlet exposes the full shared tank");
+                    helper.setBlock(MIN, Blocks.AIR);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(helper.getBlockEntity(COLD)
+                        .getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH).isPresent(),
+                        "Breaking the casing restores detached automation"))
+                .thenExecute(() -> helper.assertTrue(fluids(helper, COLD, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "Genuinely detached access still uses the separate local tank"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 340)
     public static void pebbleCoolerCircuitsPreserveSeparateGasesAcrossRebuild(GameTestHelper helper) {
         buildReactor(helper);
         helper.setBlock(CHAMBER.above().north(), NCPebbleFission.cooler(NCGasCoolants.NITROGEN));

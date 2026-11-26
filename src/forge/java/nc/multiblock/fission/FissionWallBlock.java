@@ -85,7 +85,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         Role role = role(state);
         if (level instanceof ServerLevel && (type == NCFission.PORT_ENTITY.get() || type == NCFission.IRRADIATOR_PORT_ENTITY.get())) {
-            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportOutput((ServerLevel) world);
+            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).tick((ServerLevel) world);
         }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);

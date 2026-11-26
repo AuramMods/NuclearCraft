@@ -78,6 +78,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private double heatingOutput;
     private boolean enabled;
     private boolean dirty = true;
+    private long lastAssemblyAttempt = Long.MIN_VALUE;
     private long configRevision = -1;
 
     public SolidFissionController(BlockPos pos, BlockState state) {
@@ -147,21 +148,21 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                         controlAt(server, manager).ifPresent(control -> control.unlink(pos));
                     }
                 }
-                disassemble();
+                disassemble(false);
             }
         }
     }
 
     void chunkUnloaded(ChunkPos chunk) {
         if (layout != null && layout.bounds().touchesChunk(chunk)) {
-            disassemble();
+            disassemble(true);
             dirty = true;
         }
     }
 
     public void tick(ServerLevel server) {
         if (layout != null && !layout.bounds().isLoaded(server)) {
-            disassemble();
+            disassemble(true);
         }
         long revision = NCFission.configRevision();
         if (dirty || revision != configRevision || (layout == null && (server.getGameTime() + worldPosition.asLong()) % 20 == 0)) {
@@ -236,13 +237,24 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
     }
 
+    boolean restorePortBinding(ServerLevel server) {
+        if (layout == null) {
+            if (lastAssemblyAttempt == server.getGameTime()) {
+                return false;
+            }
+            refresh(server);
+        }
+        return true;
+    }
+
     private void refresh(ServerLevel server) {
+        lastAssemblyAttempt = server.getGameTime();
         dirty = false;
         SolidFissionLayout.Validation result = SolidFissionLayout.find(server, worldPosition);
         validation = result.diagnostic();
         SolidFissionLayout found = result.layout();
         if (found == null) {
-            disassemble();
+            disassemble(false);
             return;
         }
         if (gasCooling != null) {
@@ -254,7 +266,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         if (found.equals(layout)) {
             return;
         }
-        disassemble();
+        disassemble(false);
         layout = found;
         MultiblockFrame.set(server, layout.frames(), true);
         computerPorts.bind(server, layout.computers());
@@ -309,7 +321,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
-                entity.bind(this, port);
+                entity.bind(this, port, layout.bounds());
                 BlockState portState = entity.getBlockState();
                 if (portState.getValue(FissionWallBlock.FACING) != port.side()) {
                     server.setBlock(port.pos(), portState.setValue(FissionWallBlock.FACING, port.side()), Block.UPDATE_CLIENTS);
@@ -319,7 +331,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
     }
 
-    private void disassemble() {
+    private void disassemble(boolean suspendPorts) {
         computerPorts.unbind();
         SolidFissionLayout previous = layout;
         layout = null;
@@ -372,7 +384,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         for (SolidFissionLayout.Port port : previous.ports()) {
             var chunk = server.getChunkSource().getChunkNow(port.pos().getX() >> 4, port.pos().getZ() >> 4);
             if (chunk != null && chunk.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
-                entity.unbind();
+                entity.unbind(suspendPorts);
             }
         }
     }
@@ -484,7 +496,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     private void melt(ServerLevel level, Collection<BlockPos> parts) {
-        disassemble();
+        disassemble(false);
         for (BlockPos pos : parts) {
             level.removeBlockEntity(pos);
             level.setBlockAndUpdate(pos, NCFluids.CORIUM.block().get().defaultBlockState());
@@ -754,13 +766,13 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
 
     @Override
     public void setRemoved() {
-        disassemble();
+        disassemble(false);
         super.setRemoved();
     }
 
     @Override
     public void onChunkUnloaded() {
-        disassemble();
+        disassemble(true);
         dirty = true;
         super.onChunkUnloaded();
     }
