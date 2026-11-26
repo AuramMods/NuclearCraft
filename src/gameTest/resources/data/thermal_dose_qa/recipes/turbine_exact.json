@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "fluid": "nuclearcraft:ammonia",
+        "amount": 18
+    },
+    "output": {
+        "fluid": "nuclearcraft:exhaust_steam",
+        "amount": 7
+    },
+    "power_per_mb": 8,
+    "expansion": 2
+}

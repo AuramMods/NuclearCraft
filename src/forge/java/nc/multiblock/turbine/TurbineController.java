@@ -8,6 +8,7 @@ import nc.multiblock.computer.ComputerValues;
 import nc.init.NCTurbine;
 import nc.init.TurbineConfig;
 import nc.recipe.FluidBatch;
+import nc.recipe.FluidRecipeLookup;
 import nc.recipe.TurbineRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -122,7 +123,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
     }
 
     private boolean runTurbine(ServerLevel server, boolean active) {
-        TurbineRecipe recipe = recipeFor(steam.getFluid());
+        TurbineRecipe recipe = FluidRecipeLookup.match(level, NCTurbine.RECIPES.get(),
+                steam.getFluid(), TurbineRecipe::input);
         int consumed = active && recipe != null ? expandSteam(server, recipe) : 0;
         long previousPower = power;
         double previousTension = drive.tension();
@@ -169,18 +171,6 @@ public final class TurbineController extends BlockEntity implements MenuProvider
         }
         steam.drain(usage.consumed(), FluidAction.EXECUTE);
         return usage.consumed();
-    }
-
-    private TurbineRecipe recipeFor(FluidStack fluid) {
-        if (level == null || fluid.isEmpty()) {
-            return null;
-        }
-        for (TurbineRecipe recipe : level.getRecipeManager().getAllRecipesFor(NCTurbine.RECIPES.get())) {
-            if (recipe.accepts(fluid)) {
-                return recipe;
-            }
-        }
-        return null;
     }
 
     private void pushOutputs(ServerLevel server) {
@@ -601,7 +591,8 @@ public final class TurbineController extends BlockEntity implements MenuProvider
 
     private final class TurbineTank extends FluidTank {
         TurbineTank(int capacity, boolean input) {
-            super(capacity, fluid -> !input || recipeFor(fluid) != null);
+            super(capacity, fluid -> !input
+                    || FluidRecipeLookup.accepts(level, NCTurbine.RECIPES.get(), fluid, TurbineRecipe::input));
         }
 
         @Override

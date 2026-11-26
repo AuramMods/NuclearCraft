@@ -12,6 +12,7 @@ import nc.recipe.CondenserRecipe;
 import nc.recipe.FluidBatch;
 import nc.recipe.FluidInput;
 import nc.recipe.FluidProduct;
+import nc.recipe.FluidRecipeLookup;
 import nc.recipe.HeatExchangerRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -76,7 +77,7 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
         super((state.is(NCHeatExchangers.CONDENSER.get())
                 ? NCHeatExchangers.CONDENSER_ENTITY : NCHeatExchangers.CONTROLLER_ENTITY).get(), pos, state);
         condenser = state.is(NCHeatExchangers.CONDENSER.get());
-        shell = new Circuit(stack -> condenser ? CondenserCoolants.find(level, stack) != null : exchangeRecipe(stack) != null);
+        shell = new Circuit(stack -> condenser ? CondenserCoolants.find(level, stack) != null : acceptsExchangeInput(stack));
     }
 
     @Override
@@ -154,7 +155,8 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     }
 
     private void condense(ExchangerLayout.Network network, Circuit circuit, int shellTemperature, double shellFraction) {
-        CondenserRecipe recipe = condenserRecipe(circuit.input.getFluid());
+        CondenserRecipe recipe = FluidRecipeLookup.match(level, NCHeatExchangers.RECIPES.get(),
+                circuit.input.getFluid(), CondenserRecipe::input);
         if (recipe == null || recipe.outputTemperature() < shellTemperature) {
             return;
         }
@@ -176,25 +178,11 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     }
 
     private HeatExchangerRecipe exchangeRecipe(FluidStack stack) {
-        if (level != null && !stack.isEmpty()) {
-            for (HeatExchangerRecipe recipe : level.getRecipeManager().getAllRecipesFor(NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get())) {
-                if (recipe.input().accepts(stack)) {
-                    return recipe;
-                }
-            }
-        }
-        return null;
+        return FluidRecipeLookup.match(level, NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get(), stack, HeatExchangerRecipe::input);
     }
 
-    private CondenserRecipe condenserRecipe(FluidStack stack) {
-        if (level != null && !stack.isEmpty()) {
-            for (CondenserRecipe recipe : level.getRecipeManager().getAllRecipesFor(NCHeatExchangers.RECIPES.get())) {
-                if (recipe.input().accepts(stack)) {
-                    return recipe;
-                }
-            }
-        }
-        return null;
+    private boolean acceptsExchangeInput(FluidStack stack) {
+        return FluidRecipeLookup.accepts(level, NCHeatExchangers.HEAT_EXCHANGER_RECIPES.get(), stack, HeatExchangerRecipe::input);
     }
 
     private void pushOutputs(ServerLevel server) {
@@ -310,7 +298,9 @@ public final class ExchangerController extends BlockEntity implements MenuProvid
     }
 
     private Circuit tubeCircuit() {
-        return new Circuit(stack -> condenser ? condenserRecipe(stack) != null : exchangeRecipe(stack) != null);
+        return new Circuit(stack -> condenser
+                ? FluidRecipeLookup.accepts(level, NCHeatExchangers.RECIPES.get(), stack, CondenserRecipe::input)
+                : acceptsExchangeInput(stack));
     }
 
     private Tank tank(ExchangerLayout.Port port) {

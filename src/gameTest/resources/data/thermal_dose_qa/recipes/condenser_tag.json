@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:condenser",
+    "input": {
+        "tag": "thermal_dose_qa:ammonia",
+        "amount": 10
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 3
+    },
+    "cooling": 0.001,
+    "input_temperature": 550,
+    "output_temperature": 350
+}

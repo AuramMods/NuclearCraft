@@ -1273,6 +1273,10 @@ The isolated 540-mod Auram client loaded the seven recipes through KubeJS using 
 
 Use a counted `input` with `alternatives` for turbines, condenser tubes, heat exchangers, solid-reactor casing heating, and pebble-bed or molten-salt emergency vents. Each choice accepts a fluid ID or tag and a positive mB amount. The first choice that fits the current fluid, flow, and heat limits supplies the batch. If a vent or turbine can run more batches, it checks the choices again against the remaining volume and outlet space.
 
+Inlets accept partial fills of supported fluids. When multiple consumptive recipes share a feed, the machine chooses among recipes with a complete dose in the tank. Exact matches have precedence over tags, with ties resolved by ascending recipe ID. The chosen recipe still needs its normal heat budget and outlet space. Each exchanger circuit makes its own selection before the machine checks temperatures and distributes heat.
+
+All 316 local GameTests passed. On packaged Forge 47.4.10, Ender IO 8.2.22-beta supplied the turbine and Mekanism 10.4.16.80 supplied the condenser. Both held the first 9 mB, ran the tagged recipe at 10 mB, and chose the exact recipe at 18 mB. The turbine held the 18 mB dose until its previous output could drain. The heat exchanger matched the tube and shell doses independently. All measured outputs survived server restart and confirmed chunk unload and reload on clean Forge and with both pipe mods installed.
+
 Condenser dissipation recipes use the amount of each choice as the minimum coolant level. The shell retains the coolant, and a choice with no amount uses a 1 mB minimum. The catalog selects the coolant recipe by priority, matching selector specificity, and recipe ID. Once selected, a recipe waits if its minimum is unmet.
 
 This format works with datapacks, KubeJS, and CraftTweaker `addJsonRecipe`. Use an `alternatives` object at every group level in ZenCode. JEI shows the individual fluid amounts for each recipe, including the coolant minimums.

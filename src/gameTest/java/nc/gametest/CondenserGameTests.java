@@ -125,6 +125,31 @@ public final class CondenserGameTests {
     }
 
     @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void condenserSelectsATubeRecipeByStoredDose(GameTestHelper helper) {
+        build(helper);
+        var feed = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ammonia"));
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, COOLANT, Direction.NORTH))
+                .thenExecute(() -> {
+                    var coolant = fluid(helper, COOLANT, Direction.NORTH);
+                    coolant.fill(new FluidStack(Fluids.WATER, coolant.getTankCapacity(0)), FluidAction.EXECUTE);
+                    helper.assertTrue(fluid(helper, FIRST_IN, Direction.WEST).fill(new FluidStack(feed, 10), FluidAction.EXECUTE) == 10
+                                    && fluid(helper, SECOND_IN, Direction.WEST).fill(new FluidStack(feed, 18), FluidAction.EXECUTE) == 18,
+                            "Each inlet accepts its own dose of the same fluid");
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, FIRST_OUT, Direction.EAST).getFluidInTank(0)
+                                .isFluidStackIdentical(new FluidStack(NCFluids.CONDENSATE_WATER.source().get(), 3))
+                                && fluid(helper, SECOND_OUT, Direction.EAST).getFluidInTank(0)
+                                .isFluidStackIdentical(new FluidStack(NCFluids.CONDENSATE_WATER.source().get(), 7))
+                                && fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).isEmpty()
+                                && fluid(helper, SECOND_IN, Direction.WEST).getFluidInTank(0).isEmpty(),
+                        "The smaller tagged dose and larger exact dose must each yield their own product"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
     public static void condenserRollsEachTubeBatchAndSupportsAnEmptyProduct(GameTestHelper helper) {
         build(helper);
         helper.startSequence()

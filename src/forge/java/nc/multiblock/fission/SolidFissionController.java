@@ -14,6 +14,7 @@ import nc.radiation.ChunkRadiationSource;
 import nc.radiation.WorldRadiation;
 import nc.recipe.FissionHeatRecipe;
 import nc.recipe.FluidBatch;
+import nc.recipe.FluidRecipeLookup;
 import nc.util.ValueTracker;
 
 import net.minecraft.core.BlockPos;
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.Containers;
@@ -490,31 +492,16 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         setChanged();
     }
 
-    private List<FissionHeatRecipe> casingRecipes() {
-        var type = variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE;
-        return level == null ? List.of() : level.getRecipeManager().getAllRecipesFor(type.get());
+    private RecipeType<FissionHeatRecipe> casingRecipeType() {
+        return (variant == FissionVariant.SOLID ? NCFission.HEATING_TYPE : NCFission.EMERGENCY_COOLING_TYPE).get();
     }
 
     private boolean acceptsCasingInput(FluidStack fluid) {
-        return !fluid.isEmpty() && casingRecipes().stream().anyMatch(recipe -> recipe.input().accepts(fluid));
+        return FluidRecipeLookup.accepts(level, casingRecipeType(), fluid, FissionHeatRecipe::input);
     }
 
     private @Nullable FissionHeatRecipe casingRecipe(FluidStack fluid) {
-        if (fluid.isEmpty()) {
-            return null;
-        }
-        FissionHeatRecipe selected = null;
-        boolean selectedTag = false;
-        for (FissionHeatRecipe recipe : casingRecipes()) {
-            var choice = recipe.input().matchingChoice(fluid, 1, fluid.getAmount());
-            if (choice != null && (selected == null
-                    || selectedTag && !choice.tag()
-                    || selectedTag == choice.tag() && recipe.id().compareTo(selected.id()) < 0)) {
-                selected = recipe;
-                selectedTag = choice.tag();
-            }
-        }
-        return selected;
+        return FluidRecipeLookup.match(level, casingRecipeType(), fluid, FissionHeatRecipe::input);
     }
 
     private int exchangeCasingHeat(double efficiency) {

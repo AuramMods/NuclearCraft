@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "tag": "thermal_dose_qa:ammonia",
+        "amount": 10
+    },
+    "output": {
+        "fluid": "nuclearcraft:steam",
+        "amount": 4
+    },
+    "heat": 16,
+    "input_temperature": 300,
+    "output_temperature": 600
+}

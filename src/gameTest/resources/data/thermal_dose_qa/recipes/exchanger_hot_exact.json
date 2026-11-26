@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:heat_exchanger",
+    "input": {
+        "fluid": "nuclearcraft:carbon_dioxide",
+        "amount": 18
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 9
+    },
+    "heat": 16,
+    "input_temperature": 800,
+    "output_temperature": 700
+}

@@ -1,0 +1,14 @@
+{
+    "type": "nuclearcraft:condenser",
+    "input": {
+        "fluid": "nuclearcraft:ammonia",
+        "amount": 18
+    },
+    "output": {
+        "fluid": "nuclearcraft:condensate_water",
+        "amount": 7
+    },
+    "cooling": 0.001,
+    "input_temperature": 550,
+    "output_temperature": 350
+}

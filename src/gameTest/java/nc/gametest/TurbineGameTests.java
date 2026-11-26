@@ -272,6 +272,46 @@ public final class TurbineGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "turbine", timeoutTicks = 80)
+    public static void turbineSelectsAnExpansionRecipeByStoredDose(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        var feed = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ammonia"));
+        var smallProduct = new FluidStack(NCFluids.LOW_QUALITY_STEAM.source().get(), 3);
+        var largeProduct = new FluidStack(NCFluids.EXHAUST_STEAM.source().get(), 7);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    helper.assertTrue(fluid(helper, INLET, Direction.NORTH).fill(new FluidStack(feed, 9), FluidAction.EXECUTE) == 9,
+                            "The inlet accepts a partial fill of either recipe");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenExecuteAfter(4, () -> {
+                    helper.assertTrue(fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).isEmpty()
+                                    && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 9,
+                            "An incomplete dose must stay in the inlet");
+                    helper.assertTrue(fluid(helper, INLET, Direction.NORTH).fill(new FluidStack(feed, 1), FluidAction.EXECUTE) == 1,
+                            "The final mB fits into the inlet");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(smallProduct)
+                                && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "The smaller tagged recipe runs as soon as its full dose fits"))
+                .thenExecute(() -> helper.assertTrue(
+                        fluid(helper, INLET, Direction.NORTH).fill(new FluidStack(feed, 18), FluidAction.EXECUTE) == 18,
+                        "Supply the full dose of the exact recipe"))
+                .thenExecuteAfter(4, () -> {
+                    var outlet = fluid(helper, OUTLET, Direction.SOUTH);
+                    helper.assertTrue(outlet.drain(3, FluidAction.EXECUTE).isFluidStackIdentical(smallProduct)
+                                    && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 18,
+                            "The exact recipe holds its input while its product cannot enter the outlet");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).isFluidStackIdentical(largeProduct)
+                                && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                        "The exact recipe runs once the drain makes room for its product"))
+                .thenSucceed();
+    }
+
     @GameTest(template = "turbine", timeoutTicks = 100)
     public static void turbineRollsOnlyToEstablishAnEmptyExhaust(GameTestHelper helper) {
         buildTurbine(helper, BlockPos.ZERO);

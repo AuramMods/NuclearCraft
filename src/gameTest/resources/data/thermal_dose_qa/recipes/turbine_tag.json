@@ -1,0 +1,13 @@
+{
+    "type": "nuclearcraft:turbine",
+    "input": {
+        "tag": "thermal_dose_qa:ammonia",
+        "amount": 10
+    },
+    "output": {
+        "fluid": "nuclearcraft:low_quality_steam",
+        "amount": 3
+    },
+    "power_per_mb": 8,
+    "expansion": 2
+}

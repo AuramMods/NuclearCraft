@@ -175,6 +175,37 @@ public final class HeatExchangerGameTests {
     }
 
     @GameTest(template = "turbine", timeoutTicks = 100)
+    public static void heatExchangerSelectsEachCircuitRecipeByItsStoredDose(GameTestHelper helper) {
+        build(helper, 3);
+        var cold = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("ammonia"));
+        var hot = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("carbon_dioxide"));
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(hot, 10));
+                    fill(helper, SHELL_IN, Direction.EAST, new FluidStack(cold, 18));
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 5
+                                && fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0).getAmount() == 8
+                                && fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && fluid(helper, SHELL_IN, Direction.EAST).getFluidInTank(0).isEmpty(),
+                        "The tube runs the tagged dose while the shell runs the exact dose"))
+                .thenExecute(() -> {
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(hot, 18));
+                    fill(helper, SHELL_IN, Direction.EAST, new FluidStack(cold, 10));
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, TUBE_OUT, Direction.SOUTH).getFluidInTank(0).getAmount() == 14
+                                && fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0).getAmount() == 12
+                                && fluid(helper, TUBE_IN, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                && fluid(helper, SHELL_IN, Direction.EAST).getFluidInTank(0).isEmpty(),
+                        "The tube can then run the exact dose while the shell runs the tagged dose"))
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 100)
     public static void heatExchangerKeepsHeatBalancedWithChanceAndEmptyProducts(GameTestHelper helper) {
         build(helper, 3);
         helper.startSequence()
