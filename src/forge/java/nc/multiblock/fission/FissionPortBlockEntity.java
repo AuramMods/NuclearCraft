@@ -281,7 +281,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
     }
 
     private FissionItemBuffer itemBuffer(Binding connection) {
-        return connection.port.itemFuel() ? connection.controller.fuelItems(connection.port.fuelFilter())
+        return connection.port.itemFuel() ? connection.controller.fuelItems(connection.port.filter())
                 : connection.controller.irradiatorItems(localIrradiatorItems());
     }
 

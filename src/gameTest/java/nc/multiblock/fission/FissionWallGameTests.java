@@ -11,6 +11,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
@@ -22,8 +23,11 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.common.util.FakePlayerFactory;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
@@ -50,6 +54,55 @@ public final class FissionWallGameTests {
     private static final BlockPos ELSEWHERE = new BlockPos(10, 3, 1);
 
     private FissionWallGameTests() {}
+
+    @GameTest(template = "fission")
+    public static void solidFissionVentsRequireBothDirections(GameTestHelper helper) {
+        buildShell(helper, NCFission.CONTROLLER.get());
+        helper.setBlock(MONITOR, NCFission.VENT.get().defaultBlockState().setValue(ACTIVE, true));
+        var diagnostic = controller(helper).diagnostic(helper.getLevel());
+        helper.assertTrue(diagnostic != null && helper.absolutePos(MONITOR).equals(diagnostic.position())
+                        && diagnostic.message().getContents() instanceof TranslatableContents text
+                        && text.getKey().equals("message.nuclearcraft.fission.missing_port_input"),
+                "The solid-fuel controller identifies the unpaired outlet and the missing vent mode");
+        helper.setBlock(POWER, NCFission.VENT.get());
+        helper.assertTrue(controller(helper).diagnostic(helper.getLevel()) == null,
+                "An inlet completes the solid-fuel vent circuit");
+        helper.succeed();
+    }
+
+    @GameTest(template = "fission")
+    public static void pebbleFissionAllowsAnIndependentEmergencyVent(GameTestHelper helper) {
+        verifyEmergencyVent(helper, NCPebbleFission.CONTROLLER.get());
+    }
+
+    @GameTest(template = "fission")
+    public static void saltFissionAllowsAnIndependentEmergencyVent(GameTestHelper helper) {
+        verifyEmergencyVent(helper, NCSaltFission.CONTROLLER.get());
+    }
+
+    private static void verifyEmergencyVent(GameTestHelper helper, Block controllerBlock) {
+        buildShell(helper, controllerBlock);
+        helper.setBlock(MONITOR, NCFission.VENT.get());
+        var controller = controller(helper);
+        helper.assertTrue(controller.diagnostic(helper.getLevel()) == null, "An emergency inlet can be used by itself");
+        var vent = helper.getBlockEntity(MONITOR);
+        var link = vent.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH);
+        var inlet = link.orElseThrow(AssertionError::new);
+        var coolant = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("emergency_coolant"));
+        helper.assertTrue(inlet.fill(new FluidStack(coolant, 71), FluidAction.EXECUTE) == 71,
+                "The isolated inlet accepts emergency coolant");
+
+        var output = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("emergency_coolant_heated"));
+        helper.setBlock(MONITOR, NCFission.VENT.get().defaultBlockState().setValue(ACTIVE, true));
+        FissionPartBlock.geometryChanged(helper.getLevel(), helper.absolutePos(MONITOR));
+        helper.assertTrue(!link.isPresent() && controller.diagnostic(helper.getLevel()) == null,
+                "Changing the single vent to an outlet releases the old inlet and reforms the reactor");
+        controller.steam().fill(new FluidStack(output, 53), FluidAction.EXECUTE);
+        var outlet = vent.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH).orElseThrow(AssertionError::new);
+        helper.assertTrue(outlet.drain(100, FluidAction.EXECUTE).getAmount() == 53 && controller.coolant().getFluidAmount() == 71,
+                "The outlet exposes stored hot coolant and leaves the cold supply intact");
+        helper.succeed();
+    }
 
     @GameTest(template = "fission", timeoutTicks = 160)
     public static void solidFissionMonitorLinksAndTracksTheWholeHeatCluster(GameTestHelper helper) {

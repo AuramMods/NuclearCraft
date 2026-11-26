@@ -688,7 +688,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return saltCooling.tank(port.salt(), port.output());
         }
         if (port.role() == FissionPartBlock.Role.VESSEL_PORT && saltFuel != null) {
-            return saltFuel.circuit(port.fuelFilter()).tank(port.output());
+            return saltFuel.circuit(port.filter()).tank(port.output());
         }
         return port.output() ? steam : coolant;
     }

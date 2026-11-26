@@ -473,6 +473,8 @@
     "item.nuclearcraft.depleted_lecf_251_oxide": "枯竭低浓缩锎-251 氧化物燃料丸",
     "fluid_type.nuclearcraft.high_pressure_steam": "高压蒸汽",
     "fluid_type.nuclearcraft.corium": "堆芯熔融物",
+    "message.nuclearcraft.fission.missing_port_input": "%s（%s、%s、%s）需要配对的输入端口。",
+    "message.nuclearcraft.fission.missing_port_output": "%s（%s、%s、%s）需要配对的输出端口。",
     "gui.nuclearcraft.fission.disable": "停用",
     "gui.nuclearcraft.fission.enable": "启用",
     "gui.nuclearcraft.fission.running": "运行中",

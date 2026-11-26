@@ -12,6 +12,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -42,10 +43,63 @@ public final class FissionIrradiatorGameTests {
     private static final BlockPos INPUT = new BlockPos(2, 3, 1);
     private static final BlockPos OUTPUT = new BlockPos(2, 3, 5);
     private static final BlockPos ALTERNATE = new BlockPos(6, 3, 1);
+    private static final BlockPos ALTERNATE_OUTPUT = new BlockPos(6, 3, 5);
     private static final BlockPos FUEL_IN = new BlockPos(6, 2, 1);
     private static final BlockPos FUEL_OUT = new BlockPos(6, 2, 5);
 
     private FissionIrradiatorGameTests() {}
+
+    @GameTest(template = "fission")
+    public static void solidIrradiatorPortsRequireMatchingModes(GameTestHelper helper) {
+        checkIrradiatorPortPair(helper, NCFission.CONTROLLER.get(), NCFission.CELL.get());
+    }
+
+    @GameTest(template = "fission")
+    public static void pebbleIrradiatorPortsRequireMatchingModes(GameTestHelper helper) {
+        checkIrradiatorPortPair(helper, NCPebbleFission.CONTROLLER.get(), NCPebbleFission.CHAMBER.get());
+    }
+
+    @GameTest(template = "fission")
+    public static void saltIrradiatorPortsRequireMatchingModes(GameTestHelper helper) {
+        checkIrradiatorPortPair(helper, NCSaltFission.CONTROLLER.get(), NCSaltFission.VESSEL.get());
+    }
+
+    private static void checkIrradiatorPortPair(GameTestHelper helper, Block controllerBlock, Block fuelPart) {
+        shell(helper, controllerBlock, fuelPart, false);
+        helper.setBlock(INPUT, NCFission.IRRADIATOR_PORT.get());
+        helper.setBlock(OUTPUT, outputOf(NCFission.IRRADIATOR_PORT.get()));
+        var thorium = stack("thorium_dust");
+        port(helper, INPUT).localIrradiatorItems().setFilter(thorium);
+        port(helper, OUTPUT).localIrradiatorItems().setFilter(stack("bismuth_dust"));
+        irradiator(helper).localItems().setFilter(thorium);
+
+        var controller = controller(helper);
+        var level = helper.getLevel();
+        var diagnostic = controller.diagnostic(level);
+        helper.assertTrue(diagnostic != null && helper.absolutePos(INPUT).equals(diagnostic.position())
+                        && diagnostic.message().getContents() instanceof TranslatableContents text
+                        && text.getKey().equals("message.nuclearcraft.fission.missing_port_output"),
+                "An output with a different filter leaves the inlet unpaired");
+        helper.assertTrue(!port(helper, INPUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH).isPresent(),
+                "An incomplete reactor does not expose its shared inventory");
+
+        var savedPort = port(helper, OUTPUT).saveWithoutMetadata();
+        port(helper, OUTPUT).localIrradiatorItems().setFilter(thorium);
+        FissionPartBlock.geometryChanged(level, helper.absolutePos(OUTPUT));
+        helper.assertTrue(controller.diagnostic(level) == null, "Matching filters assemble the reactor");
+        var link = port(helper, INPUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH);
+        var inlet = link.orElseThrow(AssertionError::new);
+        helper.assertTrue(inlet.insertItem(0, thorium, false).isEmpty(), "The paired inlet accepts the selected feed");
+
+        port(helper, OUTPUT).load(savedPort);
+        helper.assertTrue(controller.diagnostic(level) != null && !link.isPresent()
+                        && inlet.insertItem(0, thorium, false).getCount() == 1,
+                "Loading a mismatched filter invalidates the previously resolved capability");
+        helper.setBlock(TARGET, Blocks.AIR);
+        helper.assertTrue(controller.diagnostic(level) == null && items(helper, INPUT, Direction.NORTH).getStackInSlot(0).getCount() == 1,
+                "A port without any irradiators need not be paired and retains its saved feed");
+        helper.succeed();
+    }
 
     @GameTest(template = "empty")
     public static void irradiationLoadsTheLegacyRecipeChain(GameTestHelper helper) {
@@ -117,11 +171,13 @@ public final class FissionIrradiatorGameTests {
         helper.setBlock(INPUT, NCFission.IRRADIATOR_PORT.get());
         helper.setBlock(OUTPUT, outputOf(NCFission.IRRADIATOR_PORT.get()));
         helper.setBlock(ALTERNATE, NCFission.IRRADIATOR_PORT.get());
+        helper.setBlock(ALTERNATE_OUTPUT, outputOf(NCFission.IRRADIATOR_PORT.get()));
         var part = irradiator(helper);
         part.localItems().setFilter(stack("bismuth_dust"));
         port(helper, INPUT).localIrradiatorItems().setFilter(stack("bismuth_dust"));
         port(helper, OUTPUT).localIrradiatorItems().setFilter(stack("bismuth_dust"));
         port(helper, ALTERNATE).localIrradiatorItems().setFilter(stack("tbp_dust"));
+        port(helper, ALTERNATE_OUTPUT).localIrradiatorItems().setFilter(stack("tbp_dust"));
         var product = stack("polonium_dust");
         port(helper, INPUT).localIrradiatorItems().setStackInSlot(1, product.copyWithCount(64));
         seed(part, 1_920_000 - 36);
@@ -227,11 +283,14 @@ public final class FissionIrradiatorGameTests {
         helper.setBlock(INPUT, NCFission.IRRADIATOR_PORT.get());
         helper.setBlock(outlet, outputOf(NCFission.IRRADIATOR_PORT.get()));
         helper.setBlock(ALTERNATE, NCFission.IRRADIATOR_PORT.get());
+        var alternateOutlet = new BlockPos(ALTERNATE.getX(), ALTERNATE.getY(), max.getZ());
+        helper.setBlock(alternateOutlet, outputOf(NCFission.IRRADIATOR_PORT.get()));
         var thorium = stack("thorium_dust");
         var tbp = stack("tbp_dust");
         port(helper, INPUT).localIrradiatorItems().setFilter(thorium);
         port(helper, outlet).localIrradiatorItems().setFilter(thorium);
         port(helper, ALTERNATE).localIrradiatorItems().setFilter(tbp);
+        port(helper, alternateOutlet).localIrradiatorItems().setFilter(tbp);
         var targets = new ArrayList<BlockPos>();
         for (BlockPos p : BlockPos.betweenClosed(MIN.offset(1, 1, 1), max.offset(-1, -1, -1))) {
             helper.setBlock(p, NCFission.IRRADIATOR.get());

@@ -53,7 +53,7 @@ final class SaltFuelBank {
         connected.clear();
         for (var port : layout.ports()) {
             if (port.role() == FissionPartBlock.Role.VESSEL_PORT) {
-                connected.add(port.fuelFilter());
+                connected.add(port.filter());
             }
         }
         var vessels = new HashMap<ResourceLocation, Integer>();

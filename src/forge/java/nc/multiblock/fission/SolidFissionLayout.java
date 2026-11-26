@@ -13,16 +13,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashSet;
-import java.util.Objects;
+import java.util.List;
 
 record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> sinks, List<Port> ports,
                           List<BlockPos> sources, List<BlockPos> shields, List<BlockPos> managers, List<BlockPos> irradiators,
                           List<BlockPos> conductors, List<BlockPos> monitors, List<BlockPos> computers,
                           List<BlockPos> frames, FissionVariant variant) {
     record Port(BlockPos pos, Direction side, Role role, boolean output, @Nullable PebbleCooling.Channel gas,
-                @Nullable FissionCoolant salt, @Nullable ResourceLocation fuelFilter) {
+                @Nullable FissionCoolant salt, @Nullable ResourceLocation filter) {
         boolean itemFuel() {
             return role == Role.FUEL_PORT || role == Role.CHAMBER_PORT;
         }
@@ -58,6 +57,11 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
             case SOLID -> Role.HEAT_SINK;
             case PEBBLE -> Role.PEBBLE_COOLER;
             case SALT -> Role.SALT_HEATER;
+        };
+        Role fuelPort = switch (variant) {
+            case SOLID -> Role.FUEL_PORT;
+            case PEBBLE -> Role.CHAMBER_PORT;
+            case SALT -> Role.VESSEL_PORT;
         };
         List<BlockPos> cells = new ArrayList<>();
         List<BlockPos> sinks = new ArrayList<>();
@@ -120,9 +124,13 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                                 return invalid("wall", pos);
                             }
                             var wall = (FissionWallBlock) state.getBlock();
+                            var filter = switch (role) {
+                                case IRRADIATOR_PORT -> entity.localIrradiatorItems().filter();
+                                case FUEL_PORT, CHAMBER_PORT, VESSEL_PORT -> entity.fuelFilter();
+                                default -> null;
+                            };
                             ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),
-                                    entity.gasChannel(), wall.saltCoolant(), role == Role.FUEL_PORT || role == Role.CHAMBER_PORT
-                                            || role == Role.VESSEL_PORT ? entity.fuelFilter() : null));
+                                    entity.gasChannel(), wall.saltCoolant(), filter));
                         }
                         default -> {
                             return invalid("wall", pos);
@@ -141,29 +149,19 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         if (bounds.boundaryAxes(origin) != 1) {
             return invalid("wall", origin);
         }
-        if (hasUnpairedPorts(ports, Role.VENT, null)) {
-            return invalid("port_pair", origin);
+        Port unpaired = irradiators.isEmpty() ? null : unpairedPort(ports, Role.IRRADIATOR_PORT);
+        if (unpaired == null && !cells.isEmpty()) {
+            unpaired = unpairedPort(ports, fuelPort);
         }
-        if (!cells.isEmpty() && variant != FissionVariant.SALT) {
-            Role fuelPort = variant == FissionVariant.SOLID ? Role.FUEL_PORT : Role.CHAMBER_PORT;
-            var checked = new HashSet<ResourceLocation>();
-            for (Port port : ports) {
-                if (port.role() == fuelPort && checked.add(port.fuelFilter())
-                        && hasUnpairedPorts(ports, fuelPort, port.fuelFilter())) {
-                    return invalid("port_pair", port.pos());
-                }
-            }
+        if (unpaired == null && variant == FissionVariant.SOLID) {
+            unpaired = unpairedPort(ports, Role.VENT);
         }
-        if (variant == FissionVariant.SALT && !cells.isEmpty()) {
-            var filters = new HashSet<ResourceLocation>();
-            for (Port port : ports) {
-                if (port.role() == Role.VESSEL_PORT) {
-                    filters.add(port.fuelFilter());
-                }
-            }
-            if (filters.stream().anyMatch(filter -> hasUnpairedPorts(ports, Role.VESSEL_PORT, filter))) {
-                return invalid("port_pair", origin);
-            }
+        if (unpaired != null) {
+            BlockPos pos = unpaired.pos();
+            String mode = unpaired.output() ? "missing_port_input" : "missing_port_output";
+            var message = Component.translatable("message.nuclearcraft.fission." + mode,
+                    level.getBlockState(pos).getBlock().getName(), pos.getX(), pos.getY(), pos.getZ());
+            return new Validation(null, new AssemblyDiagnostic(message, pos));
         }
         return new Validation(new SolidFissionLayout(bounds, List.copyOf(cells), List.copyOf(sinks),
                 List.copyOf(ports), List.copyOf(sources), List.copyOf(shields), List.copyOf(managers), List.copyOf(irradiators),
@@ -184,20 +182,20 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
         return role != null && role != Role.MODERATOR && role != Role.REFLECTOR;
     }
 
-    private static boolean hasUnpairedPorts(List<Port> ports, Role role, @Nullable Object filter) {
-        boolean input = false;
-        boolean output = false;
+    private static @Nullable Port unpairedPort(List<Port> ports, Role role) {
+        var input = new HashSet<ResourceLocation>();
+        var output = new HashSet<ResourceLocation>();
         for (Port port : ports) {
-            Object current = switch (role) {
-                case FUEL_PORT, CHAMBER_PORT, VESSEL_PORT -> port.fuelFilter();
-                default -> null;
-            };
-            if (port.role() == role && Objects.equals(current, filter)) {
-                input |= !port.output();
-                output |= port.output();
+            if (port.role() == role) {
+                (port.output() ? output : input).add(port.filter());
             }
         }
-        return input != output;
+        for (Port port : ports) {
+            if (port.role() == role && !(port.output() ? input : output).contains(port.filter())) {
+                return port;
+            }
+        }
+        return null;
     }
 
     static Validation invalid(String reason, BlockPos pos) {

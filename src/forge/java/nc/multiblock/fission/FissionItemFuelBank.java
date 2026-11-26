@@ -35,7 +35,7 @@ final class FissionItemFuelBank {
         connected.clear();
         for (var port : layout.ports()) {
             if (port.itemFuel()) {
-                connected.put(port.fuelFilter(), 0);
+                connected.put(port.filter(), 0);
             }
         }
         for (var pos : layout.cells()) {
