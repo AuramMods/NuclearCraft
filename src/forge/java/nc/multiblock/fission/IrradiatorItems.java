@@ -47,7 +47,7 @@ final class IrradiatorItems extends FissionItemBuffer {
             return false;
         }
         filter = next;
-        owner.setChanged();
+        onFilterChanged();
         return true;
     }
 

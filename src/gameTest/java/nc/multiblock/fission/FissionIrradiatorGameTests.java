@@ -80,8 +80,10 @@ public final class FissionIrradiatorGameTests {
                         && diagnostic.message().getContents() instanceof TranslatableContents text
                         && text.getKey().equals("message.nuclearcraft.fission.missing_port_output"),
                 "An output with a different filter leaves the inlet unpaired");
-        helper.assertTrue(!port(helper, INPUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH).isPresent(),
-                "An incomplete reactor does not expose its shared inventory");
+        var localLink = port(helper, INPUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH);
+        var localInlet = localLink.orElseThrow(AssertionError::new);
+        helper.assertTrue(localInlet.insertItem(0, thorium.copyWithCount(2), false).isEmpty(),
+                "An incomplete reactor exposes only the wall port's local inventory");
 
         var savedPort = port(helper, OUTPUT).saveWithoutMetadata();
         port(helper, OUTPUT).localIrradiatorItems().setFilter(thorium);
@@ -89,14 +91,17 @@ public final class FissionIrradiatorGameTests {
         helper.assertTrue(controller.diagnostic(level) == null, "Matching filters assemble the reactor");
         var link = port(helper, INPUT).getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH);
         var inlet = link.orElseThrow(AssertionError::new);
-        helper.assertTrue(inlet.insertItem(0, thorium, false).isEmpty(), "The paired inlet accepts the selected feed");
+        helper.assertTrue(!localLink.isPresent() && localInlet.insertItem(0, thorium, false).getCount() == 1
+                        && inlet.getStackInSlot(0).getCount() == 2 && inlet.insertItem(0, thorium, false).isEmpty(),
+                "Assembly revokes the detached inlet and uses its stored feed in the shared circuit");
 
         port(helper, OUTPUT).load(savedPort);
         helper.assertTrue(controller.diagnostic(level) != null && !link.isPresent()
-                        && inlet.insertItem(0, thorium, false).getCount() == 1,
-                "Loading a mismatched filter invalidates the previously resolved capability");
+                        && inlet.insertItem(0, thorium, false).getCount() == 1
+                        && items(helper, INPUT, Direction.NORTH).getStackInSlot(0).getCount() == 3,
+                "Loading a mismatched filter revokes the shared inlet and restores access to the retained feed");
         helper.setBlock(TARGET, Blocks.AIR);
-        helper.assertTrue(controller.diagnostic(level) == null && items(helper, INPUT, Direction.NORTH).getStackInSlot(0).getCount() == 1,
+        helper.assertTrue(controller.diagnostic(level) == null && items(helper, INPUT, Direction.NORTH).getStackInSlot(0).getCount() == 3,
                 "A port without any irradiators need not be paired and retains its saved feed");
         helper.succeed();
     }

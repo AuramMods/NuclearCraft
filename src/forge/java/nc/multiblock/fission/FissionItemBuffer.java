@@ -32,6 +32,13 @@ abstract class FissionItemBuffer extends ItemStackHandler {
 
     protected abstract boolean acceptsSlot(int slot, ItemStack stack);
 
+    protected void onFilterChanged() {
+        owner.setChanged();
+        if (owner instanceof FissionPortBlockEntity port) {
+            port.invalidateDetachedItems();
+        }
+    }
+
     int total(int slot) {
         return getStackInSlot(slot).getCount() + overflow[slot].getCount();
     }
