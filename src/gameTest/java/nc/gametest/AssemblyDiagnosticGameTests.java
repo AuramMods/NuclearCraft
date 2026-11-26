@@ -134,17 +134,19 @@ public final class AssemblyDiagnosticGameTests {
         var player = new Inspector(helper.getLevel());
         helper.setBlock(CORNER, NCQuantum.block(QuantumPart.CONNECTOR));
         helper.startSequence()
-                .thenExecuteAfter(1, () -> {
+                .thenWaitUntil(() -> {
                     player.use(CORNER, helper);
                     helper.assertTrue(Component.translatable(AssemblyDiagnostic.NO_CONTROLLER).equals(player.message),
-                            "An isolated quantum connector needs a controller");
+                            "An isolated quantum connector needs a controller, got " + player.message);
+                })
+                .thenExecute(() -> {
                     helper.setBlock(CORNER.above(), NCQuantum.block(QuantumPart.CONTROLLER));
                     helper.setBlock(CORNER.east(), NCQuantum.block(QuantumPart.CONTROLLER));
                 })
-                .thenExecuteAfter(1, () -> {
+                .thenWaitUntil(() -> {
                     player.use(CORNER, helper);
                     helper.assertTrue(Component.translatable("message.nuclearcraft.quantum.controllers").equals(player.message),
-                            "Two connected controllers report a conflicting controller count");
+                            "Two connected controllers report a conflicting controller count, got " + player.message);
                 })
                 .thenSucceed();
     }

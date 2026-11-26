@@ -216,21 +216,18 @@ public final class WorldRadiation {
         double fraction = 0;
         if (!scrubbers.isEmpty()) {
             double total = scrubbers.stream().mapToDouble(RadiationScrubber::contribution).sum();
+            double removalFraction = total;
+            double indicatedRate = sources + spread * Math.max(0D, current - sources);
             if (ScrubberSettings.nonlinear()) {
-                fraction = ScrubberSettings.nonlinearFraction(total);
-                double removal = fraction * (sources + spread * Math.max(0, current - sources));
-                for (var scrubber : scrubbers) {
-                    scrubber.measuredRemoval(removal * scrubber.contribution() / total);
-                }
-                sources *= 1 - fraction;
-            } else {
-                fraction = Math.min(1D, total);
-                for (var scrubber : scrubbers) {
-                    double part = Math.min(1D, scrubber.contribution());
-                    scrubber.measuredRemoval(part * (sources + spread * Math.max(0, current - sources)));
-                    sources *= 1 - part;
-                }
+                removalFraction = ScrubberSettings.nonlinearFraction(total);
+                indicatedRate *= removalFraction / total;
             }
+            // Each scrubber measures the same pre-scrubbing source and chunk rates.
+            for (var scrubber : scrubbers) {
+                scrubber.measuredRemoval(indicatedRate * scrubber.contribution());
+            }
+            sources *= 1D - removalFraction;
+            fraction = Math.min(1D, removalFraction);
         }
         if (fraction > 0) {
             loaded.scrubbing.put(key, fraction);
