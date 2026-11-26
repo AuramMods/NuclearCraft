@@ -29,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.IntSupplier;
 
 abstract class MachineController extends BlockEntity
         implements ComputerPort.Controller, AssemblyDiagnostic.Controller, ChunkRadiationSource {
@@ -44,6 +45,9 @@ abstract class MachineController extends BlockEntity
     private boolean halted;
     private long power;
     private double radiationEmission;
+    private @Nullable OutputReservation outputReservation;
+
+    private record OutputReservation(Object storage, int slot, int amount) {}
 
     MachineController(BlockEntityType<?> type, BlockPos pos, BlockState state, Part controllerPart) {
         super(type, pos, state);
@@ -75,6 +79,23 @@ abstract class MachineController extends BlockEntity
     public final boolean assembled() { return bounds != null && !isRemoved(); }
     public final boolean halted() { return halted; }
     final long power() { return power; }
+
+    final int reservedOutput(Object storage, int slot) {
+        var reservation = outputReservation;
+        return reservation != null && reservation.storage == storage && reservation.slot == slot
+                ? reservation.amount : 0;
+    }
+
+    final int sendReservedOutput(Object storage, int slot, int amount, IntSupplier send) {
+        // Sibling ports share storage. Keep the offer in place while the destination can call back into them.
+        var previous = outputReservation;
+        outputReservation = new OutputReservation(storage, slot, amount);
+        try {
+            return Math.max(0, Math.min(amount, send.getAsInt()));
+        } finally {
+            outputReservation = previous;
+        }
+    }
 
     @Override
     public final double radiationEmission() {

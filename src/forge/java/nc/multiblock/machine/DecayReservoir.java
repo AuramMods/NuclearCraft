@@ -41,36 +41,43 @@ final class DecayReservoir {
         return accepted;
     }
 
-    ItemStack peekItem() {
+    ItemStack peekItem(int reserved) {
         if (itemOutputs.isEmpty()) return ItemStack.EMPTY;
         var stack = itemOutputs.get(0);
-        return stack.copyWithCount(Math.min(stack.getCount(), stack.getMaxStackSize()));
+        return stack.copyWithCount(Math.min(Math.max(0, stack.getCount() - reserved), stack.getMaxStackSize()));
     }
 
-    ItemStack extract(int requested, boolean simulate) {
-        if (requested <= 0 || itemOutputs.isEmpty()) return ItemStack.EMPTY;
-        var stack = itemOutputs.get(0);
-        int amount = Math.min(requested, Math.min(stack.getCount(), stack.getMaxStackSize()));
-        var result = stack.copyWithCount(amount);
+    ItemStack extract(int requested, boolean simulate, int reserved) {
+        if (requested <= 0) return ItemStack.EMPTY;
+        var available = peekItem(reserved);
+        if (available.isEmpty()) return ItemStack.EMPTY;
+        int amount = Math.min(requested, available.getCount());
+        available.setCount(amount);
         if (!simulate) {
+            var stack = itemOutputs.get(0);
             stack.shrink(amount);
             if (stack.isEmpty()) itemOutputs.remove(0);
         }
-        return result;
+        return available;
     }
 
-    FluidStack peekFluid(boolean output) {
+    FluidStack peekFluid(boolean output, int reserved) {
         var fluids = output ? fluidOutputs : fluidInputs;
-        return fluids.isEmpty() ? FluidStack.EMPTY : fluids.get(0).copy();
+        if (fluids.isEmpty()) return FluidStack.EMPTY;
+        var stack = fluids.get(0);
+        int amount = stack.getAmount() - reserved;
+        return amount > 0 ? new FluidStack(stack, amount) : FluidStack.EMPTY;
     }
 
-    FluidStack drain(FluidStack requested, int amount, boolean simulate) {
+    FluidStack drain(FluidStack requested, int amount, boolean simulate, int reserved) {
         if (amount <= 0 || fluidOutputs.isEmpty()) return FluidStack.EMPTY;
+        var first = fluidOutputs.get(0);
         var iterator = fluidOutputs.iterator();
         while (iterator.hasNext()) {
             var stack = iterator.next();
             if (!requested.isEmpty() && !requested.isFluidEqual(stack)) continue;
-            int drained = Math.min(amount, stack.getAmount());
+            int drained = Math.min(amount, stack.getAmount() - (stack == first ? reserved : 0));
+            if (drained <= 0) return FluidStack.EMPTY;
             var result = new FluidStack(stack, drained);
             if (!simulate) {
                 stack.shrink(drained);

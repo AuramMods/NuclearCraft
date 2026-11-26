@@ -686,6 +686,8 @@ The refreshed full snapshot with AuramCore 1.0.36 repeated both Distributor chai
 
 In a packaged Forge 47.4.10 dedicated server, Ender IO and Mekanism supplied water and an item heat source to separate Decay Pools and carried both products out. Each pool produced exactly 1,000 mB of preheated water and one palladium dust. A disposable datapack shortened the Ruthenium-106 recipe's lifetime to 300 ticks for this transport test.
 
+On the 540-mod Auram snapshot on Forge 47.4.10, a Decay Pool reservoir and a process port pushed 40 mB of heavy water and 20 mB of preheated water into nearly full Ender IO tanks, respectively. The controller kept the remaining 60 mB and 80 mB. A second pool sent 100 mB of heavy water through a Mekanism mechanical pipe. The tanks and reservoir remainders retained their exact amounts after chunk unload and reload.
+
 The full Auram snapshot with AuramCore 1.0.36 build `a3e441f` repeated both Decay Pool chains on Forge 47.4.18. KubeJS applied the same 300-tick test override. Both destination pairs saved 1,000 mB of preheated water and one palladium dust, and both source pairs and controllers saved their tanks and reservoirs empty. JEI loaded, the client used OpenAL No Output, and the native observer recorded zero visible windows or focus activations through a clean exit.
 
 On a packaged Forge 47.4.10 dedicated server, Ender IO 8.2.18-beta and Mekanism 10.4.16.80 both supplied water, hydrogen sulfide, and RTG power to separate Distillers. Each route delivered exactly 500 mB of low-enriched water and 500 mB of depleted hydrogen sulfide to external tanks. Keep the two fluid lines separate. Mekanism mechanical pipes connect automatically and share their contents when they form one network.
@@ -1474,6 +1476,8 @@ The eight shipped RTGs and Solar Panels retain their registry IDs. Solar Panels 
 Distributor block and item IDs retain their legacy names. Their shared block entity type is `nuclearcraft:distributor`. Each part saves its share of the network as `energy`, an item stack in `items`, and a Forge fluid stack in `fluid`. Legacy conversion must distribute data from `energyStorage`, `distributorInventory`, and `distributorTank` over the converted parts using the per-block limits. Chunk unload leaves each part's share saved on that part. Breaking a part drops its saved items and removes its share of fluid and charge. When loaded networks with different item stacks or fluids join, both types remain recoverable through the outlet, one type at a time.
 
 Large Machine housing blocks and the Decay Pool Controller and Container retain their legacy block and item IDs. The Process Port's four settings map to the `mode` states `item_in`, `fluid_in`, `item_out`, and `fluid_out`. Reservoir and power ports use the same state to record their input or output direction. The Multitool cycles the mode. Ports expose Forge capabilities through their outward face when the shell is assembled. The legacy `machine_min_size` and `machine_max_size` settings map to `min_size` and `max_size` in `nuclearcraft-machines.toml`.
+
+During a push, Large Machine ports reserve the offered items, fluid, or FE in their shared controller storage. Sibling ports can still extract unreserved stock. The controller deducts exactly what the adjacent capability accepts. GameTests exercise callbacks through a second port, partial acceptance, and reservoir product order.
 
 ### Decay Pool recipes and saves
 

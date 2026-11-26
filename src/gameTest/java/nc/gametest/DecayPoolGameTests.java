@@ -17,14 +17,23 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.EnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE;
@@ -261,6 +270,161 @@ public final class DecayPoolGameTests {
 
     private static FluidStack stack(String id, int amount) {
         return new FluidStack(ForgeRegistries.FLUIDS.getValue(NuclearCraft.id(id)), amount);
+    }
+
+    @GameTest(template = "empty")
+    public static void outputReservoirReservesProductsAcrossPortsDuringPush(GameTestHelper helper) {
+        build(helper);
+        helper.setBlock(RESERVOIR, NCMachines.block(Part.RESERVOIR).defaultBlockState().setValue(MachinePartBlock.MODE, Mode.ITEM_OUT));
+        helper.setBlock(new BlockPos(3, 2, 2), NCMachines.block(Part.CONTAINER));
+        helper.setBlock(new BlockPos(3, 2, 3), NCMachines.block(Part.CONTAINER));
+        var pool = (DecayPool) helper.getBlockEntity(CONTROLLER);
+        var pulledItems = new ItemStack[1];
+        var pulledFluid = new FluidStack[1];
+        var storedItems = new ItemStackHandler() {
+            @Override public ItemStack insertItem(int slot, ItemStack offered, boolean simulate) {
+                if (!offered.is(Items.BRICK) || !getStackInSlot(slot).isEmpty()) return offered;
+                if (simulate) return ItemStack.EMPTY;
+                var otherPort = item(helper, RESERVOIR, Direction.WEST);
+                pulledItems[0] = otherPort.getStackInSlot(0).is(Items.BRICK)
+                        ? otherPort.extractItem(0, offered.getCount(), false) : ItemStack.EMPTY;
+                setStackInSlot(slot, offered.copyWithCount(1));
+                return offered.copyWithCount(offered.getCount() - 1);
+            }
+        };
+        var storedFluid = new FluidTank(60) {
+            @Override public int fill(FluidStack offered, FluidAction action) {
+                if (offered.getFluid() != Fluids.WATER || !isEmpty()) return 0;
+                if (action.simulate()) return offered.getAmount();
+                pulledFluid[0] = fluid(helper, RESERVOIR, Direction.WEST).drain(offered, EXECUTE);
+                return super.fill(offered, action);
+            }
+        };
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(pool.assembled(), "Pool assembles with two output reservoirs"))
+                .thenExecute(() -> {
+                    var itemProducts = new ListTag();
+                    var bricks = new ItemStack(Items.BRICK).save(new CompoundTag());
+                    bricks.putInt("amount", 2);
+                    itemProducts.add(bricks);
+                    var gold = new ItemStack(Items.GOLD_INGOT).save(new CompoundTag());
+                    gold.putInt("amount", 1);
+                    itemProducts.add(gold);
+                    var fluidProducts = new ListTag();
+                    fluidProducts.add(new FluidStack(Fluids.WATER, 100).writeToNBT(new CompoundTag()));
+                    fluidProducts.add(new FluidStack(Fluids.LAVA, 30).writeToNBT(new CompoundTag()));
+                    var saved = pool.saveWithoutMetadata();
+                    var reservoir = saved.getCompound("reservoir");
+                    reservoir.put("item_outputs", itemProducts);
+                    reservoir.put("fluid_outputs", fluidProducts);
+                    pool.load(saved);
+
+                    var destination = PRODUCTS.east();
+                    helper.setBlock(destination, Blocks.BARREL);
+                    helper.getLevel().setBlockEntity(new BarrelBlockEntity(helper.absolutePos(destination), helper.getBlockState(destination)) {
+                        private final LazyOptional<IItemHandler> items = LazyOptional.of(() -> storedItems);
+                        private final LazyOptional<IFluidHandler> fluids = LazyOptional.of(() -> storedFluid);
+
+                        @Override public <T> @NotNull LazyOptional<T> getCapability(
+                                @NotNull Capability<T> capability, @Nullable Direction side) {
+                            if (capability == ForgeCapabilities.ITEM_HANDLER) return items.cast();
+                            if (capability == ForgeCapabilities.FLUID_HANDLER) return fluids.cast();
+                            return super.getCapability(capability, side);
+                        }
+                    });
+                })
+                .thenWaitUntil(() -> helper.assertTrue(pulledItems[0] != null && pulledFluid[0] != null,
+                        "The output port pushes both resources into the adjacent capability"))
+                .thenExecute(() -> {
+                    helper.assertTrue(pulledItems[0].isEmpty() && pulledFluid[0].isEmpty(),
+                            "A destination cannot extract the offered product from a second port during the push");
+                    var itemPort = item(helper, RESERVOIR, Direction.WEST);
+                    var remaining = itemPort.getStackInSlot(0);
+                    helper.assertTrue(remaining.is(Items.BRICK) && remaining.getCount() == 1
+                                    && storedItems.getStackInSlot(0).getCount() == 1,
+                            "The partial item transfer conserves and restores the first product group");
+                    itemPort.extractItem(0, 1, false);
+                    helper.assertTrue(itemPort.getStackInSlot(0).is(Items.GOLD_INGOT), "The next item group is untouched");
+                    var fluidPort = fluid(helper, RESERVOIR, Direction.WEST);
+                    helper.assertTrue(fluidPort.getFluidInTank(0).getFluid() == Fluids.WATER
+                                    && fluidPort.getFluidInTank(0).getAmount() + storedFluid.getFluidAmount() == 100
+                                    && storedFluid.getFluidAmount() == 60,
+                            "The partial fluid transfer conserves and restores the first fluid group");
+                    helper.assertTrue(fluidPort.drain(new FluidStack(Fluids.LAVA, 30), SIMULATE).getAmount() == 30,
+                            "The next fluid group is untouched");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty")
+    public static void processAndPowerPushesReserveTheirSharedContents(GameTestHelper helper) {
+        build(helper);
+        var otherProcess = OUTPUT.above();
+        var powerOutput = new BlockPos(3, 2, 1);
+        var otherPower = powerOutput.above();
+        var powerInput = FEED.above();
+        helper.setBlock(otherProcess, NCMachines.block(Part.PROCESS).defaultBlockState().setValue(MachinePartBlock.MODE, Mode.FLUID_OUT));
+        var powerBlock = NCMachines.block(Part.POWER).defaultBlockState();
+        helper.setBlock(powerOutput, powerBlock.setValue(MachinePartBlock.MODE, Mode.ITEM_OUT));
+        helper.setBlock(otherPower, powerBlock.setValue(MachinePartBlock.MODE, Mode.ITEM_OUT));
+        helper.setBlock(powerInput, powerBlock);
+        var pool = (DecayPool) helper.getBlockEntity(CONTROLLER);
+        var pulledFluid = new FluidStack[1];
+        var pulledEnergy = new int[]{-1};
+        var filledEnergy = new int[1];
+        var storedFluid = new FluidTank(60) {
+            @Override public int fill(FluidStack offered, FluidAction action) {
+                if (action.execute() && pulledFluid[0] == null) {
+                    pulledFluid[0] = fluid(helper, otherProcess, Direction.SOUTH).drain(offered, EXECUTE);
+                }
+                return super.fill(offered, action);
+            }
+        };
+        var storedEnergy = new EnergyStorage(9) {
+            @Override public int receiveEnergy(int offered, boolean simulate) {
+                if (!simulate && pulledEnergy[0] < 0) {
+                    pulledEnergy[0] = energy(helper, otherPower).extractEnergy(offered, false);
+                    filledEnergy[0] = energy(helper, powerInput).receiveEnergy(offered, false);
+                }
+                return super.receiveEnergy(offered, simulate);
+            }
+        };
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(pool.assembled(), "Pool assembles with shared process and power output ports"))
+                .thenExecute(() -> {
+                    var saved = pool.saveWithoutMetadata();
+                    saved.putLong("energy", 16);
+                    saved.put("product", stack("preheated_water", 100).writeToNBT(new CompoundTag()));
+                    pool.load(saved);
+                    installDestination(helper, OUTPUT.south(), ForgeCapabilities.FLUID_HANDLER, storedFluid);
+                    installDestination(helper, powerOutput.north(), ForgeCapabilities.ENERGY, storedEnergy);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(pulledFluid[0] != null && pulledEnergy[0] >= 0,
+                        "Fluid and power reach the adjacent destinations"))
+                .thenExecute(() -> {
+                    helper.assertTrue(pulledFluid[0].isEmpty() && storedFluid.getFluidAmount() == 60
+                                    && fluid(helper, otherProcess, Direction.SOUTH).getFluidInTank(0).getAmount() == 40,
+                            "The process tank debits only the accepted amount after the callback");
+                    helper.assertTrue(pulledEnergy[0] == 0 && filledEnergy[0] == 0 && storedEnergy.getEnergyStored() == 9
+                                    && energy(helper, otherPower).getEnergyStored() == 7,
+                            "The power port reserves both the offered charge and its storage space during the callback");
+                })
+                .thenSucceed();
+    }
+
+    private static <T> void installDestination(GameTestHelper helper, BlockPos pos, Capability<T> type, T handler) {
+        helper.setBlock(pos, Blocks.BARREL);
+        helper.getLevel().setBlockEntity(new BarrelBlockEntity(helper.absolutePos(pos), helper.getBlockState(pos)) {
+            private final LazyOptional<T> storage = LazyOptional.of(() -> handler);
+
+            @Override public <C> @NotNull LazyOptional<C> getCapability(@NotNull Capability<C> capability, @Nullable Direction side) {
+                return capability == type ? storage.cast() : super.getCapability(capability, side);
+            }
+        });
+    }
+
+    private static IEnergyStorage energy(GameTestHelper helper, BlockPos pos) {
+        return helper.getBlockEntity(pos).getCapability(ForgeCapabilities.ENERGY, Direction.NORTH).orElseThrow(AssertionError::new);
     }
 
     private static void build(GameTestHelper helper) {

@@ -19,6 +19,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import org.jetbrains.annotations.NotNull;
@@ -32,9 +33,9 @@ public final class MachinePort extends BlockEntity {
     private @Nullable Binding binding;
     private int tankIndex;
     private int itemIndex;
-    private LazyOptional<IItemHandler> items = LazyOptional.empty();
-    private LazyOptional<IFluidHandler> fluid = LazyOptional.empty();
-    private LazyOptional<IEnergyStorage> energy = LazyOptional.empty();
+    private LazyOptional<ItemPort> items = LazyOptional.empty();
+    private LazyOptional<FluidPort> fluid = LazyOptional.empty();
+    private LazyOptional<EnergyPort> energy = LazyOptional.empty();
 
     public MachinePort(BlockPos pos, BlockState state) {
         super(NCMachines.PORT.get(), pos, state);
@@ -196,37 +197,55 @@ public final class MachinePort extends BlockEntity {
         if (target == null || target instanceof MachinePort port && port.binding != null
                 && port.binding.controller == attached.controller) return;
         Direction face = attached.side.getOpposite();
-        fluid.ifPresent(source -> {
-            var available = source.drain(Integer.MAX_VALUE, SIMULATE);
-            if (!available.isEmpty()) target.getCapability(ForgeCapabilities.FLUID_HANDLER, face).ifPresent(destination -> {
-                int accepted = destination.fill(available.copy(), EXECUTE);
-                if (accepted > 0) source.drain(new FluidStack(available, Math.min(accepted, available.getAmount())), EXECUTE);
-            });
-        });
-        items.ifPresent(source -> {
-            var available = source.extractItem(0, Integer.MAX_VALUE, true);
-            if (!available.isEmpty()) target.getCapability(ForgeCapabilities.ITEM_HANDLER, face).ifPresent(destination -> {
-                int accepted = available.getCount() - ItemHandlerHelper.insertItemStacked(destination, available.copy(), false).getCount();
-                if (accepted > 0) source.extractItem(0, accepted, false);
-            });
-        });
-        energy.ifPresent(source -> {
-            int available = source.getEnergyStored();
-            if (available > 0) target.getCapability(ForgeCapabilities.ENERGY, face).ifPresent(destination -> {
-                int accepted = destination.receiveEnergy(available, false);
-                if (accepted > 0) source.extractEnergy(Math.min(available, accepted), false);
-            });
-        });
+        fluid.ifPresent(source -> source.pushTo(target, face));
+        items.ifPresent(source -> source.pushTo(target, face));
+        energy.ifPresent(source -> source.pushTo(target, face));
     }
 
-    private final class ReservoirItemPort implements IItemHandler {
-        private final Binding attached;
-        ReservoirItemPort(Binding attached) { this.attached = attached; }
+    private abstract class ItemPort implements IItemHandler {
+        final Binding attached;
+        private final Object storage;
+        private final int storageSlot;
+
+        ItemPort(Binding attached, Object storage, int storageSlot) {
+            this.attached = attached;
+            this.storage = storage;
+            this.storageSlot = storageSlot;
+        }
+
+        final int reserved() {
+            return attached.controller.reservedOutput(storage, storageSlot);
+        }
+
+        abstract ItemStack extract(int amount, boolean simulate, int reserved);
+
+        @Override public final ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return slot == 0 && amount > 0 && connected(attached) && attached.mode.output()
+                    ? extract(amount, simulate, reserved()) : ItemStack.EMPTY;
+        }
+
+        final void pushTo(BlockEntity target, Direction face) {
+            if (extractItem(0, Integer.MAX_VALUE, true).isEmpty()) return;
+            target.getCapability(ForgeCapabilities.ITEM_HANDLER, face).ifPresent(destination -> {
+                var offered = extractItem(0, Integer.MAX_VALUE, true);
+                if (offered.isEmpty()) return;
+                int amount = offered.getCount();
+                int accepted = attached.controller.sendReservedOutput(storage, storageSlot, amount,
+                        () -> amount - ItemHandlerHelper.insertItemStacked(destination, offered, false).getCount());
+                if (accepted > 0) extract(accepted, false, 0);
+            });
+        }
+    }
+
+    private final class ReservoirItemPort extends ItemPort {
+        ReservoirItemPort(Binding attached) {
+            super(attached, ForgeCapabilities.ITEM_HANDLER, 0);
+        }
 
         @Override public int getSlots() { return connected(attached) ? 1 : 0; }
         @Override public ItemStack getStackInSlot(int slot) {
             return slot == 0 && connected(attached) && attached.mode.output()
-                    ? attached.pool().reservoir().peekItem() : ItemStack.EMPTY;
+                    ? attached.pool().reservoir().peekItem(reserved()) : ItemStack.EMPTY;
         }
 
         @Override public int getSlotLimit(int slot) {
@@ -244,28 +263,32 @@ public final class MachinePort extends BlockEntity {
             return remaining;
         }
 
-        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            if (slot != 0 || !connected(attached) || !attached.mode.output()) return ItemStack.EMPTY;
-            var result = attached.pool().reservoir().extract(amount, simulate);
+        @Override ItemStack extract(int amount, boolean simulate, int reserved) {
+            var result = attached.pool().reservoir().extract(amount, simulate, reserved);
             if (!simulate && !result.isEmpty()) attached.controller.setChanged();
             return result;
         }
     }
 
-    private final class ProcessItemPort implements IItemHandler {
-        private final Binding attached;
+    private final class ProcessItemPort extends ItemPort {
         private final IItemHandler handler;
         private final int index;
 
         ProcessItemPort(Binding attached, IItemHandler handler) {
-            this.attached = attached;
+            this(attached, handler, attached.index + (attached.mode.output() ? attached.controller.itemCount(false) : 0));
+        }
+
+        private ProcessItemPort(Binding attached, IItemHandler handler, int index) {
+            super(attached, handler, index);
             this.handler = handler;
-            index = attached.index + (attached.mode.output() ? attached.controller.itemCount(false) : 0);
+            this.index = index;
         }
 
         @Override public int getSlots() { return connected(attached) ? 1 : 0; }
         @Override public ItemStack getStackInSlot(int slot) {
-            return slot == 0 && connected(attached) ? handler.getStackInSlot(index).copy() : ItemStack.EMPTY;
+            if (slot != 0 || !connected(attached)) return ItemStack.EMPTY;
+            var stack = handler.getStackInSlot(index);
+            return stack.copyWithCount(Math.max(0, stack.getCount() - reserved()));
         }
 
         @Override public int getSlotLimit(int slot) {
@@ -280,27 +303,31 @@ public final class MachinePort extends BlockEntity {
             return isItemValid(slot, stack) ? handler.insertItem(index, stack, simulate) : stack;
         }
 
-        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
-            return slot == 0 && amount > 0 && connected(attached) && attached.mode.output()
-                    ? handler.extractItem(index, amount, simulate) : ItemStack.EMPTY;
+        @Override ItemStack extract(int amount, boolean simulate, int reserved) {
+            int available = handler.getStackInSlot(index).getCount() - reserved;
+            return available > 0 ? handler.extractItem(index, Math.min(amount, available), simulate) : ItemStack.EMPTY;
         }
     }
 
     private final class FluidPort implements IFluidHandler {
         private final Binding attached;
-        private final @Nullable IFluidHandler tankHandler;
+        private final @Nullable FluidTank tankHandler;
+        private final Object storage;
 
-        FluidPort(Binding attached, @Nullable IFluidHandler tankHandler) {
+        FluidPort(Binding attached, @Nullable FluidTank tankHandler) {
             this.attached = attached;
             this.tankHandler = tankHandler;
+            storage = tankHandler == null ? ForgeCapabilities.FLUID_HANDLER : tankHandler;
         }
 
         @Override public int getTanks() { return connected(attached) ? 1 : 0; }
 
         @Override public FluidStack getFluidInTank(int tank) {
             if (tank != 0 || !connected(attached)) return FluidStack.EMPTY;
-            return tankHandler == null ? attached.pool().reservoir().peekFluid(attached.mode.output())
-                    : tankHandler.getFluidInTank(0).copy();
+            int reserved = attached.mode.output() ? attached.controller.reservedOutput(storage, 0) : 0;
+            if (tankHandler == null) return attached.pool().reservoir().peekFluid(attached.mode.output(), reserved);
+            int available = tankHandler.getFluidAmount() - reserved;
+            return available > 0 ? new FluidStack(tankHandler.getFluid(), available) : FluidStack.EMPTY;
         }
 
         @Override public int getTankCapacity(int tank) {
@@ -324,20 +351,33 @@ public final class MachinePort extends BlockEntity {
 
         @Override public FluidStack drain(FluidStack stack, FluidAction action) {
             if (stack.isEmpty() || !connected(attached) || !attached.mode.output()) return FluidStack.EMPTY;
-            if (tankHandler != null) return tankHandler.drain(stack, action);
-            return drainReservoir(stack, stack.getAmount(), action);
+            return drain(stack, stack.getAmount(), action, attached.controller.reservedOutput(storage, 0));
         }
 
         @Override public FluidStack drain(int amount, FluidAction action) {
             if (amount <= 0 || !connected(attached) || !attached.mode.output()) return FluidStack.EMPTY;
-            if (tankHandler != null) return tankHandler.drain(amount, action);
-            return drainReservoir(FluidStack.EMPTY, amount, action);
+            return drain(FluidStack.EMPTY, amount, action, attached.controller.reservedOutput(storage, 0));
         }
 
-        private FluidStack drainReservoir(FluidStack filter, int amount, FluidAction action) {
-            var result = attached.pool().reservoir().drain(filter, amount, action.simulate());
+        private FluidStack drain(FluidStack filter, int amount, FluidAction action, int reserved) {
+            if (tankHandler != null) {
+                if (!filter.isEmpty() && !tankHandler.getFluid().isFluidEqual(filter)) return FluidStack.EMPTY;
+                return tankHandler.drain(Math.min(amount, tankHandler.getFluidAmount() - reserved), action);
+            }
+            var result = attached.pool().reservoir().drain(filter, amount, action.simulate(), reserved);
             if (action.execute() && !result.isEmpty()) attached.controller.setChanged();
             return result;
+        }
+
+        void pushTo(BlockEntity target, Direction face) {
+            if (getFluidInTank(0).isEmpty()) return;
+            target.getCapability(ForgeCapabilities.FLUID_HANDLER, face).ifPresent(destination -> {
+                var offered = drain(Integer.MAX_VALUE, SIMULATE);
+                if (offered.isEmpty()) return;
+                int accepted = attached.controller.sendReservedOutput(storage, 0, offered.getAmount(),
+                        () -> destination.fill(offered.copy(), EXECUTE));
+                if (accepted > 0) drain(offered, accepted, EXECUTE, 0);
+            });
         }
     }
 
@@ -356,14 +396,30 @@ public final class MachinePort extends BlockEntity {
         @Override public int extractEnergy(int requested, boolean simulate) {
             if (!canExtract() || requested <= 0) return 0;
             var controller = attached.controller;
-            int amount = (int) Math.min(requested, controller.power());
+            int amount = Math.min(requested, getEnergyStored());
             if (!simulate) controller.setPower(controller.power() - amount);
             return amount;
         }
 
-        @Override public int getEnergyStored() { return connected(attached) ? (int) Math.min(Integer.MAX_VALUE, attached.controller.power()) : 0; }
+        @Override public int getEnergyStored() {
+            if (!connected(attached)) return 0;
+            var controller = attached.controller;
+            return (int) Math.min(Integer.MAX_VALUE, controller.power() - controller.reservedOutput(controller, 0));
+        }
         @Override public int getMaxEnergyStored() { return connected(attached) ? (int) Math.min(Integer.MAX_VALUE, attached.controller.energyCapacity()) : 0; }
         @Override public boolean canExtract() { return connected(attached) && attached.mode.output(); }
         @Override public boolean canReceive() { return connected(attached) && !attached.mode.output(); }
+
+        void pushTo(BlockEntity target, Direction face) {
+            if (getEnergyStored() <= 0) return;
+            target.getCapability(ForgeCapabilities.ENERGY, face).ifPresent(destination -> {
+                int offered = getEnergyStored();
+                if (offered <= 0 || !canExtract()) return;
+                var controller = attached.controller;
+                int accepted = controller.sendReservedOutput(controller, 0, offered,
+                        () -> destination.receiveEnergy(offered, false));
+                if (accepted > 0) controller.setPower(controller.power() - accepted);
+            });
+        }
     }
 }
