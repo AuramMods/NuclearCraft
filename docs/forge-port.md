@@ -453,6 +453,20 @@ KubeJS 2001.6.5-build.16 removed the fish recipe and replaced the pork recipe un
 
 The same JAR, SHA-256 `a8b83dceef9cdcae6bf970b19efde052378a6d757cb8de915911e25c5c17e45b`, ran in the isolated 540-mod Auram copy. JEI displayed the nine tested recipe outputs with their durations, power, and fluid amounts. Each network saved one Marshmallow, the unused Gelatin, and one item of each chocolate form. The Manufactory delivered the Thermal lapis dust shown in JEI. All results survived confirmed chunk eviction and reload and were present in the saved region files. The client exited with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
 
+### Elite Plating and crafting conversions
+
+Craft two Crystal Binder from Rhodochrosite Dust, Calcium Sulfate, Obsidian Dust, and Magnesium Dust. The shaped Elite Plating recipe uses four Crystal Binder in the corners, four boron ingots on the edges, and one DU Plating in the center. Those recipes restore the crafting path to the Molten-Salt Fission Controller, the Radiation Scrubber, the highest-tier solar panel, and advanced battery recipes. They preserve the existing `nuclearcraft:crystal_binder` and `nuclearcraft:plate_elite` item IDs.
+
+A Brown Mushroom and Glowstone Dust craft one Glowing Mushroom. Craft the Glowing Mushroom by itself to turn it back into a Brown Mushroom. The four legacy music discs use an item from `minecraft:music_discs` plus Tough Alloy for Wanderer, Uranium-235 for The End of the World, silver for Money for Nothing, or Dimensional Blend for Hyperspace. The tag includes NuclearCraft discs so they can be converted again.
+
+The previous packaged JAR lacked all eight crafting recipes on clean Forge 47.4.10. The new JAR matched the output counts and shapes of 328 direct legacy crafting calls. The audit also matched the 32 generated gas cooler and port recipes and 22 generated Quantum gate conversions. Its Crafting Menu supplied nine Elite Plating from Crystal Binder and DU Plating, then used eight of those plates to craft one Molten-Salt Fission Controller and one Radiation Scrubber. The same test converted both mushrooms and crafted Hyperspace through the other three discs. The stored outcomes survived chunk unload, reload, and dedicated restart.
+
+All 334 local GameTests passed in a fresh world. JEI 15.20.0.129 displayed all eight recipes on clean Forge 47.4.10 with the same packaged JAR, SHA-256 `448e1aa5969274ede0b4607116d208040ea1405a01603e5f7c6e4c41bf6f68ef`.
+
+The isolated 540-mod Auram instance repeated the crafting chain with Mekanism 10.4.16.80 Obsidian Dust and Thermal Foundation 11.0.6.70 silver ingots. The saved world retained both machines, one spare Elite Plating, both mushrooms, and Hyperspace after reload. Auram's JEI displayed the plating and mushroom recipes and retained the four disc recipes in its hidden set. All eight recipes were available in the Crafting Menu. The clients used master volume zero and OpenAL No Output. The focus observer recorded zero visible windows, foreground samples, or focus activations.
+
+A smaller profile with the same Malum 1.6.7 and JEI 15.20.0.129 releases reproduced the hidden recipes. Malum adds Aesthetica to `minecraft:music_discs` and hides recipes that reference it until its Black Crystal revelation. The profile recorded all four NuclearCraft disc recipes in Malum's hidden set and verified that the Black Crystal revelation restored all four to the visible JEI list during the same session.
+
 ### Fluid batch factoring
 
 Set `factor_recipes = true` at the top level of `world/serverconfig/nuclearcraft-processors.toml` to use the legacy smaller batches. It defaults to false. The Supercooler, Electrolyzer, Chemical Reactor, Salt Mixer, Centrifuge, and Distiller divide their shipped fluid inputs, outputs, and batch durations by the same greatest common divisor. Chance outputs preserve their minimum amounts and step sizes in the reduced units. Each machine keeps the same FE draw per tick. JEI shows the effective quantities and durations.

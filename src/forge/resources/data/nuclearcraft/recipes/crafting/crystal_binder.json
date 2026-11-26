@@ -1,0 +1,22 @@
+{
+    "type": "minecraft:crafting_shapeless",
+    "category": "misc",
+    "ingredients": [
+        {
+            "tag": "forge:dusts/rhodochrosite"
+        },
+        {
+            "tag": "forge:dusts/calcium_sulfate"
+        },
+        {
+            "tag": "forge:dusts/obsidian"
+        },
+        {
+            "tag": "forge:dusts/magnesium"
+        }
+    ],
+    "result": {
+        "item": "nuclearcraft:crystal_binder",
+        "count": 2
+    }
+}

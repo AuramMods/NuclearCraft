@@ -211,6 +211,39 @@ public final class MaterialGameTests {
         helper.succeed();
     }
 
+    @GameTest(template = "empty")
+    public static void craftsElitePlatingMushroomsAndRecords(GameTestHelper helper) {
+        var grid = craftingGrid(3, 3);
+        fillGrid(grid, item("rhodochrosite_dust"), item("calcium_sulfate"), item("obsidian_dust"), item("magnesium_dust"));
+        assertCrafts(helper, grid, item("crystal_binder"), 2);
+
+        Item binder = item("crystal_binder");
+        Item boron = item("boron_ingot");
+        fillGrid(grid, binder, boron, binder, boron, item("plate_du"), boron, binder, boron, binder);
+        assertCrafts(helper, grid, item("plate_elite"), 1);
+
+        Item plating = item("plate_elite");
+        Item borax = item("borax");
+        fillGrid(grid, plating, borax, plating, borax, item("extreme_ingot"), borax, plating, borax, plating);
+        assertCrafts(helper, grid, item("radiation_scrubber"), 1);
+
+        Item glowing = item("glowing_mushroom");
+        fillGrid(grid, Items.BROWN_MUSHROOM, Items.GLOWSTONE_DUST);
+        assertCrafts(helper, grid, glowing, 1);
+        fillGrid(grid, glowing);
+        assertCrafts(helper, grid, Items.BROWN_MUSHROOM, 1);
+
+        fillGrid(grid, Items.MUSIC_DISC_CAT, item("tough_ingot"));
+        assertCrafts(helper, grid, item("record_wanderer"), 1);
+        fillGrid(grid, item("record_wanderer"), item("uranium_235_ingot"));
+        assertCrafts(helper, grid, item("record_end_of_the_world"), 1);
+        fillGrid(grid, item("record_end_of_the_world"), item("silver_ingot"));
+        assertCrafts(helper, grid, item("record_money_for_nothing"), 1);
+        fillGrid(grid, item("record_money_for_nothing"), item("dimensional_blend"));
+        assertCrafts(helper, grid, item("record_hyperspace"), 1);
+        helper.succeed();
+    }
+
     private static void fillGrid(TransientCraftingContainer grid, Item... inputs) {
         grid.clearContent();
         for (int slot = 0; slot < inputs.length; slot++) {
