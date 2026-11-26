@@ -1415,6 +1415,16 @@ A separate clean Forge multiplayer client received the full 70,001 mB volume and
 
 The isolated 540-mod Auram client opened both menus on Forge 47.4.10 and finished loading JEI. A temporary copper conductivity of 1.25 H/t/K kept the fixtures running while the client sampled them. The heat exchanger reported 32 mB/t on the tube side, 1 mB/t on the shell side, 125 H/t, and 100 K. The condenser reported 64 mB/t, about 123 H/t, and 150 K. Both showed the original powered and unpowered textures and synced cleared tanks and circuits. The test removed its fixtures and restored the copied config. The clean and Auram clients used master volume zero and OpenAL No Output with zero focus activations, foreground samples, or visible windows.
 
+### Held fluid containers at thermal ports
+
+With a bucket or another Forge fluid container in your main hand, right-click the outward face of an assembled turbine, condenser, or heat-exchanger port without sneaking. An inlet accepts a supported fluid from the held container. An outlet fills the container from its own circuit. A condenser shell outlet returns the retained coolant, while a heat-exchanger shell outlet returns the shell recipe's product. The transfer uses the same sided fluid handler as attached pipes.
+
+All 319 local GameTests passed. A survival client on clean packaged Forge 47.4.10 filled and drained all three machines with buckets. Dedicated restart and confirmed chunk unload and reload preserved the remaining 3,000 mB of turbine exhaust, 100,000 mB of condenser coolant, 3,000 mB of exchanger steam, and 4,000 mB of recovered oxygen.
+
+With Auram's Ender IO 8.2.22-beta and Mekanism 10.4.16.80 JARs on a dedicated server, the held Ender IO pressurized tank took 3,000 mB of exhaust in one click. The Mekanism Basic Fluid Tank took 1,000 mB of high-pressure steam per click. Three clicks transferred all 3,000 mB, and both machine outlets were empty.
+
+The isolated 540-mod Auram run repeated the bucket and portable-tank transfers in a fresh world with a damage-protected survival player. JEI loaded, and the saved region and player data confirmed both empty outlets, the retained coolant and oxygen, and 3,000 mB of steam in the Mekanism tank. An earlier run's test player died from Wither and Psychedelicraft 1.20.1-port.4 rejected that character's next login with `Missing player drug capability`. The fresh run used a new player. All three successful client runs used master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, and visible windows.
+
 ### Placing and removing heat exchanger tubes
 
 Place a stock or scripted tube against another tube to open both touching faces. Any baffle on the existing face carries across to the new connection. A fluid inlet or outlet along the placement axis opens the face of the new tube that touches it. Sneak-place against a tube to copy its settings and match the face at the contact. If the original tube has a connected branch, the copy can open the matching face of a tube in the parallel branch.

@@ -18,6 +18,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
@@ -150,6 +151,28 @@ public final class HeatExchangerGameTests {
                     helper.assertTrue(simulated.getAmount() == 128 && output.getFluidInTank(0).getAmount() == 256,
                             "Simulated extraction should leave the recovered oxygen intact");
                 })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 120)
+    public static void heatExchangerExchangesHeldContainersAtTheShellPorts(GameTestHelper helper) {
+        build(helper, 3);
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, TUBE_IN, Direction.NORTH))
+                .thenExecute(() -> {
+                    fill(helper, TUBE_IN, Direction.NORTH, new FluidStack(NCGasCoolants.OXYGEN.exhaust(), 16_000));
+                    helper.assertTrue(CondenserGameTests.useContainer(helper, SHELL_IN, Direction.EAST,
+                                    new ItemStack(Items.WATER_BUCKET), true).is(Items.BUCKET),
+                            "The shell inlet must accept a held water bucket");
+                    helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0).getAmount() == 4000,
+                        "One bucket of water must become four buckets of high-pressure steam"))
+                .thenExecute(() -> helper.assertTrue(CondenserGameTests.useContainer(helper, SHELL_OUT, Direction.WEST,
+                                    new ItemStack(Items.BUCKET), true).is(NCFluids.HIGH_PRESSURE_STEAM.bucket().get())
+                                    && fluid(helper, SHELL_OUT, Direction.WEST).getFluidInTank(0).getAmount() == 3000,
+                            "The shell outlet must fill the bucket and debit exactly 1,000 mB"))
                 .thenSucceed();
     }
 

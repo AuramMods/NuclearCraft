@@ -24,6 +24,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.fluids.FluidUtil;
 import org.jetbrains.annotations.Nullable;
 
 public final class ExchangerWallBlock extends ExchangerPartBlock implements EntityBlock {
@@ -77,7 +78,16 @@ public final class ExchangerWallBlock extends ExchangerPartBlock implements Enti
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand,
                                  BlockHitResult hit) {
-        if (!part(state).controller() || hand != InteractionHand.MAIN_HAND) {
+        Part part = part(state);
+        if ((part == Part.INLET || part == Part.OUTLET) && hand == InteractionHand.MAIN_HAND && !player.isShiftKeyDown()) {
+            boolean handled = level.isClientSide
+                    ? state.getValue(FACING) == hit.getDirection() && FluidUtil.getFluidHandler(player.getItemInHand(hand)).isPresent()
+                    : FluidUtil.interactWithFluidHandler(player, hand, level, pos, hit.getDirection());
+            if (handled) {
+                return InteractionResult.sidedSuccess(level.isClientSide);
+            }
+        }
+        if (!part.controller() || hand != InteractionHand.MAIN_HAND) {
             return super.use(state, level, pos, player, hand, hit);
         }
         if (level instanceof ServerLevel server && level.getBlockEntity(pos) instanceof ExchangerController controller) {

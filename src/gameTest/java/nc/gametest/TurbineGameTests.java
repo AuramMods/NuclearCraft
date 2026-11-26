@@ -19,6 +19,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.contents.TranslatableContents;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.material.Fluids;
@@ -234,6 +235,35 @@ public final class TurbineGameTests {
                     FluidStack exhaust = drain.drain(4800, FluidAction.EXECUTE);
                     helper.assertTrue(exhaust.getFluid() == NCFluids.EXHAUST_STEAM.source().get() && exhaust.getAmount() == 4800
                             && drain.getFluidInTank(0).isEmpty(), "Exhaust should drain exactly once");
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 80)
+    public static void turbineExchangesHeldContainersOnItsOutwardFluidFaces(GameTestHelper helper) {
+        buildTurbine(helper, BlockPos.ZERO);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper, CONTROLLER))
+                .thenExecute(() -> {
+                    var steam = new ItemStack(NCFluids.HIGH_PRESSURE_STEAM.bucket().get());
+                    helper.assertTrue(CondenserGameTests.useContainer(helper, INLET, Direction.SOUTH, steam, false).is(steam.getItem())
+                                    && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).isEmpty(),
+                            "Clicking the inward face must leave both the bucket and the inlet unchanged");
+                    helper.assertTrue(CondenserGameTests.useContainer(helper, INLET, Direction.NORTH, steam, true).is(Items.BUCKET)
+                                    && fluid(helper, INLET, Direction.NORTH).getFluidInTank(0).getAmount() == 1000,
+                            "The outward inlet face must accept the full steam bucket");
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> helper.assertTrue(
+                        fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 4000,
+                        "One bucket of input must expand into four buckets of exhaust"))
+                .thenExecute(() -> {
+                    helper.assertTrue(CondenserGameTests.useContainer(helper, INLET, Direction.NORTH, new ItemStack(Items.BUCKET), false)
+                                    .is(Items.BUCKET), "The inlet must not act as a drain");
+                    helper.assertTrue(CondenserGameTests.useContainer(helper, OUTLET, Direction.SOUTH, new ItemStack(Items.BUCKET), true)
+                                    .is(NCFluids.EXHAUST_STEAM.bucket().get())
+                                    && fluid(helper, OUTLET, Direction.SOUTH).getFluidInTank(0).getAmount() == 3000,
+                            "One manual drain must remove exactly one bucket from the outlet");
                 })
                 .thenSucceed();
     }

@@ -17,6 +17,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
@@ -93,6 +94,48 @@ public final class CondenserGameTests {
                             "Cooling fluid must remain in the shell");
                 })
                 .thenSucceed();
+    }
+
+    @GameTest(template = "turbine", timeoutTicks = 80)
+    public static void condenserExchangesHeldContainersAtShellAndTubePorts(GameTestHelper helper) {
+        build(helper);
+        BlockPos shellOutlet = COOLANT.east();
+        helper.setBlock(shellOutlet, NCHeatExchangers.OUTLET.get());
+        helper.startSequence()
+                .thenWaitUntil(() -> fluid(helper, shellOutlet, Direction.NORTH))
+                .thenExecute(() -> {
+                    var water = new ItemStack(Items.WATER_BUCKET);
+                    var steam = new ItemStack(NCFluids.EXHAUST_STEAM.bucket().get());
+                    helper.assertTrue(useContainer(helper, COOLANT, Direction.NORTH, water, true).is(Items.BUCKET)
+                                    && fluid(helper, COOLANT, Direction.NORTH).getFluidInTank(0).getAmount() == 1000,
+                            "The shell inlet must accept a held bucket of coolant");
+                    helper.assertTrue(useContainer(helper, FIRST_IN, Direction.WEST, steam, true).is(Items.BUCKET)
+                                    && fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 1000,
+                            "The tube inlet must accept a held steam bucket");
+                    helper.assertTrue(useContainer(helper, shellOutlet, Direction.NORTH, new ItemStack(Items.BUCKET), true)
+                                    .is(Items.WATER_BUCKET) && fluid(helper, COOLANT, Direction.NORTH).getFluidInTank(0).isEmpty()
+                                    && fluid(helper, FIRST_IN, Direction.WEST).getFluidInTank(0).getAmount() == 1000,
+                            "Only the shell outlet must return the full bucket of coolant");
+                })
+                .thenSucceed();
+    }
+
+    static ItemStack useContainer(GameTestHelper helper, BlockPos port, Direction side, ItemStack held, boolean succeeds) {
+        var player = FakePlayerFactory.getMinecraft(helper.getLevel());
+        var previous = player.getMainHandItem();
+        boolean sneaking = player.isShiftKeyDown();
+        try {
+            player.setShiftKeyDown(false);
+            player.setItemInHand(InteractionHand.MAIN_HAND, held);
+            var pos = helper.absolutePos(port);
+            var hit = new BlockHitResult(Vec3.atCenterOf(pos), side, pos, false);
+            var result = helper.getBlockState(port).use(helper.getLevel(), player, InteractionHand.MAIN_HAND, hit);
+            helper.assertTrue(result.consumesAction() == succeeds, "Unexpected fluid container interaction at " + port);
+            return player.getMainHandItem().copy();
+        } finally {
+            player.setItemInHand(InteractionHand.MAIN_HAND, previous);
+            player.setShiftKeyDown(sneaking);
+        }
     }
 
     @GameTest(template = "turbine", timeoutTicks = 100)
