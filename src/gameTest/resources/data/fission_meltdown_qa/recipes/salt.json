@@ -1,0 +1,11 @@
+{
+  "type": "nuclearcraft:salt_fission",
+  "fuel": {"fluid": "minecraft:lava", "amount": 1},
+  "result": {"fluid": "minecraft:water", "amount": 1},
+  "ticks": 1000,
+  "heat": 10,
+  "efficiency": 1,
+  "criticality": 1,
+  "self_priming": true,
+  "radiation": 0.25
+}

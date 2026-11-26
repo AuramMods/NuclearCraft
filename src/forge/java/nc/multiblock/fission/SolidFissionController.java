@@ -42,6 +42,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -170,7 +171,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             SolidFissionCore.Heat generated = core.tick(server, clusterHeat, gasCooling, saltFuel, saltCooling,
                     requested, decaySettings, computerPorts.hasPorts());
             if (!generated.overheatedCells().isEmpty()) {
-                melt(server, generated.overheatedCells());
+                meltCluster(server, generated.overheatedCells());
                 return;
             }
 
@@ -463,12 +464,22 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         return SolidFissionCore.primingTarget(level, layout, source, layout.cells()::contains);
     }
 
-    private void melt(ServerLevel level, List<BlockPos> parts) {
-        disassemble();
-        for (BlockPos pos : parts) {
+    private void meltCluster(ServerLevel level, List<BlockPos> fuelParts) {
+        Set<BlockPos> affected = new LinkedHashSet<>(fuelParts);
+        for (BlockPos pos : fuelParts) {
             if (level.getBlockEntity(pos) instanceof ChunkRadiationSource source) {
                 WorldRadiation.addLeak(level, pos, 8D * source.radiationEmission() * NCFission.meltdownRadiationMultiplier());
             }
+            for (Direction side : Direction.values()) {
+                if (level.random.nextDouble() < 0.75D) affected.add(pos.relative(side));
+            }
+        }
+        melt(level, affected);
+    }
+
+    private void melt(ServerLevel level, Collection<BlockPos> parts) {
+        disassemble();
+        for (BlockPos pos : parts) {
             level.removeBlockEntity(pos);
             level.setBlockAndUpdate(pos, NCFluids.CORIUM.block().get().defaultBlockState());
         }

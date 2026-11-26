@@ -85,7 +85,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- The remaining audit covers the reactor catalogs, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
+- The remaining audit covers the reactor catalogs, legacy predictions for idle reactors, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
 
 ### Creative tabs and item descriptions
 
@@ -2026,6 +2026,12 @@ All 143 GameTests passed, including heat flow in all three reactor types, revers
 In separate Ender IO 8.2.22-beta and Mekanism 10.4.16.80 routes, each isolated solid-fuel reactor reached criticality with a gap in the conductor bridge and produced no steam. Completing each conductor bridge let the reactors turn 1,000 mB of imported water into 4,000 mB of high-pressure steam. Both attached turbines exported 16,000 mB of exhaust and saved 5,051 FE. After the server restarted, each transport routed that energy to a Melter, which spent 4,000 FE and produced 1,000 mB of water from one ice.
 
 The packaged conductor rendered with its original texture in the isolated client with all 538 installed Auram mods. The saved block entities retained their exact heat values. The client used OpenAL No Output and recorded zero focus activations or visible window samples.
+
+When a fuel cluster overheats, each affected solid cell, pebble-bed chamber, or molten-salt vessel becomes corium. Each of its six adjacent blocks has an independent 75% chance of becoming corium. The reactor disconnects its ports and deposits the fuel's meltdown radiation in the chunk. A casing overload replaces the controller with corium. Corium can solidify as it cools.
+
+All 298 local GameTests passed. Seeded checks verified which adjacent blocks changed in each reactor variant and checked port invalidation and immediate chunk radiation. Packaged Forge 47.4.10 runs preserved the damage and chunk radiation across restart and chunk reload. The persistence checks counted liquid and solidified corium. Ender IO supplied solid fuel, and Mekanism supplied the pebbles and molten-salt test fuel.
+
+The isolated 540-mod Auram client repeated all three fuel deliveries and meltdowns with temporary KubeJS recipes. The saved chunks retained corium in the fuel positions and damage on six, five, and six adjacent blocks, respectively. The muted client exited with zero focus activations, foreground samples, or visible windows.
 
 ### Fission controller diagnostics
 
