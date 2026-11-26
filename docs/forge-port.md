@@ -14,6 +14,20 @@ Review these requirements against the same packaged JAR. Record the commit and J
 | Auram automation | Use the versions installed in Auram. Verify Forge item, fluid, and FE transfer, one complete externally automated reactor-to-turbine processing chain, sided access, backpressure, chunk eviction, and restart. Record the exercised mod versions and interactions. |
 | Release artifact | Use the locally built, reobfuscated JAR on a clean Java 17 Forge 47 dedicated server and in an isolated Auram copy. Confirm client login, resource loading, gameplay, persistence, and recipe discovery. Set master volume to zero and verify the background client leaves desktop focus alone. |
 
+### Release 2o.9.7-forge
+
+The local Java 17 build produced `build/libs/nuclearcraft-1.20.1-2o.9.7-forge.jar` with SHA-256 `6ea198876426acbdbc981ed1936b4f8e8f6e245562cb1e6730808835e33293a0`. The release packaging changes only the mod version in the JAR from the verified gameplay commit `db73616a`. The gameplay classes, resources, and MIT license match that build byte for byte.
+
+- All 336 Forge GameTests passed. On clean Forge 47.4.10, the packaged JAR reproduced the checked-in legacy registry map and loaded 2,718 of its 3,063 recipe definitions. Explicit conditions accounted for all skipped recipes. The 135 stock fuels loaded with their original values. The configuration audit compared 241 legacy settings with 28 generated Forge configs.
+- In clean multiplayer, a muted client opened and ran the solid-fuel, pebble-bed, and molten-salt reactor screens and cleared their stock. The clearing survived dedicated-server restart. The observer recorded zero focus activations, foreground samples, or visible windows.
+- With Ender IO 8.2.22-beta and Mekanism 10.4.16.80, each reactor supplied 4,000 mB of high-pressure steam to a turbine and each turbine delivered 16,000 mB of exhaust. The networks each collected one depleted fuel item and used the turbine's power to melt one ice into 1,000 mB of water. Each route retained its outputs through confirmed chunk eviction and dedicated restart.
+- Converted saves kept a controlled quantum gate's target and a Large Electrolyzer's ten paid ticks. After restart the gate retained its measured state, and the Electrolyzer spent only the 57,600 FE still due. CraftTweaker 14.0.59 rebuilt legacy script addons, reported a malformed script, and retained the restored 747 mB recipe output after restart.
+- The Wasteland vault command generated a 25-piece vault on clean Forge. Its saved structure start prevented duplicate generation after a dedicated restart.
+- An isolated copy of all 540 installed Auram mod JARs with AuramCore 1.0.53 loaded JEI and crafted two Melters, a Molten Salt Controller, and a Radiation Scrubber. Both Melters were placed in survival and powered by Mekanism cables. The stock ice recipe produced 1,000 mB of water and the KubeJS replacement produced 777 mB. JEI showed both batches, and confirmed chunk eviction and shutdown preserved their outputs.
+- A fresh copy of the 540-mod pack with AuramCore 1.0.54 reopened the saved progression, showed both recipes in JEI, and retained the migrated controlled gate and both qubit measurements through chunk eviction. Both Auram clients used master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
+
+### Earlier verification
+
 On the packaged build from `f9f6f8b2` with SHA-256 `1b5bbaebd97ac2fa4d21a957384ae6f2e8ba15f55c2f9a43f08ba503e6df15fe`, the clean Forge registry audit reproduced the checked-in migration table byte for byte. It verified 812 block targets, 1,428 item targets, 457 fluid targets, 237 fixed block entity targets, and both ghoul types.
 
 Comparing the packaged fuel recipes with the legacy configuration and recipe definitions verified all 81 solid, 27 pebble, and 27 molten-salt fuels. The audit matched the input and depleted output, duration, heat, efficiency, criticality, neutron flux, self-priming, decay factor, and radiation. All 135 loaded in the clean dedicated server's recipe manager. It registered 2,698 of the 3,038 packaged recipe definitions, with the remaining definitions skipped by recipe conditions.
@@ -695,6 +709,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Imperium | 1.0.10 | Voltaic Pile power to a linked Roh Energy Tap |
 | RFTools Base and McJtyLib | 5.0.6 and 8.0.7 | Forge Energy from a sided Voltaic Pile into a Machine Infuser |
 | Nature's Aura | 39.4 | Forge Energy from an Energetic Aura Forge into a sided Voltaic Pile |
+| Botania | 450 | Mana Fluxfield energy output into a sided Voltaic Pile |
 | Cognition | 2.4.10 | Experience Obelisk transfer between scripted Melter and Infuser recipes |
 | Theurgy | 1.26.0 | Liquefaction Cauldron supplied with NuclearCraft copper ore and a scripted Melter solvent |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
@@ -764,6 +779,8 @@ Theurgy's Liquefaction Cauldron rejected water through an Ender IO Fluid Conduit
 On packaged Forge 47.4.10, an empty Ars Nouveau Source Jar left the Melter unpowered. Filling the jar started the Ars Technica Source Engine configured for 128 RPM. A Create Crafts & Additions Alternator supplied Forge Energy and the Melter finished its stock ice batch. Redstone stopped the engine, and a Mekanism Mechanical Pipe moved exactly 1,000 mB of water to a Basic Fluid Tank. The tank retained that amount through confirmed chunk eviction and dedicated restart.
 
 An Energetic Aura Forge loaded with 6,144 FE retained its entire charge against a closed Voltaic Pile face. Opening the input let it transfer exactly 1 FE into the nearly full pile. After space opened, it transferred the remaining 6,143 FE. The stored amounts and sided input persisted through confirmed chunk eviction and dedicated restart on packaged Forge 47.4.10.
+
+Botania's Mana Fluxfield repeated the same test on the release JAR. Its stored 6,144 FE remained behind the closed face, and the nearly full pile accepted precisely 1 FE. It accepted the remaining 6,143 FE after space opened. The final charge and face setting survived chunk eviction and dedicated restart.
 
 Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
 
@@ -1399,6 +1416,7 @@ Forge 1.20.1 stores the old `nuclearcraft.cfg` settings across several TOML file
 | Fission sizing, decay, fuel, and vent rules | `world/serverconfig/nuclearcraft-fission.toml`. Use the pebble and salt files for their coolant and variant-specific values. |
 | Turbine settings | `world/serverconfig/nuclearcraft-turbine.toml`. Drop the `turbine_` prefix. |
 | `ore_dims` and `ore_dims_list_type` | `config/nuclearcraft-ore-worldgen.toml`. Convert the dimension list to registry IDs. |
+| `wasteland_dimension` and `wasteland_dimension_gen` | Map the legacy numeric dimension, including a custom value, to `nuclearcraft:wasteland`. The travel switch goes in `world/serverconfig/nuclearcraft-wasteland.toml`. |
 | `corium_solidification` and `register_fluid_blocks` | `world/serverconfig/nuclearcraft-fluids.toml`. Convert the corium dimension list to registry IDs. |
 | `give_guidebook` and the client display options | `world/serverconfig/nuclearcraft-misc.toml` for the guide and `config/nuclearcraft-client.toml` for `single_creative_tab` and `ctrl_info` |
 

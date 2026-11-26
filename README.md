@@ -1,6 +1,6 @@
 # NuclearCraft: Overhauled
 
-The Forge 1.20.1 port is in development. The original Overhauled release and its complete source are on branch `1.12.2o`. The port uses that branch at `ef28c65` as its gameplay reference.
+This port of NuclearCraft: Overhauled targets Minecraft 1.20.1, Forge 47.4.10 or later in the 47 series, and Java 17. The original Overhauled release and its complete source are on branch `1.12.2o`. The port uses that branch at `ef28c65` as its gameplay reference.
 
 ## Forge development
 
@@ -8,7 +8,7 @@ Build, test, and package NuclearCraft locally with the Gradle wrapper and the wo
 
 Use Java 17. Run `./gradlew build` to produce the reobfuscated JAR in `build/libs`. Run `./gradlew runGameTestServer` for headless gameplay tests, or `./gradlew runServer` for a dedicated-server development run. Both server runs use disposable directories under `build/runs`.
 
-The active 1.20.1 code and data are in `src/forge`. Original sources are kept in `src/main` during migration, and the build reuses converted textures from that tree. See [port verification](docs/forge-port.md) for the current gameplay coverage and Auram targets.
+The 1.20.1 code and data are in `src/forge`. The build reuses textures from the original source tree in `src/main`. The verification guide covers gameplay, Auram compatibility, and legacy config, script, and save conversion. [Port verification](docs/forge-port.md)
 
 
 Summary
