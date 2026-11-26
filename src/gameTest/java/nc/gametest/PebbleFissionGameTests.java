@@ -274,6 +274,42 @@ public final class PebbleFissionGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "fission")
+    public static void pebbleGasCapacityFollowsTheConnectedCoolers(GameTestHelper helper) {
+        buildReactor(helper);
+        var oxygen = NCGasCoolants.OXYGEN;
+        var supply = new FluidStack(oxygen.cold(), 2_000);
+        helper.startSequence()
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(inlet.getTankCapacity(0) == 1_296
+                                    && inlet.fill(supply, FluidAction.SIMULATE) == 1_296,
+                            "Two wall ports share one stock tank capacity");
+                    BlockPos.betweenClosedStream(MIN.offset(1, 1, 1), MAX.offset(-1, -1, -1))
+                            .filter(pos -> helper.getBlockState(pos).isAir()).limit(36)
+                            .forEach(pos -> helper.setBlock(pos, NCPebbleFission.cooler(oxygen)));
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(inlet.getTankCapacity(0) == 1_440
+                                    && inlet.fill(supply, FluidAction.EXECUTE) == 1_440,
+                            "Forty linked coolers set the circuit's capacity to 1,440 mB");
+                    BlockPos.betweenClosedStream(MIN.offset(1, 1, 1), MAX.offset(-1, -1, -1))
+                            .filter(pos -> helper.getBlockState(pos).is(NCPebbleFission.cooler(oxygen)))
+                            .forEach(pos -> helper.setBlock(pos, Blocks.AIR));
+                })
+                .thenWaitUntil(() -> requireAssembled(helper))
+                .thenExecute(() -> {
+                    var inlet = fluids(helper, COLD, Direction.NORTH);
+                    helper.assertTrue(inlet.getFluidInTank(0).getAmount() == 1_440
+                                    && inlet.fill(supply, FluidAction.EXECUTE) == 0,
+                            "Shrinking the circuit keeps its existing charge and leaves no room to top it up");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "fission", timeoutTicks = 340)
     public static void pebbleCoolerCircuitsPreserveSeparateGasesAcrossRebuild(GameTestHelper helper) {
         buildReactor(helper);

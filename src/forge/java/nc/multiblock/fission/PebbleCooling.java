@@ -14,11 +14,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiPredicate;
 
 final class PebbleCooling {
+    private static final int VOLUME_PER_COOLER = 36;
+
     private final SolidFissionController owner;
     private final Map<Channel, CoolantTanks> circuits = new LinkedHashMap<>();
     private final Map<BlockPos, Channel> coolerRoutes = new HashMap<>();
@@ -46,14 +49,14 @@ final class PebbleCooling {
     }
 
     void resize(ServerLevel level, SolidFissionLayout layout) {
-        var portCounts = new LinkedHashMap<Channel, Integer>();
+        var channels = new LinkedHashSet<Channel>();
         for (var port : layout.ports()) {
             if (port.gas() != null) {
-                portCounts.merge(port.gas(), 1, Integer::sum);
+                channels.add(port.gas());
             }
         }
         var available = new HashMap<PebbleCoolant, List<Channel>>();
-        portCounts.keySet().forEach(channel -> available.computeIfAbsent(channel.gas(), gas -> new ArrayList<>()).add(channel));
+        channels.forEach(channel -> available.computeIfAbsent(channel.gas(), gas -> new ArrayList<>()).add(channel));
         coolerRoutes.clear();
         var coolerCounts = new HashMap<Channel, Integer>();
         for (BlockPos pos : layout.sinks()) {
@@ -65,11 +68,8 @@ final class PebbleCooling {
                 }
             }
         }
-        for (var entry : portCounts.entrySet()) {
-            CoolantTanks tanks = circuit(entry.getKey());
-            long capacity = Math.max((long) CoolantTanks.PORT_VOLUME * entry.getValue(),
-                    36L * coolerCounts.getOrDefault(entry.getKey(), 0));
-            tanks.resize(capacity);
+        for (var channel : channels) {
+            circuit(channel).resize((long) VOLUME_PER_COOLER * coolerCounts.getOrDefault(channel, 0));
         }
     }
 
