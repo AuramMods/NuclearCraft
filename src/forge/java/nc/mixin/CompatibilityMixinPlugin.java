@@ -18,6 +18,7 @@ public final class CompatibilityMixinPlugin implements IMixinConfigPlugin {
     private static final String WAITING_MIXIN = "nc.mixin.compat.BetterChunkLoadingWaiting";
     private static final String ADLODS_MIXIN = "nc.mixin.compat.AdLodsReload";
     private static final String COMPACT_MACHINE_MIXIN = "nc.mixin.compat.CompactMachine";
+    private static final String CUSTOM_MACHINERY_CHEMICAL_MIXIN = "nc.mixin.compat.CustomMachineryChemicalPersistence";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     @Override
@@ -27,6 +28,9 @@ public final class CompatibilityMixinPlugin implements IMixinConfigPlugin {
         }
         if (mixinClassName.startsWith(COMPACT_MACHINE_MIXIN)) {
             return hasVersion("compactmachines", "6.0.3");
+        }
+        if (CUSTOM_MACHINERY_CHEMICAL_MIXIN.equals(mixinClassName)) {
+            return hasVersion("custommachinerymekanism", "1.3.6");
         }
         return !WAITING_MIXIN.equals(mixinClassName) || hasVersion("betterchunkloading", "1.20.1-5.4");
     }

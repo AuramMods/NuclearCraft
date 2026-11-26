@@ -11,6 +11,7 @@
         "compat.PneumaticCraftFluidPlacement",
         "compat.CreateFluidPlacement",
         "compat.CyclicFluidPersistence",
+        "compat.CustomMachineryChemicalPersistence",
         "compat.CompactMachineExterior",
         "compat.CompactMachineTunnelWall",
         "compat.CompactMachineItemTunnel",

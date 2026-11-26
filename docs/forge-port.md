@@ -539,6 +539,9 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | --- | --- | --- |
 | Ender IO | 8.2.22-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
 | Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and Pressurized Tubes |
+| Evolved Mekanism | 1.2.1-fix3 | Dense Energy Cube, Universal Cable, Fluid Tank, and Bin on processor routes |
+| Custom Machinery | 0.10.7 | Forge Energy, item, and fluid transfer between a datapack-defined machine and NuclearCraft processors |
+| Custom Machinery Mekanism | 1.3.6 | Sided oxygen transfer and saved gas, infusion, pigment, and slurry buffers |
 | Thermal Series | Expansion 11.0.1.29, Dynamics 11.0.1.23 | Transfer, storage, and shared material tags |
 | Extreme Reactors and ZeroCore | 2.0.97 and 2.1.48 | Solid fission compatibility, Cyanite reprocessing, and tagged fluid radiation |
 | Applied Energistics 2 | 15.4.10 | Item and fluid transfers through Import and Storage Buses, plus shared material tags |
@@ -911,6 +914,30 @@ With the same JAR and all 540 installed Auram mod JARs, the player placed a Maxi
 On packaged Forge 47.4.10, Auram's Ranged Pumps 1.1.0 waited while the adjacent Voltaic Pile's output face was closed. Opening it delivered 300 FE. The pump spent 100 FE draining one water source and held 1,000 mB behind the Infuser's closed input. The water, pump charge, and unprocessed feed survived confirmed chunk eviction and a dedicated restart. Opening the Infuser's input let it use the entire bucket and its own 1,500 FE to make one white concrete. The exact product, empty tanks, and 200 FE in the pump survived a second eviction and reload.
 
 The same JAR repeated the closed-face and processing checks in the isolated instance with all 540 installed Auram JARs. The Infuser saved one white concrete with no water or energy left, and the pump saved an empty tank and 200 FE.
+
+### Evolved Mekanism hardware
+
+On packaged Forge 47.4.10 with Evolved Mekanism 1.2.1-fix3 and Mekanism 10.4.16.80, a Voltaic Pile sent 4,500 FE through a Dense Energy Cube and Dense Universal Cable to a Melter. The Melter used 4,000 FE to melt one ice and held its 1,000 mB of water against a full Dense Fluid Tank. A second Dense Fluid Tank kept its 179 mB of molten uranium while the Ingot Former's inlet was closed. Opening the inlet let a Mechanical Pipe deliver the entire dose. The Former held it while its result slot was full.
+
+Both buffers survived chunk eviction and a dedicated restart. Freeing 1,000 mB of space refilled the water tank to 2,048,000 mB. Opening the Former's output let the stock cast use 90 mB and deliver one uranium ingot through a hopper into a Dense Bin. The tank and bin totals, the Melter's 500 FE, and the Former's 89 mB remainder survived a second eviction and restart. [Evolved Mekanism source](https://github.com/iglee42/EvolvedMekanism)
+
+A separate Dense Energy Cube started with 5,000,000,000 FE at Auram's 2.5 J per FE conversion. Its Dense Universal Cable filled two connected Elite Lithium Ion Batteries to 2,048,000,000 FE each. The cable retained the surplus 904,000,000 FE. The cube was empty, and all three balances matched after confirmed chunk eviction and two dedicated restarts.
+
+### Custom Machinery transfers
+
+On packaged Forge 47.4.10 with Custom Machinery 0.10.7, a disposable world datapack defined a concrete mixer. A Voltaic Pile supplied 200 FE, a Melter supplied 1,000 mB of water from one ice, and a hopper supplied four sand and four gravel. The mixer used all 200 FE and both item feeds. It held one white concrete powder and the 1,000 mB of water until the Infuser's item and fluid input faces opened. The blocked products survived chunk eviction and a dedicated restart.
+
+The mixer transferred both outputs through normal Forge capabilities. The Infuser spent 1,500 FE and produced one white concrete. The exact result and empty mixer outputs survived a second eviction and restart. [Custom Machinery 1.20.1 datapack examples](https://github.com/Frinn38/Custom-Machinery/tree/1.20.1/test_datapack)
+
+#### Custom Machinery Mekanism chemical tanks
+
+With Custom Machinery Mekanism 1.3.6, a datapack-defined relay pulled 1,000 units of oxygen from an Electrolyzer. It used 20 FE and held the oxygen while the Infuser's west port was closed. The earlier JAR lost that buffer after chunk eviction. The addon's handler writes every chemical type to `gases` and checks for `fluids` before loading it.
+
+The optional compatibility patch applies to 1.3.6. Its keys in `componentManager` are `gas_tanks`, `infusion_tanks`, `pigment_tanks`, and `slurry_tanks`. It reads the surviving legacy `gases` list and uses the saved chemical type when routing it to a handler. This recovers the list the old version wrote last.
+
+On packaged Forge 47.4.10, the patched relay kept the 1,000 units through confirmed chunk eviction and a dedicated restart. Opening the Infuser's west input delivered the gas and let it spend exactly 6,000 FE to make one LEU-235 oxide. The empty gas buffers and oxide survived a second eviction and restart. A separate run loaded a saved 1,000-unit oxygen buffer written with the earlier JAR. A mixed machine kept 100 gas, 200 infusion, 300 pigment, and 400 slurry in four tanks that share a slot ID. A legacy pigment list populated the pigment tank alone. Both saves passed eviction and restart. All 320 local GameTests passed.
+
+The patched JAR repeated all three circuits in the isolated copy with all 540 installed Auram JARs. The saved chunk held 2,048,000 mB of water, 500 FE in the Melter, 89 mB of molten uranium in the Former, and one unified Immersive Engineering uranium ingot in the Dense Bin. The concrete mixer and oxygen relay held their outputs behind closed Infuser faces. The oxygen buffer survived eviction, and the saved world contained one white concrete, one LEU-235 oxide, and empty mixer and relay outputs. The client loaded JEI with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
 
 ### Tools and Armor
 
