@@ -641,6 +641,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Applied Mekanistics | 1.4.3 | Gas transfer through AE2 buses and ME chemical cells on sided processors |
 | Refined Storage | 1.12.4 | Item and fluid transfers through Importers and External Storage |
 | ExtraStorage | 4.0.7 | Item and fluid transfers through Advanced Importers and Exporters |
+| Extended Crafting and Cucumber | 6.0.10 and 7.0.16 | Quantum Compressor input from a Manufactory and Forge Energy from a Voltaic Pile |
 | Draconic Evolution | 3.1.2.621 | Forge Energy transfer through linked I/O, Relay, and Wireless Energy Crystals |
 | Immersive Engineering | 10.2.0-183 | Fluid, item, and power automation |
 | Create | 6.0.8 | Fluid pipes, funnels, and shared material tags |
@@ -1044,6 +1045,12 @@ On packaged Forge 47.4.10, the patched relay kept the 1,000 units through confir
 
 The patched JAR repeated all three circuits in the isolated copy with all 540 installed Auram JARs. The saved chunk held 2,048,000 mB of water, 500 FE in the Melter, 89 mB of molten uranium in the Former, and one unified Immersive Engineering uranium ingot in the Dense Bin. The concrete mixer and oxygen relay held their outputs behind closed Infuser faces. The oxygen buffer survived eviction, and the saved world contained one white concrete, one LEU-235 oxide, and empty mixer and relay outputs. The client loaded JEI with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible windows.
 
+### Extended Crafting
+
+On packaged Forge 47.4.10, a Manufactory sent two graphite dust through a hopper to Extended Crafting 6.0.10's Quantum Compressor. A Voltaic Pile supplied 6,001 FE through its east output face. The Compressor matched both items through `forge:dusts/graphite`, spent 6,000 FE, retained its NuclearCraft advanced plating catalyst, and produced one borax using a test recipe. The final FE allowed the Compressor to assemble its result on the following tick. The product and exact energy balances survived chunk reload and dedicated restart.
+
+KubeJS registered the same recipe in the isolated 540-mod Auram instance. The Compressor, battery, and Manufactory saved the expected items and charge after the compressor chunk became unavailable and reloaded. The client loaded JEI, exited with master volume zero and OpenAL No Output, and recorded zero focus activations, foreground samples, or visible windows.
+
 ### Tools and Armor
 
 Boron, Tough Alloy, Hard Carbon, and Boron Nitride each have their original sword, pickaxe, shovel, axe, hoe, Spaxelhoe, helmet, chestplate, leggings, and boots. The items keep their registry IDs, including `nuclearcraft:spaxelhoe_boron` and `nuclearcraft:helm_hard_carbon`. The original sprites and armor layers are in the packaged mod. Crafting and repair use Forge material tags. Boron armor still repairs with the boron ore tag. The Spaxelhoe combines five tools of one grade and two iron ingots. It mines at the grade's configured speed, follows Forge harvest tiers, and tills with the standard hoe action. The ordinary tools use Forge and vanilla equipment tags, and the armor supports vanilla trims.
@@ -1314,6 +1321,9 @@ Forge 1.20.1 stores the old `nuclearcraft.cfg` settings across several TOML file
 | `register_tool` and `register_armor` | `config/nuclearcraft-equipment-availability.toml` |
 | Battery capacities and transfer rates | Named tiers and `lithium_ion_cell` in `world/serverconfig/nuclearcraft-batteries.toml` |
 | `machine_update_rate` for collectors and decay generators | `collectors.update_interval` in the collector file and `decay_generator.update_interval` in the generator file |
+| `machine_min_size`, `machine_max_size`, and the Large Machine time, power, and sound settings | Root `min_size` and `max_size` in `world/serverconfig/nuclearcraft-machines.toml`, with `time`, `power`, and `sound_volume` in the `electrolyzer`, `distiller`, and `infiltrator` sections |
+| `machine_sieve_assembly_efficiency` | `distiller.sieve_efficiency` in the machine file, in steel, polytetrafluoroethene, and Hastelloy order |
+| `machine_cathode_efficiency`, `machine_anode_efficiency`, `machine_diaphragm_efficiency`, `machine_diaphragm_contact_factor`, and `machine_infiltrator_pressure_fluid_efficiency` | Edit the corresponding [Large Machine material recipes](#large-electrolyzer-and-infiltrator) in a datapack or recipe script |
 | Fission sizing, decay, fuel, and vent rules | `world/serverconfig/nuclearcraft-fission.toml`. Use the pebble and salt files for their coolant and variant-specific values. |
 | Turbine settings | `world/serverconfig/nuclearcraft-turbine.toml`. Drop the `turbine_` prefix. |
 | `ore_dims` and `ore_dims_list_type` | `config/nuclearcraft-ore-worldgen.toml`. Convert the dimension list to registry IDs. |
@@ -1742,6 +1752,8 @@ All 198 local GameTests passed. The custom sieve test checked the exact energy u
 
 In the isolated 539-mod Auram client, KubeJS added a tagged Create zinc sieve at 150%, replaced the steel recipe at 125%, and removed Hastelloy. JEI listed those changes alongside the stock PTFE recipe at 90%. A tower using zinc above a tray and in a separate packed layer used 5,360 FE and produced 250 mB of each fluid. The client used master volume zero and OpenAL No Output. The native monitor recorded zero desktop activations, foreground samples, and visible windows.
 
+### Large Electrolyzer and Infiltrator
+
 The Infiltrator Controller, Pressure Chamber, and Heating Unit preserve their legacy IDs. Its Process Ports cycle through two item inputs, two fluid inputs, and one item output. The mode selects the group, and `slot_index` or `tank_index` selects a zero-based position within it. Reservoir Ports can fill or drain the separate pressure tank. Pressure fluid remains in the reservoir after processing.
 
 Use `nuclearcraft:multiblock_infiltrator` for a recipe. `item_inputs` holds up to two counted Forge ingredients and `fluid_inputs` holds up to two measured fluids or fluid tags. Both lists match shapelessly. Set `result` to an item stack or leave it empty for a recipe that only consumes feeds. Optionally override `time_multiplier`, `power_multiplier`, and `heating_bonus`. The legacy pressure-fluid efficiency list maps to `nuclearcraft:infiltrator_pressure_fluid` datapack recipes with a `fluid_input` and `efficiency`. Nitrogen and helium are included through Forge fluid tags. Argon and neon become available when the pack provides their fluid tags. Legacy `machine_infiltrator_time`, `machine_infiltrator_power`, and `machine_infiltrator_sound_volume` map to `time`, `power`, and `sound_volume` under `infiltrator` in `nuclearcraft-machines.toml`. The controller saves `inventory`, `input_0`, `input_1`, `pressure`, and batch and energy data.
@@ -1762,7 +1774,17 @@ With CraftTweaker 14.0.59, the ZenCode recipes produced two charcoal and 75 mB o
 
 In the isolated 540-mod Auram profile, KubeJS supplied both recipes with empty objects in unused slots. JEI showed the two-to-four charcoal range and the 75–100 mB steam range at the Electrolyzer's fourth outlets and the three-to-four flint range at the Infiltrator's outlet. Both machines waited for room and produced the guaranteed amounts. The client used master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
 
-The legacy cathode, anode, and diaphragm efficiency settings map to `nuclearcraft:electrolyzer_cathode`, `nuclearcraft:electrolyzer_anode`, and `nuclearcraft:machine_diaphragm` datapack recipes. Each accepts a Forge item ingredient under `block` and specifies `efficiency`. Diaphragms also specify `contact`. Changes to ordinary electrode blocks are checked every 20 server ticks. Importing a legacy save requires converting the controller's contents to `inventory`, `input_0` and `input_1`, `output_0` through `output_3`, and `electrolyte`. Use the modern recipe ID when restoring progress.
+The legacy cathode, anode, and diaphragm efficiency settings map to `nuclearcraft:electrolyzer_cathode`, `nuclearcraft:electrolyzer_anode`, and `nuclearcraft:machine_diaphragm` datapack recipes. Each accepts a Forge item ingredient under `block`. For example, convert the anode entry `CobaltOxide@0.8` to a `forge:storage_blocks/cobalt_oxide` ingredient with `efficiency` set to `0.8`. Pair the two legacy diaphragm arrays in `sintered_steel`, `polyethersulfone`, and `zirfon` order, using `efficiency` and `contact` for each material. Electrodes default to `efficiency: 1`. Diaphragms default to `efficiency: 0` and `contact: 1`, which keeps a separator without an efficiency supplied from processing or spending charge. Changes to ordinary electrode blocks are checked every 20 server ticks.
+
+When converting a legacy Large Electrolyzer save, move the delegate's item stocks to `inventory` and its two feed and four product tanks to `input_0`, `input_1`, and `output_0` through `output_3` in order. Move `reservoirTanks0` into `electrolyte`, `energyStorage.energy` into `energy`, and `fullHalt` into `halted`. Convert fluid IDs and retain their mB amounts. For a saved batch using the same recipe and time basis, copy `processor.time` into `progress` and `processor.resetTime` into `batch_start`, and set `recipe` to the corresponding modern recipe ID.
+
+On packaged Forge 47.4.10, two converted Electrolyzers used `time = 16` and `power = 120`. A calcite diaphragm with both values omitted retained 500 mB water and its full 90,000 FE. A quartz diaphragm with efficiency set to 0.8 and contact omitted used 67,200 FE and yielded 500 mB hydrogen and 250 mB oxygen. Dedicated restart preserved both results, including the original 80,000 mB electrolyte charge. The previous JAR ran the calcite batch in 21,600 FE and charged only 33,600 FE for the quartz batch.
+
+A third Electrolyzer loaded with ten paid ticks from the same conversion. After a dedicated restart, the paused batch retained `progress = 2.304`, 500 mB of water, and 80,400 FE. Resuming it spent the remaining 57,600 FE, produced the same output quantities, and left 22,800 FE.
+
+All 333 local GameTests passed. The diaphragm regression tests the default stall and then replaces the diaphragm in the same Electrolyzer. The original input produces both fluids at the legacy FE cost after reassembly.
+
+The packaged JAR, SHA-256 `02f8439be0a6261dff8b49c87fc8cdf38e005ab2e6d0635417af8ebc123149f1`, also passed both diaphragm checks in the isolated 540-mod Auram instance. KubeJS supplied the two material recipes and the world read the same migrated settings. The saved chunks contained the expected inputs, outputs, remaining energy, and full electrolyte tanks. The client used master volume zero and OpenAL No Output with zero recorded desktop focus changes.
 
 Use the recipe types `nuclearcraft:multiblock_decay_pool` for heat-driven fluid processing and `nuclearcraft:decay_pool_heat_source` for decay. The water recipe uses `fluid_input`, `fluid_result`, and `heat_per_batch`. Source recipes can use an item ingredient, a fluid ingredient, or both and specify `lifetime` in ticks, `heat_per_tick`, and the resulting item or fluid. An item result can use `preferred_tag` ahead of its fallback item or tag. Legacy pool saves need explicit conversion into the controller's `feed`, `product`, and `reservoir` fields. The reservoir stores precursors and products separately by resource, and fractional progress by the modern recipe ID.
 

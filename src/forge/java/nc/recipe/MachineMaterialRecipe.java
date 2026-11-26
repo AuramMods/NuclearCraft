@@ -59,8 +59,9 @@ public record MachineMaterialRecipe(ResourceLocation id, Kind kind, Ingredient b
     public record Serializer(Kind kind) implements RecipeSerializer<MachineMaterialRecipe> {
         @Override public MachineMaterialRecipe fromJson(ResourceLocation id, JsonObject json) {
             var block = Ingredient.fromJson(GsonHelper.getNonNull(json, "block"));
-            double efficiency = GsonHelper.getAsDouble(json, "efficiency", kind == Kind.SIEVE ? 0 : 1);
-            double contact = GsonHelper.getAsDouble(json, "contact", 0);
+            boolean diaphragm = kind == Kind.DIAPHRAGM;
+            double efficiency = GsonHelper.getAsDouble(json, "efficiency", diaphragm || kind == Kind.SIEVE ? 0D : 1D);
+            double contact = GsonHelper.getAsDouble(json, "contact", diaphragm ? 1D : 0D);
             if (!Double.isFinite(efficiency) || efficiency < 0 || !Double.isFinite(contact) || contact < 0) {
                 throw new JsonSyntaxException("Invalid machine material for " + id);
             }

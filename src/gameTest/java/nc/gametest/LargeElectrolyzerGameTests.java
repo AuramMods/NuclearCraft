@@ -126,6 +126,41 @@ public final class LargeElectrolyzerGameTests {
                 .thenSucceed();
     }
 
+    @GameTest(template = "empty", timeoutTicks = 200)
+    public static void migratedDiaphragmsKeepLegacyOptionalValues(GameTestHelper helper) {
+        var machine = build(helper);
+        for (int y = 2; y <= 3; y++) {
+            helper.setBlock(new BlockPos(3, y, 2), Blocks.CALCITE);
+            helper.setBlock(new BlockPos(3, y, 3), Blocks.CALCITE);
+        }
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(machine.assembled(), "A default diaphragm still separates the electrodes"))
+                .thenExecute(() -> {
+                    fluid(helper, ELECTROLYTE, Direction.WEST).fill(stock("nuclearcraft:potassium_hydroxide_solution", 80_000), EXECUTE);
+                    feed(helper, "minecraft:water", 500);
+                })
+                .thenIdle(10)
+                .thenExecute(() -> {
+                    helper.assertTrue(energy(helper).getEnergyStored() == 512_000,
+                            "A diaphragm with no specified efficiency has zero speed and spends no FE");
+                    for (int y = 2; y <= 3; y++) {
+                        helper.setBlock(new BlockPos(3, y, 2), Blocks.QUARTZ_BLOCK);
+                        helper.setBlock(new BlockPos(3, y, 3), Blocks.QUARTZ_BLOCK);
+                    }
+                })
+                .thenWaitUntil(() -> {
+                    var saved = machine.saveWithoutMetadata();
+                    helper.assertTrue(FluidStack.loadFluidStackFromNBT(saved.getCompound("output_0"))
+                                    .isFluidStackIdentical(stock("nuclearcraft:hydrogen", 500))
+                                    && FluidStack.loadFluidStackFromNBT(saved.getCompound("output_1"))
+                                    .isFluidStackIdentical(stock("nuclearcraft:oxygen", 250)),
+                            "The replacement diaphragm reassembles and processes the unchanged water feed");
+                    helper.assertTrue(saved.getLong("energy") == 512_000 - 87 * 2_560,
+                            "A diaphragm with efficiency 0.8 and omitted contact spends 2,560 FE per tick");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "empty")
     public static void blocksPartialProductionForSparseMixedRecipes(GameTestHelper helper) {
         var machine = build(helper);

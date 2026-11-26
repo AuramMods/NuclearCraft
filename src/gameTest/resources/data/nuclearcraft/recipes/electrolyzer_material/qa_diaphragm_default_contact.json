@@ -1,0 +1,5 @@
+{
+    "type": "nuclearcraft:machine_diaphragm",
+    "block": { "item": "minecraft:quartz_block" },
+    "efficiency": 0.8
+}

@@ -132,19 +132,23 @@ public final class AssemblyDiagnosticGameTests {
     @GameTest(template = "empty")
     public static void quantumSeparatesMissingAndDuplicateControllers(GameTestHelper helper) {
         var player = new Inspector(helper.getLevel());
-        helper.setBlock(CORNER, NCQuantum.block(QuantumPart.CONNECTOR));
+        var connector = new BlockPos(2, 2, 2);
+        for (Direction direction : Direction.values()) {
+            helper.setBlock(connector.relative(direction), Blocks.AIR);
+        }
+        helper.setBlock(connector, NCQuantum.block(QuantumPart.CONNECTOR));
         helper.startSequence()
                 .thenWaitUntil(() -> {
-                    player.use(CORNER, helper);
+                    player.use(connector, helper);
                     helper.assertTrue(Component.translatable(AssemblyDiagnostic.NO_CONTROLLER).equals(player.message),
                             "An isolated quantum connector needs a controller, got " + player.message);
                 })
                 .thenExecute(() -> {
-                    helper.setBlock(CORNER.above(), NCQuantum.block(QuantumPart.CONTROLLER));
-                    helper.setBlock(CORNER.east(), NCQuantum.block(QuantumPart.CONTROLLER));
+                    helper.setBlock(connector.above(), NCQuantum.block(QuantumPart.CONTROLLER));
+                    helper.setBlock(connector.east(), NCQuantum.block(QuantumPart.CONTROLLER));
                 })
                 .thenWaitUntil(() -> {
-                    player.use(CORNER, helper);
+                    player.use(connector, helper);
                     helper.assertTrue(Component.translatable("message.nuclearcraft.quantum.controllers").equals(player.message),
                             "Two connected controllers report a conflicting controller count, got " + player.message);
                 })
