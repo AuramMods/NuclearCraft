@@ -279,8 +279,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
-        double batch = 2D * batchTicks;
-        while (progressHalfTicks >= batch) {
+        while (progressHalfTicks >= 2D * batchTicks) {
             if (reserved == null) {
                 consume(recipe, null);
             } else {
@@ -298,23 +297,23 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
                 }
             }
             autoEject(level);
-            if (fluid != null && fluid.discardsUnusableInputs()) {
-                refreshInput();
-                ItemProcessorRecipe nextBatch = findRecipe(level);
-                if (nextBatch == null || !hasOutputSpace(nextBatch.products(), nextBatch.fluidOutputs())) {
-                    fluid.discardUnusableInputs();
-                    progressHalfTicks = 0;
-                    break;
-                }
+            progressHalfTicks -= 2D * batchTicks;
+            refreshInput();
+            var nextRecipe = findRecipe(level);
+            if (nextRecipe != recipe) {
+                recipe = nextRecipe;
+                activeRecipe = recipe == null ? null : recipe.id();
+                setBatchRates(recipe == null ? 0 : recipe.configuredTime(), recipe == null ? 0 : recipe.configuredPower());
+                products = recipe == null ? List.of() : recipe.products();
+                fluidProducts = recipe == null ? List.of() : recipe.fluidOutputs();
             }
-            progressHalfTicks -= batch;
-            if (progressHalfTicks > 0) {
-                refreshInput();
-                if (!recipe.matches(input, level) || !hasOutputSpace(products, fluidProducts)) {
-                    progressHalfTicks = 0;
-                } else if (machine.consumesInputs()) {
-                    reserve(recipe);
-                }
+            if (recipe == null || !hasOutputSpace(products, fluidProducts)) {
+                if (fluid != null && fluid.discardsUnusableInputs()) fluid.discardUnusableInputs();
+                progressHalfTicks = 0;
+                break;
+            }
+            if (progressHalfTicks > 0 && machine.consumesInputs()) {
+                reserve(recipe);
             }
         }
         setChanged();

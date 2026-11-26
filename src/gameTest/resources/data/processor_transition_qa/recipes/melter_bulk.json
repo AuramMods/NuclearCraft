@@ -1,0 +1,10 @@
+{
+  "type": "nuclearcraft:melter",
+  "ingredient": {"alternatives": [
+    {"ingredient": {"item": "minecraft:sculk_catalyst"}, "count": 3},
+    {"ingredient": {"item": "minecraft:sculk_sensor"}, "count": 3}
+  ]},
+  "result": {"fluid": "minecraft:water", "amount": 13},
+  "ticks": 4,
+  "energy_per_tick": 5
+}

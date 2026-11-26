@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:chemical_reactor",
+  "nuclearcraft_default": "chemical_reactor",
+  "fluid_inputs": [{"fluid": "minecraft:water", "amount": 12}, {"fluid": "minecraft:lava", "amount": 6}],
+  "results": [{"fluid": "minecraft:water", "amount": 18}],
+  "ticks": 12,
+  "energy_per_tick": 5
+}

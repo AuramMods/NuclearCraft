@@ -1,0 +1,8 @@
+{
+  "type": "nuclearcraft:extractor",
+  "ingredients": [{"ingredient": {"item": "minecraft:sculk_sensor"}}],
+  "result": {"item": "minecraft:charcoal", "count": 2},
+  "fluid_result": {"fluid": "minecraft:water", "amount": 7},
+  "ticks": 3,
+  "energy_per_tick": 17
+}

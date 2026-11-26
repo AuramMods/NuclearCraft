@@ -93,6 +93,10 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
             progressHalfTicks = progressHalfTicks * (configuredTicks / previousTicks);
             setChanged();
         }
+        setBatchRates(configuredTicks, configuredPower);
+    }
+
+    final void setBatchRates(double configuredTicks, double configuredPower) {
         batchTicks = configuredTicks;
         basePower = configuredPower;
     }

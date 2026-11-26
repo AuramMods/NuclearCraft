@@ -100,16 +100,19 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         return radiationEmission;
     }
 
+    private @Nullable MelterRecipe findRecipe(Level level) {
+        recipeInput.setItem(0, inventory.getStackInSlot(0));
+        var recipe = recipes.find(recipeInput, level, recipeInput.isEmpty());
+        return recipe == null && !recipeInput.isEmpty()
+                ? MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0)) : recipe;
+    }
+
     private boolean process(Level level, boolean halted) {
         radiationEmission = 0D;
         if (!rate.enabled()) {
             return false;
         }
-        recipeInput.setItem(0, inventory.getStackInSlot(0));
-        MelterRecipe recipe = recipes.find(recipeInput, level, recipeInput.isEmpty());
-        if (recipe == null && !recipeInput.isEmpty()) {
-            recipe = MelterMaterialRecipes.find(level.getRecipeManager(), recipeInput.getItem(0));
-        }
+        MelterRecipe recipe = findRecipe(level);
         if (recipe == null || !recipe.id().equals(activeRecipe)) {
             activeRecipe = recipe == null ? null : recipe.id();
             if (progressHalfTicks != 0) {
@@ -137,19 +140,23 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
 
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += 2 * speed;
-        double batch = 2D * batchTicks;
-        while (progressHalfTicks + 1E-9 >= batch && progressHalfTicks > 0) {
+        while (progressHalfTicks + 1E-9 >= 2D * batchTicks && progressHalfTicks > 0) {
             if (!product.isEmpty()) {
                 fluids.produce(0, recipe.fluidProduct().roll(level.random));
             }
             inventory.extractItem(0, recipe.input().matchedCount(recipeInput.getItem(0)), false);
             autoEject(level);
-            progressHalfTicks = Math.max(0, progressHalfTicks - batch);
-            if (progressHalfTicks > 0) {
-                recipeInput.setItem(0, inventory.getStackInSlot(0));
-                if (!recipe.matches(recipeInput, level) || !hasOutputSpace(product)) {
-                    progressHalfTicks = 0;
-                }
+            progressHalfTicks = Math.max(0, progressHalfTicks - 2D * batchTicks);
+            var nextRecipe = findRecipe(level);
+            if (nextRecipe != recipe) {
+                recipe = nextRecipe;
+                activeRecipe = recipe == null ? null : recipe.id();
+                setBatchRates(recipe == null ? 0 : rate.time(recipe.ticks()), recipe == null ? 0 : rate.power(recipe.energyPerTick()));
+                product = recipe == null ? FluidStack.EMPTY : recipe.product();
+            }
+            if (recipe == null || !hasOutputSpace(product)) {
+                progressHalfTicks = 0;
+                break;
             }
         }
         setChanged();

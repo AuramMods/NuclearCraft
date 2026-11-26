@@ -176,10 +176,11 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         }
         radiationEmission = recipe.radiation() * speed;
         progressHalfTicks += progressPerTick;
-        double batchHalfTicks = 2 * batchTicks;
-        // Config multipliers can round the nominal duration. Allow that error across one original batch.
-        double rounding = 4 * Math.ulp(batchHalfTicks) * factor;
-        while (progressHalfTicks > 0 && progressHalfTicks + rounding >= batchHalfTicks) {
+        while (progressHalfTicks > 0) {
+            double batchHalfTicks = 2 * batchTicks;
+            // Config multipliers can round the nominal duration. Allow that error across one original batch.
+            double rounding = 4 * Math.ulp(batchHalfTicks) * factor;
+            if (progressHalfTicks + rounding < batchHalfTicks) break;
             var item = recipe.itemInput();
             if (item != null && machine.hasItemInput) {
                 itemInput.extractItem(0, item.matchedCount(input.getItem(0)), false);
@@ -198,21 +199,25 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
                 }
             }
             autoEject(level);
-            if (fluids.discardsUnusableInputs()) {
-                refreshInput();
-                FluidProcessorRecipe nextBatch = findRecipe(level);
-                if (nextBatch == null || !hasOutputSpace(nextBatch.results(), nextBatch.batchFactor())) {
-                    fluids.discardUnusableInputs();
-                    progressHalfTicks = 0;
-                    break;
+            progressHalfTicks = Math.max(0, progressHalfTicks - batchHalfTicks);
+            refreshInput();
+            var nextRecipe = findRecipe(level);
+            if (nextRecipe != recipe) {
+                recipe = nextRecipe;
+                activeRecipe = recipe == null ? null : recipe.id();
+                setBatchRates(recipe == null ? 0 : rate.time(recipe.duration()), recipe == null ? 0 : rate.power(recipe.energyPerTick()));
+                outputs = recipe == null ? List.of() : recipe.results();
+                if (recipe != null) {
+                    int nextFactor = recipe.batchFactor();
+                    // Carry paid time into the next recipe's original batch units.
+                    progressHalfTicks = progressHalfTicks / factor * nextFactor;
+                    factor = nextFactor;
                 }
             }
-            progressHalfTicks = Math.max(0, progressHalfTicks - batchHalfTicks);
-            if (progressHalfTicks > 0) {
-                refreshInput();
-                if (!recipe.matches(input, factor) || !hasOutputSpace(outputs, factor)) {
-                    progressHalfTicks = 0;
-                }
+            if (recipe == null || !hasOutputSpace(outputs, factor)) {
+                if (fluids.discardsUnusableInputs()) fluids.discardUnusableInputs();
+                progressHalfTicks = 0;
+                break;
             }
         }
         setChanged();
