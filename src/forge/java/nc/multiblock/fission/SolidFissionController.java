@@ -203,10 +203,10 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                 resetHeatingOutput();
             }
         }
-        if (layout != null && !requested && variant != FissionVariant.SOLID && casingHeat > 0) {
-            exchangeCasingHeat(1D);
-        }
         if (layout != null) {
+            if (!active && variant != FissionVariant.SOLID) {
+                exchangeCasingHeat(1D);
+            }
             // A shared tank may have been exhausted by the last cooler or heater to run.
             if (gasCooling != null) {
                 gasCooling.discardBlockedProgress(server, layout);
@@ -214,7 +214,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             if (saltCooling != null) {
                 saltCooling.discardBlockedProgress(server, layout);
             }
-            long lost = NCFission.casingHeatLost(casingHeat, layout.bounds().exteriorSurfaceArea(), requested);
+            long lost = NCFission.casingHeatLost(casingHeat, layout.bounds().exteriorSurfaceArea(), active);
             if (lost > 0) {
                 casingHeat -= lost;
                 setChanged();

@@ -3,6 +3,7 @@ package nc.multiblock.fission;
 import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
 import nc.init.NCFission;
+import nc.init.NCFluids;
 import nc.init.NCHeatExchangers;
 import nc.init.NCPebbleFission;
 import nc.init.NCSaltFission;
@@ -54,6 +55,56 @@ public final class FissionWallGameTests {
     private static final BlockPos ELSEWHERE = new BlockPos(10, 3, 1);
 
     private FissionWallGameTests() {}
+
+    @GameTest(template = "fission")
+    public static void enabledSolidReactorWithoutAReactionDissipatesHeat(GameTestHelper helper) {
+        var controller = hotCasing(helper, NCFission.CONTROLLER.get());
+        controller.toggle();
+        controller.tick(helper.getLevel());
+        helper.assertTrue(!controller.computerOn() && controller.computerHeat() == 199,
+                "An enabled reactor without a reaction uses the idle dissipation setting");
+        helper.succeed();
+    }
+
+    @GameTest(template = "fission")
+    public static void enabledPebbleReactorWithoutAReactionUsesEmergencyCooling(GameTestHelper helper) {
+        var controller = hotCasing(helper, NCPebbleFission.CONTROLLER.get());
+        controller.toggle();
+        verifyStalledReactorCooling(helper, controller);
+    }
+
+    @GameTest(template = "fission")
+    public static void poweredSaltReactorWithoutAReactionUsesEmergencyCooling(GameTestHelper helper) {
+        var controller = hotCasing(helper, NCSaltFission.CONTROLLER.get());
+        helper.setBlock(CONTROLLER.north(), Blocks.REDSTONE_BLOCK);
+        helper.assertTrue(helper.getLevel().hasNeighborSignal(helper.absolutePos(CONTROLLER)),
+                "The controller receives a redstone signal");
+        verifyStalledReactorCooling(helper, controller);
+    }
+
+    private static SolidFissionController hotCasing(GameTestHelper helper, Block block) {
+        buildShell(helper, block);
+        var controller = controller(helper);
+        var saved = controller.saveWithoutMetadata();
+        saved.putLong("heat", 200L);
+        controller.load(saved);
+        return controller;
+    }
+
+    private static void verifyStalledReactorCooling(GameTestHelper helper, SolidFissionController controller) {
+        helper.setBlock(MONITOR, NCFission.VENT.get());
+        helper.assertTrue(controller.diagnostic(helper.getLevel()) == null, "The emergency vent is connected");
+        var cold = new FluidStack(NCFluids.EMERGENCY_COOLANT.source().get(), 71);
+        var hot = new FluidStack(NCFluids.HEATED_EMERGENCY_COOLANT.source().get(), 71);
+        var inlet = helper.getBlockEntity(MONITOR).getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.NORTH)
+                .orElseThrow(AssertionError::new);
+        helper.assertTrue(inlet.fill(cold, FluidAction.EXECUTE) == 71, "The emergency vent accepts the coolant");
+        controller.tick(helper.getLevel());
+        helper.assertTrue(!controller.computerOn() && controller.coolant().isEmpty()
+                        && controller.steam().getFluid().isFluidStackIdentical(hot) && controller.computerHeat() == 128,
+                "A stalled reactor cools 71 mB of coolant and dissipates the idle heat unit");
+        helper.succeed();
+    }
 
     @GameTest(template = "fission")
     public static void solidFissionVentsRequireBothDirections(GameTestHelper helper) {

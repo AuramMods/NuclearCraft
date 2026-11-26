@@ -122,7 +122,7 @@ public final class NCFission {
                 .define("fission_sparsity_penalty_params", List.of(0.5D, 0.75D),
                         entry -> entry instanceof List<?> values && values.size() == 2 && values.stream().allMatch(
                                 value -> value instanceof Number number && number.doubleValue() >= 0D && number.doubleValue() <= 1D));
-        DISSIPATION = builder.comment("Passive casing heat dissipation while switched off, then while switched on.")
+        DISSIPATION = builder.comment("Passive casing heat dissipation while idle, then while producing heat.")
                 .define("fission_heat_dissipation", List.of(true, false),
                         entry -> entry instanceof List<?> values && values.size() == 2 && values.stream().allMatch(Boolean.class::isInstance));
         DISSIPATION_RATE = builder.defineInRange("fission_heat_dissipation_rate", 0D, 0D, 1D);
@@ -488,8 +488,8 @@ public final class NCFission {
         return density >= threshold ? 1D : floor + (1D - floor) * Math.sin(density * Math.PI / (2D * threshold));
     }
 
-    public static long casingHeatLost(long heat, int surface, boolean requested) {
-        if (heat <= 0 || !configured(DISSIPATION).get(requested ? 1 : 0)) {
+    public static long casingHeatLost(long heat, int surface, boolean active) {
+        if (heat <= 0 || !configured(DISSIPATION).get(active ? 1 : 0)) {
             return 0L;
         }
         return Math.min(heat, Math.max(1L, (long) (configured(DISSIPATION_RATE) * heat * surface)));

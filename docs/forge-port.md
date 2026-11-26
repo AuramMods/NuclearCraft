@@ -1180,6 +1180,8 @@ For legacy generic `battery`, `rtg`, and `solar_panel` block entities, use the m
 
 The table contains 812 block entries, 1,428 item entries, 457 fluid entries, 237 fixed block entity entries, and two entity entries. It combines rows where a block and item share both IDs. Every target was present in the corresponding registry of the packaged JAR on clean Forge 47.4.10. The block entity entries use the types that the converted blocks create.
 
+A later packaged Forge 47.4.10 check found all 333 mapped reactor block and item targets, including fuel forms, fission dusts, and empty cooling parts. The JAR contains recipe outputs for 332 of those targets. The remaining block, `nuclearcraft:solidified_corium`, forms when corium cools in the world.
+
 | Legacy 1.12.2 ID and metadata | Forge 1.20.1 ID |
 | --- | --- |
 | `nuclearcraft:pebble_fission_cooler`, 0–15 | `nuclearcraft:pebble_fission_cooler_<gas>` |
@@ -2111,9 +2113,13 @@ On packaged Forge 47.4.10 with Industrial Craft FE 1.2.8, both fuels remained re
 
 Copy the legacy `fission_min_size` and `fission_max_size` values into `world/serverconfig/nuclearcraft-fission.toml`. Size limits apply to each interior dimension. The same file retains `fission_fuel_time_multiplier`, `fission_fuel_heat_multiplier`, `fission_fuel_efficiency_multiplier`, and `fission_fuel_radiation_multiplier`. These settings apply to the three reactor types and multiply any molten-salt-specific overrides already in the Forge configuration. Fuel heat rounds down to whole heat units. Solid and pebble fuel durations round down and have a minimum of one tick. Molten-salt duration keeps its fractional precision. JEI shows scaled duration and heat.
 
-The same file retains `fission_cooling_efficiency_leniency`, `fission_sparsity_penalty_params`, `fission_heat_dissipation`, `fission_heat_dissipation_rate`, and `fission_sound_volume`. Supply the sparsity values in legacy order, with minimum efficiency followed by the density that gives full efficiency. Supply the dissipation flags in switched-off, switched-on order. The default flags let idle reactors with stored casing heat lose 1 H per tick. Size changes revalidate loaded reactors. An assembled reactor with zero cooling and zero leniency uses 1 H/t as the divisor for undercooling fuel speed.
+The same file retains `fission_cooling_efficiency_leniency`, `fission_sparsity_penalty_params`, `fission_heat_dissipation`, `fission_heat_dissipation_rate`, and `fission_sound_volume`. Supply the sparsity values in legacy order, with minimum efficiency followed by the density that gives full efficiency. Supply the dissipation flags in idle, heat-producing order. The default flags let idle reactors with stored casing heat lose 1 H per tick, including when the controller is powered and waiting for fuel. Size changes revalidate loaded reactors. An assembled reactor with zero cooling and zero leniency uses 1 H/t as the divisor for undercooling fuel speed.
 
 Solid reactors heat water and preheated water into four times their volume of high-pressure steam. They also heat 16 gas coolants at a one-to-two volume ratio and 32 NaK coolants at a one-to-one ratio. Change the legacy gas and NaK heat multipliers using `fission_heating_gas_coolant_heat_mult` and `fission_heating_nak_coolant_heat_mult`. Idle pebble-bed and molten-salt reactors heat emergency coolant at a one-to-one ratio. Their shared `fission_emergency_cooling_multiplier` multiplies the existing `emergency_cooling_multiplier` in each variant's server config. Both vent paths retain the controller's existing `coolant` and `steam` save fields.
+
+Emergency vents work while a pebble-bed or molten-salt reactor is idle, including with redstone power or the manual switch on. While a reaction or fuel decay produces heat, the vent keeps its coolant until the reactor returns to idle.
+
+All 311 local GameTests passed. Packaged Forge 47.4.10 verified both idle and decay-heating states on clean Forge and with Auram's Ender IO 8.2.22-beta and Mekanism 10.4.16.80. The powered, stalled reactors delivered 257 mB through Mekanism and 383 mB through Ender IO. Each reactor then held 83 mB until fuel decay stopped. All 340 mB and 466 mB respectively survived a confirmed chunk unload and dedicated restart.
 
 An assembled vent in output mode pushes heated fluid into Forge fluid storage on its outside face. Attach a compatible tank or machine directly to the vent, or use a pipe that can pull from it. A full adjacent handler leaves excess fluid in the reactor. Breaking and repairing the shell pauses and resumes the transfer.
 
