@@ -49,6 +49,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
     private static final int LINKED = 8;
     private static final int LOCAL_VIEW = 16;
     private static final int CAN_CLEAR_FILTER = 32;
+    private static final int EXACT_COOLANT_FILTER = 64;
 
     private final Kind kind;
     private final Level playerLevel;
@@ -111,7 +112,9 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         var block = BuiltInRegistries.BLOCK.byId(get(HEATER_BLOCK));
         FissionCoolant material = block instanceof SaltHeaterBlock heater ? heater.coolant()
                 : block instanceof FissionWallBlock wall ? wall.saltCoolant() : null;
-        return material == null ? null : FissionCoolantRecipes.displayedInput(playerLevel, material, fluid(false));
+        var contents = fluid(false);
+        return material == null ? null : FissionCoolantRecipes.displayedInput(playerLevel, material,
+                contents.isEmpty() && exactCoolantFilter() ? filter() : contents);
     }
 
     public FluidStack reserved() {
@@ -152,6 +155,10 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
 
     public boolean canClearFilter() {
         return (get(STATUS) & CAN_CLEAR_FILTER) != 0;
+    }
+
+    public boolean exactCoolantFilter() {
+        return (get(STATUS) & EXACT_COOLANT_FILTER) != 0;
     }
 
     public boolean outputPort() {
@@ -229,11 +236,12 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         var input = part.tank(viewLocal, false);
         setTank(INPUT, input);
         setTank(OUTPUT, part.tank(viewLocal, true));
-        ResourceLocation filter = part.filter();
+        ResourceLocation filter = part.filter(viewLocal);
         var feed = input == null ? FluidStack.EMPTY : input.getFluid();
-        var recipe = part.coolant == null ? null : FissionCoolantRecipes.displayedRecipe(level, part.coolant, feed);
         var filterFluid = filter == null ? null : ForgeRegistries.FLUIDS.getValue(filter);
-        if (recipe != null) {
+        var recipeInput = feed.isEmpty() && filterFluid != null ? new FluidStack(filterFluid, 1) : feed;
+        var recipe = part.coolant == null ? null : FissionCoolantRecipes.displayedRecipe(level, part.coolant, recipeInput);
+        if (recipe != null && filterFluid == null) {
             filterFluid = recipe.input().accepts(feed) ? feed.getFluid()
                     : recipe.input().alternatives().stream().findFirst().orElse(FluidStack.EMPTY).getFluid();
         }
@@ -252,7 +260,8 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
         set(STATUS, (part.controller != null ? CONNECTED : 0)
                 | (heat.processing() ? PROCESSING : 0) | (part.outputPort ? OUTPUT_PORT : 0)
                 | (linked ? LINKED : 0) | (viewLocal ? LOCAL_VIEW : 0)
-                | (part.controller == null && filter != null ? CAN_CLEAR_FILTER : 0));
+                | (part.controller == null && filter != null ? CAN_CLEAR_FILTER : 0)
+                | (part.coolant != null && filterFluid != null && filter != null ? EXACT_COOLANT_FILTER : 0));
     }
 
     private static int fluidId(@Nullable Fluid fluid) {
@@ -297,14 +306,21 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
             return heater == null ? port.localSaltCoolant() : heater.localTanks();
         }
 
-        @Nullable ResourceLocation filter() {
+        CoolantTanks coolantTanks(boolean local) {
+            var sharing = local ? null : sharedCoolant();
+            return sharing == null ? localCoolant() : sharing;
+        }
+
+        @Nullable ResourceLocation filter(boolean local) {
+            if (coolant != null) {
+                return coolantTanks(local).filter();
+            }
             return vessel != null ? vessel.filter() : port != null ? port.fuelFilter() : null;
         }
 
         FluidTank tank(boolean local, boolean output) {
             if (coolant != null) {
-                var shared = local ? null : sharedCoolant();
-                return (shared == null ? localCoolant() : shared).tank(output);
+                return coolantTanks(local).tank(output);
             }
             if (vessel != null) {
                 return local ? vessel.localTanks().tank(output) : vessel.fuelTank(output);
@@ -326,7 +342,7 @@ public final class SaltFissionPartMenu extends AbstractContainerMenu {
 
         boolean clearFilter() {
             if (coolant != null) {
-                return false;
+                return heater == null ? port.selectSaltCoolantFilter(FluidStack.EMPTY) : heater.selectFilter(FluidStack.EMPTY);
             }
             return vessel == null ? port.selectVesselFilter(null) : vessel.selectFilter(null);
         }

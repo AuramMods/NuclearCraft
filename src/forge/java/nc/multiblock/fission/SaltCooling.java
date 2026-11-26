@@ -15,10 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiPredicate;
 
 final class SaltCooling {
@@ -26,7 +24,7 @@ final class SaltCooling {
 
     private final SolidFissionController owner;
     private final Map<FissionCoolant, CoolantTanks> circuits = new HashMap<>();
-    private final Set<FissionCoolant> connected = new HashSet<>();
+    private final Map<FissionCoolant, SolidFissionLayout.Port> connected = new HashMap<>();
     private final Map<BlockPos, Fraction> legacyProgress = new HashMap<>();
     private record Fraction(FissionCoolant coolant, double amount) {}
 
@@ -35,7 +33,10 @@ final class SaltCooling {
     }
 
     private CoolantTanks circuit(FissionCoolant coolant) {
-        return circuits.computeIfAbsent(coolant, kind -> new CoolantTanks(kind, owner));
+        return circuits.computeIfAbsent(coolant, kind -> new CoolantTanks(kind, owner, () -> {
+            var port = connected.get(kind);
+            return port == null ? null : port.filter();
+        }));
     }
 
     FluidTank tank(FissionCoolant coolant, boolean output) {
@@ -43,7 +44,7 @@ final class SaltCooling {
     }
 
     @Nullable CoolantTanks connectedTanks(FissionCoolant coolant) {
-        return connected.contains(coolant) ? circuits.get(coolant) : null;
+        return connected.containsKey(coolant) ? circuits.get(coolant) : null;
     }
 
     void clearMaterial() {
@@ -56,7 +57,8 @@ final class SaltCooling {
         connected.clear();
         for (var port : layout.ports()) {
             if (port.salt() != null) {
-                connected.add(port.salt());
+                connected.merge(port.salt(), port, (first, next) ->
+                        next.filter() != null && (first.filter() == null || first.output() && !next.output()) ? next : first);
             }
         }
         var counts = new HashMap<FissionCoolant, Integer>();
@@ -66,7 +68,7 @@ final class SaltCooling {
                 heater.bind(owner);
             }
         }
-        for (var coolant : connected) {
+        for (var coolant : connected.keySet()) {
             circuit(coolant).resize((long) VOLUME_PER_HEATER * counts.getOrDefault(coolant, 0));
         }
     }
@@ -132,12 +134,12 @@ final class SaltCooling {
 
     FissionTankTotals tankTotals(Level level, SolidFissionLayout layout) {
         var totals = new FissionTankTotals();
-        for (var coolant : connected) {
+        for (var coolant : connected.keySet()) {
             var tanks = circuit(coolant);
             totals.add(tanks.cold, tanks.hot);
         }
         for (BlockPos pos : layout.sinks()) {
-            if (level.getBlockEntity(pos) instanceof SaltHeater heater && !connected.contains(heater.coolant())) {
+            if (level.getBlockEntity(pos) instanceof SaltHeater heater && !connected.containsKey(heater.coolant())) {
                 var tanks = heater.localTanks();
                 totals.add(tanks.cold, tanks.hot);
             }

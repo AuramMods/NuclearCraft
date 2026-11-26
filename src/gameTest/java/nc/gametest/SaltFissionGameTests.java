@@ -71,6 +71,98 @@ public final class SaltFissionGameTests {
         });
     }
 
+    @GameTest(template = "fission", timeoutTicks = 240)
+    public static void heaterFiltersPreserveTheSharedCircuitAndSavedCoolant(GameTestHelper helper) {
+        shell(helper);
+        addVessel(helper, FIRST_VESSEL, Direction.EAST, FUEL, FUEL_IN, FUEL_OUT);
+        var heater = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("salt_fission_heater_qa_salt_recipe"));
+        var port = ForgeRegistries.BLOCKS.getValue(NuclearCraft.id("fission_heater_port_qa_salt_recipe"));
+        BlockPos heaterPos = FIRST_VESSEL.below();
+        helper.setBlock(heaterPos, heater);
+        helper.setBlock(NAK_IN, port);
+        helper.setBlock(NAK_OUT, port.defaultBlockState().setValue(FissionWallBlock.ACTIVE, true));
+        helper.setBlock(CASE, Blocks.AIR);
+
+        var player = saltInspector(helper);
+        var iron = stack("iron_nak", 18);
+        var gold = stack("gold_nak", 18);
+        useCoolantSample(helper, player, heaterPos, gold);
+        useCoolantSample(helper, player, NAK_OUT, gold);
+        var detached = helper.getBlockEntity(NAK_IN).getCapability(ForgeCapabilities.FLUID_HANDLER);
+        var previous = detached.orElseThrow(AssertionError::new);
+        useCoolantSample(helper, player, NAK_IN, iron);
+        helper.assertTrue(!detached.isPresent() && previous.fill(iron, EXECUTE) == 0,
+                "Changing the inlet filter releases cached detached capabilities");
+        var inputPart = helper.getBlockEntity(NAK_IN);
+        var savedPort = inputPart.saveWithoutMetadata();
+        helper.assertTrue(savedPort.getCompound("heater_coolant").getString("filter").equals("nuclearcraft:iron_nak")
+                        && heaterFluid(helper, heaterPos, false).isEmpty(),
+                "Selecting a fluid saves its ID without filling a tank");
+        inputPart.load(savedPort);
+
+        var controller = (SolidFissionController) helper.getBlockEntity(CONTROLLER);
+        var saved = controller.saveWithoutMetadata();
+        var coolant = new CompoundTag();
+        coolant.put("input", gold.writeToNBT(new CompoundTag()));
+        var circuits = new CompoundTag();
+        circuits.put("qa_salt_recipe", coolant);
+        saved.put("salt_cooling", circuits);
+        controller.load(saved);
+        helper.setBlock(CASE, NCFission.CASING.get());
+
+        helper.startSequence().thenWaitUntil(() -> helper.assertTrue(controller.assembled(), "The coolant circuit assembles"))
+                .thenExecute(() -> {
+                    helper.useBlock(heaterPos, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    helper.assertTrue(menu.linked() && menu.exactCoolantFilter() && menu.filter().isFluidEqual(iron)
+                                    && menu.fluid(false).isFluidStackIdentical(gold) && !menu.canClearFilter(),
+                            "The heater sees the selected inlet fluid and the earlier stored coolant in one shared circuit");
+                    helper.assertTrue(input.isFluidValid(0, iron) && !input.isFluidValid(0, gold)
+                                    && input.fill(gold, SIMULATE) == 0 && input.fill(iron, SIMULATE) == 0,
+                            "The selected filter constrains new fluid and physical contents still prevent mixing");
+                    useCoolantSample(helper, player, NAK_IN, gold);
+                    helper.assertTrue(input.isFluidValid(0, iron), "An assembled port keeps its selected filter");
+                    fluids(helper, FUEL_IN, Direction.NORTH).fill(stack(FUEL, 180), EXECUTE);
+                    helper.setBlock(CONTROLLER.west(), Blocks.REDSTONE_BLOCK);
+                })
+                .thenWaitUntil(() -> {
+                    var input = fluids(helper, NAK_IN, Direction.DOWN);
+                    var output = fluids(helper, NAK_OUT, Direction.UP);
+                    helper.assertTrue(input.getFluidInTank(0).isEmpty() && output.getFluidInTank(0).getAmount() == 3,
+                            "Earlier gold coolant finishes its batch after the inlet filter changes");
+                    helper.assertTrue(input.fill(gold, EXECUTE) == 0 && input.fill(iron, SIMULATE) == 18
+                                    && input.getFluidInTank(0).isEmpty() && input.fill(iron, EXECUTE) == 18,
+                            "A simulated or executed transfer accepts the matching fluid in the same inlet");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(fluids(helper, NAK_OUT, Direction.UP).getFluidInTank(0).getAmount() == 6,
+                        "Both fluids use the same product tank"))
+                .thenExecute(() -> {
+                    helper.setBlock(CONTROLLER.west(), Blocks.AIR);
+                    helper.setBlock(CASE, Blocks.AIR);
+                    var pos = helper.absolutePos(NAK_IN);
+                    player.moveTo(pos.getX() + 0.5D, pos.getY() - 1, pos.getZ() + 0.5D);
+                    helper.useBlock(NAK_IN, player);
+                    var menu = (SaltFissionPartMenu) player.containerMenu;
+                    helper.assertTrue(menu.canClearFilter() && menu.clickMenuButton(player, SaltFissionPartMenu.CLEAR_INPUT),
+                            "The disconnected empty inlet can clear its saved filter from the menu");
+                    menu.broadcastChanges();
+                    helper.assertTrue(!menu.exactCoolantFilter() && !inputPart.saveWithoutMetadata()
+                                    .getCompound("heater_coolant").contains("filter"),
+                            "Clearing the filter restores the unfiltered inlet");
+                }).thenSucceed();
+    }
+
+    private static void useCoolantSample(GameTestHelper helper, FakePlayer player, BlockPos pos, FluidStack sample) {
+        var bucket = new ItemStack(sample.getFluid().getBucket());
+        player.setItemInHand(InteractionHand.MAIN_HAND, bucket);
+        player.setShiftKeyDown(true);
+        helper.useBlock(pos, player);
+        helper.assertTrue(player.getMainHandItem().is(bucket.getItem()), "Selecting a filter leaves the bucket intact");
+        player.setShiftKeyDown(false);
+        player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+    }
+
     @GameTest(template = "fission", timeoutTicks = 500)
     public static void scriptedSaltHeaterKeepsWholeBatchesAcrossBackpressureAndReload(GameTestHelper helper) {
         shell(helper);

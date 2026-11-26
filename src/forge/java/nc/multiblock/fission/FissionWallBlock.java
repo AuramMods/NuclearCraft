@@ -192,7 +192,17 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
             if (role == Role.VESSEL_PORT) {
                 return SaltVesselBlock.selectFilter(player, hand, level, port::selectVesselFilter).consumesAction();
             }
-            if (role == Role.HEATER_PORT || role == Role.POWER_PORT) {
+            if (role == Role.HEATER_PORT) {
+                var sample = FluidUtil.getFluidContained(held).orElse(FluidStack.EMPTY);
+                if (sample.isEmpty()) {
+                    return false;
+                }
+                if (port.selectSaltCoolantFilter(sample)) {
+                    player.displayClientMessage(Component.translatable("gui.nuclearcraft.salt_part.filter", sample.getDisplayName()), true);
+                }
+                return true;
+            }
+            if (role == Role.POWER_PORT) {
                 return false;
             }
             togglePort(level, state, pos, player);

@@ -234,6 +234,21 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return Objects.requireNonNull(localSaltCoolant);
     }
 
+    boolean selectSaltCoolantFilter(FluidStack sample) {
+        if (localSaltCoolant == null || assembled() || !localSaltCoolant.selectFilter(sample)) {
+            return false;
+        }
+        saltCoolantFilterChanged();
+        return true;
+    }
+
+    private void saltCoolantFilterChanged() {
+        invalidateDetachedFluid();
+        if (level instanceof ServerLevel server) {
+            FissionPartBlock.geometryChanged(server, worldPosition);
+        }
+    }
+
     @Nullable SolidFissionController saltController() {
         Binding current = binding;
         return current != null && connected(current) && current.controller.variant() == FissionVariant.SALT
@@ -373,7 +388,11 @@ public final class FissionPortBlockEntity extends BlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (localSaltCoolant != null) {
+            var previous = localSaltCoolant.filter();
             localSaltCoolant.load(tag.getCompound("heater_coolant"));
+            if (!Objects.equals(previous, localSaltCoolant.filter())) {
+                saltCoolantFilterChanged();
+            }
             return;
         }
         if (localPebbleGas != null) {

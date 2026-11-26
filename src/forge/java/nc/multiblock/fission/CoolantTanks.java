@@ -14,6 +14,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 final class CoolantTanks {
@@ -23,23 +24,37 @@ final class CoolantTanks {
     final FluidTank hot;
     private final FissionCoolant material;
     private final BlockEntity owner;
-    private final Supplier<@Nullable ResourceLocation> filter;
+    private final @Nullable Supplier<@Nullable ResourceLocation> circuitFilter;
+    private @Nullable ResourceLocation localFilter;
     private long minimum = PORT_VOLUME;
 
     CoolantTanks(FissionCoolant material, BlockEntity owner) {
-        this(material, owner, () -> null);
+        this(material, owner, null);
     }
 
-    CoolantTanks(FissionCoolant material, BlockEntity owner, Supplier<@Nullable ResourceLocation> filter) {
+    CoolantTanks(FissionCoolant material, BlockEntity owner, @Nullable Supplier<@Nullable ResourceLocation> circuitFilter) {
         this.material = material;
         this.owner = owner;
-        this.filter = filter;
+        this.circuitFilter = circuitFilter;
         cold = new Tank(false);
         hot = new Tank(true);
     }
 
     @Nullable ResourceLocation filter() {
-        return filter.get();
+        return circuitFilter == null ? localFilter : circuitFilter.get();
+    }
+
+    boolean selectFilter(FluidStack sample) {
+        if (!cold.isEmpty() || (!sample.isEmpty() && !accepts(sample))) {
+            return false;
+        }
+        var next = sample.isEmpty() ? null : ForgeRegistries.FLUIDS.getKey(sample.getFluid());
+        if (Objects.equals(localFilter, next)) {
+            return false;
+        }
+        localFilter = next;
+        owner.setChanged();
+        return true;
     }
 
     FluidTank tank(boolean output) {
@@ -77,7 +92,8 @@ final class CoolantTanks {
 
     @Nullable FissionCoolantRecipe matchingRecipe(@Nullable ResourceLocation partFilter) {
         FluidStack input = cold.getFluid();
-        if (input.isEmpty() || !matches(input, filter()) || !matches(input, partFilter)) {
+        // A salt circuit keeps processing its stored coolant after the inlet filter changes.
+        if (input.isEmpty() || !matches(input, partFilter) || material instanceof PebbleCoolant && !matches(input, filter())) {
             return null;
         }
         for (var recipe : recipes()) {
@@ -116,12 +132,16 @@ final class CoolantTanks {
         CompoundTag tag = new CompoundTag();
         tag.put("input", cold.writeToNBT(new CompoundTag()));
         tag.put("output", hot.writeToNBT(new CompoundTag()));
+        if (localFilter != null) {
+            tag.putString("filter", localFilter.toString());
+        }
         return tag;
     }
 
     void load(CompoundTag tag) {
         cold.readFromNBT(tag.getCompound("input"));
         hot.readFromNBT(tag.getCompound("output"));
+        localFilter = tag.contains("filter") ? ResourceLocation.tryParse(tag.getString("filter")) : null;
     }
 
     private final class Tank extends FluidTank {

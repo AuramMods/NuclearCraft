@@ -86,7 +86,7 @@ public final class SaltFissionPartScreen extends AbstractContainerScreen<SaltFis
         if (!output) {
             var filter = menu.filter();
             var coolant = menu.coolantInput();
-            if (coolant != null && coolant.tag()) {
+            if (coolant != null && coolant.tag() && !menu.exactCoolantFilter()) {
                 lines.add(Component.translatable("gui.nuclearcraft.fission_part.gas_tag", "#" + coolant.id()));
             } else if (!filter.isEmpty()) {
                 lines.add(Component.translatable("gui.nuclearcraft.salt_part.filter", filter.getDisplayName()));

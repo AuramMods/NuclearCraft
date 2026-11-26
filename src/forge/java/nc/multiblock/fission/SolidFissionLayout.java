@@ -127,6 +127,7 @@ record SolidFissionLayout(Cuboid bounds, List<BlockPos> cells, List<BlockPos> si
                             var filter = switch (role) {
                                 case IRRADIATOR_PORT -> entity.localIrradiatorItems().filter();
                                 case FUEL_PORT, CHAMBER_PORT, VESSEL_PORT -> entity.fuelFilter();
+                                case HEATER_PORT -> entity.localSaltCoolant().filter();
                                 default -> null;
                             };
                             ports.add(new Port(pos.immutable(), bounds.outward(pos), role, state.getValue(FissionWallBlock.ACTIVE),

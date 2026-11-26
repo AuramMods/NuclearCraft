@@ -17,6 +17,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,12 +44,19 @@ public final class SaltHeaterBlock extends FissionPartBlock implements EntityBlo
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                  InteractionHand hand, BlockHitResult hit) {
-        if (hand != InteractionHand.MAIN_HAND || player.isShiftKeyDown()) {
+        if (hand != InteractionHand.MAIN_HAND) {
+            return InteractionResult.PASS;
+        }
+        var sample = FluidUtil.getFluidContained(player.getItemInHand(hand)).orElse(FluidStack.EMPTY);
+        if (player.isShiftKeyDown() && sample.isEmpty()) {
             return InteractionResult.PASS;
         }
         if (level instanceof ServerLevel server && entity(server, pos) instanceof SaltHeater heater) {
-            boolean output = FluidUtil.getFluidContained(player.getItemInHand(hand)).isEmpty();
-            if (!FluidUtil.interactWithFluidHandler(player, hand, heater.tanks().tank(output))) {
+            if (player.isShiftKeyDown()) {
+                if (heater.selectFilter(sample)) {
+                    player.displayClientMessage(Component.translatable("gui.nuclearcraft.salt_part.filter", sample.getDisplayName()), true);
+                }
+            } else if (!FluidUtil.interactWithFluidHandler(player, hand, heater.tanks().tank(sample.isEmpty()))) {
                 SaltFissionPartMenu.open(player, server, pos, SaltFissionPartMenu.Kind.HEATER);
             }
         }
