@@ -1,6 +1,7 @@
 package nc.gametest;
 
 import nc.NuclearCraft;
+import nc.init.NCCollectors.Collector;
 import nc.init.NCFluids;
 import nc.init.NCItemProcessors.Machine;
 import nc.processor.ItemProcessorBlockEntity;
@@ -11,6 +12,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -26,6 +28,71 @@ import net.minecraftforge.registries.ForgeRegistries;
 public final class InfuserGameTests {
     private static final BlockPos INFUSER = new BlockPos(2, 1, 2);
 
+    @GameTest(template = "empty", timeoutTicks = 1_950)
+    public static void infusesSupercoldIceAndMakesWorkingCollectors(GameTestHelper helper) {
+        for (String recipe : new String[]{"supercold_ice", "water_source", "cobblestone_generator"}) {
+            helper.assertTrue(helper.getLevel().getRecipeManager().byKey(NuclearCraft.id("infuser/" + recipe)).isPresent(),
+                    "The default Infuser catalog includes " + recipe);
+        }
+        BlockPos cold = INFUSER.east(2);
+        BlockPos water = INFUSER.south(2);
+        BlockPos cobble = cold.south(2);
+        helper.setBlock(INFUSER, Machine.INFUSER.block());
+        helper.setBlock(cold, Machine.INFUSER.block());
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(INFUSER);
+        var freezer = (ItemProcessorBlockEntity) helper.getBlockEntity(cold);
+        var fluid = fluid(machine, Direction.WEST);
+        var helium = fluid(freezer, Direction.UP);
+        var items = machine.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var power = machine.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+        var ice = freezer.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.UP).orElseThrow(AssertionError::new);
+        var coolingPower = freezer.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+        var coolant = ForgeRegistries.FLUIDS.getValue(NuclearCraft.id("liquid_helium"));
+        helper.assertTrue(ice.insertItem(0, new ItemStack(Blocks.ICE), false).isEmpty()
+                        && helium.fill(new FluidStack(coolant, 100), FluidAction.EXECUTE) == 100
+                        && coolingPower.receiveEnergy(1_500, false) == 1_500,
+                "Provide enough liquid helium and charge for both ice types");
+        helper.assertTrue(items.insertItem(0, stack("empty_frame", 2), false).isEmpty()
+                        && fluid.fill(new FluidStack(Fluids.WATER, 4_000), FluidAction.EXECUTE) == 4_000
+                        && power.receiveEnergy(12_000, false) == 12_000,
+                "Supply two frames, four buckets of water, and two batches of FE");
+
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(ice.getStackInSlot(1), stack("supercold_ice", 1)),
+                        "Ordinary ice makes the first Supercold Ice block"))
+                .thenExecute(() -> helper.assertTrue(ice.insertItem(0, new ItemStack(Blocks.PACKED_ICE), false).isEmpty(),
+                        "The same recipe accepts packed ice"))
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(ice.getStackInSlot(1), stack("supercold_ice", 2))
+                                && coolingPower.getEnergyStored() == 0 && helium.getFluidInTank(0).isEmpty(),
+                        "Each ice batch consumes 50 mB of helium and 750 FE"))
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(items.getStackInSlot(1), stack("water_source", 2))
+                                && power.getEnergyStored() == 0 && fluid.getFluidInTank(0).isEmpty(),
+                        "Two water sources each consume one frame, 2,000 mB of water, and 6,000 FE"))
+                .thenExecute(() -> {
+                    var sources = items.extractItem(1, 2, false);
+                    helper.setBlock(water, Collector.WATER.block());
+                    helper.assertTrue(items.insertItem(0, sources.copyWithCount(1), false).isEmpty()
+                                    && fluid.fill(new FluidStack(Fluids.LAVA, 1_000), FluidAction.EXECUTE) == 1_000
+                                    && power.receiveEnergy(6_000, false) == 6_000,
+                            "Reuse one manufactured water source in the cobblestone recipe");
+                })
+                .thenWaitUntil(() -> helper.assertTrue(ItemStack.matches(items.getStackInSlot(1), stack("cobblestone_generator", 1))
+                                && items.getStackInSlot(0).isEmpty() && fluid.getFluidInTank(0).isEmpty()
+                                && power.getEnergyStored() == 0,
+                        "The generator consumes one water source, 1,000 mB of lava, and 6,000 FE"))
+                .thenExecute(() -> helper.setBlock(cobble, Collector.COBBLESTONE.block()))
+                .thenWaitUntil(() -> {
+                    var source = helper.getBlockEntity(water).getCapability(ForgeCapabilities.FLUID_HANDLER)
+                            .orElseThrow(AssertionError::new);
+                    var generator = helper.getBlockEntity(cobble).getCapability(ForgeCapabilities.ITEM_HANDLER)
+                            .orElseThrow(AssertionError::new);
+                    helper.assertTrue(source.drain(1, FluidAction.SIMULATE).getFluid() == Fluids.WATER
+                                    && generator.getStackInSlot(0).is(Items.COBBLESTONE),
+                            "The infused blocks generate water and cobblestone when placed");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "empty", timeoutTicks = 740)
     public static void infusesPelletWithTaggedOxygenAfterReload(GameTestHelper helper) {
         helper.setBlock(INFUSER, Machine.INFUSER.block());
@@ -38,7 +105,8 @@ public final class InfuserGameTests {
                 "A face change revokes an already acquired input handler");
         var inlet = fluid(processor, Direction.UP);
         var outlet = fluid(processor, Direction.NORTH);
-        helper.assertTrue(inlet.fill(new FluidStack(Fluids.LAVA, 1000), FluidAction.EXECUTE) == 0,
+        helper.assertTrue(inlet.fill(new FluidStack(NCFluids.HIGH_PRESSURE_STEAM.source().get(), 1000),
+                        FluidAction.EXECUTE) == 0,
                 "An unrelated fluid is rejected");
         helper.assertTrue(inlet.fill(oxygen, FluidAction.SIMULATE) == 999 && inlet.getFluidInTank(0).isEmpty(),
                 "Simulation reports the transfer without filling the tank");

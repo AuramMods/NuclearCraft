@@ -1,0 +1,26 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": [
+                {
+                    "item": "minecraft:ice"
+                },
+                {
+                    "item": "minecraft:packed_ice"
+                }
+            ],
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "fluid": "nuclearcraft:liquid_helium",
+        "amount": 50
+    },
+    "result": {
+        "item": "nuclearcraft:supercold_ice",
+        "count": 1
+    },
+    "ticks": 150,
+    "energy_per_tick": 5
+}

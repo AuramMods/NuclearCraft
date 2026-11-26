@@ -1,0 +1,31 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:water_source"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "minecraft:lava",
+        "amount": 1000
+    },
+    "result": {
+        "item": "nuclearcraft:cobblestone_generator",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "nuclearcraft:collector_enabled",
+            "family": "water"
+        },
+        {
+            "type": "nuclearcraft:collector_enabled",
+            "family": "cobblestone"
+        }
+    ]
+}

@@ -1,0 +1,27 @@
+{
+    "type": "nuclearcraft:infuser",
+    "ingredients": [
+        {
+            "ingredient": {
+                "item": "nuclearcraft:empty_frame"
+            },
+            "count": 1
+        }
+    ],
+    "fluid_input": {
+        "tag": "minecraft:water",
+        "amount": 2000
+    },
+    "result": {
+        "item": "nuclearcraft:water_source",
+        "count": 1
+    },
+    "ticks": 600,
+    "energy_per_tick": 10,
+    "conditions": [
+        {
+            "type": "nuclearcraft:collector_enabled",
+            "family": "water"
+        }
+    ]
+}
