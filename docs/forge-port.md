@@ -2,6 +2,26 @@
 
 The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds with Java 17, Mojang mappings, and Forge 47.4.10. The verification notes record the Forge version for each tested Auram snapshot. The Forge code currently comes from the legacy NuclearCraft source and uses no Neohaul implementation code.
 
+## Release verification
+
+Review these requirements against the same packaged JAR. Record the commit and JAR SHA-256 with the final results.
+
+| Requirement | Evidence |
+| --- | --- |
+| Registry and recipe parity | Regenerate the legacy registry mapping from the original definitions and the live Forge registries. Compare shipped recipe data and default settings with the legacy values, and check optional recipes with the providers available in Auram. |
+| Playable legacy progression | Verify materials and processors, power generation and distribution, all three fission variants, thermal and turbine processing, decay pools and chemical multiblocks, quantum computing, radiation, Wasteland and vaults, equipment, commands, and the guide. Exercise menus, rendering, and configuration through their normal entry points. |
+| Save, config, and script migration | Check the documented conversions against representative legacy data. Reload corresponding Forge saves to verify stock, progress, and configuration, and exercise the documented recipe and scripting interfaces. |
+| Auram automation | Use the versions installed in Auram. Verify Forge item, fluid, and FE transfer, one complete externally automated reactor-to-turbine processing chain, sided access, backpressure, chunk eviction, and restart. Record the exercised mod versions and interactions. |
+| Release artifact | Use the locally built, reobfuscated JAR on a clean Java 17 Forge 47 dedicated server and in an isolated Auram copy. Confirm client login, resource loading, gameplay, persistence, and recipe discovery. Set master volume to zero and verify the background client leaves desktop focus alone. |
+
+On the packaged build from `f9f6f8b2` with SHA-256 `1b5bbaebd97ac2fa4d21a957384ae6f2e8ba15f55c2f9a43f08ba503e6df15fe`, the clean Forge registry audit reproduced the checked-in migration table byte for byte. It verified 812 block targets, 1,428 item targets, 457 fluid targets, 237 fixed block entity targets, and both ghoul types.
+
+Comparing the packaged fuel recipes with the legacy configuration and recipe definitions verified all 81 solid, 27 pebble, and 27 molten-salt fuels. The audit matched the input and depleted output, duration, heat, efficiency, criticality, neutron flux, self-priming, decay factor, and radiation. All 135 loaded in the clean dedicated server's recipe manager. It registered 2,698 of the 3,038 packaged recipe definitions, with the remaining definitions skipped by recipe conditions.
+
+The clean multiplayer test used that JAR on both sides of the connection. The client opened all three reactor screens, read the live heating and coolant values, observed each variant running, and cleared the selected stock through its menu. All three clears persisted after a dedicated restart. The client used master volume zero and OpenAL No Output, and the observer recorded zero focus activations, foreground samples, or visible-window samples.
+
+With Ender IO 8.2.22-beta and Mekanism 10.4.16.80 on packaged Forge 47.4.10, each network supplied one LECf-251 oxide and 1,000 mB of water to a solid reactor. Each transferred 4,000 mB of high-pressure steam to a turbine, exported 16,000 mB of exhaust and one depleted fuel item, and used the turbine's FE to melt one ice into 1,000 mB of water. Both completed chains kept their measured products after confirmed chunk eviction and dedicated restart.
+
 ## Gameplay coverage
 
 - The Melter has an in-world block, menu, datapack recipes for ice, packed ice, and sulfur dust, and a Forge fluid registration for molten sulfur.
@@ -85,7 +105,6 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- The remaining audit covers the reactor catalogs, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
 
 ### Creative tabs and item descriptions
 
@@ -539,6 +558,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | --- | --- | --- |
 | Ender IO | 8.2.22-beta | Fluid, item, and energy conduits on sided processors and multiblock ports |
 | Mekanism | 10.4.16.80 | Mechanical Pipes, Logistical Transporters, Universal Cables, and Pressurized Tubes |
+| Mekanism Generators | 10.4.16.80 | Gas-Burning Generator and Forge Energy transfer |
 | Evolved Mekanism | 1.2.1-fix3 | Dense Energy Cube, Universal Cable, Fluid Tank, and Bin on processor routes |
 | Custom Machinery | 0.10.7 | Forge Energy, item, and fluid transfer between a datapack-defined machine and NuclearCraft processors |
 | Custom Machinery Mekanism | 1.3.6 | Sided oxygen transfer and saved gas, infusion, pigment, and slurry buffers |
@@ -570,6 +590,9 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
 | Tesseract | 1.0.38 | Item, fluid, and Forge Energy channels between a Distributor, an Infuser, and remote storage |
 | Compact Machines | 6.0.3 | Item, fluid, and Forge Energy tunnels for processors and batteries, including saved tunnel buffers |
+| Extra Utilities Rebirth | 1.7.5 | Generator power and Forge Energy storage |
+| Open Blocks | 1.0.0 | Tank and Vacuum Hopper transfers |
+| Wormhole | 1.1.16 | Coal Generator and Energy Cell transfers |
 | Ranged Pumps | 1.1.0 | Voltaic Pile power and water transfer to a sided Infuser |
 | Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
 | Large Ore Deposits and ForgeEndertech | 8.1.8.0 build 1850 and 11.1.10.0 build 2048 | Deposit generation during reload and saved deposits in new Overworld and Wasteland terrain |
@@ -1814,6 +1837,8 @@ The outward Forge item and fluid capabilities access the wall port's local buffe
 All 322 local GameTests passed. On packaged Forge 47.4.10, Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied seven matching items and removed eleven stored products through each detached chamber, cell, and irradiator port pair. Both networks left the other valid fuel or feed in its source. Each also moved 673 mB of oxygen into a detached cooler inlet and recovered 863 mB of stored hot oxygen from a detached outlet. The item and fluid balances survived confirmed chunk eviction and dedicated restart. Vanilla hoppers repeated all three item routes on clean Forge.
 
 The isolated client repeated all eight Ender IO and Mekanism routes with the 540 installed Auram mod JARs. It loaded JEI, saved the transferred quantities, and exited with master volume zero and OpenAL No Output. The native observer recorded zero visible-window samples, foreground samples, or focus activations.
+
+On the same JAR, a single Mekanism 10.4.16.80 Pressurized Tube held 613 units of oxygen while its detached cooler port was in output mode. Switching to input caused the tube network to acquire the new handler and transfer all 613 units without replacing any blocks. A second fresh world also passed when the mode switched before the tube finished pulling gas.
 
 In existing Forge saves, the unfiltered fuel circuit stays in the controller's `inventory` field and gas stays in `gas_cooling`. The reactor creates the new cooler block entity for already placed cooler blocks. To convert a legacy world, map chamber and chamber-port input filters to `pebble_filter` using namespaced item IDs. Store matching master-port items under the controller's `pebble_fuel` list, with `pebble_filter` and `pebble_inventory` per circuit. Keep each unlinked part's item buffers in its own `pebble_inventory`. On a chamber with a reserved pellet, copy the item into `fuel` and the elapsed processing ticks into `progress`. Set `reserved_filter` for a filtered shared circuit, or `reserved_local` for a local reservation. Unfiltered gas remains under `gas_cooling.<material>`. Store each filtered legacy master-port circuit in the controller's `gas_cooling.filtered` list with a material `gas`, a namespaced fluid `filter`, and the `input` and `output` fluid stacks. A cooler's local buffers go in `gas.input` and `gas.output`. A cooler port stores its detached tanks under `pebble_gas`. Set `gas_filter` on each migrated cooler and port that should select an exact circuit.
 
