@@ -14,9 +14,9 @@ Review these requirements against the same packaged JAR. Record the commit and J
 | Auram automation | Use the versions installed in Auram. Verify Forge item, fluid, and FE transfer, one complete externally automated reactor-to-turbine processing chain, sided access, backpressure, chunk eviction, and restart. Record the exercised mod versions and interactions. |
 | Release artifact | Use the locally built, reobfuscated JAR on a clean Java 17 Forge 47 dedicated server and in an isolated Auram copy. Confirm client login, resource loading, gameplay, persistence, and recipe discovery. Set master volume to zero and verify the background client leaves desktop focus alone. |
 
-### Release 2o.9.7-forge
+### Forge port validation build
 
-The local Java 17 build produced `build/libs/nuclearcraft-1.20.1-2o.9.7-forge.jar` with SHA-256 `6ea198876426acbdbc981ed1936b4f8e8f6e245562cb1e6730808835e33293a0`. The release packaging changes only the mod version in the JAR from the verified gameplay commit `db73616a`. The gameplay classes, resources, and MIT license match that build byte for byte.
+The local Java 17 validation build before the loading-screen tips produced `nuclearcraft-1.20.1-2o.9.7-forge.jar` with SHA-256 `6ea198876426acbdbc981ed1936b4f8e8f6e245562cb1e6730808835e33293a0`. Its packaging changed only the mod version in the JAR from the verified gameplay commit `db73616a`. The gameplay classes, resources, and MIT license matched that build byte for byte.
 
 - All 336 Forge GameTests passed. On clean Forge 47.4.10, the packaged JAR reproduced the checked-in legacy registry map and loaded 2,718 of its 3,063 recipe definitions. Explicit conditions accounted for all skipped recipes. The 135 stock fuels loaded with their original values. The configuration audit compared 241 legacy settings with 28 generated Forge configs.
 - In clean multiplayer, a muted client opened and ran the solid-fuel, pebble-bed, and molten-salt reactor screens and cleared their stock. The clearing survived dedicated-server restart. The observer recorded zero focus activations, foreground samples, or visible windows.
