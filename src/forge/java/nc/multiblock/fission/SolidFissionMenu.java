@@ -20,6 +20,7 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
     private static final int DATA_COUNT = Reading.values().length * WORDS;
     static final int ENABLED = 1;
     static final int ACTIVE = 2;
+    static final int PREDICTED = 4;
     public static final int TOGGLE = 0;
     public static final int CLEAR = 1;
 
@@ -118,6 +119,10 @@ public final class SolidFissionMenu extends AbstractContainerMenu {
 
     public boolean active() {
         return (read(Reading.FLAGS) & ACTIVE) != 0;
+    }
+
+    public boolean predicted() {
+        return (read(Reading.FLAGS) & PREDICTED) != 0;
     }
 
     public int lengthX() { return (int) read(Reading.LENGTH_X); }

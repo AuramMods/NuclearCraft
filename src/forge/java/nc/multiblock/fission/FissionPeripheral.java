@@ -168,7 +168,7 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
                     vessel.computerProgress());
         }
         if (entity instanceof FissionIrradiator irradiator) {
-            return irradiator.computerStats(level);
+            return irradiator.computerStats(level, controller.computerOn(), core.irradiatorFlux(pos));
         }
         var state = level.getBlockState(pos);
         if (state.getBlock() instanceof SolidHeatSinkBlock sink) {
@@ -179,11 +179,11 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
         if (entity instanceof SaltHeater heater) {
             var coolant = heater.coolant();
             String name = coolant instanceof NCSaltCoolants stock ? stock.material() : coolant.id();
-            return coolerStats(core.coolerStats(pos), name, heater.tanks(), null, heater.progress().amount());
+            return coolerStats(core.coolerStats(pos), name, heater.tanks(), null, heater.progress().amount(), controller.computerOn());
         }
         if (entity instanceof PebbleCooler cooler) {
             return coolerStats(core.coolerStats(pos), cooler.gas().id(), cooler.tanks(), cooler.filter(),
-                    cooler.progress().amount());
+                    cooler.progress().amount(), controller.computerOn());
         }
         if (state.getBlock() instanceof FissionShieldBlock) {
             var shield = core.shieldStats(pos);
@@ -218,13 +218,13 @@ public final class FissionPeripheral extends MachinePeripheral<SolidFissionContr
 
     private static Map<String, Object> coolerStats(@Nullable SolidFissionCore.CoolerStats stats,
                                                    String type, CoolantTanks tanks, @Nullable ResourceLocation filter,
-                                                   double progress) {
-        boolean processing = stats != null && stats.processing();
-        var recipe = processing ? null : tanks.matchingRecipe(filter);
-        int cooling = processing ? stats.cooling() : recipe == null ? 0 : recipe.cooling();
+                                                   double progress, boolean running) {
+        boolean heated = stats != null && stats.processing();
+        var recipe = heated ? null : tanks.matchingRecipe(filter);
+        int cooling = heated ? stats.cooling() : recipe == null ? 0 : recipe.cooling();
         return Map.of("coolant", ComputerValues.fluid(tanks.cold.getFluid()),
                 "hot_coolant", ComputerValues.fluid(tanks.hot.getFluid()), "type", type, "cooling", cooling,
-                "speed_multiplier", processing ? stats.batchesPerTick() : 0D, "is_processing", processing,
+                "speed_multiplier", heated ? stats.batchesPerTick() : 0D, "is_processing", running && heated,
                 "current_time", progress, "base_process_time", 1D);
     }
 

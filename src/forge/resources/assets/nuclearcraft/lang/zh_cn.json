@@ -477,6 +477,7 @@
     "gui.nuclearcraft.fission.enable": "启用",
     "gui.nuclearcraft.fission.running": "运行中",
     "gui.nuclearcraft.fission.idle": "待机",
+    "gui.nuclearcraft.fission.predicted": "预测",
     "gui.nuclearcraft.fission.heat": "热量",
     "gui.nuclearcraft.fission.water": "水",
     "gui.nuclearcraft.fission.steam": "蒸汽",

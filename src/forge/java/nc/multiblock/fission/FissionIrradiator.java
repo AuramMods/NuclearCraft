@@ -61,10 +61,14 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
     }
 
     @Nullable FissionIrradiatorRecipe prepare(ServerLevel level) {
+        return prepare(level, false);
+    }
+
+    @Nullable FissionIrradiatorRecipe prepare(ServerLevel level, boolean preview) {
         var inventory = inventory();
         ItemStack input = inventory.bulkStack(0);
-        var recipe = input.isEmpty() || !inventory.matchesFilter(input) ? null : findRecipe(level, input);
-        if (controller() != null && workingRecipe != null && (input.isEmpty()
+        var recipe = input.isEmpty() || !inventory.matchesFilter(input) ? null : findRecipe(level, input, preview);
+        if (!preview && controller() != null && workingRecipe != null && (input.isEmpty()
                 || !ItemStack.isSameItemSameTags(input, workingInput) || recipe != null && !recipe.id().equals(workingRecipe))) {
             progress = 0;
             workingRecipe = null;
@@ -74,9 +78,10 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         return recipe != null && insertProduct(inventory, recipe.result(), true).isEmpty() ? recipe : null;
     }
 
-    private @Nullable FissionIrradiatorRecipe findRecipe(ServerLevel level, ItemStack input) {
+    private @Nullable FissionIrradiatorRecipe findRecipe(ServerLevel level, ItemStack input, boolean preview) {
         recipeInput.setItem(0, input);
-        return recipes.getRecipeFor(recipeInput, level).orElse(null);
+        return (preview ? level.getRecipeManager().getRecipeFor(NCFission.IRRADIATION.get(), recipeInput, level)
+                : recipes.getRecipeFor(recipeInput, level)).orElse(null);
     }
 
     void irradiate(ServerLevel level, FissionIrradiatorRecipe recipe, long received) {
@@ -139,17 +144,17 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         setChanged();
     }
 
-    Map<String, Object> computerStats(ServerLevel level) {
-        var recipe = computerRecipe(level);
+    Map<String, Object> computerStats(ServerLevel level, boolean running, long predictedFlux) {
+        var recipe = running ? computerRecipe(level) : prepare(level, true);
         var info = new LinkedHashMap<String, Object>();
-        long received = flux();
+        long received = running ? flux() : predictedFlux;
         info.put("input", ComputerValues.item(inventory().bulkStack(0)));
         info.put("output", ComputerValues.item(inventory().bulkStack(1)));
         info.put("current_time", progress);
         info.put("base_process_time", recipe == null ? 1L : recipe.fluxRequired());
         info.put("base_process_heat_per_flux", recipe == null ? 0D : recipe.heatPerFlux());
         info.put("base_process_efficiency", recipe == null ? 0D : recipe.efficiency());
-        info.put("is_processing", received > 0);
+        info.put("is_processing", running && received > 0);
         info.put("flux", received);
         info.put("effective_heating", recipe == null ? 0D : received * recipe.heatPerFlux() * recipe.efficiency());
         return info;
@@ -161,7 +166,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
     }
 
     private @Nullable FissionIrradiatorRecipe computerRecipe(ServerLevel level) {
-        return workingRecipe == null ? findRecipe(level, inventory().bulkStack(0))
+        return workingRecipe == null ? findRecipe(level, inventory().bulkStack(0), true)
                 : level.getRecipeManager().byKey(workingRecipe)
                         .filter(FissionIrradiatorRecipe.class::isInstance).map(FissionIrradiatorRecipe.class::cast).orElse(null);
     }

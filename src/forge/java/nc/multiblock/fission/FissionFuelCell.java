@@ -17,7 +17,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 public final class FissionFuelCell extends BlockEntity implements ChunkRadiationSource {
+    record FuelPreview(SolidFissionRecipe recipe, ItemStack fuel) {}
+
     private final RecipeType<SolidFissionRecipe> fuelType;
     private final RecipeManager.CachedCheck<Container, SolidFissionRecipe> recipes;
     private final SimpleContainer recipeInput = new SimpleContainer(1);
@@ -74,14 +78,43 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         return current.hasItemFuelCircuit(filter()) ? current.fuelItems(filter()) : localItems;
     }
 
-    SolidFissionRecipe prepare(Level level) {
-        boolean needsFuel = reservedFuel.isEmpty();
+    private FissionFuelItems feedItems() {
         FissionFuelItems feed = items(false);
         // Existing Forge worlds may have unfiltered fuel buffered in a controller without input ports.
         var current = controller();
         if (feed == localItems && filter() == null && feed.getStackInSlot(0).isEmpty() && current != null) {
-            feed = current.fuelItems(null);
+            return current.fuelItems(null);
         }
+        return feed;
+    }
+
+    @Nullable FuelPreview preview(Level level, Map<FissionFuelItems, Integer> remainingFuel) {
+        if (!reservedFuel.isEmpty()) {
+            SolidFissionRecipe recipe = findReservation(level, true);
+            return recipe != null && progress < recipe.runtimeTicks()
+                    && items(true).insertBulk(1, recipe.depleted(), true).isEmpty()
+                    ? new FuelPreview(recipe, reservedFuel) : null;
+        }
+        FissionFuelItems feed = feedItems();
+        ItemStack stock = feed.bulkStack(0);
+        int remaining = remainingFuel.getOrDefault(feed, stock.getCount());
+        if (remaining <= 0) {
+            return null;
+        }
+        ItemStack available = stock.copyWithCount(remaining);
+        SolidFissionRecipe recipe = findRecipe(level, available, true);
+        if (recipe == null) {
+            return null;
+        }
+        int dose = recipe.fuel().matchedCount(available);
+        remainingFuel.put(feed, remaining - dose);
+        return progress < recipe.runtimeTicks() && feed.insertBulk(1, recipe.depleted(), true).isEmpty()
+                ? new FuelPreview(recipe, available.copyWithCount(dose)) : null;
+    }
+
+    SolidFissionRecipe prepare(Level level) {
+        boolean needsFuel = reservedFuel.isEmpty();
+        FissionFuelItems feed = feedItems();
         ItemStack input = needsFuel ? feed.bulkStack(0) : reservedFuel;
         if (input.isEmpty()) {
             if (sourceEfficiency >= 0) {
@@ -90,7 +123,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
             }
             return null;
         }
-        SolidFissionRecipe recipe = needsFuel ? findRecipe(level, input) : findReservation(level);
+        SolidFissionRecipe recipe = needsFuel ? findRecipe(level, input, false) : findReservation(level, false);
         if (recipe == null) {
             return null;
         }
@@ -119,22 +152,23 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         if (level == null || reservedFuel.isEmpty()) {
             return 0D;
         }
-        var recipe = findReservation(level);
+        var recipe = findReservation(level, true);
         return recipe == null ? 0D : Math.min(1D, progress / recipe.runtimeTicks());
     }
 
-    private @Nullable SolidFissionRecipe findRecipe(Level level, ItemStack input) {
+    private @Nullable SolidFissionRecipe findRecipe(Level level, ItemStack input, boolean preview) {
         recipeInput.setItem(0, input);
-        return recipes.getRecipeFor(recipeInput, level).orElse(null);
+        return (preview ? level.getRecipeManager().getRecipeFor(fuelType, recipeInput, level)
+                : recipes.getRecipeFor(recipeInput, level)).orElse(null);
     }
 
-    private @Nullable SolidFissionRecipe findReservation(Level level) {
+    private @Nullable SolidFissionRecipe findReservation(Level level, boolean preview) {
         var manager = level.getRecipeManager();
         if (reservedRecipe != null) {
             var recipe = manager.byKey(reservedRecipe).orElse(null);
             return recipe instanceof SolidFissionRecipe fuel && fuel.getType() == fuelType && matchesReservation(fuel) ? fuel : null;
         }
-        var recipe = findRecipe(level, reservedFuel);
+        var recipe = findRecipe(level, reservedFuel, preview);
         if (recipe != null && matchesReservation(recipe)) {
             return recipe;
         }
@@ -169,7 +203,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
     }
 
     double sourceEfficiency() {
-        return sourceEfficiency < 0 ? 1 : sourceEfficiency;
+        return sourceEfficiency;
     }
 
     void burn(SolidFissionRecipe recipe, double speed) {

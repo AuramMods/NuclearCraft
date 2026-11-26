@@ -85,7 +85,7 @@ The reference is NuclearCraft: Overhauled 2o.9.7 at `ef28c65`. The port builds w
 - Carried radioactive items now accumulate a server-authoritative player dose. The item catalog uses the original isotope and fuel rates and recognizes shared Forge material tags. Radiation sickness and death use the legacy dose thresholds. RadAway and Slow RadAway remove dose over time, Rad-X temporarily increases resistance, and the handheld Geiger counter displays dose and exposure rate when used.
 - Loaded chunks now accumulate, spread, and retain radiation from RTGs, Decay Generators, active solid-fuel, pebble-bed, and molten-salt reactions, meltdown leaks, and radioactive items. The fixed Geiger counter shows the chunk rate and supplies a redstone comparator signal.
 - The Radiation Scrubber keeps its three legacy media and reduces chunk radiation while a powered batch runs. It reserves supplies before processing, reports removal on sneak-use, and exposes independently configurable item and fluid faces.
-- The remaining audit covers the reactor catalogs, legacy predictions for idle reactors, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
+- The remaining audit covers the reactor catalogs, remaining legacy config and port filters, optional recipes whose legacy providers lack corresponding registered fluids, and the complete legacy and Auram scope.
 
 ### Creative tabs and item descriptions
 
@@ -2035,7 +2035,13 @@ The isolated 540-mod Auram client repeated all three fuel deliveries and meltdow
 
 ### Fission controller diagnostics
 
-All three fission controller screens show the reactor's interior dimensions, live cluster count, casing temperature, efficiency, useful part count, and net heating. The solid-fuel controller displays measured coolant output in mB/t. Pebble-bed and molten-salt controllers show the cooling-rate-weighted heating speed of their active coolers and heaters.
+All three fission controller screens show the reactor's interior dimensions, cluster count, casing temperature, efficiency, useful part count, and net heating. The solid-fuel controller displays coolant output in mB/t. Pebble-bed and molten-salt controllers show the cooling-rate-weighted heating speed of their coolers and heaters.
+
+When an idle reactor has usable fuel, its controller forecasts heating, cooling, efficiency, and output from its current layout. The screen labels these readings **Predicted**. The forecast considers unpowered wall neutron sources, available fuel doses, and coolant recipes. Contact heat, temperatures, and tank amounts still reflect actual state. Fuel, coolant, irradiator inventory, and progress are untouched by the calculation. Computer-port queries use the same forecast for reactor and component statistics while the activity and processing flags report actual operation.
+
+All 301 local GameTests passed. On packaged Forge 47.4.10 multiplayer, each reactor showed projected heating and output while idle with no stored heat or hot coolant. The same menus switched to live readings and reported hot coolant after power was applied.
+
+The isolated Auram instance repeated these checks with all 540 installed mod JARs. Coolant amounts stayed fixed while the three idle forecasts were displayed. The solid-fuel controller forecast approximately 12.29 mB/t of steam, showed actual output after power was applied, and returned to the forecast after shutdown.
 
 Hover over the gauges for exact heat and fluid amounts. Hold Shift or the physical Ctrl key for Celsius, the heat multiplier, sparsity efficiency, and Clear. Clear uses the same material drain as the computer port to empty reactor fuel, coolant, and products while preserving stored heat.
 

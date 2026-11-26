@@ -88,7 +88,7 @@ final class SaltCooling {
         return recipes;
     }
 
-    double heat(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double efficiency) {
+    double heat(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double efficiency, boolean preview) {
         if (efficiency <= 0 || !(level.getBlockEntity(pos) instanceof SaltHeater heater)) {
             return 0D;
         }
@@ -98,9 +98,11 @@ final class SaltCooling {
         }
         int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
         double batchesPerTick = efficiency * recipe.cooling() / (HeatExchangerConfig.nakHeatPerMb() * inputAmount);
-        double progress = heater.progress().amount() + batchesPerTick;
-        heater.progress().set(progress - Math.floor(progress));
-        tanks.process(null, recipe, (int) progress, level.random);
+        if (!preview) {
+            double progress = heater.progress().amount() + batchesPerTick;
+            heater.progress().set(progress - Math.floor(progress));
+            tanks.process(null, recipe, (int) progress, level.random);
+        }
         return batchesPerTick;
     }
 

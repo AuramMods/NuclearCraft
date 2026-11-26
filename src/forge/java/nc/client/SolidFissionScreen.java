@@ -109,7 +109,8 @@ final class SolidFissionScreen extends AbstractContainerScreen<SolidFissionMenu>
         boolean alternate = modifierDown();
         int color = menu.active() ? 0x404040 : 0x8C4200;
         centered(graphics, 7, color, text("title", menu.lengthX(), menu.lengthY(), menu.lengthZ(), title));
-        centered(graphics, 20, color, text("clusters_status", menu.clusterCount(), text(menu.active() ? "running" : "idle")));
+        String status = menu.active() ? "running" : menu.predicted() ? "predicted" : "idle";
+        centered(graphics, 20, color, text("clusters_status", menu.clusterCount(), text(status)));
         double temperature = menu.temperature();
         centered(graphics, 33, color, alternate
                 ? text("temperature_celsius", number(Math.round(temperature - 273.15D)))

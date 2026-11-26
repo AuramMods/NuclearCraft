@@ -16,6 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -155,20 +157,28 @@ final class SolidFissionCore {
         final R recipe;
         final double criticality;
         final boolean hasDecayHeat;
+        private double sourceEfficiency;
         private Bunch bunch;
         private int lines;
         private double moderatorEfficiency;
 
-        private Reaction(R recipe, FissionFuelDecay decay, boolean decayEnabled) {
+        private Reaction(R recipe, FissionFuelDecay decay, boolean decayEnabled, double sourceEfficiency) {
             this.recipe = recipe;
             criticality = decayEnabled ? decay.criticality(recipe) : recipe.criticality();
             hasDecayHeat = decayEnabled && (int) decay.heating() > 0;
+            this.sourceEfficiency = sourceEfficiency;
         }
 
-        abstract void primeWith(double efficiency);
-        abstract double sourceEfficiency();
+        abstract void rememberSource(double efficiency);
         abstract boolean sameFuel(Reaction<?> other);
         abstract void burn(double speed);
+
+        private void primeWith(double efficiency, boolean preview) {
+            sourceEfficiency = Math.max(sourceEfficiency, efficiency);
+            if (!preview) {
+                rememberSource(efficiency);
+            }
+        }
 
         int baseHeat() {
             return recipe.runtimeHeat();
@@ -195,48 +205,53 @@ final class SolidFissionCore {
         private double effectiveHeat() {
             double fluxEfficiency = (1D + Math.exp(-2D * criticality))
                     / (1D + Math.exp(2D * ((double) bunch.flux / bunch.surface - 2D * criticality)));
-            return (double) bunch.packing * baseHeat() * baseEfficiency() * sourceEfficiency() * moderatorEfficiency * fluxEfficiency;
+            double source = sourceEfficiency < 0D ? 1D : sourceEfficiency;
+            return (double) bunch.packing * baseHeat() * baseEfficiency() * source * moderatorEfficiency * fluxEfficiency;
         }
     }
 
     private static final class ItemReaction extends Reaction<SolidFissionRecipe> {
         private final FissionFuelCell cell;
+        private final ItemStack fuel;
 
-        private ItemReaction(FissionFuelCell cell, SolidFissionRecipe recipe,
-                             boolean decayEnabled) {
-            super(recipe, cell.decay(), decayEnabled);
+        private ItemReaction(FissionFuelCell cell, SolidFissionRecipe recipe, ItemStack fuel, boolean decayEnabled) {
+            super(recipe, cell.decay(), decayEnabled, cell.sourceEfficiency());
             this.cell = cell;
+            this.fuel = fuel;
         }
 
-        @Override void primeWith(double efficiency) { cell.primeWith(efficiency); }
-        @Override double sourceEfficiency() { return cell.sourceEfficiency(); }
+        @Override void rememberSource(double efficiency) { cell.primeWith(efficiency); }
         @Override void burn(double speed) { cell.burn(recipe, speed); }
 
         @Override
         boolean sameFuel(Reaction<?> other) {
             return other instanceof ItemReaction item
                     && Objects.equals(cell.filter(), item.cell.filter())
-                    && ItemStack.isSameItemSameTags(cell.reservedFuel(), item.cell.reservedFuel());
+                    && ItemStack.isSameItemSameTags(fuel, item.fuel);
         }
     }
 
     private static final class SaltReaction extends Reaction<SaltFissionRecipe> {
         private final SaltVessel vessel;
         private final SaltFuelBank bank;
+        private final FluidStack fuel;
+        private final @Nullable ResourceLocation circuit;
 
-        private SaltReaction(SaltVessel vessel, SaltFissionRecipe recipe, SaltFuelBank bank, boolean decayEnabled) {
-            super(recipe, vessel.decay(), decayEnabled);
+        private SaltReaction(SaltVessel vessel, SaltFissionRecipe recipe, SaltFuelBank bank, boolean decayEnabled,
+                             FluidStack fuel, @Nullable ResourceLocation circuit) {
+            super(recipe, vessel.decay(), decayEnabled, vessel.sourceEfficiency());
             this.vessel = vessel;
             this.bank = bank;
+            this.fuel = fuel;
+            this.circuit = circuit;
         }
 
-        @Override void primeWith(double efficiency) { vessel.primeWith(efficiency); }
-        @Override double sourceEfficiency() { return vessel.sourceEfficiency(); }
+        @Override void rememberSource(double efficiency) { vessel.primeWith(efficiency); }
         @Override void burn(double speed) { vessel.burn(recipe, bank, speed); }
 
         @Override
         boolean sameFuel(Reaction<?> other) {
-            return other instanceof SaltReaction salt && vessel.sameFuel(salt.vessel);
+            return other instanceof SaltReaction salt && Objects.equals(circuit, salt.circuit) && fuel.isFluidEqual(salt.fuel);
         }
     }
 
@@ -254,6 +269,7 @@ final class SolidFissionCore {
     private Map<BlockPos, FuelStats> fuelStats = Map.of();
     private Map<BlockPos, ShieldStats> shieldStats = Map.of();
     private Map<BlockPos, CoolerStats> coolerStats = Map.of();
+    private Map<BlockPos, Long> irradiatorFlux = Map.of();
 
     SolidFissionCore(SolidFissionLayout layout) {
         this.layout = layout;
@@ -302,11 +318,28 @@ final class SolidFissionCore {
     Heat tick(ServerLevel level, Map<BlockPos, Long> storedHeat,
               @Nullable PebbleCooling gasCooling, @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling,
               boolean requested, @Nullable FissionDecaySettings decaySettings, boolean telemetry) {
+        return calculate(level, storedHeat, gasCooling, saltFuel, saltCooling, requested, decaySettings, telemetry, false);
+    }
+
+    Heat predict(ServerLevel level, Map<BlockPos, Long> storedHeat, @Nullable PebbleCooling gasCooling,
+                 @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling, @Nullable FissionDecaySettings decaySettings) {
+        return calculate(level, storedHeat, gasCooling, saltFuel, saltCooling, true, decaySettings, true, true);
+    }
+
+    long irradiatorFlux(BlockPos pos) {
+        return irradiatorFlux.getOrDefault(pos, 0L);
+    }
+
+    private Heat calculate(ServerLevel level, Map<BlockPos, Long> storedHeat,
+                           @Nullable PebbleCooling gasCooling, @Nullable SaltFuelBank saltFuel, @Nullable SaltCooling saltCooling,
+                           boolean requested, @Nullable FissionDecaySettings decaySettings, boolean telemetry, boolean preview) {
         var materials = FissionMaterials.get(level);
         boolean fluidCooling = layout.variant() != FissionVariant.SOLID;
         boolean decayEnabled = decaySettings != null;
         Map<BlockPos, FissionFuelDecay> fuelDecay = new HashMap<>();
         Map<BlockPos, Reaction<?>> reactions = new HashMap<>();
+        Map<FissionFuelItems, Integer> itemBudget = preview ? new HashMap<>() : Map.of();
+        Map<FluidTank, Integer> saltBudget = preview ? new HashMap<>() : Map.of();
         for (BlockPos pos : layout.cells()) {
             var entity = level.getBlockEntity(pos);
             if (decayEnabled) {
@@ -319,14 +352,29 @@ final class SolidFissionCore {
                 continue;
             }
             if (entity instanceof FissionFuelCell cell) {
-                SolidFissionRecipe recipe = cell.prepare(level);
-                if (recipe != null) {
-                    reactions.put(pos, new ItemReaction(cell, recipe, decayEnabled));
+                if (preview) {
+                    var fuel = cell.preview(level, itemBudget);
+                    if (fuel != null) {
+                        reactions.put(pos, new ItemReaction(cell, fuel.recipe(), fuel.fuel(), decayEnabled));
+                    }
+                } else {
+                    SolidFissionRecipe recipe = cell.prepare(level);
+                    if (recipe != null) {
+                        reactions.put(pos, new ItemReaction(cell, recipe, cell.reservedFuel(), decayEnabled));
+                    }
                 }
             } else if (saltFuel != null && entity instanceof SaltVessel vessel) {
-                SaltFissionRecipe recipe = vessel.prepare(level, saltFuel);
-                if (recipe != null) {
-                    reactions.put(pos, new SaltReaction(vessel, recipe, saltFuel, decayEnabled));
+                if (preview) {
+                    var fuel = vessel.preview(level, saltFuel, saltBudget);
+                    if (fuel != null) {
+                        reactions.put(pos, new SaltReaction(vessel, fuel.recipe(), saltFuel, decayEnabled, fuel.fuel(), fuel.circuit()));
+                    }
+                } else {
+                    SaltFissionRecipe recipe = vessel.prepare(level, saltFuel);
+                    if (recipe != null) {
+                        reactions.put(pos, new SaltReaction(vessel, recipe, saltFuel, decayEnabled,
+                                vessel.reservedFuel(), vessel.reservedCircuit()));
+                    }
                 }
             }
         }
@@ -334,7 +382,7 @@ final class SolidFissionCore {
         if (requested) {
             for (BlockPos pos : layout.irradiators()) {
                 if (level.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
-                    var recipe = irradiator.prepare(level);
+                    var recipe = irradiator.prepare(level, preview);
                     if (recipe != null) {
                         irradiation.put(pos, new Irradiation(irradiator, recipe));
                     }
@@ -342,7 +390,7 @@ final class SolidFissionCore {
             }
         }
         assembleBunches(reactions);
-        Set<BlockPos> sourceTargets = reactions.isEmpty() ? Set.of() : primeFromWall(level, reactions);
+        Set<BlockPos> sourceTargets = reactions.isEmpty() ? Set.of() : primeFromWall(level, reactions, preview);
         var lines = new ArrayList<NeutronLine>();
         Set<BlockPos> failedSources = new HashSet<>();
         while (!distributeFlux(level, materials, reactions, irradiation, sourceTargets, lines, failedSources)) {
@@ -394,7 +442,9 @@ final class SolidFissionCore {
             BlockPos pos = entry.getKey();
             FissionFuelDecay decay = entry.getValue();
             boolean processing = burning.contains(pos);
-            decay.tick(level.getGameTime(), decaySettings, processing);
+            if (!preview) {
+                decay.tick(level.getGameTime(), decaySettings, processing);
+            }
             if (!processing && (int) decay.heating() > 0) {
                 thermalCells.add(pos);
                 for (Direction side : Direction.values()) {
@@ -464,7 +514,7 @@ final class SolidFissionCore {
                 int base = reaction.baseHeat();
                 boolean primed = sourceTargets.contains(pos) || reaction.recipe.selfPriming() || processing;
                 measuredFuel.put(pos, new FuelStats(reaction.recipe, ticks, radiation, base, reaction.baseEfficiency(),
-                        primed, processing, heat, base > 0 ? heat / base : 0D,
+                        primed, processing && !preview, heat, base > 0 ? heat / base : 0D,
                         processing ? reaction.lines * reaction.bunch.packing : 0, reaction.bunch.flux));
             });
         }
@@ -500,7 +550,9 @@ final class SolidFissionCore {
                 if (target != null) {
                     heat = target.flux * target.recipe.heatPerFlux();
                     efficiency = target.recipe.efficiency();
-                    target.part.irradiate(level, target.recipe, target.flux);
+                    if (!preview) {
+                        target.part.irradiate(level, target.recipe, target.flux);
+                    }
                 } else {
                     var shield = (FissionShieldBlock) level.getBlockState(pos).getBlock();
                     long flux = shieldFlux.get(pos).values().stream().mapToLong(Long::longValue).sum();
@@ -543,7 +595,7 @@ final class SolidFissionCore {
                     }
                 }
             }
-            if (rawCluster > 0) {
+            if (!preview && rawCluster > 0) {
                 double speed = Math.max(1D, (double) rawCluster / Math.max(1L, cooling + coolingLeniency));
                 for (BlockPos pos : cluster.cells()) {
                     Reaction<?> reaction = reactions.get(pos);
@@ -557,11 +609,11 @@ final class SolidFissionCore {
             long netHeat = totalHeat - cooling;
             boolean heatToWall = fluidCooling && netHeat > 0 && cluster.connectedToWall();
             long next = Math.max(0, Math.min(cluster.capacity(), previous + (heatToWall ? 0 : netHeat)));
-            if (next != previous || rebuildClusters && previous > 0) {
+            if (!preview && (next != previous || rebuildClusters && previous > 0)) {
                 cluster.retainHeat(level, storedHeat, next);
                 storedHeatChanged = true;
             }
-            if (NCFission.overheats() && next >= cluster.capacity() && totalHeat > 0 && !cluster.cells().isEmpty()) {
+            if (!preview && NCFission.overheats() && next >= cluster.capacity() && totalHeat > 0 && !cluster.cells().isEmpty()) {
                 cluster.retainHeat(level, storedHeat, 0);
                 return new Heat(raw, casing, effective, true, cluster.cells());
             }
@@ -571,7 +623,7 @@ final class SolidFissionCore {
                 positions.addAll(cluster.sinks());
                 positions.addAll(cluster.heatingParts());
                 positions.addAll(cluster.conductors());
-                measuredClusters.add(new ClusterStats(cluster.capacity(), next, cooling, totalHeat, List.copyOf(positions)));
+                measuredClusters.add(new ClusterStats(cluster.capacity(), preview ? previous : next, cooling, totalHeat, List.copyOf(positions)));
             }
             if (cluster.connectedToWall() || fluidCooling) {
                 totalCooling += cooling;
@@ -593,7 +645,7 @@ final class SolidFissionCore {
             for (GasLoad load : gasLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
                 weightedCoolantSpeed += speed * load.recipe().cooling();
-                double batchesPerTick = gasCooling.heatGas(level, load.pos(), load.recipe(), speed);
+                double batchesPerTick = gasCooling.heatGas(level, load.pos(), load.recipe(), speed, preview);
                 if (measuredCoolers != null) {
                     measuredCoolers.put(load.pos(), new CoolerStats(batchesPerTick, load.recipe().cooling()));
                 }
@@ -604,7 +656,7 @@ final class SolidFissionCore {
             for (SaltLoad load : saltLoads) {
                 double speed = load.efficiency() * sparsityEfficiency;
                 weightedCoolantSpeed += speed * load.recipe().cooling();
-                double batchesPerTick = saltCooling.heat(level, load.pos(), load.recipe(), speed);
+                double batchesPerTick = saltCooling.heat(level, load.pos(), load.recipe(), speed, preview);
                 if (batchesPerTick > 0D) {
                     heating.add(load.pos());
                 }
@@ -623,7 +675,12 @@ final class SolidFissionCore {
             shieldStats = measuredShields;
             coolerStats = measuredCoolers;
         }
-        if (requested && raw > 0) {
+        if (preview) {
+            var flux = new HashMap<BlockPos, Long>();
+            irradiation.forEach((pos, target) -> flux.put(pos, target.flux));
+            irradiatorFlux = flux;
+        }
+        if (!preview && requested && raw > 0) {
             playOperatingSound(level, burning, reactions);
         }
         return new Heat(raw, casing, effective * sparsityEfficiency, storedHeatChanged, List.of());
@@ -660,17 +717,17 @@ final class SolidFissionCore {
         return NCFission.placementRules().active(candidates, neighbors).keySet();
     }
 
-    private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction<?>> reactions) {
+    private Set<BlockPos> primeFromWall(ServerLevel level, Map<BlockPos, Reaction<?>> reactions, boolean preview) {
         Set<BlockPos> primed = new HashSet<>();
         for (BlockPos wall : layout.sources()) {
             var state = level.getBlockState(wall);
-            if (!(state.getBlock() instanceof FissionSourceBlock source) || !state.getValue(FissionWallBlock.ACTIVE)) {
+            if (!(state.getBlock() instanceof FissionSourceBlock source) || !preview && !state.getValue(FissionWallBlock.ACTIVE)) {
                 continue;
             }
             BlockPos targetPos = primingTarget(level, layout, wall, reactions::containsKey);
             Reaction<?> target = reactions.get(targetPos);
             if (target != null) {
-                target.primeWith(source.efficiency());
+                target.primeWith(source.efficiency(), preview);
                 if (++target.bunch.sources >= target.bunch.surface) {
                     primed.addAll(target.bunch.cells);
                 }
@@ -691,7 +748,7 @@ final class SolidFissionCore {
                 return null;
             }
             if (state.getBlock() instanceof FissionIrradiatorBlock
-                    && level.getBlockEntity(pos) instanceof FissionIrradiator irradiator && irradiator.prepare(level) != null) {
+                    && level.getBlockEntity(pos) instanceof FissionIrradiator irradiator && irradiator.prepare(level, true) != null) {
                 return null;
             }
             if (fuel.test(pos)) {

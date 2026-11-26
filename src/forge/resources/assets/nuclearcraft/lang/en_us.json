@@ -534,6 +534,7 @@
     "gui.nuclearcraft.fission.enable": "Enable",
     "gui.nuclearcraft.fission.running": "Running",
     "gui.nuclearcraft.fission.idle": "Idle",
+    "gui.nuclearcraft.fission.predicted": "Predicted",
     "gui.nuclearcraft.fission.heat": "Heat",
     "gui.nuclearcraft.fission.water": "Water",
     "gui.nuclearcraft.fission.steam": "Steam",

@@ -18,11 +18,14 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Objects;
 
 import static net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE;
 
 public final class SaltVessel extends BlockEntity implements ChunkRadiationSource {
+    record FuelPreview(SaltFissionRecipe recipe, FluidStack fuel, @Nullable ResourceLocation circuit) {}
+
     private final RecipeManager.CachedCheck<Container, SaltFissionRecipe> recipes =
             RecipeManager.createCheck(NCSaltFission.FUEL_TYPE.get());
     private final ProcessorInputs recipeInput = new ProcessorInputs(0);
@@ -89,6 +92,28 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         return reservedLocal ? local : bank.circuit(reservedCircuit);
     }
 
+    @Nullable FuelPreview preview(Level level, SaltFuelBank bank, Map<FluidTank, Integer> remainingFuel) {
+        if (!reserved.isEmpty()) {
+            SaltFissionRecipe recipe = findReservation(level, true);
+            return recipe != null && progress < recipe.runtimeTicks() && hasOutputSpace(recipe, fuelTank(bank, true))
+                    ? new FuelPreview(recipe, reserved, reservedCircuit) : null;
+        }
+        var feed = feedTanks(bank);
+        FluidTank input = feed.tank(false);
+        int remaining = remainingFuel.getOrDefault(input, input.getFluidAmount());
+        if (remaining <= 0 || !input.isFluidValid(input.getFluid())) {
+            return null;
+        }
+        FluidStack available = new FluidStack(input.getFluid(), remaining);
+        SaltFissionRecipe recipe = findRecipe(level, available, true);
+        if (recipe == null || !hasOutputSpace(recipe, feed.tank(true))) {
+            return null;
+        }
+        int dose = recipe.fuel().matchedAmount(available, 1);
+        remainingFuel.put(input, remaining - dose);
+        return progress < recipe.runtimeTicks() ? new FuelPreview(recipe, new FluidStack(available, dose), filter) : null;
+    }
+
     SaltFissionRecipe prepare(Level level, SaltFuelBank bank) {
         boolean fromTank = reserved.isEmpty();
         var feed = feedTanks(bank);
@@ -101,7 +126,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
             }
             return null;
         }
-        SaltFissionRecipe recipe = fromTank ? findRecipe(level, fuel) : findReservation(level);
+        SaltFissionRecipe recipe = fromTank ? findRecipe(level, fuel, false) : findReservation(level, false);
         if (recipe == null) {
             return null;
         }
@@ -135,26 +160,29 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         return reserved.copy();
     }
 
+    FluidStack reservedFuel() { return reserved; }
+
     double progressForInspection() {
         if (level == null || reserved.isEmpty()) {
             return 0;
         }
-        var recipe = findReservation(level);
+        var recipe = findReservation(level, true);
         return recipe == null ? 0D : Math.min(1, progress / recipe.runtimeTicks());
     }
 
-    private @Nullable SaltFissionRecipe findRecipe(Level level, FluidStack fuel) {
+    private @Nullable SaltFissionRecipe findRecipe(Level level, FluidStack fuel, boolean preview) {
         recipeInput.setFluid(fuel);
-        return recipes.getRecipeFor(recipeInput, level).orElse(null);
+        return (preview ? level.getRecipeManager().getRecipeFor(NCSaltFission.FUEL_TYPE.get(), recipeInput, level)
+                : recipes.getRecipeFor(recipeInput, level)).orElse(null);
     }
 
-    private @Nullable SaltFissionRecipe findReservation(Level level) {
+    private @Nullable SaltFissionRecipe findReservation(Level level, boolean preview) {
         var manager = level.getRecipeManager();
         if (reservedRecipe != null) {
             var recipe = manager.byKey(reservedRecipe).orElse(null);
             return recipe instanceof SaltFissionRecipe fuel && matchesReservation(fuel) ? fuel : null;
         }
-        var recipe = findRecipe(level, reserved);
+        var recipe = findRecipe(level, reserved, preview);
         if (recipe != null && matchesReservation(recipe)) {
             return recipe;
         }
@@ -165,9 +193,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
         return recipe.fuel().matchedAmount(reserved, 1) == reserved.getAmount();
     }
 
-    boolean sameFuel(SaltVessel other) {
-        return Objects.equals(reservedCircuit, other.reservedCircuit) && reserved.isFluidEqual(other.reserved);
-    }
+    @Nullable ResourceLocation reservedCircuit() { return reservedCircuit; }
 
     double computerProgress() {
         return progress;
@@ -199,7 +225,7 @@ public final class SaltVessel extends BlockEntity implements ChunkRadiationSourc
     }
 
     double sourceEfficiency() {
-        return sourceEfficiency < 0 ? 1 : sourceEfficiency;
+        return sourceEfficiency;
     }
 
     void burn(SaltFissionRecipe recipe, SaltFuelBank bank, double speed) {

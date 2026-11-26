@@ -67,6 +67,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     private final ComputerPort.Links computerPorts = new ComputerPort.Links(this);
     private SolidFissionLayout layout;
     private SolidFissionCore core;
+    private @Nullable SolidFissionCore prediction;
+    private long predictionTick;
+    private double predictedOutput;
     private AssemblyDiagnostic validation = new AssemblyDiagnostic(
             Component.translatable("message.nuclearcraft.fission.checking"), null);
     private long casingHeat;
@@ -319,6 +322,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         SolidFissionLayout previous = layout;
         layout = null;
         core = null;
+        prediction = null;
         if (previous == null || !(level instanceof ServerLevel server)) {
             return;
         }
@@ -556,7 +560,29 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
     }
 
     SolidFissionLayout computerLayout() { return layout; }
-    SolidFissionCore computerCore() { return core; }
+
+    SolidFissionCore computerCore() {
+        if (core == null || computerOn() || !(level instanceof ServerLevel server)) {
+            return core;
+        }
+        if (prediction == null || predictionTick != server.getGameTime()) {
+            prediction = new SolidFissionCore(layout);
+            predictionTick = server.getGameTime();
+            var heat = prediction.predict(server, clusterHeat, gasCooling, saltFuel, saltCooling, NCFission.decaySettings());
+            predictedOutput = variant == FissionVariant.SOLID ? predictHeatingOutput(heat.effective()) : 0D;
+        }
+        return prediction;
+    }
+
+    private double predictHeatingOutput(double effectiveHeating) {
+        FissionHeatRecipe recipe = casingRecipe(coolant.getFluid());
+        if (recipe == null || !(effectiveHeating > 0)) {
+            return 0D;
+        }
+        int dose = recipe.input().matchedAmount(coolant.getFluid(), 1, Integer.MAX_VALUE);
+        return dose > 0 ? recipe.product().stack().getAmount() * effectiveHeating / (dose * recipe.heatPerMb()) : 0D;
+    }
+
     long computerHeat() { return casingHeat; }
 
     double computerTemperature() {
@@ -829,9 +855,16 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
             return;
         }
         var bounds = layout.bounds();
-        var heat = core.heatStats();
+        var diagnostic = computerCore();
+        var heat = diagnostic.heatStats();
         var tanks = tankTotals(server);
-        menu.set(SolidFissionMenu.Reading.FLAGS, (enabled ? SolidFissionMenu.ENABLED : 0) | (computerOn() ? SolidFissionMenu.ACTIVE : 0));
+        int flags = enabled ? SolidFissionMenu.ENABLED : 0;
+        if (computerOn()) {
+            flags |= SolidFissionMenu.ACTIVE;
+        } else if (heat.heating() > 0) {
+            flags |= SolidFissionMenu.PREDICTED;
+        }
+        menu.set(SolidFissionMenu.Reading.FLAGS, flags);
         menu.set(SolidFissionMenu.Reading.LENGTH_X, bounds.xLength() - 2);
         menu.set(SolidFissionMenu.Reading.LENGTH_Y, bounds.yLength() - 2);
         menu.set(SolidFissionMenu.Reading.LENGTH_Z, bounds.zLength() - 2);
@@ -846,7 +879,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         menu.set(SolidFissionMenu.Reading.EFFICIENCY, heat.efficiency());
         menu.set(SolidFissionMenu.Reading.HEAT_MULTIPLIER, heat.heatMultiplier());
         menu.set(SolidFissionMenu.Reading.SPARSITY, heat.sparsity());
-        menu.set(SolidFissionMenu.Reading.OUTPUT_RATE, variant == FissionVariant.SOLID ? heatingOutput : heat.coolantSpeed());
+        double outputRate = variant == FissionVariant.SOLID
+                ? (diagnostic == prediction ? predictedOutput : heatingOutput) : heat.coolantSpeed();
+        menu.set(SolidFissionMenu.Reading.OUTPUT_RATE, outputRate);
         menu.set(SolidFissionMenu.Reading.COLD_AMOUNT, tanks.coldAmount);
         menu.set(SolidFissionMenu.Reading.COLD_CAPACITY, tanks.coldCapacity);
         menu.set(SolidFissionMenu.Reading.HOT_AMOUNT, tanks.hotAmount);

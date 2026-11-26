@@ -102,7 +102,7 @@ final class PebbleCooling {
         return recipes;
     }
 
-    double heatGas(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double multiplier) {
+    double heatGas(ServerLevel level, BlockPos pos, FissionCoolantRecipe recipe, double multiplier, boolean preview) {
         if (multiplier <= 0 || !(level.getBlockEntity(pos) instanceof PebbleCooler cooler)) {
             return 0D;
         }
@@ -112,9 +112,11 @@ final class PebbleCooling {
         }
         int inputAmount = recipe.input().matchedAmount(tanks.cold.getFluid(), 1);
         double batchesPerTick = multiplier * recipe.cooling() / (NCPebbleFission.heatPerMb() * inputAmount);
-        double progress = cooler.progress().amount() + batchesPerTick;
-        cooler.progress().set(progress - Math.floor(progress));
-        tanks.process(cooler.filter(), recipe, (int) progress, level.random);
+        if (!preview) {
+            double progress = cooler.progress().amount() + batchesPerTick;
+            cooler.progress().set(progress - Math.floor(progress));
+            tanks.process(cooler.filter(), recipe, (int) progress, level.random);
+        }
         return batchesPerTick;
     }
 
