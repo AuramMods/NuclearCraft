@@ -26,6 +26,14 @@ The build that restored additive linear scrubbing, SHA-256 `8577e36ed64f3eebf0b4
 
 The build that restored the conditional processor recipes, SHA-256 `8b107de16d5e3564f5cd5ea47dfc53db304ecbbf9c28ab73ffadde38a22c8ebe`, reproduced the same registry table on clean Forge 47.4.10. Its live recipe manager loaded 2,718 of the 3,063 packaged recipes. Every unconditional definition loaded. All 135 stock reactor fuels also loaded and their packaged values matched the legacy reference. Both reactor-to-turbine chains completed on this JAR and retained their measured products after chunk eviction and a dedicated restart.
 
+The clean multiplayer replay used that same JAR on both sides. A player opened and ran all three reactor variants, saw the live heat and coolant readouts, and cleared each reactor's buffers through its menu. The cleared state survived a dedicated restart. The muted client recorded zero focus activations, foreground samples, or visible windows.
+
+The same JAR reconstructed the CraftTweaker addon directories and archives and ran their recipes on packaged Forge 47.4.10 with CraftTweaker 14.0.59. A damaged archive left the previous scripts usable. A syntax check reported a malformed script, and the repaired reload applied the recipe change from 731 mB to 747 mB. Restart confirmed the updated recipe's saved output.
+
+On clean Forge, a converted Large Electrolyzer kept ten paid ticks, 500 mB of water, and 80,400 FE through a dedicated restart. It resumed from the saved progress, used the remaining 57,600 FE, and produced 500 mB of hydrogen and 250 mB of oxygen.
+
+In a fresh isolated copy with all 540 installed Auram mod JARs, the packaged JAR loaded a saved world and initialized JEI. The crafting menu produced the chassis, servo, and plates for two Melters, and a survival player placed both. The same crafting run used Elite Plating for the Molten Salt Controller and Radiation Scrubber. Mekanism cables powered one stock ice recipe and one packed-ice recipe replaced by KubeJS. JEI showed both recipes, and the saved chunks retained 1,000 mB and 777 mB of water after confirmed chunk eviction and reload. The client used master volume zero and OpenAL No Output and exited with zero focus activations, foreground samples, or visible windows.
+
 ## Gameplay coverage
 
 - The Melter has an in-world block, menu, datapack recipes for ice, packed ice, and sulfur dust, and a Forge fluid registration for molten sulfur.
@@ -680,6 +688,9 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Arcane Archives | 0.2.5 | Radiant Tank fluid transfer with an Infuser and a Melter, and Radiant Chest and Trove item transfer with a Manufactory |
 | ProjectRed Expansion | 4.21.0 | Transposers and Pneumatic Tubes on a sided Manufactory |
 | Imperium | 1.0.10 | Voltaic Pile power to a linked Roh Energy Tap |
+| RFTools Base and McJtyLib | 5.0.6 and 8.0.7 | Forge Energy from a sided Voltaic Pile into a Machine Infuser |
+| Cognition | 2.4.10 | Experience Obelisk transfer between scripted Melter and Infuser recipes |
+| Theurgy | 1.26.0 | Liquefaction Cauldron supplied with NuclearCraft copper ore and a scripted Melter solvent |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
 | Tom's Simple Storage | 1.7.1 | Item routing through Inventory Connectors, Basic Inventory Hoppers, and Inventory Proxies |
 | Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
@@ -739,6 +750,10 @@ The isolated 540-mod Auram instance repeated the ProjectRed and Imperium cases w
 On packaged Forge 47.4.10 with the installed Create add-ons, a Steam ’n’ Rails Fuel Tank in realistic mode rejected 1,000 mB of water, which stayed in the Melter. Ender IO then moved 1,200 mB of lava from the Melter's output tank into the Fuel Tank. A Mekanism Mechanical Pipe supplied that lava to an Infuser. The Infuser used 1,000 mB and 6,000 FE to make one Cobblestone Generator and retained 200 mB.
 
 In the same test world, a Mekanism Logistical Transporter moved one NuclearCraft copper ore into an Occult Engineering Mechanical Pulverizer. With Create power, the Pulverizer made two copper dust. An Ender IO Item Conduit delivered both to a Melter, which held its dust and all 64,000 FE behind a full water output tank. Clearing the tank let both batches finish with 288 mB of molten copper. The Fuel Tank and Pulverizer routes kept their measured products through confirmed chunk eviction and dedicated restart.
+
+On packaged Forge 47.4.10, an RFTools Machine Infuser accepted exactly 4,096 FE after the Voltaic Pile's output face opened. A simulated transfer left its stored charge unchanged. A Cognition Experience Obelisk rejected water from a Melter and then accepted the scripted Melter recipe's 135 mB of Cognitium through an Ender IO conduit. A Mekanism Mechanical Pipe carried that fluid into a scripted Infuser, which used 100 mB and 250 FE and retained 35 mB. A confirmed chunk eviction and a dedicated restart preserved the item, fluid, and energy balances.
+
+Theurgy's Liquefaction Cauldron rejected water through an Ender IO Fluid Conduit and accepted one NuclearCraft copper ore from a Mekanism Logistical Transporter. With a fueled Pyromantic Brazier, its stock recipe used 10 mB of the scripted Melter's 45 mB of Sal Ammoniac. An Ender IO Item Conduit exported five Copper Alchemical Sulfur with the copper ore tag recorded as their source. The five items and 35 mB of solvent survived a confirmed chunk eviction and dedicated restart.
 
 Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
 
