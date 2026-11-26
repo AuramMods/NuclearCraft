@@ -28,6 +28,7 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     private final boolean generator;
     private boolean redstoneControl;
     private double basePower;
+    private double batchStartHalfTicks;
     double batchTicks;
     double progressHalfTicks;
 
@@ -90,7 +91,9 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
     void updateRates(double rawTicks, double configuredTicks, double configuredPower) {
         double previousTicks = batchTicks > 0 ? batchTicks : rawTicks;
         if (progressHalfTicks > 0 && configuredTicks > 0 && previousTicks > 0 && previousTicks != configuredTicks) {
-            progressHalfTicks = progressHalfTicks * (configuredTicks / previousTicks);
+            double scale = configuredTicks / previousTicks;
+            progressHalfTicks *= scale;
+            batchStartHalfTicks *= scale;
             setChanged();
         }
         setBatchRates(configuredTicks, configuredPower);
@@ -125,6 +128,34 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
 
     int energyPerTick() {
         return (int) Math.ceil(basePower * powerMultiplier());
+    }
+
+    final boolean payForProcessingTick(double workPerTick) {
+        int cost = energyPerTick();
+        if (!generator && progressHalfTicks <= batchStartHalfTicks) {
+            // Work carried from the previous batch has already been paid for.
+            double remainingTicks = (batchTicks - progressHalfTicks / 2D) / workPerTick;
+            double batchEnergy = cost * Math.max(1D, Math.ceil(remainingTicks - 1E-9));
+            if (power.getEnergyStored() < Math.min(power.getMaxEnergyStored(), batchEnergy)) {
+                return false;
+            }
+        }
+        return power.spend(cost);
+    }
+
+    final void recordBatchStart() {
+        batchStartHalfTicks = progressHalfTicks;
+    }
+
+    final void discardProgress() {
+        progressHalfTicks = 0;
+        batchStartHalfTicks = 0;
+    }
+
+    final void loseProgress(double speed) {
+        progressHalfTicks = Math.max(0, progressHalfTicks - 3D * speed);
+        batchStartHalfTicks = Math.min(batchStartHalfTicks, progressHalfTicks);
+        setChanged();
     }
 
     private int energyCapacity() {
@@ -171,6 +202,9 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         long whole = (long) progressHalfTicks;
         tag.putLong("progress_half_ticks", whole);
         if (progressHalfTicks > 0) {
+            if (batchStartHalfTicks > 0) {
+                tag.putDouble("batch_start_half_ticks", batchStartHalfTicks);
+            }
             if (progressHalfTicks > whole) {
                 tag.putDouble("progress_fraction", progressHalfTicks - whole);
             }
@@ -196,6 +230,8 @@ abstract class UpgradableProcessorBlockEntity extends BlockEntity {
         power.load(tag.getInt("energy"));
         double fraction = tag.getDouble("progress_fraction");
         progressHalfTicks = Math.max(0, tag.getLong("progress_half_ticks")) + (fraction > 0 && fraction < 1 ? fraction : 0);
+        double savedBatchStart = tag.getDouble("batch_start_half_ticks");
+        batchStartHalfTicks = savedBatchStart > 0 ? Math.min(savedBatchStart, progressHalfTicks) : 0;
         double savedDuration = tag.getDouble("progress_duration");
         batchTicks = Double.isFinite(savedDuration) && savedDuration > 0 ? savedDuration : 0;
     }

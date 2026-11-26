@@ -49,18 +49,20 @@ public final class ProcessorRedstoneGameTests {
         var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "ProcessorMenu"));
         BlockPos center = helper.absolutePos(FLUID);
         player.moveTo(center.getX() + 0.5D, center.getY(), center.getZ() + 0.5D);
-        int initialEnergy = 4_000;
+        int[] initialEnergy = new int[MACHINES.size()];
         int[] pausedEnergy = new int[MACHINES.size()];
-        for (BlockPos pos : MACHINES) {
+        for (int index = 0; index < MACHINES.size(); index++) {
+            BlockPos pos = MACHINES.get(index);
             var processor = (UpgradableProcessorBlockEntity) helper.getBlockEntity(pos);
             helper.assertTrue(!processor.redstoneControl(), "New processors start with the legacy disabled setting");
-            processor.power.receiveEnergy(initialEnergy, false);
+            initialEnergy[index] = processor.power.receiveEnergy(128_000, false);
         }
 
         helper.startSequence().thenWaitUntil(() -> {
-            for (BlockPos pos : MACHINES) {
+            for (int index = 0; index < MACHINES.size(); index++) {
+                BlockPos pos = MACHINES.get(index);
                 var processor = (UpgradableProcessorBlockEntity) helper.getBlockEntity(pos);
-                helper.assertTrue(processor.power.getEnergyStored() < initialEnergy
+                helper.assertTrue(processor.power.getEnergyStored() < initialEnergy[index]
                                 && helper.getBlockState(pos).getValue(ProcessorBlock.LIT),
                         "Each processor runs despite redstone while control is disabled");
             }

@@ -54,7 +54,7 @@ public final class ProcessorBatchEjectionGameTests {
         var receiver = installReceiver(helper);
         var items = machine.getCapability(ForgeCapabilities.ITEM_HANDLER, Direction.NORTH).orElseThrow(AssertionError::new);
         helper.assertTrue(items.insertItem(0, new ItemStack(Items.STICK), false).isEmpty(), "The stick input fits");
-        chargeForOneTick(machine, 0);
+        power(machine).receiveEnergy(10, false);
         machine.fluidTanks().produce(0, water(100));
         machine.fluidTanks().cycle(0, Direction.EAST);
 
@@ -62,6 +62,7 @@ public final class ProcessorBatchEjectionGameTests {
         helper.assertTrue(helper.getBlockState(MACHINE).getValue(ProcessorBlock.LIT)
                         && receiver.fluidTanks().stored(0).isEmpty(),
                 "A running tick that completes no batch leaves the old fluid buffered");
+        machine.power.load(0);
         tickMelter(helper, machine);
         helper.assertTrue(!helper.getBlockState(MACHINE).getValue(ProcessorBlock.LIT)
                         && receiver.fluidTanks().stored(0).isEmpty(),

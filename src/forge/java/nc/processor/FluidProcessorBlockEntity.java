@@ -149,7 +149,7 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         FluidProcessorRecipe recipe = findRecipe(level);
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
-            progressHalfTicks = 0;
+            discardProgress();
             activeRecipe = next;
             setChanged();
         }
@@ -166,16 +166,15 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
         }
         List<FluidStack> outputs = recipe.results();
         double speed = speed();
-        double progressPerTick = 2 * speed * factor;
-        if (!hasOutputSpace(outputs, factor) || !power.spend(energyPerTick())) {
+        double workPerTick = speed * factor;
+        if (!hasOutputSpace(outputs, factor) || !payForProcessingTick(workPerTick)) {
             if (progressHalfTicks > 0) {
-                progressHalfTicks = Math.max(0, progressHalfTicks - 1.5 * progressPerTick);
-                setChanged();
+                loseProgress(workPerTick);
             }
             return false;
         }
         radiationEmission = recipe.radiation() * speed;
-        progressHalfTicks += progressPerTick;
+        progressHalfTicks += 2 * workPerTick;
         while (progressHalfTicks > 0) {
             double batchHalfTicks = 2 * batchTicks;
             // Config multipliers can round the nominal duration. Allow that error across one original batch.
@@ -216,9 +215,10 @@ public final class FluidProcessorBlockEntity extends UpgradableProcessorBlockEnt
             }
             if (recipe == null || !hasOutputSpace(outputs, factor)) {
                 if (fluids.discardsUnusableInputs()) fluids.discardUnusableInputs();
-                progressHalfTicks = 0;
+                discardProgress();
                 break;
             }
+            recordBatchStart();
         }
         setChanged();
         return true;

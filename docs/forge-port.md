@@ -373,6 +373,12 @@ The 87 stock Decay Hastener entries derive time from their recipe radiation and 
 
 Saved progress keeps the same completed fraction of a batch when a duration changes. The new `progress_duration` field holds the previous duration in ticks. Saves from earlier Forge builds use the nominal recipe duration to convert their stored progress. The FE buffer scales with the configured rates and keeps previously stored charge when its limit shrinks.
 
+Powered single-block processors accumulate FE for the next batch. They start when the stored energy covers the remaining work or reaches the current buffer capacity. Each running tick spends its actual FE cost. Paid fractional work carried from a prior batch counts toward the next one. During manual legacy conversion, put `resetTime` in `batch_start_half_ticks` using the same half-tick units as the saved progress. A Forge save with an in-progress batch and no saved start marker resumes at the per-tick rate.
+
+All 322 local GameTests passed. On packaged Forge 47.4.10, a Melter driven by a 10 FE/t Wormhole Coal Generator kept its charge until it could start. It melted one ice for 4,000 FE and kept 12,000 FE from the single coal. An older Forge save with one tick of melting left resumed with its remaining 20 FE and produced exactly 1,000 mB of water.
+
+The same JAR loaded the installed KubeJS 2001.6.5-build.16 and CraftTweaker 14.0.59. Each replacement Melter recipe kept its partial charge across twenty server ticks. Once a Voltaic Pile delivered the exact shortfall, the KubeJS recipe used 100 FE to produce 719 mB of water, and the CraftTweaker recipe used 60 FE to produce 743 mB. The exact Ender IO and Mekanism reactor-to-turbine-to-Melter chains also passed again through chunk eviction and dedicated restart.
+
 All 182 local GameTests passed with the stock rates. A packaged Forge 47.4.18 world migrated a saved Manufactory batch into a shorter configured duration and retained its 6.25% completion. Configured batches in the Electrolyzer, upgraded Melter, and Ingot Former finished for their exact FE budgets. The Decay Hastener recalculated its radiation-derived duration through a second restart while preserving fractional progress.
 
 Ender IO 8.2.22-beta and Mekanism 10.4.16.80 each supplied graphite and 21,000 FE to a configured Pressurizer with three of each upgrade. With a full destination, both processors buffered two pyrolytic carbon and exported them when the destination opened. Their upgrades and items persisted through a dedicated restart and a confirmed chunk unload and reload. A clean multiplayer client received the server config and matched the displayed FE and durations for six representative recipes. It ran muted and recorded zero focus activations or visible window samples.
@@ -945,6 +951,16 @@ On packaged Forge 47.4.10 with Evolved Mekanism 1.2.1-fix3 and Mekanism 10.4.16.
 Both buffers survived chunk eviction and a dedicated restart. Freeing 1,000 mB of space refilled the water tank to 2,048,000 mB. Opening the Former's output let the stock cast use 90 mB and deliver one uranium ingot through a hopper into a Dense Bin. The tank and bin totals, the Melter's 500 FE, and the Former's 89 mB remainder survived a second eviction and restart. [Evolved Mekanism source](https://github.com/iglee42/EvolvedMekanism)
 
 A separate Dense Energy Cube started with 5,000,000,000 FE at Auram's 2.5 J per FE conversion. Its Dense Universal Cable filled two connected Elite Lithium Ion Batteries to 2,048,000,000 FE each. The cable retained the surplus 904,000,000 FE. The cube was empty, and all three balances matched after confirmed chunk eviction and two dedicated restarts.
+
+### Mekanism Generators, Extra Utilities Rebirth, Open Blocks, and Wormhole
+
+On packaged Forge 47.4.10, a Pressurized Tube took 500 units of hydrogen from an Electrolyzer into the Mekanism 10.4.16.80 Gas-Burning Generator. Its Universal Cable powered a Melter, which produced 1,000 mB of water and retained 36,000 FE. Extra Utilities Rebirth 1.7.5 powered separate Melters with a coal-fired Furnace Generator and Creative Energy Storage.
+
+Open Blocks 1.0.0's Vacuum Hopper held a dropped ice item while the Melter's west input was disabled. Opening the input let the hopper feed the Melter. The resulting 1,000 mB of water stayed buffered while the Open Blocks tank contained lava. After clearing the tank, the Melter filled it and a Mechanical Pipe supplied the water to an Infuser for one white concrete.
+
+With Wormhole 1.1.16, the Coal Generator powered the Melter at 10 FE/t. A separate Basic Energy Cell accepted 3,000 FE to reach its 10,000 FE capacity. The Voltaic Pile kept the remaining 6,000 FE. The exact checked products and buffers survived confirmed chunk eviction and dedicated restart.
+
+The same JAR repeated these routes in the isolated 540-mod Auram instance. The player joined, JEI loaded, and the outputs and energy balances matched after the fixture chunks unloaded and reloaded. The client saved and exited with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible-window samples.
 
 ### Custom Machinery transfers
 

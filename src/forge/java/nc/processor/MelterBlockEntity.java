@@ -116,7 +116,7 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         if (recipe == null || !recipe.id().equals(activeRecipe)) {
             activeRecipe = recipe == null ? null : recipe.id();
             if (progressHalfTicks != 0) {
-                progressHalfTicks = 0;
+                discardProgress();
                 setChanged();
             }
         }
@@ -130,10 +130,9 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
         }
         FluidStack product = recipe.product();
         double speed = speed();
-        if (!hasOutputSpace(product) || !power.spend(energyPerTick())) {
+        if (!hasOutputSpace(product) || !payForProcessingTick(speed)) {
             if (progressHalfTicks > 0) {
-                progressHalfTicks = Math.max(0, progressHalfTicks - 3 * speed);
-                setChanged();
+                loseProgress(speed);
             }
             return false;
         }
@@ -155,9 +154,10 @@ public final class MelterBlockEntity extends UpgradableProcessorBlockEntity impl
                 product = recipe == null ? FluidStack.EMPTY : recipe.product();
             }
             if (recipe == null || !hasOutputSpace(product)) {
-                progressHalfTicks = 0;
+                discardProgress();
                 break;
             }
+            recordBatchStart();
         }
         setChanged();
         return true;

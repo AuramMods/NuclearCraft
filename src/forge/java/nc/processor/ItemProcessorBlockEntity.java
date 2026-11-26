@@ -250,7 +250,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         ResourceLocation next = recipe == null ? null : recipe.id();
         if (!Objects.equals(activeRecipe, next)) {
-            progressHalfTicks = 0;
+            discardProgress();
             activeRecipe = next;
             setChanged();
         }
@@ -263,12 +263,12 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         List<FluidStack> fluidProducts = recipe.fluidOutputs();
         boolean room = hasOutputSpace(products, fluidProducts);
         double speed = speed();
-        if (!room || halted || !power.spend(energyPerTick())) {
+        if (!room || halted || !payForProcessingTick(speed)) {
             if (progressHalfTicks > 0) {
-                double nextProgress = machine.losesProgress() && !halted ? Math.max(0, progressHalfTicks - 3 * speed)
-                        : room ? progressHalfTicks : 0;
-                if (nextProgress != progressHalfTicks) {
-                    progressHalfTicks = nextProgress;
+                if (machine.losesProgress() && !halted) {
+                    loseProgress(speed);
+                } else if (!room) {
+                    discardProgress();
                     setChanged();
                 }
             }
@@ -309,9 +309,10 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
             }
             if (recipe == null || !hasOutputSpace(products, fluidProducts)) {
                 if (fluid != null && fluid.discardsUnusableInputs()) fluid.discardUnusableInputs();
-                progressHalfTicks = 0;
+                discardProgress();
                 break;
             }
+            recordBatchStart();
             if (progressHalfTicks > 0 && machine.consumesInputs()) {
                 reserve(recipe);
             }
@@ -396,7 +397,7 @@ public final class ItemProcessorBlockEntity extends UpgradableProcessorBlockEnti
         }
         reserved = null;
         activeRecipe = null;
-        progressHalfTicks = 0;
+        discardProgress();
         setChanged();
         return true;
     }

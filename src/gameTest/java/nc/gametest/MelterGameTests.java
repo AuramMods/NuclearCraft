@@ -110,11 +110,16 @@ public final class MelterGameTests {
         helper.assertTrue(items.extractItem(0, 1, false).isEmpty(), "Automation should not extract inputs");
         helper.assertTrue(energy.receiveEnergy(4000, true) == 4000 && energy.getEnergyStored() == 0,
                 "FE simulation should not charge the machine");
-        helper.assertTrue(energy.receiveEnergy(4000, false) == 4000, "Sided FE insertion should charge the machine");
+        helper.assertTrue(energy.receiveEnergy(3990, false) == 3990, "Sided FE insertion should charge the machine");
         helper.assertTrue(fluids.fill(new FluidStack(Fluids.WATER, 100), FluidAction.EXECUTE) == 0,
                 "The output tank should reject external filling");
 
-        helper.succeedWhen(() -> {
+        helper.startSequence().thenIdle(5).thenExecute(() -> {
+            helper.assertTrue(energy.getEnergyStored() == 3990 && items.getStackInSlot(0).getCount() == 1
+                            && fluids.getFluidInTank(0).isEmpty(),
+                    "A partial energy supply charges the Melter without spending FE on an incomplete batch");
+            helper.assertTrue(energy.receiveEnergy(10, false) == 10, "The final delivery powers the legacy batch");
+        }).thenWaitUntil(() -> {
             helper.assertTrue(fluids.getFluidInTank(0).getAmount() == 1000, "Ice should melt into 1000 mB of water");
             helper.assertTrue(items.getStackInSlot(0).isEmpty(), "Processing should consume one ice");
             helper.assertTrue(energy.getEnergyStored() == 0, "The legacy ice recipe should consume 4000 FE");
@@ -136,6 +141,6 @@ public final class MelterGameTests {
                     .orElseThrow(AssertionError::new).getFluidInTank(0);
             helper.assertTrue(restored.getFluid() == Fluids.WATER && restored.getAmount() == 600,
                     "Reading saved block entity data should restore the output tank");
-        });
+        }).thenSucceed();
     }
 }

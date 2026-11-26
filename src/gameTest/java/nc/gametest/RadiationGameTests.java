@@ -376,11 +376,14 @@ public final class RadiationGameTests {
                 "The Crystallizer accepts the full irradiated borax batch");
         var crystalPower = crystallizer.getCapability(ForgeCapabilities.ENERGY, Direction.EAST)
                 .orElseThrow(AssertionError::new);
-        crystalPower.receiveEnergy(15, false);
+        crystalPower.receiveEnergy(4_000, false);
         helper.startSequence()
                 .thenWaitUntil(() -> near(helper, crystalSource.radiationEmission(), 0.033D / 4D,
                         "Processing irradiated borax emits the legacy Caesium-137 fraction"))
                 .thenExecute(() -> {
+                    var stopped = crystallizer.saveWithoutMetadata();
+                    stopped.putInt("energy", 0);
+                    crystallizer.load(stopped);
                     near(helper, hasteSource.radiationEmission(), 0D, "An unpowered Hastener stays quiet");
                     hastePower.receiveEnergy(1000, false);
                 })
@@ -390,8 +393,10 @@ public final class RadiationGameTests {
                 .thenExecuteAfter(4, () -> {
                     near(helper, hasteSource.radiationEmission(), 0D, "Redstone stops the Hastener emission");
                     near(helper, crystalSource.radiationEmission(), 0D, "Power loss stops the Crystallizer emission");
+                    var reloadedFluid = crystallizer.getCapability(ForgeCapabilities.FLUID_HANDLER, Direction.UP)
+                            .orElseThrow(AssertionError::new);
                     helper.assertTrue(items.getStackInSlot(0).getCount() == 1
-                                    && inputFluid.getFluidInTank(0).getAmount() == 666,
+                                    && reloadedFluid.getFluidInTank(0).getAmount() == 666,
                             "No batch finishes while the machine cannot run");
                     helper.setBlock(hastenerPos.west(), Blocks.AIR);
                 })
