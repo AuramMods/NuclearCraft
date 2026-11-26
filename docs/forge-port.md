@@ -567,6 +567,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
 | Tesseract | 1.0.38 | Item, fluid, and Forge Energy channels between a Distributor, an Infuser, and remote storage |
 | Compact Machines | 6.0.3 | Item, fluid, and Forge Energy tunnels for processors and batteries, including saved tunnel buffers |
+| Ranged Pumps | 1.1.0 | Voltaic Pile power and water transfer to a sided Infuser |
 | Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
 | Large Ore Deposits and ForgeEndertech | 8.1.8.0 build 1850 and 11.1.10.0 build 2048 | Deposit generation during reload and saved deposits in new Overworld and Wasteland terrain |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
@@ -904,6 +905,12 @@ The isolated client with all 540 installed Auram JARs loaded JEI and tested the 
 A later dedicated test retained the active Forge handles before eviction. The previous JAR left them valid after the room unloaded or the fluid tunnel was replaced with a wall. With the patched JAR, unloading just the exterior invalidated its item, fluid, and energy handles while the loaded room kept its own. Unloading the room invalidated the remaining handles. Replacing one fluid tunnel invalidated both of its handles and preserved the item and energy connections. Fresh queries after reloading both chunks returned working handles.
 
 With the same JAR and all 540 installed Auram mod JARs, the player placed a Maximum Compact Machine, entered its new room with a Personal Shrinking Device, and installed an item tunnel. An outside hopper fed one coal through the tunnel to a Manufactory. The first batch produced the pack's unified coal dust and used 4,000 FE. The test returned that dust to the input hopper, and the second batch used the remaining 1,000 FE to produce one Graphite Dust. The saved room contained that output and an empty tunnel buffer. The client ran with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
+
+### Ranged Pumps
+
+On packaged Forge 47.4.10, Auram's Ranged Pumps 1.1.0 waited while the adjacent Voltaic Pile's output face was closed. Opening it delivered 300 FE. The pump spent 100 FE draining one water source and held 1,000 mB behind the Infuser's closed input. The water, pump charge, and unprocessed feed survived confirmed chunk eviction and a dedicated restart. Opening the Infuser's input let it use the entire bucket and its own 1,500 FE to make one white concrete. The exact product, empty tanks, and 200 FE in the pump survived a second eviction and reload.
+
+The same JAR repeated the closed-face and processing checks in the isolated instance with all 540 installed Auram JARs. The Infuser saved one white concrete with no water or energy left, and the pump saved an empty tank and 200 FE.
 
 ### Tools and Armor
 
@@ -2543,9 +2550,11 @@ The muted client with all 539 Auram JARs logged in on Forge 47.4.18 and displaye
 
 ### Feral and glowing ghouls
 
-The legacy entity IDs are `nuclearcraft:feral_ghoul` and `nuclearcraft:glowing_ghoul`. Their modern spawn eggs use the matching `_spawn_egg` IDs. The Nuclear Wasteland biome spawns feral ghouls in daylight and glowing ghouls underground where the chunk radiation exceeds the legacy background threshold. Both use the original model, adult proportions, wall climbing, husk loot, and charge and death sounds. Feral ghouls can leap at nearby targets. Glowing ghouls use the original emissive layer. The dimension plays its nine original ambient tracks on the music channel.
+The legacy entity IDs are `nuclearcraft:feral_ghoul` and `nuclearcraft:glowing_ghoul`. Their modern spawn eggs use the matching `_spawn_egg` IDs. Feral ghoul placement rules allow open sky. The vanilla position check still applies its light preference. Glowing ghoul placement requires darkness underground and chunk radiation above the legacy background threshold. Both use the original model, adult proportions, wall climbing, husk loot, and charge and death sounds. Feral ghouls can leap at nearby targets. Glowing ghouls use the original emissive layer. The dimension plays its nine original ambient tracks on the music channel.
 
 Feral and glowing attacks add 0.33 and 3.8 Rad respectively at the base difficulty multiplier. Successful attacks on nonhostile living targets inflict poison and add radiation to the victim's buffered exposure. The amount increases with local difficulty and absorbs over `radiation_poison_time`. The two legacy attack settings retain their names in `world/serverconfig/nuclearcraft-radiation.toml`. Ghouls retain radiation buffs at a fatal dose. Villagers and other NPCs can convert to feral ghouls at a fatal dose or on entering the Wasteland. Conversion preserves their name, AI setting, and persistence and uses Forge's conversion and spawn events.
+
+The Wasteland's standard Forge spawn checks allow ghouls and NPCs. Those checks reject other mobs during natural spawning, chunk generation, and spawner attempts. A feral or glowing ghoul already in a loaded chunk blocks another natural ghoul spawn there, including outside the Wasteland biome. Both variants count toward the same limit. A ghoul in a neighboring chunk leaves the spawn eligible, and spawners bypass the ghoul limit.
 
 Move the two `register_entity` booleans to `world/serverconfig/nuclearcraft-entities.toml`, in feral then glowing order. Registered entity IDs remain available to saves and datapacks. A disabled type cannot spawn naturally and discards any loaded instances.
 
@@ -2558,6 +2567,10 @@ The same packaged JAR loaded with all 539 installed JARs in the isolated Auram i
 On clean packaged Forge 47.4.10, a multiplayer client received both ghoul variants at 25 blocks and removed them at 25.125. Changing the setting to 113 and then to the default 64 affected the same entities without restarting. A vanilla zombie kept its own range. A ghoul carrying a pig kept the pig's longer range, and an arrow carrying a ghoul was tracked out to the ghoul's longer configured range. At 50 percent server broadcast distance, a 25-block setting tracked both variants through 12 blocks and removed them at 12.125. The offline build passed all 227 GameTests.
 
 The same JAR loaded JEI with all 541 installed Auram mod JARs and repeated the 25-block cutoff and passenger checks. Both dedicated test clients and the Auram client used master volume zero and OpenAL No Output. The native observers recorded zero focus activations, foreground samples, and visible-window samples.
+
+All 320 local GameTests passed after restoring the spawn rules. The regression test exercised the Forge position checks for both dimensions, both ghoul variants, and a spawner. On packaged Forge 47.4.10, a named villager entered from the Overworld and became one feral ghoul with its name, disabled AI, and persistence flag intact. The ghoul survived eviction and reload of the destination chunk and a dedicated restart.
+
+In the isolated instance with all 540 installed Auram JARs, a Wasteland spawner made a feral ghoul in a chunk already occupied by a glowing ghoul. A villager from a second spawner became a feral ghoul. A third spawner stayed active without producing its cow. The same cow setup worked in the Overworld. The saved entity data contained exactly the three named ghouls and the Overworld control cow. The client loaded JEI and ran with master volume zero and OpenAL No Output. The native observer recorded zero focus activations, foreground samples, or visible window samples.
 
 ### Ore, mob, and dungeon loot
 

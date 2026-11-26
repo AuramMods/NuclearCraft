@@ -10,6 +10,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -19,10 +20,11 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.SpawnData;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.util.FakePlayer;
+import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 
@@ -80,7 +82,7 @@ public final class GhoulGameTests {
     }
 
     @GameTest(template = "empty", timeoutTicks = 70)
-    public static void feralGhoulSpawnsInSunlightAndGlowingGhoulNeedsIrradiatedDarkness(GameTestHelper helper) {
+    public static void feralPlacementAllowsOpenSkyAndGlowingGhoulNeedsIrradiatedDarkness(GameTestHelper helper) {
         var level = helper.getLevel();
         var open = new BlockPos(1, 165, 1);
         var dark = new BlockPos(4, 165, 4);
@@ -106,7 +108,7 @@ public final class GhoulGameTests {
                     + "(outside " + outside + ", sheltered " + sheltered + ", inside light " + light + ")");
             var random = RandomSource.create(51);
             helper.assertTrue(SpawnPlacements.checkSpawnRules(feral, level, MobSpawnType.NATURAL, exposed, random),
-                    "A naturally spawned feral ghoul can appear in sunlight");
+                    "The feral ghoul's placement rule allows open sky");
             helper.assertTrue(!SpawnPlacements.checkSpawnRules(glowing, level, MobSpawnType.NATURAL, exposed, random)
                     && SpawnPlacements.checkSpawnRules(glowing, level, MobSpawnType.NATURAL, shelter, random),
                     "Only a sheltered irradiated site can spawn glowing ghouls");
@@ -140,22 +142,94 @@ public final class GhoulGameTests {
     public static void npcsTurnIntoFeralGhoulsOnEnteringTheWasteland(GameTestHelper helper) {
         var wasteland = helper.getLevel().getServer().getLevel(NCWasteland.DIMENSION);
         var reference = helper.absolutePos(CELL);
-        var column = new BlockPos(reference.getX() * 8, 0, reference.getZ() * 8);
-        var landing = wasteland.getHeightmapPos(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, column);
-        wasteland.getChunkSource().addRegionTicket(TicketType.PORTAL, new ChunkPos(landing), 3, landing);
+        var landing = new BlockPos(reference.getX() * 8, 240, reference.getZ() * 8);
+        var chunk = new ChunkPos(landing);
+        wasteland.getChunkSource().addRegionTicket(TicketType.PORTAL, chunk, 3, landing);
+        wasteland.setBlockAndUpdate(landing.below(), Blocks.STONE.defaultBlockState());
+        wasteland.setBlockAndUpdate(landing, Blocks.AIR.defaultBlockState());
+        wasteland.setBlockAndUpdate(landing.above(), Blocks.AIR.defaultBlockState());
         var villager = EntityType.VILLAGER.create(wasteland);
         var name = Component.literal("Wasteland visitor " + UUID.randomUUID());
         villager.moveTo(landing, 0, 0);
         villager.setCustomName(name);
         villager.setNoAi(true);
-        helper.assertTrue(wasteland.addFreshEntity(villager), "The NPC enters the Wasteland");
-        helper.succeedWhen(() -> {
-            var converted = wasteland.getEntitiesOfClass(FeralGhoul.class, new AABB(landing).inflate(4),
-                    mob -> name.equals(mob.getCustomName()));
-            helper.assertTrue(villager.isRemoved() && converted.size() == 1,
-                    "The Wasteland converts an NPC without a lethal dose");
-            converted.get(0).discard();
-        });
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(wasteland.areEntitiesLoaded(chunk.toLong()),
+                        "The Wasteland has loaded the landing chunk's entities"))
+                .thenExecute(() -> helper.assertTrue(wasteland.addFreshEntity(villager), "The NPC enters the Wasteland"))
+                .thenWaitUntil(() -> {
+                    var converted = wasteland.getEntitiesOfClass(FeralGhoul.class, new AABB(landing).inflate(4),
+                            mob -> name.equals(mob.getCustomName()));
+                    helper.assertTrue(villager.isRemoved() && converted.size() == 1,
+                            "The Wasteland converts an NPC without a lethal dose");
+                    converted.get(0).discard();
+                    wasteland.getChunkSource().removeRegionTicket(TicketType.PORTAL, chunk, 3, landing);
+                })
+                .thenSucceed();
+    }
+
+    @GameTest(template = "empty", timeoutTicks = 100)
+    public static void wastelandSpawnChecksKeepVanillaMobsOutAndCountBothGhoulVariants(GameTestHelper helper) {
+        var overworld = helper.getLevel();
+        var wasteland = overworld.getServer().getLevel(NCWasteland.DIMENSION);
+        var reference = helper.absolutePos(CELL);
+        var chunk = new ChunkPos(new BlockPos(reference.getX() * 8, 0, reference.getZ() * 8));
+        var spawn = new BlockPos(chunk.getMaxBlockX(), 240, chunk.getMiddleBlockZ());
+        wasteland.getChunkSource().addRegionTicket(TicketType.PORTAL, chunk, 3, spawn);
+        var neighbor = spawn.east();
+        for (var pos : BlockPos.betweenClosed(spawn.offset(-1, -1, -1), neighbor.offset(1, 2, 1))) {
+            wasteland.setBlockAndUpdate(pos, Blocks.STONE.defaultBlockState());
+        }
+        for (var pos : BlockPos.betweenClosed(spawn, neighbor.above())) {
+            wasteland.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+        }
+        wasteland.setBlockAndUpdate(spawn.below(), Blocks.GRASS_BLOCK.defaultBlockState());
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(wasteland.areEntitiesLoaded(chunk.toLong()),
+                        "The Wasteland has loaded the spawn chunk's entities"))
+                .thenWaitUntil(() -> helper.assertTrue(wasteland.getMaxLocalRawBrightness(spawn) == 0
+                                && wasteland.getMaxLocalRawBrightness(neighbor) == 0,
+                        "Both spawn positions have settled lighting inside the chamber"))
+                .thenExecute(() -> assertWastelandSpawnChecks(helper, wasteland, spawn, neighbor))
+                .thenSucceed();
+    }
+
+    private static void assertWastelandSpawnChecks(GameTestHelper helper, ServerLevel wasteland, BlockPos spawn, BlockPos neighbor) {
+        var cow = EntityType.COW.create(wasteland);
+        var villager = EntityType.VILLAGER.create(wasteland);
+        var feral = NCEntities.FERAL_GHOUL.get().create(wasteland);
+        var glowing = NCEntities.GLOWING_GHOUL.get().create(wasteland);
+        var spawnData = new SpawnData();
+        cow.moveTo(spawn, 0, 0);
+        villager.moveTo(spawn, 0, 0);
+        feral.moveTo(spawn, 0, 0);
+        glowing.moveTo(spawn.west(4).below(100), 0, 0);
+        helper.assertTrue(cow.checkSpawnRules(wasteland, MobSpawnType.NATURAL), "The cow passes vanilla spawn rules");
+        helper.assertTrue(cow.checkSpawnObstruction(wasteland), "The cow's Wasteland spawn position is unobstructed");
+        helper.assertTrue(!ForgeEventFactory.checkSpawnPosition(cow, wasteland, MobSpawnType.NATURAL)
+                        && !ForgeEventFactory.checkSpawnPosition(cow, wasteland, MobSpawnType.CHUNK_GENERATION)
+                        && !ForgeEventFactory.checkSpawnPositionSpawner(cow, wasteland, MobSpawnType.SPAWNER, spawnData, null),
+                "The Wasteland rejects ordinary mobs during natural, chunk generation, and spawner checks");
+        helper.assertTrue(ForgeEventFactory.checkSpawnPosition(villager, wasteland, MobSpawnType.NATURAL)
+                        && ForgeEventFactory.checkSpawnPosition(feral, wasteland, MobSpawnType.NATURAL),
+                "An NPC and the first ghoul pass Wasteland spawn checks");
+        helper.assertTrue(wasteland.addFreshEntity(glowing), "A glowing ghoul occupies the spawn chunk");
+        try {
+            helper.assertTrue(!ForgeEventFactory.checkSpawnPosition(feral, wasteland, MobSpawnType.NATURAL)
+                            && ForgeEventFactory.checkSpawnPositionSpawner(feral, wasteland, MobSpawnType.SPAWNER, spawnData, null),
+                    "A ghoul elsewhere in the chunk blocks the other variant except from a spawner");
+            feral.moveTo(neighbor, 0, 0);
+            helper.assertTrue(ForgeEventFactory.checkSpawnPosition(feral, wasteland, MobSpawnType.NATURAL),
+                    "A ghoul in a different chunk does not block the spawn");
+        } finally {
+            glowing.discard();
+        }
+        var overworld = helper.getLevel();
+        var overworldCow = EntityType.COW.create(overworld);
+        helper.setBlock(CELL.below(), Blocks.GRASS_BLOCK);
+        overworldCow.moveTo(helper.absolutePos(CELL), 0, 0);
+        helper.assertTrue(ForgeEventFactory.checkSpawnPosition(overworldCow, overworld, MobSpawnType.NATURAL),
+                "The same cow spawn check still passes in the Overworld");
     }
 
     private static void near(GameTestHelper helper, double actual, double expected, String message) {
