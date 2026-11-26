@@ -668,6 +668,8 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Create Diesel Generators | 1.3.8 | Shared ethanol into Salt Mixers and NuclearCraft ethanol into diesel engines |
 | Create Crafts & Additions | 1.3.3 | Alternator power for a processor and battery power for an Electric Motor |
 | Create: New Age | 1.1.7f | Electrical Connectors and copper wire on sided batteries and processors |
+| Create: Steam ’n’ Rails | 1.6.15-beta | Fuel Tank fill and drain through Ender IO and Mekanism |
+| Create: Occult Engineering and Occultism | 0.11.3 and 1.157.0 | Mechanical Pulverizer crushing a NuclearCraft ore and feeding its dust into a Melter |
 | XNet | 6.1.6 | Item, fluid, and energy channels on sided processors and batteries |
 | Integrated Dynamics | 1.29.11 | Fluid, Inventory, and Machine Readers on sided processors, and Energy Battery transfer in both directions |
 | Integrated Crafting and Common Capabilities | 1.4.2 and 2.9.11 | Attuned Crafting Interface recipe discovery on single-block processors |
@@ -676,6 +678,8 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
 | PneumaticCraft | 6.0.22 | Liquid and Omnidirectional Hopper transfers on processors and fission ports |
 | Arcane Archives | 0.2.5 | Radiant Tank fluid transfer with an Infuser and a Melter, and Radiant Chest and Trove item transfer with a Manufactory |
+| ProjectRed Expansion | 4.21.0 | Transposers and Pneumatic Tubes on a sided Manufactory |
+| Imperium | 1.0.10 | Voltaic Pile power to a linked Roh Energy Tap |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
 | Tom's Simple Storage | 1.7.1 | Item routing through Inventory Connectors, Basic Inventory Hoppers, and Inventory Proxies |
 | Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
@@ -725,6 +729,16 @@ On packaged Forge 47.4.10, a Mekanism 10.4.16.80 Mechanical Pipe pulled 2,000 mB
 The same packaged JAR, SHA-256 `fa0dae83729ccee37790c4a1cb3ed16fb3fc18f9e278873cc612d39538899702`, repeated both Radiant Tank routes and the Quantum controller replacement in the isolated 540-mod Auram instance. JEI loaded, the two fluid routes kept their exact amounts after chunk eviction and reload, and the saved regions contained both Quantum parts and the expected processor outputs. The client used master volume zero and OpenAL No Output. It exited cleanly with zero recorded focus activations, foreground samples, or visible windows.
 
 On packaged Forge 47.4.10, Ender IO 8.2.22-beta Item Conduits moved coal from a Radiant Chest to a Manufactory. A Radiant Trove storing a diamond rejected the coal dust, which stayed in the Manufactory. After clearing the Trove, it accepted exactly one coal dust. Mekanism 10.4.16.80 Logistical Transporters moved coal from a Trove and delivered one coal dust to a Radiant Chest. Both machines used exactly 4,000 FE, and the two routes kept their stocks through confirmed chunk eviction and a dedicated restart.
+
+On packaged Forge 47.4.10, a ProjectRed Expansion 4.21.0 Transposer pulled one coal into a Pneumatic Tube and supplied a Manufactory. The machine used 4,000 FE to make one coal dust. A second Transposer left the dust in the machine while its output face was closed. Reopening the face let the network accept the dust while its destination barrel was full. After confirmed chunk eviction and restart, clearing the barrel recovered exactly one dust with no dropped items.
+
+On the same server, an unlinked Imperium 1.0.10 Roh Energy Tap left 4,096 FE in a Voltaic Pile. Linking the Tap to a Roh Core and making an authorized request left the charge in place while the battery face was off. Opening that face delivered all 4,096 FE and the Core stored 1.359421916990146 Roh at Auram's configured rate. A dedicated restart preserved the link, the emptied battery, and the exact Roh balance.
+
+The isolated 540-mod Auram instance repeated the ProjectRed and Imperium cases with the same JAR, SHA-256 `8b107de16d5e3564f5cd5ea47dfc53db304ecbbf9c28ab73ffadde38a22c8ebe`. Almost Unified selected Mekanism coal dust. After chunk eviction and reload the barrel held one of that item, and the Core retained the exact Roh balance and Tap link. The saved regions confirmed both results. The client used master volume zero and OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
+
+On packaged Forge 47.4.10 with the installed Create add-ons, a Steam ’n’ Rails Fuel Tank in realistic mode rejected 1,000 mB of water, which stayed in the Melter. Ender IO then moved 1,200 mB of lava from the Melter's output tank into the Fuel Tank. A Mekanism Mechanical Pipe supplied that lava to an Infuser. The Infuser used 1,000 mB and 6,000 FE to make one Cobblestone Generator and retained 200 mB.
+
+In the same test world, a Mekanism Logistical Transporter moved one NuclearCraft copper ore into an Occult Engineering Mechanical Pulverizer. With Create power, the Pulverizer made two copper dust. An Ender IO Item Conduit delivered both to a Melter, which held its dust and all 64,000 FE behind a full water output tank. Clearing the tank let both batches finish with 288 mB of molten copper. The Fuel Tank and Pulverizer routes kept their measured products through confirmed chunk eviction and dedicated restart.
 
 Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
 
