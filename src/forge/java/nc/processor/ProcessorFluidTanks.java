@@ -6,7 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -15,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.function.IntUnaryOperator;
 
@@ -340,32 +340,36 @@ public final class ProcessorFluidTanks {
     }
 
     void push(Level level) {
-        for (Direction side : SIDES) {
-            for (int index = 0; index < tanks.length; index++) {
-                FluidTank tank = tanks[index];
-                if (tank.isEmpty() || Mode.read(sideModes[index], side) != Mode.AUTO_OUTPUT) {
-                    continue;
-                }
-                var adjacent = owner.getBlockPos().relative(side);
-                BlockEntity target = level.hasChunkAt(adjacent) ? level.getBlockEntity(adjacent) : null;
-                if (target != null) {
-                    target.getCapability(ForgeCapabilities.FLUID_HANDLER, side.getOpposite())
-                            .ifPresent(handler -> transferTo(tank, handler));
+        if (transferring) return;
+        List<ProcessorOutputTarget> targets = null;
+        for (int index = 0; index < tanks.length; index++) {
+            FluidTank tank = tanks[index];
+            int modes = sideModes[index];
+            if (tank.isEmpty() || !hasAutoOutput(modes)) continue;
+            if (targets == null) targets = ProcessorOutputTarget.inTransferOrder(level, owner.getBlockPos());
+            for (var neighbor : targets) {
+                if (Mode.read(modes, neighbor.side()) == Mode.AUTO_OUTPUT
+                        && neighbor.fluids().map(target -> transferTo(tank, target)).orElse(0) > 0) {
+                    break;
                 }
             }
         }
     }
 
-    private void transferTo(FluidTank tank, IFluidHandler target) {
-        if (transferring) {
-            return;
+    private static boolean hasAutoOutput(int modes) {
+        for (Direction side : SIDES) {
+            if (Mode.read(modes, side) == Mode.AUTO_OUTPUT) return true;
         }
+        return false;
+    }
+
+    private int transferTo(FluidTank tank, IFluidHandler target) {
         transferring = true;
         try {
             FluidStack offered = tank.getFluid().copy();
             int fillable = Math.min(offered.getAmount(), target.fill(offered, SIMULATE));
             if (fillable <= 0) {
-                return;
+                return 0;
             }
             FluidStack withdrawn = tank.drain(fillable, EXECUTE);
             int accepted = 0;
@@ -378,6 +382,7 @@ public final class ProcessorFluidTanks {
                     owner.setChanged();
                 }
             }
+            return accepted;
         } finally {
             transferring = false;
         }

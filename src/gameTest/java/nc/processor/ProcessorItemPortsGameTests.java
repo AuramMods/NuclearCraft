@@ -88,6 +88,48 @@ public final class ProcessorItemPortsGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void itemEjectionRotatesRealNeighbors(GameTestHelper helper) {
+        helper.setBlock(MACHINE, Machine.ALLOY_FURNACE.block());
+        helper.setBlock(MACHINE.east(), Blocks.BARREL);
+        helper.setBlock(MACHINE.west(), Blocks.BARREL);
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(MACHINE);
+        int slot = machine.itemPorts().inputs();
+        machine.itemPorts().cycleSlot(slot, Direction.WEST);
+        machine.itemPorts().cycleSlot(slot, Direction.EAST);
+        for (int tick = 1; tick <= 6; tick++) {
+            helper.runAtTickTime(tick, () -> {
+                machine.inventory().setStackInSlot(slot, new ItemStack(Items.COPPER_INGOT));
+                machine.itemPorts().push(helper.getLevel());
+            });
+        }
+        helper.runAtTickTime(7, () -> {
+            var east = items(helper.getBlockEntity(MACHINE.east()), Direction.WEST);
+            var west = items(helper.getBlockEntity(MACHINE.west()), Direction.EAST);
+            helper.assertTrue(machine.inventory().getStackInSlot(slot).isEmpty()
+                            && east.getStackInSlot(0).getCount() == 3 && west.getStackInSlot(0).getCount() == 3,
+                    "Consecutive batches alternate between the actual neighbors");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
+    public static void itemEjectionDebitsAnEntireAcceptedStackFromSavedStock(GameTestHelper helper) {
+        helper.setBlock(MACHINE, Machine.ALLOY_FURNACE.block());
+        helper.setBlock(MACHINE.east(), Blocks.BARREL);
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(MACHINE);
+        int slot = machine.itemPorts().inputs();
+        machine.inventory().setStackInSlot(slot, new ItemStack(Items.COPPER_INGOT, 100));
+        machine.itemPorts().cycleSlot(slot, Direction.EAST);
+        machine.load(machine.saveWithoutMetadata());
+        machine.itemPorts().push(helper.getLevel());
+        var barrel = items(helper.getBlockEntity(MACHINE.east()), Direction.WEST);
+        int received = barrel.getStackInSlot(0).getCount() + barrel.getStackInSlot(1).getCount();
+        helper.assertTrue(received == 100 && machine.inventory().getStackInSlot(slot).isEmpty(),
+                "A 100-item saved stack leaves exactly 100 items in the destination and zero in the source");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void outputOverflowPoliciesApplyIndependently(GameTestHelper helper) {
         helper.setBlock(MACHINE, Machine.SEPARATOR.block());
         var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(MACHINE);

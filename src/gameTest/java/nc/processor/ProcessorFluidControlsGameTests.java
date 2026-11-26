@@ -68,6 +68,43 @@ public final class ProcessorFluidControlsGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void fluidEjectionStopsAtOneDestinationAndRotatesRealNeighbors(GameTestHelper helper) {
+        helper.setBlock(MACHINE, NCRegistries.MELTER.get());
+        helper.setBlock(MACHINE.east(), NCRegistries.ELECTROLYZER.get());
+        helper.setBlock(MACHINE.west(), NCRegistries.ELECTROLYZER.get());
+        var source = ((MelterBlockEntity) helper.getBlockEntity(MACHINE)).fluidTanks();
+        var west = fluids(helper.getBlockEntity(MACHINE.west()), Direction.EAST);
+        var east = fluids(helper.getBlockEntity(MACHINE.east()), Direction.WEST);
+        for (var receiver : new IFluidHandler[]{west, east}) receiver.fill(water(15_900), EXECUTE);
+        source.cycle(0, Direction.WEST);
+        source.cycle(0, Direction.EAST);
+        source.produce(0, water(250));
+
+        source.push(helper.getLevel());
+        helper.assertTrue(source.stored(0).getAmount() == 150,
+                "A push stops after the first destination accepts 100 mB");
+        source.push(helper.getLevel());
+        helper.assertTrue(west.getFluidInTank(0).getAmount() == 16_000 && east.getFluidInTank(0).getAmount() == 16_000
+                        && source.stored(0).getAmount() == 50,
+                "A full first tank lets the same amount go to the other destination on the next attempt");
+        source.clear(0);
+        ((FluidProcessorBlockEntity) helper.getBlockEntity(MACHINE.west())).fluidTanks().clear(0);
+        ((FluidProcessorBlockEntity) helper.getBlockEntity(MACHINE.east())).fluidTanks().clear(0);
+        for (int tick = 1; tick <= 6; tick++) {
+            helper.runAtTickTime(tick, () -> {
+                source.produce(0, water(100));
+                source.push(helper.getLevel());
+            });
+        }
+        helper.runAtTickTime(7, () -> {
+            helper.assertTrue(source.stored(0).isEmpty() && west.getFluidInTank(0).getAmount() == 300
+                            && east.getFluidInTank(0).getAmount() == 300,
+                    "Consecutive batches alternate between the two adjacent receivers");
+            helper.succeed();
+        });
+    }
+
+    @GameTest(template = "empty")
     public static void multipleInputsKeepTheirLegacySeparationAndSidedModes(GameTestHelper helper) {
         helper.setBlock(MACHINE, NCRegistries.CHEMICAL_REACTOR.get());
         var reactor = (FluidProcessorBlockEntity) helper.getBlockEntity(MACHINE);

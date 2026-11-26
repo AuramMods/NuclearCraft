@@ -1,14 +1,12 @@
 package nc.processor;
 
 import nc.processor.ProcessorFluidTanks.OutputMode;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
@@ -17,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
 
@@ -309,7 +308,7 @@ public final class ProcessorItemPorts {
         }
         pushing = true;
         try {
-            int first = Math.floorMod(level.getGameTime(), SIDES.length);
+            List<ProcessorOutputTarget> targets = null;
             for (int slot = 0; slot < slots; slot++) {
                 ItemStackHandler source = handler(slot);
                 int index = index(slot);
@@ -317,14 +316,15 @@ public final class ProcessorItemPorts {
                 if (stack.isEmpty()) {
                     continue;
                 }
-                for (int offset = 0; offset < SIDES.length; offset++) {
-                    Direction side = SIDES[(first + offset) % SIDES.length];
-                    if (mode(slot, side) != SlotMode.AUTO_OUTPUT) {
-                        continue;
-                    }
-                    int moved = pushToNeighbor(level, side, stack);
+                if (targets == null) targets = ProcessorOutputTarget.inTransferOrder(level, owner.getBlockPos());
+                int count = stack.getCount();
+                for (var neighbor : targets) {
+                    if (mode(slot, neighbor.side()) != SlotMode.AUTO_OUTPUT) continue;
+                    int moved = neighbor.items()
+                            .map(target -> count - ItemHandlerHelper.insertItemStacked(target, stack.copy(), false).getCount())
+                            .orElse(0);
                     if (moved > 0) {
-                        source.extractItem(index, moved, false);
+                        source.setStackInSlot(index, stack.copyWithCount(count - moved));
                         break;
                     }
                 }
@@ -332,21 +332,6 @@ public final class ProcessorItemPorts {
         } finally {
             pushing = false;
         }
-    }
-
-    private int pushToNeighbor(Level level, Direction side, ItemStack stack) {
-        BlockPos pos = owner.getBlockPos().relative(side);
-        if (!level.hasChunkAt(pos)) {
-            return 0;
-        }
-        BlockEntity neighbor = level.getBlockEntity(pos);
-        if (neighbor == null) {
-            return 0;
-        }
-        int count = stack.getCount();
-        return neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side.getOpposite())
-                .map(target -> count - ItemHandlerHelper.insertItemStacked(target, stack.copy(), false).getCount())
-                .orElse(0);
     }
 
     private ItemStackHandler handler(int slot) {
