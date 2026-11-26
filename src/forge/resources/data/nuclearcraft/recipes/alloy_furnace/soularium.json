@@ -7,7 +7,13 @@
                     "tag": "forge:ingots/gold"
                 },
                 {
+                    "tag": "c:ingots/gold"
+                },
+                {
                     "tag": "forge:dusts/gold"
+                },
+                {
+                    "tag": "c:dusts/gold"
                 }
             ],
             "count": 1
@@ -20,15 +26,52 @@
         }
     ],
     "result": {
-        "item": "enderio:soularium_ingot",
+        "tag": "c:ingots/soularium",
+        "preferred_tag": "forge:ingots/soularium",
         "count": 1
     },
     "ticks": 600,
     "power_multiplier": 0.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:soularium_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/gold"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/soularium"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/soularium"
+                    }
+                ]
+            }
         }
     ]
 }

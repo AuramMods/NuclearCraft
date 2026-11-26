@@ -28,21 +28,64 @@
                 },
                 {
                     "tag": "c:nuggets/pulsating_alloy"
+                },
+                {
+                    "tag": "forge:nuggets/pulsating_iron"
+                },
+                {
+                    "tag": "c:nuggets/pulsating_iron"
                 }
             ],
             "count": 8
         }
     ],
     "result": {
-        "item": "enderio:pulsating_crystal",
+        "tag": "c:gems/pulsating_crystal",
+        "preferred_tag": "forge:gems/pulsating_crystal",
         "count": 1
     },
     "ticks": 400,
     "power_multiplier": 1.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:pulsating_crystal"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/pulsating_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/pulsating_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/pulsating_iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/pulsating_iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:gems/pulsating_crystal"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:gems/pulsating_crystal"
+                    }
+                ]
+            }
         }
     ]
 }

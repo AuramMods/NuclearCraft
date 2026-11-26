@@ -7,7 +7,13 @@
                     "tag": "forge:ingots/iron"
                 },
                 {
+                    "tag": "c:ingots/iron"
+                },
+                {
                     "tag": "forge:dusts/iron"
+                },
+                {
+                    "tag": "c:dusts/iron"
                 }
             ],
             "count": 2
@@ -18,22 +24,89 @@
                     "tag": "forge:ingots/nickel"
                 },
                 {
+                    "tag": "c:ingots/nickel"
+                },
+                {
                     "tag": "forge:dusts/nickel"
+                },
+                {
+                    "tag": "c:dusts/nickel"
                 }
             ],
             "count": 1
         }
     ],
     "result": {
-        "item": "thermal:invar_ingot",
+        "tag": "c:ingots/invar",
+        "preferred_tag": "forge:ingots/invar",
         "count": 3
     },
     "ticks": 400,
-    "energy_per_tick": 15,
+    "power_multiplier": 1.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "thermal:invar_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/nickel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/nickel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/invar"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/invar"
+                    }
+                ]
+            }
         }
     ]
 }

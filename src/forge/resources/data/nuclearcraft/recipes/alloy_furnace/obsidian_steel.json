@@ -19,9 +19,17 @@
             "count": 1
         },
         {
-            "ingredient": {
-                "item": "minecraft:obsidian"
-            },
+            "ingredient": [
+                {
+                    "item": "minecraft:obsidian"
+                },
+                {
+                    "tag": "forge:obsidian"
+                },
+                {
+                    "tag": "c:obsidian"
+                }
+            ],
             "count": 1
         }
     ],
@@ -34,30 +42,17 @@
     "power_multiplier": 2,
     "conditions": [
         {
-            "type": "forge:not",
-            "value": {
-                "type": "forge:not",
-                "value": {
-                    "type": "forge:and",
-                    "values": [
-                        {
-                            "type": "forge:tag_empty",
-                            "tag": "forge:ingots/dark_steel"
-                        },
-                        {
-                            "type": "forge:tag_empty",
-                            "tag": "c:ingots/dark_steel"
-                        }
-                    ]
+            "type": "forge:and",
+            "values": [
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "forge:ingots/dark_steel"
+                },
+                {
+                    "type": "forge:tag_empty",
+                    "tag": "c:ingots/dark_steel"
                 }
-            }
-        },
-        {
-            "type": "forge:not",
-            "value": {
-                "type": "forge:item_exists",
-                "item": "enderio:dark_steel_ingot"
-            }
+            ]
         },
         {
             "type": "forge:not",

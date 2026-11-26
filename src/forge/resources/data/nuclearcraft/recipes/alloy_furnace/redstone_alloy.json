@@ -19,22 +19,67 @@
             "count": 1
         },
         {
-            "ingredient": {
-                "item": "minecraft:redstone"
-            },
+            "ingredient": [
+                {
+                    "item": "minecraft:redstone"
+                },
+                {
+                    "tag": "forge:dusts/redstone"
+                },
+                {
+                    "tag": "c:dusts/redstone"
+                }
+            ],
             "count": 1
         }
     ],
     "result": {
-        "item": "enderio:redstone_alloy_ingot",
+        "tag": "c:ingots/redstone_alloy",
+        "preferred_tag": "forge:ingots/redstone_alloy",
         "count": 1
     },
     "ticks": 400,
     "power_multiplier": 1,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:redstone_alloy_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/silicon"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/silicon"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/redstone_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/redstone_alloy"
+                    }
+                ]
+            }
         }
     ]
 }

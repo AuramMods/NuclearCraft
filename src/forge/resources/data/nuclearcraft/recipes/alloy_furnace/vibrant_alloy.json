@@ -34,15 +34,52 @@
         }
     ],
     "result": {
-        "item": "enderio:vibrant_alloy_ingot",
+        "tag": "c:ingots/vibrant_alloy",
+        "preferred_tag": "forge:ingots/vibrant_alloy",
         "count": 1
     },
     "ticks": 600,
     "power_multiplier": 2,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:vibrant_alloy_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/energetic_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/energetic_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/energetic_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/energetic_alloy"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/vibrant_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/vibrant_alloy"
+                    }
+                ]
+            }
         }
     ]
 }

@@ -7,28 +7,79 @@
                     "tag": "forge:ingots/iron"
                 },
                 {
+                    "tag": "c:ingots/iron"
+                },
+                {
                     "tag": "forge:dusts/iron"
+                },
+                {
+                    "tag": "c:dusts/iron"
                 }
             ],
             "count": 1
         },
         {
-            "ingredient": {
-                "item": "minecraft:redstone"
-            },
+            "ingredient": [
+                {
+                    "item": "minecraft:redstone"
+                },
+                {
+                    "tag": "forge:dusts/redstone"
+                },
+                {
+                    "tag": "c:dusts/redstone"
+                }
+            ],
             "count": 1
         }
     ],
     "result": {
-        "item": "enderio:conductive_alloy_ingot",
+        "tag": "c:ingots/conductive_alloy",
+        "preferred_tag": "forge:ingots/conductive_alloy",
         "count": 1
     },
     "ticks": 400,
     "power_multiplier": 1,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:conductive_alloy_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/conductive_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/conductive_alloy"
+                    }
+                ]
+            }
         }
     ]
 }

@@ -19,22 +19,80 @@
             "count": 1
         },
         {
-            "ingredient": {
-                "tag": "forge:dusts/energetic"
-            },
+            "ingredient": [
+                {
+                    "tag": "forge:dusts/energetic"
+                },
+                {
+                    "tag": "c:dusts/energetic"
+                }
+            ],
             "count": 2
         }
     ],
     "result": {
-        "item": "enderio:energetic_alloy_ingot",
+        "tag": "c:ingots/energetic_alloy",
+        "preferred_tag": "forge:ingots/energetic_alloy",
         "count": 1
     },
     "ticks": 400,
     "power_multiplier": 1.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:energetic_alloy_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/gold"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/energetic"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/energetic"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/energetic_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/energetic_alloy"
+                    }
+                ]
+            }
         }
     ]
 }

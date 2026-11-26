@@ -1,0 +1,13 @@
+{
+    "replace": false,
+    "values": [
+        {
+            "id": "#forge:ingots/pulsating_iron",
+            "required": false
+        },
+        {
+            "id": "#c:ingots/pulsating_iron",
+            "required": false
+        }
+    ]
+}

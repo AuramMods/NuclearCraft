@@ -13,22 +13,72 @@
             "count": 1
         },
         {
-            "ingredient": {
-                "tag": "forge:dusts/dimensional"
-            },
+            "ingredient": [
+                {
+                    "tag": "forge:dusts/dimensional"
+                },
+                {
+                    "tag": "c:dusts/dimensional"
+                }
+            ],
             "count": 2
         }
     ],
     "result": {
-        "item": "enderio:end_steel_ingot",
+        "tag": "c:ingots/end_steel",
+        "preferred_tag": "forge:ingots/end_steel",
         "count": 1
     },
     "ticks": 800,
     "power_multiplier": 2,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:end_steel_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/dark_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/dark_steel"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/dimensional"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/dimensional"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/end_steel"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/end_steel"
+                    }
+                ]
+            }
         }
     ]
 }

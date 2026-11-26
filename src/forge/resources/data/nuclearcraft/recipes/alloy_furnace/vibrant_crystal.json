@@ -34,15 +34,44 @@
         }
     ],
     "result": {
-        "item": "enderio:vibrant_crystal",
+        "tag": "c:gems/vibrant_crystal",
+        "preferred_tag": "forge:gems/vibrant_crystal",
         "count": 1
     },
     "ticks": 400,
     "power_multiplier": 1.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:vibrant_crystal"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:nuggets/vibrant_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:nuggets/vibrant_alloy"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:gems/vibrant_crystal"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:gems/vibrant_crystal"
+                    }
+                ]
+            }
         }
     ]
 }

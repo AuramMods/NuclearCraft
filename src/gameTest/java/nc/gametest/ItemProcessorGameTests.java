@@ -206,6 +206,28 @@ public final class ItemProcessorGameTests {
         });
     }
 
+    @GameTest(template = "empty", timeoutTicks = 450)
+    public static void alloyFurnaceUsesCommonTagsForInvarWithoutThermal(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var recipe = (ItemProcessorRecipe) level.getRecipeManager().byKey(NuclearCraft.id("alloy_furnace/invar")).orElseThrow();
+        helper.assertTrue(recipe.configuredTime() == 400 && recipe.configuredPower() == 15
+                        && ItemStack.matches(recipe.getResultItem(level.registryAccess()), new ItemStack(Items.FLINT, 3)),
+                "The tagged provider keeps the original Invar recipe and rates");
+
+        helper.setBlock(POS, Machine.ALLOY_FURNACE.block());
+        var machine = (ItemProcessorBlockEntity) helper.getBlockEntity(POS);
+        var inventory = items(machine, Direction.UP);
+        var energy = machine.getCapability(ForgeCapabilities.ENERGY).orElseThrow(AssertionError::new);
+        helper.assertTrue(inventory.insertItem(0, new ItemStack(Items.QUARTZ), false).isEmpty()
+                        && inventory.insertItem(1, new ItemStack(Items.IRON_INGOT, 2), false).isEmpty()
+                        && energy.receiveEnergy(6_000, false) == 6_000,
+                "Accept the common nickel tag and the reversed input order");
+        helper.succeedWhen(() -> helper.assertTrue(ItemStack.matches(inventory.getStackInSlot(2), new ItemStack(Items.FLINT, 3))
+                        && inventory.getStackInSlot(0).isEmpty() && inventory.getStackInSlot(1).isEmpty()
+                        && energy.getEnergyStored() == 0,
+                "Produce three tagged Invar and consume exactly 6,000 FE"));
+    }
+
     @GameTest(template = "empty")
     public static void alloyFurnaceSyncsFractionalRecipeTime(GameTestHelper helper) {
         var id = NuclearCraft.id("alloy_furnace/qa_fractional_time");

@@ -7,7 +7,13 @@
                     "tag": "forge:ingots/gold"
                 },
                 {
+                    "tag": "c:ingots/gold"
+                },
+                {
                     "tag": "forge:dusts/gold"
+                },
+                {
+                    "tag": "c:dusts/gold"
                 }
             ],
             "count": 1
@@ -18,22 +24,89 @@
                     "tag": "forge:ingots/silver"
                 },
                 {
+                    "tag": "c:ingots/silver"
+                },
+                {
                     "tag": "forge:dusts/silver"
+                },
+                {
+                    "tag": "c:dusts/silver"
                 }
             ],
             "count": 1
         }
     ],
     "result": {
-        "item": "thermal:electrum_ingot",
+        "tag": "c:ingots/electrum",
+        "preferred_tag": "forge:ingots/electrum",
         "count": 2
     },
     "ticks": 400,
-    "energy_per_tick": 5,
+    "power_multiplier": 0.5,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "thermal:electrum_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/gold"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/gold"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/silver"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/silver"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/electrum"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/electrum"
+                    }
+                ]
+            }
         }
     ]
 }

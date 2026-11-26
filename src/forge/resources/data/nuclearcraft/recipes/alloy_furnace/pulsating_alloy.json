@@ -7,7 +7,13 @@
                     "tag": "forge:ingots/iron"
                 },
                 {
+                    "tag": "c:ingots/iron"
+                },
+                {
                     "tag": "forge:dusts/iron"
+                },
+                {
+                    "tag": "c:dusts/iron"
                 }
             ],
             "count": 1
@@ -28,15 +34,52 @@
         }
     ],
     "result": {
-        "item": "enderio:pulsating_alloy_ingot",
+        "tag": "c:ingots/pulsating_alloy",
+        "preferred_tag": "forge:ingots/pulsating_alloy",
         "count": 1
     },
     "ticks": 600,
     "power_multiplier": 1,
     "conditions": [
         {
-            "type": "forge:item_exists",
-            "item": "enderio:pulsating_alloy_ingot"
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:dusts/iron"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:dusts/iron"
+                    }
+                ]
+            }
+        },
+        {
+            "type": "forge:not",
+            "value": {
+                "type": "forge:and",
+                "values": [
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "forge:ingots/pulsating_alloy"
+                    },
+                    {
+                        "type": "forge:tag_empty",
+                        "tag": "c:ingots/pulsating_alloy"
+                    }
+                ]
+            }
         }
     ]
 }
