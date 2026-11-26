@@ -669,6 +669,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Embers Rekindled | 1.20.1-1.4.7 | Extractors, fluid pipes, and molten-metal melting, stamping, and mixing |
 | Industrial Foregoing | 3.5.21 | Pitiful Generator power and Black Hole Tank and Unit transfers |
 | PneumaticCraft | 6.0.22 | Liquid and Omnidirectional Hopper transfers on processors and fission ports |
+| Arcane Archives | 0.2.5 | Radiant Tank fluid transfer with an Infuser and a Melter |
 | Hopper Ducts | 1.5 | Filtered Grated Hopper and Hopper Duct item transfer on sided processors |
 | Tom's Simple Storage | 1.7.1 | Item routing through Inventory Connectors, Basic Inventory Hoppers, and Inventory Proxies |
 | Entangled | 1.3.20 | Item, fluid, and FE transfer through a bound remote processor |
@@ -712,6 +713,10 @@ The Infuser accepted 1,000 mB of Mekanism oxygen through an Ender IO Fluid Condu
 Two Electrolyzer-to-Infuser chains used the exact installed Ender IO or Mekanism pipes and item transporters. Each drew 500 mB of water, collected 500 mB of hydrogen through a separate face, and delivered the batch's 250 mB of oxygen to the Infuser. Each started with 750 mB of buffered oxygen and delivered enough for one LEU-235 oxide. The source tanks and barrels emptied, and each destination barrel received exactly one oxide. A full server restart and a confirmed chunk unload and reload preserved the tank contents and item counts in both chains.
 
 With the same versions of Ender IO and Mekanism, each network transferred nitrogen to an Infuser and extracted one LEU-235 nitride. Compact Water Sources filled each destination tank to 16,000 mB. Compact Cobblestone Generators with the base power setting changed to 2.5 FE/t used a 400 FE buffer to produce exactly 20 cobblestone each, which the item conduit or transporter collected. Both networks preserved the amounts after a server restart and a confirmed chunk unload and reload.
+
+On packaged Forge 47.4.10, a Mekanism 10.4.16.80 Mechanical Pipe pulled 2,000 mB of water from an Arcane Archives 0.2.5 Radiant Tank after reopening the Infuser's west face. The Infuser used all the water and 6,000 FE to make one Water Source. An Ender IO 8.2.22-beta Fluid Conduit held all 1,000 mB of a Melter batch while the destination Radiant Tank held lava. With 50 mB of room for water, the tank took exactly 50 mB and the other 950 mB stayed in the Melter. The conduit delivered those 950 mB once the tank emptied. The exact outputs and empty machine buffers survived confirmed chunk eviction and dedicated restart.
+
+The same packaged JAR, SHA-256 `fa0dae83729ccee37790c4a1cb3ed16fb3fc18f9e278873cc612d39538899702`, repeated both Radiant Tank routes and the Quantum controller replacement in the isolated 540-mod Auram instance. JEI loaded, the two fluid routes kept their exact amounts after chunk eviction and reload, and the saved regions contained both Quantum parts and the expected processor outputs. The client used master volume zero and OpenAL No Output. It exited cleanly with zero recorded focus activations, foreground samples, or visible windows.
 
 Using those same networks, two Decay Hasteners received uranium-238 and output a radium dust each. Two independently powered Ra-Be sources primed LEU-235 oxide in separate solid reactors. Each reactor took water and fuel through its outward ports, burned one fuel pellet, and discharged one depleted LEU-235 oxide. The networks collected 21,860 mB of high-pressure steam each from exactly 5,465 mB of water consumed per reactor. Both systems preserved the coolant, steam, radium dust, and depleted fuel after a full server restart and a confirmed chunk unload and reload.
 
@@ -2407,6 +2412,8 @@ Right-click casing, glass, or another passive multiblock part with both hands em
 The chemical machines report the block responsible for an invalid shell or interior, including mismatched Distiller layers and Large Electrolyzer terminals or columns. Quantum connectors distinguish a missing controller from conflicting ones and mark all connected controllers when there is a conflict.
 
 All 224 local GameTests passed, including empty-hand inspection, offhand item precedence, a disconnected casing beside a larger reactor, repair, exact failure coordinates, and the two quantum controller errors.
+
+Forge queues block entity load callbacks while loading chunks. When a Quantum part is removed before its callback runs, the network now ignores that part. Replaying a saved test world exposed two removed controllers still registered at positions occupied by air. On clean, packaged Forge 47.4.10, queuing the callback and removing a controller reproduced the stale entry with the previous JAR. The patched JAR saw an isolated connector and then registered a newly placed controller at the same position. All 335 local GameTests passed when run against the same saved world copy, including a regression that uses the Forge load queue.
 
 A muted multiplayer client sent normal right-click packets to the packaged Forge 47.4.10 server. The received outlines marked the missing reactor casing, missing turbine shaft, missing exchanger casing, misplaced chemical machine part, and both conflicting quantum controllers. The disconnected reactor casing returned the missing-controller message. A separate multiplayer click reopened the repaired reactor's controller screen. The clients used OpenAL No Output and recorded zero focus activations, foreground samples, or visible windows.
 

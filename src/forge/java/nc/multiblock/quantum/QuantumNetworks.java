@@ -28,6 +28,8 @@ public final class QuantumNetworks {
     private boolean dirty;
 
     static void add(ServerLevel level, QuantumPartEntity part) {
+        // Forge can deliver a queued onLoad after the part has already been removed.
+        if (part.isRemoved()) return;
         var graph = LEVELS.computeIfAbsent(level, ignored -> new QuantumNetworks());
         graph.parts.put(part.getBlockPos(), part);
         graph.dirty = true;

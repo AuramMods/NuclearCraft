@@ -23,12 +23,50 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
 public final class QuantumGameTests {
+    @GameTest(template = "empty")
+    public static void queuedLoadDoesNotRestoreRemovedQuantumController(GameTestHelper helper) {
+        var level = helper.getLevel();
+        var connector = new BlockPos(2, 2, 2);
+        var controller = connector.east();
+        helper.setBlock(connector, NCQuantum.block(QuantumPart.CONNECTOR));
+        helper.setBlock(controller, NCQuantum.block(QuantumPart.CONTROLLER));
+        var original = (QuantumPartEntity) helper.getBlockEntity(controller);
+        var position = helper.absolutePos(connector);
+
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    var network = QuantumNetworks.at(level, position);
+                    helper.assertTrue(network != null && network.controllers().equals(List.of(original)),
+                            "Expected the original controller to register");
+                })
+                .thenExecute(() -> {
+                    level.addFreshBlockEntities(List.of(original));
+                    helper.setBlock(controller, Blocks.AIR);
+                    helper.assertTrue(original.isRemoved(), "The replaced controller must be marked removed");
+                })
+                .thenExecuteAfter(2, () -> {
+                    var network = QuantumNetworks.at(level, position);
+                    helper.assertTrue(network != null && network.controllers().isEmpty(),
+                            "A queued load must not register a removed controller");
+                    helper.setBlock(controller, NCQuantum.block(QuantumPart.CONTROLLER));
+                })
+                .thenWaitUntil(() -> {
+                    var replacement = helper.getBlockEntity(controller);
+                    var network = QuantumNetworks.at(level, position);
+                    helper.assertTrue(replacement instanceof QuantumPartEntity && replacement != original
+                                    && network != null && network.controllers().equals(List.of(replacement)),
+                            "The real replacement controller registers at that position");
+                })
+                .thenSucceed();
+    }
+
     @GameTest(template = "empty")
     public static void quantumCircuitPreservesEntanglementAndGatePhases(GameTestHelper helper) throws IOException {
         var outcomes = new boolean[2];
