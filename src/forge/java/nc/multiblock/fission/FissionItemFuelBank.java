@@ -49,8 +49,8 @@ final class FissionItemFuelBank {
     }
 
     void clear() {
-        unfiltered.clear();
-        filtered.values().forEach(FissionFuelItems::clear);
+        unfiltered.clearContents();
+        filtered.values().forEach(FissionFuelItems::clearContents);
     }
 
     void dropContents() {
@@ -71,7 +71,7 @@ final class FissionItemFuelBank {
     }
 
     void load(ListTag list) {
-        filtered.values().forEach(FissionFuelItems::clear);
+        filtered.values().forEach(FissionFuelItems::clearContents);
         for (Tag tag : list) {
             CompoundTag data = (CompoundTag) tag;
             ResourceLocation filter = FissionFuelItems.readFilter(data, variant);

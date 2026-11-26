@@ -36,7 +36,7 @@ public final class FissionIrradiatorBlock extends FissionPartBlock implements En
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState replacement, boolean moved) {
         if (!level.isClientSide && !state.is(replacement.getBlock()) && level.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
-            irradiator.localItems().dropContents(level);
+            irradiator.localItems().dropContents();
         }
         super.onRemove(state, level, pos, replacement, moved);
     }

@@ -22,11 +22,12 @@ public final class FissionIrradiatorMenu extends AbstractContainerMenu {
     public static final int CLEAR_FILTER = 0;
     public static final int SWITCH_INVENTORY = 1;
     private static final int FILTER = 0, FLUX = 1, PROGRESS = 2, HEAT = 3, CAPACITY = 4, STATUS = 5;
+    private static final int INPUT_COUNT = 6, OUTPUT_COUNT = 7, ITEM_CAPACITY = 8;
     private static final int CONNECTED = 1, LINKED = 2, LOCAL = 4, OUTPUT = 8;
     private static final int PLAYER_START = 2;
     private static final int PLAYER_END = 38;
 
-    private final SimpleContainerData data = new SimpleContainerData(12);
+    private final SimpleContainerData data = new SimpleContainerData(2 * (ITEM_CAPACITY + 1));
     private final boolean port;
     private final @Nullable BlockEntity entity;
     private boolean local;
@@ -148,7 +149,11 @@ public final class FissionIrradiatorMenu extends AbstractContainerMenu {
         var controller = controller(entity);
         boolean linked = sharedItems(entity) != localItems(entity);
         local &= linked;
-        var filter = selected().filter();
+        var inventory = selected();
+        var filter = inventory.filter();
+        set(INPUT_COUNT, inventory.total(0));
+        set(OUTPUT_COUNT, inventory.total(1));
+        set(ITEM_CAPACITY, inventory.capacity());
         set(FILTER, filter == null ? 0 : BuiltInRegistries.ITEM.getId(BuiltInRegistries.ITEM.get(filter)));
         if (entity instanceof FissionIrradiator part) {
             var heat = controller == null ? SolidFissionCore.PartHeat.NONE : controller.partHeat(entity.getBlockPos());
@@ -180,6 +185,8 @@ public final class FissionIrradiatorMenu extends AbstractContainerMenu {
     public int flux() { return get(FLUX); }
     public int heat() { return get(HEAT); }
     public int heatCapacity() { return get(CAPACITY); }
+    public int itemCount(boolean output) { return get(output ? OUTPUT_COUNT : INPUT_COUNT); }
+    public int itemCapacity() { return get(ITEM_CAPACITY); }
     public ItemStack filter() { return new ItemStack(BuiltInRegistries.ITEM.byId(get(FILTER))); }
 
     private final class IrradiatorSlot extends SlotItemHandler {

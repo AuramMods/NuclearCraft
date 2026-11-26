@@ -20,7 +20,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -88,7 +87,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
             } else if (next.port.fluid()) {
                 fluid = LazyOptional.of(() -> new VentHandler(next));
             } else {
-                items = LazyOptional.of(() -> new FuelHandler(next));
+                items = LazyOptional.of(() -> new ItemPortHandler(next));
             }
         }
         invalidateDetachedFluid();
@@ -255,42 +254,15 @@ public final class FissionPortBlockEntity extends BlockEntity {
         return controller == null ? localIrradiatorItems() : controller.irradiatorItems(localIrradiatorItems());
     }
 
-    void exportIrradiation(ServerLevel level) {
-        Binding current = binding;
-        if (current == null || !current.port.output() || irradiatorController() == null) {
-            return;
-        }
-        var inventory = irradiatorItems();
-        ItemStack product = inventory.getStackInSlot(1);
-        if (product.isEmpty()) {
-            return;
-        }
-        Direction side = current.port.side();
-        BlockPos adjacent = worldPosition.relative(side);
-        if (!level.hasChunkAt(adjacent)) {
-            return;
-        }
-        var target = level.getBlockEntity(adjacent);
-        if (target == null) {
-            return;
-        }
-        var destination = target.getCapability(ForgeCapabilities.ITEM_HANDLER, side.getOpposite()).orElse(null);
-        if (destination != null) {
-            int available = product.getCount();
-            var remainder = ItemHandlerHelper.insertItem(destination, product.copy(), false);
-            inventory.extractItem(1, available - remainder.getCount(), false);
-        }
-    }
-
-    void exportFuelOrCoolant(ServerLevel level) {
+    void exportOutput(ServerLevel level) {
         Binding current = binding;
         if (current == null || !current.port.output() || !connected(current)) {
             return;
         }
 
-        var fuel = current.port.itemFuel() ? current.controller.fuelItems(current.port.fuelFilter()) : null;
+        var inventory = current.port.fluid() ? null : itemBuffer(current);
         var output = current.port.fluid() ? current.controller.fluidTank(current.port) : null;
-        if ((fuel == null || fuel.getStackInSlot(1).isEmpty()) && (output == null || output.isEmpty())) {
+        if ((inventory == null || inventory.getStackInSlot(1).isEmpty()) && (output == null || output.isEmpty())) {
             return;
         }
         Direction outward = current.port.side();
@@ -301,14 +273,19 @@ public final class FissionPortBlockEntity extends BlockEntity {
             return;
         }
         Direction side = outward.getOpposite();
-        if (fuel != null) {
-            target.getCapability(ForgeCapabilities.ITEM_HANDLER, side).ifPresent(destination -> pushFuel(fuel, destination));
+        if (inventory != null) {
+            target.getCapability(ForgeCapabilities.ITEM_HANDLER, side).ifPresent(destination -> pushItems(inventory, destination));
         } else if (output != null) {
             target.getCapability(ForgeCapabilities.FLUID_HANDLER, side).ifPresent(destination -> pushFluid(output, destination));
         }
     }
 
-    private static void pushFuel(FissionFuelItems source, IItemHandler target) {
+    private FissionItemBuffer itemBuffer(Binding connection) {
+        return connection.port.itemFuel() ? connection.controller.fuelItems(connection.port.fuelFilter())
+                : connection.controller.irradiatorItems(localIrradiatorItems());
+    }
+
+    private static void pushItems(FissionItemBuffer source, IItemHandler target) {
         var offer = source.getStackInSlot(1).copy();
         int accepted = offer.getCount() - ItemHandlerHelper.insertItem(target, offer.copy(), true).getCount();
         if (accepted <= 0) {
@@ -515,15 +492,13 @@ public final class FissionPortBlockEntity extends BlockEntity {
         }
     }
 
-    private final class FuelHandler implements IItemHandler {
+    private final class ItemPortHandler implements IItemHandler {
         private final Binding connection;
-        private final ItemStackHandler inventory;
-        private final @Nullable FissionFuelItems fuel;
+        private final FissionItemBuffer inventory;
 
-        private FuelHandler(Binding connection) {
+        private ItemPortHandler(Binding connection) {
             this.connection = connection;
-            fuel = connection.port.itemFuel() ? connection.controller.fuelItems(connection.port.fuelFilter()) : null;
-            inventory = fuel != null ? fuel : connection.controller.irradiatorItems(localIrradiatorItems());
+            inventory = itemBuffer(connection);
         }
 
         @Override
@@ -537,7 +512,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
                 return ItemStack.EMPTY;
             }
             int index = connection.port.output() ? 1 : 0;
-            return fuel == null ? inventory.getStackInSlot(index).copy() : fuel.bulkStack(index);
+            return inventory.bulkStack(index);
         }
 
         @Override
@@ -545,7 +520,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
             if (!isItemValid(slot, stack)) {
                 return stack;
             }
-            return fuel == null ? inventory.insertItem(0, stack, simulate) : fuel.insertBulk(0, stack, simulate);
+            return inventory.insertBulk(0, stack, simulate);
         }
 
         @Override
@@ -559,7 +534,7 @@ public final class FissionPortBlockEntity extends BlockEntity {
             if (slot != 0 || !connected(connection)) {
                 return 0;
             }
-            return fuel == null ? inventory.getSlotLimit(connection.port.output() ? 1 : 0) : fuel.capacity();
+            return inventory.capacity();
         }
 
         @Override

@@ -323,6 +323,7 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         }
         resetHeatingOutput();
         MultiblockFrame.set(server, previous.frames(), false);
+        irradiationBanks.values().forEach(bank -> bank.resize(0));
         irradiationBanks.clear();
         for (BlockPos pos : previous.monitors()) {
             var chunk = server.getChunkSource().getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
@@ -375,14 +376,20 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
                     && server.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 IrradiatorItems local = entity.localIrradiatorItems();
                 irradiationBanks.merge(local.filter(), local,
-                        (first, next) -> !first.hasItems() && next.hasItems() ? next : first);
+                        (first, next) -> !first.hasContents() && next.hasContents() ? next : first);
             }
         }
+        Map<IrradiatorItems, Integer> connections = new HashMap<>();
         for (BlockPos pos : layout.irradiators()) {
             if (server.getBlockEntity(pos) instanceof FissionIrradiator irradiator) {
-                irradiator.bind(this, irradiationBanks.get(irradiator.localItems().filter()));
+                var bank = irradiationBanks.get(irradiator.localItems().filter());
+                irradiator.bind(this, bank);
+                if (bank != null) {
+                    connections.merge(bank, 1, Integer::sum);
+                }
             }
         }
+        connections.forEach(IrradiatorItems::resize);
     }
 
     IrradiatorItems irradiatorItems(IrradiatorItems local) {
@@ -610,9 +617,9 @@ public final class SolidFissionController extends BlockEntity implements MenuPro
         for (SolidFissionLayout.Port port : layout.ports()) {
             if (port.role() == Role.IRRADIATOR_PORT
                     && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
-                entity.localIrradiatorItems().clearMaterial();
+                entity.localIrradiatorItems().clearContents();
             } else if (port.itemFuel() && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
-                entity.localFuelItems().clear();
+                entity.localFuelItems().clearContents();
             } else if (port.role() == Role.COOLER_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {
                 entity.localPebbleGas().clear();
             } else if (port.role() == Role.HEATER_PORT && level.getBlockEntity(port.pos()) instanceof FissionPortBlockEntity entity) {

@@ -62,7 +62,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
 
     @Nullable FissionIrradiatorRecipe prepare(ServerLevel level) {
         var inventory = inventory();
-        ItemStack input = inventory.getStackInSlot(0);
+        ItemStack input = inventory.bulkStack(0);
         var recipe = input.isEmpty() || !inventory.matchesFilter(input) ? null : findRecipe(level, input);
         if (controller() != null && workingRecipe != null && (input.isEmpty()
                 || !ItemStack.isSameItemSameTags(input, workingInput) || recipe != null && !recipe.id().equals(workingRecipe))) {
@@ -71,7 +71,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
             workingInput = ItemStack.EMPTY;
             setChanged();
         }
-        return recipe != null && inventory.insertItem(1, recipe.result(), true).isEmpty() ? recipe : null;
+        return recipe != null && insertProduct(inventory, recipe.result(), true).isEmpty() ? recipe : null;
     }
 
     private @Nullable FissionIrradiatorRecipe findRecipe(ServerLevel level, ItemStack input) {
@@ -87,9 +87,9 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
             return;
         }
         var inventory = inventory();
-        ItemStack input = inventory.getStackInSlot(0);
+        ItemStack input = inventory.bulkStack(0);
         ItemStack result = recipe.result();
-        if (!recipe.matchesInput(input) || !inventory.insertItem(1, result, true).isEmpty()) {
+        if (!recipe.matchesInput(input) || !insertProduct(inventory, result, true).isEmpty()) {
             return;
         }
         if (workingRecipe != null && (!workingRecipe.equals(recipe.id()) || !ItemStack.isSameItemSameTags(input, workingInput))) {
@@ -98,8 +98,8 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         workingRecipe = recipe.id();
         workingInput = input.copyWithCount(1);
         long remaining = received;
-        while (remaining > 0 && inventory.insertItem(1, result, true).isEmpty()) {
-            int count = recipe.input().matchedCount(inventory.getStackInSlot(0));
+        while (remaining > 0 && insertProduct(inventory, result, true).isEmpty()) {
+            int count = recipe.input().matchedCount(inventory.bulkStack(0));
             if (count < 0) {
                 break;
             }
@@ -107,8 +107,8 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
             remaining -= used;
             progress += used;
             if (progress >= recipe.fluxRequired()) {
-                inventory.extractItem(0, count, false);
-                inventory.insertItem(1, recipe.product().roll(level.random), false);
+                inventory.takeInput(count);
+                insertProduct(inventory, recipe.product().roll(level.random), false);
                 progress = 0;
             }
         }
@@ -118,15 +118,19 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         setChanged();
     }
 
+    private ItemStack insertProduct(IrradiatorItems inventory, ItemStack product, boolean simulate) {
+        return inventory == items ? inventory.insertItem(1, product, simulate) : inventory.insertBulk(1, product, simulate);
+    }
+
     long flux() {
         return level != null && lastTick != Long.MIN_VALUE && level.getGameTime() - lastTick <= 1
                 && controller() != null ? flux : 0;
     }
 
     void clearMaterial() {
-        items.clearMaterial();
+        items.clearContents();
         if (linked != null && linked != items) {
-            linked.clearMaterial();
+            linked.clearContents();
         }
         workingInput = ItemStack.EMPTY;
         workingRecipe = null;
@@ -139,8 +143,8 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
         var recipe = computerRecipe(level);
         var info = new LinkedHashMap<String, Object>();
         long received = flux();
-        info.put("input", ComputerValues.item(inventory().getStackInSlot(0)));
-        info.put("output", ComputerValues.item(inventory().getStackInSlot(1)));
+        info.put("input", ComputerValues.item(inventory().bulkStack(0)));
+        info.put("output", ComputerValues.item(inventory().bulkStack(1)));
         info.put("current_time", progress);
         info.put("base_process_time", recipe == null ? 1L : recipe.fluxRequired());
         info.put("base_process_heat_per_flux", recipe == null ? 0D : recipe.heatPerFlux());
@@ -157,7 +161,7 @@ public final class FissionIrradiator extends BlockEntity implements ChunkRadiati
     }
 
     private @Nullable FissionIrradiatorRecipe computerRecipe(ServerLevel level) {
-        return workingRecipe == null ? findRecipe(level, inventory().getStackInSlot(0))
+        return workingRecipe == null ? findRecipe(level, inventory().bulkStack(0))
                 : level.getRecipeManager().byKey(workingRecipe)
                         .filter(FissionIrradiatorRecipe.class::isInstance).map(FissionIrradiatorRecipe.class::cast).orElse(null);
     }

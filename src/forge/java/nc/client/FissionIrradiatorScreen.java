@@ -9,6 +9,10 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class FissionIrradiatorScreen extends AbstractContainerScreen<FissionIrradiatorMenu> {
     private static final int HEAT_HEIGHT = 74;
@@ -50,6 +54,18 @@ public final class FissionIrradiatorScreen extends AbstractContainerScreen<Fissi
         storage.visible = menu.linked();
         storage.setMessage(Component.translatable(menu.local()
                 ? "gui.nuclearcraft.irradiator.local_items" : "gui.nuclearcraft.irradiator.linked_items"));
+    }
+
+    @Override
+    protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
+        var tooltip = super.getTooltipFromContainerItem(stack);
+        if (hoveredSlot == null || hoveredSlot.index >= 2) {
+            return tooltip;
+        }
+        var lines = new ArrayList<>(tooltip);
+        lines.add(Component.translatable("gui.nuclearcraft.fission_part.fuel_buffer",
+                menu.itemCount(hoveredSlot.index == 1), menu.itemCapacity()));
+        return lines;
     }
 
     @Override

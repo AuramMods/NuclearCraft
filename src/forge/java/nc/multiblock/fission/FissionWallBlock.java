@@ -84,11 +84,8 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         Role role = role(state);
-        if (level instanceof ServerLevel && role == Role.IRRADIATOR_PORT && type == NCFission.IRRADIATOR_PORT_ENTITY.get()) {
-            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportIrradiation((ServerLevel) world);
-        }
-        if (level instanceof ServerLevel && type == NCFission.PORT_ENTITY.get()) {
-            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportFuelOrCoolant((ServerLevel) world);
+        if (level instanceof ServerLevel && (type == NCFission.PORT_ENTITY.get() || type == NCFission.IRRADIATOR_PORT_ENTITY.get())) {
+            return (world, pos, blockState, entity) -> ((FissionPortBlockEntity) entity).exportOutput((ServerLevel) world);
         }
         if (level instanceof ServerLevel && isController(role) && type == FissionVariant.forController(role).entity()) {
             return (world, pos, blockState, entity) -> ((SolidFissionController) entity).tick((ServerLevel) world);
@@ -133,7 +130,7 @@ public final class FissionWallBlock extends FissionPartBlock implements EntityBl
         }
         if (!level.isClientSide && role(state) == Role.IRRADIATOR_PORT && !state.is(replacement.getBlock())
                 && level.getBlockEntity(pos) instanceof FissionPortBlockEntity port) {
-            port.localIrradiatorItems().dropContents(level);
+            port.localIrradiatorItems().dropContents();
         }
         super.onRemove(state, level, pos, replacement, moved);
     }

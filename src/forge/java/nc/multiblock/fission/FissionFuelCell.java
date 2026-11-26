@@ -96,7 +96,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         }
         decay.remember(recipe, recipe.runtimeHeat());
         if (needsFuel) {
-            reservedFuel = feed.takeFuel(recipe.fuel().matchedCount(input));
+            reservedFuel = feed.takeInput(recipe.fuel().matchedCount(input));
             reservedLocal = feed == localItems;
             reservedFilter = filter();
         }
@@ -153,7 +153,7 @@ public final class FissionFuelCell extends BlockEntity implements ChunkRadiation
         reservedFuel = ItemStack.EMPTY;
         reservedRecipe = null;
         progress = 0D;
-        localItems.clear();
+        localItems.clearContents();
         setChanged();
     }
 

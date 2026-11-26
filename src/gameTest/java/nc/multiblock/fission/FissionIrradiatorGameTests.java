@@ -1,5 +1,6 @@
 package nc.multiblock.fission;
 
+import com.mojang.authlib.GameProfile;
 import nc.NuclearCraft;
 import nc.init.NCFission;
 import nc.init.NCPebbleFission;
@@ -11,6 +12,7 @@ import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
@@ -18,12 +20,17 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BarrelBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.ArrayList;
+import java.util.OptionalInt;
+import java.util.UUID;
 
 @GameTestHolder(NuclearCraft.MOD_ID)
 @PrefixGameTestTemplate(false)
@@ -196,12 +203,100 @@ public final class FissionIrradiatorGameTests {
         helper.assertTrue(stored.extractItem(1, 64, false).getCount() == 64
                         && stored.getStackInSlot(1).getCount() == 64,
                 "A normal extraction refills from the legacy overflow");
-        port.load(port.saveWithoutMetadata());
+        var previousForge = port.saveWithoutMetadata();
+        previousForge.getCompound("inventory").remove("overflow");
+        previousForge.putInt("legacy_overflow_1", 9);
+        port.load(previousForge);
         helper.assertTrue(stored.extractItem(1, 64, false).getCount() == 64
                         && stored.extractItem(1, 64, false).getCount() == 9
                         && stored.getStackInSlot(1).isEmpty(),
                 "Saving and reloading retains the 73 remaining items exactly");
         helper.succeed();
+    }
+
+    @GameTest(template = "fission", timeoutTicks = 140)
+    public static void linkedIrradiatorsUseBulkCapacityThroughProductionAndResize(GameTestHelper helper) {
+        var max = new BlockPos(7, 5, 7);
+        for (BlockPos p : BlockPos.betweenClosed(MIN, max)) {
+            if (p.getX() == 1 || p.getX() == 7 || p.getY() == 1 || p.getY() == 5 || p.getZ() == 1 || p.getZ() == 7) {
+                helper.setBlock(p, NCFission.CASING.get());
+            }
+        }
+        var outlet = new BlockPos(2, 3, 7);
+        helper.setBlock(CONTROLLER, NCFission.CONTROLLER.get());
+        helper.setBlock(INPUT, NCFission.IRRADIATOR_PORT.get());
+        helper.setBlock(outlet, outputOf(NCFission.IRRADIATOR_PORT.get()));
+        helper.setBlock(ALTERNATE, NCFission.IRRADIATOR_PORT.get());
+        var thorium = stack("thorium_dust");
+        var tbp = stack("tbp_dust");
+        port(helper, INPUT).localIrradiatorItems().setFilter(thorium);
+        port(helper, outlet).localIrradiatorItems().setFilter(thorium);
+        port(helper, ALTERNATE).localIrradiatorItems().setFilter(tbp);
+        var targets = new ArrayList<BlockPos>();
+        for (BlockPos p : BlockPos.betweenClosed(MIN.offset(1, 1, 1), max.offset(-1, -1, -1))) {
+            helper.setBlock(p, NCFission.IRRADIATOR.get());
+            var target = (FissionIrradiator) helper.getBlockEntity(p);
+            if (targets.size() == 70) {
+                target.localItems().setFilter(tbp);
+                break;
+            }
+            targets.add(p.immutable());
+            target.localItems().setFilter(thorium);
+        }
+        var target = (FissionIrradiator) helper.getBlockEntity(targets.get(0));
+        var player = new FakePlayer(helper.getLevel(), new GameProfile(UUID.randomUUID(), "IrradiatorInspector")) {
+            @Override
+            public OptionalInt openMenu(MenuProvider provider) {
+                containerMenu = provider.createMenu(1, getInventory(), this);
+                return OptionalInt.of(1);
+            }
+        };
+        var portPos = helper.absolutePos(outlet);
+        player.moveTo(portPos.getX() + 0.5, portPos.getY(), portPos.getZ() + 1.5);
+        helper.startSequence().thenWaitUntil(() -> requireAssembled(helper)).thenExecute(() -> {
+            var input = items(helper, INPUT, Direction.NORTH);
+            var output = items(helper, outlet, Direction.SOUTH);
+            var alternate = items(helper, ALTERNATE, Direction.NORTH);
+            var incoming = thorium.copyWithCount(150);
+            helper.assertTrue(input.getSlotLimit(0) == 140 && output.getSlotLimit(0) == 140
+                            && alternate.getSlotLimit(0) == 64 && !alternate.isItemValid(0, thorium),
+                    "Capacity tracks connected targets by exact item filter");
+            helper.assertTrue(input.insertItem(0, incoming, true).getCount() == 10 && input.getStackInSlot(0).isEmpty()
+                            && input.insertItem(0, incoming, false).getCount() == 10 && incoming.getCount() == 150,
+                    "A simulated or executed insertion offers precisely the available shared room");
+            var bank = target.inventory();
+            var owner = bank.owner;
+            bank.insertBulk(1, tbp.copyWithCount(139), false);
+            owner.load(owner.saveWithoutMetadata());
+            var tagged = thorium.copy();
+            tagged.getOrCreateTag().putInt("variant", 1);
+            helper.assertTrue(!input.isItemValid(0, tagged), "A different stack tag cannot replace the visible stack over stored excess");
+            helper.assertTrue(input.getStackInSlot(0).getCount() == 140 && output.getStackInSlot(0).getCount() == 139,
+                    "Full-range counts survive the port's normal NBT save and load");
+            var recipe = target.prepare(helper.getLevel());
+            helper.assertTrue(recipe != null, "Irradiation can use the final unit of shared output space");
+            target.irradiate(helper.getLevel(), recipe, 2 * recipe.fluxRequired());
+            helper.assertTrue(input.getStackInSlot(0).getCount() == 139 && output.getStackInSlot(0).getCount() == 140
+                            && target.prepare(helper.getLevel()) == null && output.extractItem(0, 140, true).getCount() == 64,
+                    "The last batch completes exactly once, and extraction stays within vanilla stack size");
+            helper.useBlock(outlet, player);
+            var menu = (FissionIrradiatorMenu) player.containerMenu;
+            helper.assertTrue(menu.itemCount(false) == 139 && menu.itemCount(true) == 140 && menu.itemCapacity() == 140
+                            && !menu.getSlot(0).mayPlace(tagged) && menu.getSlot(1).getItem().getCount() == 64
+                            && menu.quickMoveStack(player, 1).getCount() == 64,
+                    "The menu shows the full count and transfers one normal stack");
+            for (BlockPos p : targets.subList(30, targets.size())) {
+                helper.setBlock(p, Blocks.AIR);
+            }
+            helper.assertTrue(output.extractItem(0, 1, false).isEmpty(), "A cached outlet loses access when the shell reforms");
+        }).thenWaitUntil(() -> requireAssembled(helper)).thenExecute(() -> {
+            var input = items(helper, INPUT, Direction.NORTH);
+            var output = items(helper, outlet, Direction.SOUTH);
+            helper.assertTrue(input.getSlotLimit(0) == 64 && output.getSlotLimit(0) == 64
+                            && input.getStackInSlot(0).getCount() == 139 && output.getStackInSlot(0).getCount() == 76
+                            && input.insertItem(0, thorium, false).getCount() == 1,
+                    "Shrinking the bank retains both buffers and stops additional input while over capacity");
+        }).thenSucceed();
     }
 
     @GameTest(template = "fission", timeoutTicks = 70)
