@@ -566,6 +566,7 @@ All 218 local GameTests passed. The isolated 539-mod Auram instance on Forge 47.
 | Cyclic | 1.13.6 | Item, fluid, and energy cables on sided processors and solid-fission ports |
 | Starbunclemania and Ars Nouveau | 1.2.3.0 and 4.12.7 | Sided item, fluid, Forge Energy, and Mekanism gas transport |
 | Tesseract | 1.0.38 | Item, fluid, and Forge Energy channels between a Distributor, an Infuser, and remote storage |
+| Compact Machines | 6.0.3 | Item, fluid, and Forge Energy tunnels for processors and batteries, including saved tunnel buffers |
 | Better Chunk Loading and Cupboard | 5.4 and 2.7 | Chunk eviction and save integrity for attached Ender IO and Mekanism networks |
 | Large Ore Deposits and ForgeEndertech | 8.1.8.0 build 1850 and 11.1.10.0 build 2048 | Deposit generation during reload and saved deposits in new Overworld and Wasteland terrain |
 | JEI, Patchouli, and KubeJS | 15.20.0.129, 84.1, and 2001.6.5-build.16 | Recipe display, guidebook content, and pack recipe overrides |
@@ -891,6 +892,14 @@ The isolated 540-mod Auram instance repeated the liquid ender and 3,000 FE route
 On packaged Forge 47.4.10, Auram's Tesseract 1.0.38 carried one glass block, 1,000 mB of tritium, and 6,000 FE from a Distributor Outlet to an Infuser across three channels. A full output kept all supplies in the Infuser through chunk eviction and restart. After the output cleared, the Infuser made one Tritium Lamp. An Ender IO 8.2.22-beta Item Conduit sent it through a separate Tesseract channel to a remote barrel. The single lamp and the empty source and processor buffers survived another eviction and restart. [Tesseract 1.0.38 for Forge 1.20.1](https://www.curseforge.com/minecraft/mc-mods/tesseract/files/6865509)
 
 The isolated Auram instance repeated the circuit with all 540 installed mod JARs and the original Tesseract configuration. The region files contained exactly one remote lamp and empty input and energy buffers after eviction and shutdown. The client loaded JEI and ran with master volume zero and OpenAL No Output. The observer recorded zero focus activations, foreground samples, or visible windows.
+
+### Compact Machines tunnels
+
+On packaged Forge 47.4.10, a player opened a Compact Machines 6.0.3 room and installed six tunnels. Hoppers, Mekanism 10.4.16.80 pipes and cables, and Ender IO 8.2.22-beta conduits moved items, fluids, and Forge Energy in both directions. The Infuser received 2,000 mB of water and 6,123 FE while dirt waited behind its disabled item face. Opening the face let the Infuser make one clay block and keep 123 FE. The outside barrel collected the clay after a slot opened. A Melter and a Voltaic Pile sent 1,000 mB of water and 3,700 FE out of the room. The delivered quantities and the internal balances survived a dedicated restart and confirmed eviction and reload of both chunks.
+
+With the room's consumers disconnected, the previous JAR accepted two dirt blocks, 1,234 mB of water, and 4,321 FE into the three tunnel buffers. It lost those contents when both chunks evicted. For Compact Machines 6.0.3, NuclearCraft now marks the room block entity for saving when one of its Forge buffer handlers changes. With the patched JAR, the same quantities survived both chunk eviction and dedicated restart. After outside storage drew out all three resources, both checks preserved the emptied buffers and exact amounts in the destinations. The eviction tests explicitly released Compact Machines' room ticket, which normally keeps a room with tunnels loaded. All 319 local GameTests passed on clean Forge.
+
+The isolated client with all 540 installed Auram JARs loaded JEI and tested the patched JAR in a copy of the dedicated room. It verified all three buffered amounts after confirmed eviction of both chunks. The saved region files also contained the exact three buffers and the original balances in outside storage. The client used master volume zero and OpenAL No Output, with zero focus activations, foreground samples, or visible windows.
 
 ### Tools and Armor
 

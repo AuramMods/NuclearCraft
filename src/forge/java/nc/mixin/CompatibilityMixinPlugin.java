@@ -17,12 +17,16 @@ import java.util.Set;
 public final class CompatibilityMixinPlugin implements IMixinConfigPlugin {
     private static final String WAITING_MIXIN = "nc.mixin.compat.BetterChunkLoadingWaiting";
     private static final String ADLODS_MIXIN = "nc.mixin.compat.AdLodsReload";
+    private static final String COMPACT_MACHINE_MIXIN = "nc.mixin.compat.CompactMachine";
     private static final Logger LOGGER = LogUtils.getLogger();
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
         if (ADLODS_MIXIN.equals(mixinClassName)) {
             return hasVersion("adlods", "8.1.8.0");
+        }
+        if (mixinClassName.startsWith(COMPACT_MACHINE_MIXIN)) {
+            return hasVersion("compactmachines", "6.0.3");
         }
         return !WAITING_MIXIN.equals(mixinClassName) || hasVersion("betterchunkloading", "1.20.1-5.4");
     }
